@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 def loadData(file):
     df = pd.read_csv(file)
     df["Date"] = pd.to_datetime(df["Date"])
+    df.sort_values("Date", ascendending=True, inplace=True)
     df.set_index("Date", inplace=True)
     return df
 
