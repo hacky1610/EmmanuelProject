@@ -2,6 +2,7 @@ import gym
 import gym_anytrading
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import A2C
+from Envs.stocks_env import StocksEnv
 
 import numpy as np
 import pandas as pd
@@ -42,10 +43,10 @@ def Evaluate(env,model):
 
 def learn(model):
     #Todo: Callback -> https://youtu.be/D9sU1hLT0QY?t=1796
-    model.learn(total_timesteps=100000) #ACER or PPo auch möglich
+    model.learn(total_timesteps=1000000) #ACER or PPo auch möglich
 
 def createAndLearn(df):
-    envTrain = gym.make('stocks-v0', df=df, frame_bound=(10, 100),
+    envTrain = StocksEnv(df=df, frame_bound=(5, 100),
                         window_size=5)  # Why 5? See here https://youtu.be/D9sU1hLT0QY?t=949
     env_maker = lambda: envTrain
     envTrain = DummyVecEnv([env_maker])
@@ -55,10 +56,10 @@ def createAndLearn(df):
 
 df = loadData("./Data/gmedata.csv")
 #Learn
-#model = createAndLearn(df)
-#model.save("./model.h5")
+model = createAndLearn(df)
+model.save("./model.h5")
 
 #Evaluate
 model = A2C.load("./model.h5")
-envTest = gym.make('stocks-v0', df=df, frame_bound=(90, 110), window_size=5) #Day 90 to 110
+envTest = StocksEnv( df=df, frame_bound=(90, 110), window_size=5) #Day 90 to 110
 Evaluate(envTest, model)
