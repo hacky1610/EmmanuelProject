@@ -3,6 +3,7 @@ import gym_anytrading
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import A2C
 from Envs.stocks_env import StocksEnv
+from finta import TA
 
 import numpy as np
 import pandas as pd
@@ -11,8 +12,14 @@ from matplotlib import pyplot as plt
 def loadData(file):
     df = pd.read_csv(file)
     df["Date"] = pd.to_datetime(df["Date"])
+    df["Volume"] = df["Volume"].apply(lambda x: float(x.replace(",", ""))) #From String to float
     df.sort_values("Date", ascendending=True, inplace=True)
     df.set_index("Date", inplace=True)
+    df['SMA'] = TA.SMA(df, 12)
+    df['RSI'] = TA.RSI(df)
+    df['OBV'] = TA.OBV(df)
+    df.fillna(0, inplace=True)
+
     return df
 
 def doRandTest(env):
