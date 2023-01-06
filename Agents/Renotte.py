@@ -4,12 +4,14 @@ import numpy as np
 
 class Renotte:
     _modelPath = "./model.h5"
-    def __init__(self,plot):
+    _tensorboard_log = "./logs/"
+
+    def __init__(self, plot):
         self.loadModel()
         self._plt = plot
 
 
-    def doRandTest(self,env):
+    def doRandTest(self, env):
         state = env .reset()
         while True:
             action = env .action_space.sample()
@@ -38,7 +40,8 @@ class Renotte:
 
     def learn(self):
         # Todo: Callback -> https://youtu.be/D9sU1hLT0QY?t=1796
-        self._model.learn(total_timesteps=1000000)  # ACER or PPo auch möglich
+        #self._model.learn(total_timesteps=1000000)  # ACER or PPo auch möglich
+        self._model.learn(total_timesteps=1000)  # ACER or PPo auch möglich
 
     def loadModel(self):
         self._model = A2C.load(self._modelPath)
@@ -46,6 +49,6 @@ class Renotte:
     def createAndLearn(self, env):
         env_maker = lambda: env
         envTrain = DummyVecEnv([env_maker])
-        self._model = A2C('MlpLstmPolicy', envTrain, verbose=1)
+        self._model = A2C('MlpLstmPolicy', envTrain, verbose=1, tensorboard_log=self._tensorboard_log)
         self.learn()
         self._model.save("./model.h5")
