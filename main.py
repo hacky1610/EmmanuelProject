@@ -1,7 +1,8 @@
 from Envs.StockSignalEnv import StockSignalEnv
-from finta import TA
-import pandas as pd
+from finta import TA-
+import pandas as p
 from Agents.Renotte import Renotte
+from matplotlib import pyplot as plt
 
 def loadData(file):
     df = pd.read_csv(file)
@@ -16,7 +17,7 @@ def loadData(file):
     return df
 
 df = loadData("./Data/gmedata.csv")
-agent = Renotte()
+agent = Renotte(plt)
 
 #Learn
 envTrain = StockSignalEnv(df=df, frame_bound=(12, 50),window_size=12)  # Why 5? See here https://youtu.be/D9sU1hLT0QY?t=949

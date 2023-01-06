@@ -1,10 +1,11 @@
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import A2C
+import numpy as np
 
 class Renotte:
     _modelPath = "./model.h5"
     def __init__(self,plot):
-        self._model = ""
+        self.loadModel()
         self._plt = plot
 
 
