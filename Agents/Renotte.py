@@ -33,7 +33,7 @@ class Renotte:
                 break
         self._plt.figure(figsize=(15, 6))
         self._plt.cla()
-        self._plt.render_all()
+        env.render_all()
         self._plt.show()
 
     def learn(self):
