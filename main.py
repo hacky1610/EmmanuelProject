@@ -1,6 +1,6 @@
 from Envs.StockSignalEnv import StockSignalEnv
-from finta import TA-
-import pandas as p
+from finta import TA
+import pandas as pd
 from Agents.Renotte import Renotte
 from matplotlib import pyplot as plt
 
