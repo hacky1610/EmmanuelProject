@@ -22,7 +22,7 @@ class Positions(Enum):
 class TradingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, window_size):
+    def __init__(self, df, window_size, ):
         assert df.ndim == 2
 
         self.seed()
