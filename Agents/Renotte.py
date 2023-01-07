@@ -7,7 +7,6 @@ class Renotte:
     _tensorboard_log = "./logs/"
 
     def __init__(self, plot):
-        self.loadModel()
         self._plt = plot
 
 
@@ -21,7 +20,7 @@ class Renotte:
                 break
         self._plt.figure(figsize=(15, 6))
         self._plt.cla()
-        self._plt.render_all()
+        env.render_all()
         self._plt.show()
 
     def Evaluate(self,env):
@@ -41,7 +40,7 @@ class Renotte:
     def learn(self):
         # Todo: Callback -> https://youtu.be/D9sU1hLT0QY?t=1796
         #self._model.learn(total_timesteps=1000000)  # ACER or PPo auch möglich
-        self._model.learn(total_timesteps=1000)  # ACER or PPo auch möglich
+        self._model.learn(total_timesteps=1000000)  # ACER or PPo auch möglich
 
     def loadModel(self):
         self._model = A2C.load(self._modelPath)

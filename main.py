@@ -16,13 +16,16 @@ def loadData(file):
     df.fillna(0, inplace=True)
     return df
 
-df = loadData("./Data/gmedata.csv")
+df = loadData("./Data/allianzdata.csv")
 agent = Renotte(plt)
 
+
 #Learn
-envTrain = StockSignalEnv(df=df, frame_bound=(12, 50),window_size=12)  # Why 5? See here https://youtu.be/D9sU1hLT0QY?t=949
+envTrain = StockSignalEnv(df=df, frame_bound=(12, 80), window_size=12)  # Why 5? See here https://youtu.be/D9sU1hLT0QY?t=949
 agent.createAndLearn(envTrain)
 
 #Evaluate
-envTest = StockSignalEnv( df=df, frame_bound=(80, 250), window_size=12) #Day 90 to 110
+
+envTest = StockSignalEnv(df=df, frame_bound=(75, 150), window_size=12)
+agent.loadModel()
 agent.Evaluate(envTest)
