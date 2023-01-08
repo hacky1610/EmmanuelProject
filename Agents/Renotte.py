@@ -12,13 +12,14 @@ class Renotte:
     _modelPath = ""
     _plotType = "" #Types: show , save, none
     _logDirectory = ""
+    _tfLogDirectory = None
     _plotPath = ""
     _runName = ""
     _tracer = None
     _model = ""
+    _discountRate = 0.95
 
-
-    def __init__(self, plot,tracer, plotType="show", model="A2C"):
+    def __init__(self, plot,tracer, plotType="show", tfLog=False, model="A2C", disountRate=0.99):
         self._plt = plot
         self._runName = datetime.now().strftime("%Y%m%d_%H%M%S") + self.get_random_string()
         self._logDirectory = os.path.join("runs",self._runName )
@@ -29,8 +30,10 @@ class Renotte:
         self._plotType = plotType
         self._tracer = tracer
         self._model = model
+        self._discountRate = disountRate
 
-
+        if tfLog == True:
+            self._tfLogDirectory = self._logDirectory
 
     def plot(self, env):
         if "none" == self._plotType:
@@ -86,11 +89,11 @@ class Renotte:
         envTrain = DummyVecEnv([env_maker])
 
         if "A2C" == self._model:
-            self._model = A2C('MlpLstmPolicy', envTrain, verbose=1, tensorboard_log=self._logDirectory )
+            self._model = A2C('MlpLstmPolicy', envTrain, verbose=1, tensorboard_log=self._tfLogDirectory,gamma=self._discountRate )
         elif "PPO2" == self._model:
-            self._model = PPO2('MlpPolicy', envTrain, verbose=1, tensorboard_log=self._logDirectory )
+            self._model = PPO2('MlpPolicy', envTrain, verbose=1, tensorboard_log=self._tfLogDirectory,gamma=self._discountRate )
         elif "DQN" == self._model:
-            self._model = DQN('LnMlpPolicy', envTrain, verbose=1, tensorboard_log=self._logDirectory)
+            self._model = DQN('LnMlpPolicy', envTrain, verbose=1, tensorboard_log=self._tfLogDirectory,gamma=self._discountRate)
 
         self.learn()
         self._model.save(self._modelPath)

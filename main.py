@@ -24,11 +24,15 @@ tracer = FileTracer("./trace.log")
 
 agents = [Renotte(plt, tracer=tracer, plotType="save", model="PPO2"),
           Renotte(plt, tracer=tracer, plotType="save", model="DQN"),
-          Renotte(plt, tracer=tracer, plotType="save", model="A2C")]
+          Renotte(plt, tracer=tracer, plotType="save", model="A2C"),
+          Renotte(plt, tracer=tracer, plotType="save", model="PPO2",disountRate=0.95),
+          Renotte(plt, tracer=tracer, plotType="save", model="DQN",disountRate=0.95),
+          Renotte(plt, tracer=tracer, plotType="save", model="A2C",disountRate=0.95)]
 
 for a in agents:
     envTrain = StockSignalEnv(df=df, frame_bound=(80, 150),
                               window_size=12)  # Why 5? See here https://youtu.be/D9sU1hLT0QY?t=949
+    a.doRandTest(envTrain)
     a.createAndLearn(envTrain)
     # Evaluate
     envTest = StockSignalEnv(df=df, frame_bound=(145, 170), window_size=12)
