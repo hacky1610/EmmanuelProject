@@ -22,7 +22,7 @@ class Renotte:
     def __init__(self, plot,tracer, plotType="show", tfLog=False, model="A2C", disountRate=0.99):
         self._plt = plot
         self._runName = datetime.now().strftime("%Y%m%d_%H%M%S") + self.get_random_string()
-        self._logDirectory = os.path.join("runs",self._runName )
+        self._logDirectory = os.path.join("../../runs",self._runName )
         self._modelPath = os.path.join(self._logDirectory, "model.h5")
         self._plotPath = os.path.join(self._logDirectory, "graph.png")
         os.mkdir(self._logDirectory)

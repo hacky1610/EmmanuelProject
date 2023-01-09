@@ -19,8 +19,8 @@ def loadData(file):
     return df
 
 
-df = loadData("./Data/allianzdata.csv")
-tracer = FileTracer("./trace.log")
+df = loadData("../../Data/allianzdata.csv")
+tracer = FileTracer("../../trace.log")
 
 agents = [Renotte(plt, tracer=tracer, plotType="save", model="PPO2"),
           Renotte(plt, tracer=tracer, plotType="save", model="DQN"),
