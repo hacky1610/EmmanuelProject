@@ -15,7 +15,7 @@ class AgentCollection:
         self.runs["RunName"] = None
 
     def CreateAgent(plt, tracer, run, logdir):
-        return Renotte(plt, tracer=tracer, model=run["Model"], disountRate=float(run["Discount"]), plotType="save",
+        return Renotte(plt, tracer=tracer, model=run["Model"], disountRate=float(run["Discount"]), plotType="save",policy=run["Policy"],
                        logDir=logdir)
 
     def Run(self, df, plt, tracer, logdir):
