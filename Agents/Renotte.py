@@ -1,12 +1,10 @@
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import A2C,PPO2,DQN
-from stable_baselines.common import make_vec_env
 import numpy as np
 from datetime import datetime
 import os
 import random
 import string
-import Tracing.Tracer
 
 class Renotte:
     _modelPath = ""
@@ -14,15 +12,17 @@ class Renotte:
     _logDirectory = ""
     _tfLogDirectory = None
     _plotPath = ""
-    _runName = ""
+    runName = ""
     _tracer = None
     _model = ""
     _discountRate = 0.95
+    totalReward = None
+    totalProfit = None
 
-    def __init__(self, plot,tracer, plotType="show", tfLog=False, model="A2C", disountRate=0.99):
+    def __init__(self, plot,tracer, plotType="show", tfLog=False, model="A2C", disountRate=0.99, logDir="/tmp"):
         self._plt = plot
-        self._runName = datetime.now().strftime("%Y%m%d_%H%M%S") + self.get_random_string()
-        self._logDirectory = os.path.join("../../runs",self._runName )
+        self.runName = datetime.now().strftime("%Y%m%d_%H%M%S") + self.get_random_string()
+        self._logDirectory = os.path.join(logDir, self.runName)
         self._modelPath = os.path.join(self._logDirectory, "model.h5")
         self._plotPath = os.path.join(self._logDirectory, "graph.png")
         os.mkdir(self._logDirectory)
@@ -60,7 +60,7 @@ class Renotte:
         self.plot(env)
 
     def Evaluate(self,env):
-        self._tracer.Info("Run: {}".format(self._runName))
+        self._tracer.Info("Run: {}".format(self.runName))
         obs = env.reset()
         while True:
             obs = obs[np.newaxis, ...]
@@ -68,13 +68,15 @@ class Renotte:
             obs, reward, done, info = env.step(action)
             if done:
                 self._tracer.Result(info)
+                self.totalReward = info["total_reward"]
+                self.totalProfit = info["total_profit"]
                 break
         self.plot(env)
 
     def learn(self):
         # Todo: Callback -> https://youtu.be/D9sU1hLT0QY?t=1796
-        self._model.learn(total_timesteps=1000000)  # ACER or PPo auch möglich
-        #self._model.learn(total_timesteps=10000)  # ACER or PPo auch möglich
+        #self._model.learn(total_timesteps=1000000)  # ACER or PPo auch möglich
+        self._model.learn(total_timesteps=10000)  # ACER or PPo auch möglich
 
     def loadModel(self):
         if "A2C" == self._model:
