@@ -35,4 +35,4 @@ class AgentCollection:
             self.runs._set_value(i, "RunName", ag.runName)
             del ag
 
-        self.runs.to_csv(os.path.join("Result.csv"))
+        self.runs.to_csv(os.path.join(logdir, "Result.csv"))
