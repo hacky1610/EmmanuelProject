@@ -1,15 +1,15 @@
-from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines import A2C, PPO2, DQN, TD3, SAC
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3 import A2C, PPO, DQN, TD3, SAC
 import numpy as np
 from datetime import datetime
 import os
 import random
 import string
 from Agents import config
-from stable_baselines.common.noise import NormalActionNoise
-from stable_baselines.common.noise import OrnsteinUhlenbeckActionNoise
+from stable_baselines3.common.noise import NormalActionNoise
+from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 
-MODELS = {"A2C": A2C, "TD3": TD3, "SAC": SAC, "PPO2": PPO2, "DQN": DQN} #"DDPG": DDPG
+MODELS = {"A2C": A2C, "TD3": TD3, "SAC": SAC, "PPO": PPO, "DQN": DQN} #"DDPG": DDPG
 MODEL_KWARGS = {x: config.__dict__[f"{x.upper()}_PARAMS"] for x in MODELS.keys()}
 
 NOISE = {
