@@ -1,9 +1,12 @@
-tensorflow===1.15.0
+tensorflow===2.1.4
 stable-baselines3
 gym==0.19.0
 gym-anytrading
 finta
 pandas
 matplotlib
-protobuf==3.20
+protobuf
 yfinance
+ray
+dm-tree==0.1.5
+tensorflow_probability

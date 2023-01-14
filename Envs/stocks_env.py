@@ -1,15 +1,15 @@
 import numpy as np
 
 from Envs.trading_env import TradingEnv, Actions, Positions
-
+from ray.rllib.env.env_context import EnvContext
 
 class StocksEnv(TradingEnv):
 
-    def __init__(self, df, window_size, frame_bound):
-        assert len(frame_bound) == 2
+    def __init__(self, config: EnvContext):
+        assert len(config["frame_bound"]) == 2
 
-        self.frame_bound = frame_bound
-        super().__init__(df, window_size)
+        self.frame_bound = config["frame_bound"]
+        super().__init__(config["df"], config["window_size"])
 
         self.trade_fee_bid_percent = 0.01  # unit
         self.trade_fee_ask_percent = 0.005  # unit
