@@ -69,6 +69,7 @@ class TradingEnv(gym.Env):
         self._current_tick += 1
 
         if self._current_tick == self._end_tick:
+            self.tracer.write(f"Reward: {self._total_reward} Profit: {self._total_profit}")
             self._done = True
 
         step_reward = self._calculate_reward(action)

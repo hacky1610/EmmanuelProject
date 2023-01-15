@@ -13,6 +13,7 @@ class StocksEnv(TradingEnv):
 
         self.trade_fee_bid_percent = 0.01  # unit
         self.trade_fee_ask_percent = 0.005  # unit
+        self.tracer = config["tracer"]
 
 
     def _process_data(self):

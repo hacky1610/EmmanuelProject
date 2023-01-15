@@ -15,7 +15,8 @@ df = Loader.loadFromOnline("USDJPY=X", dt.datetime.today() - dt.timedelta(350), 
 env_conf = {
     "df":df,
     "frame_bound": (12, 100),
-    "window_size": 12
+    "window_size": 12,
+    "tracer":FileTracer("/tmp/foo.log")
 }
 
 config = (
