@@ -1,6 +1,6 @@
 tensorflow===2.1.4
 stable-baselines3
-gym==0.19.0
+gym
 gym-anytrading
 finta
 pandas

@@ -7,6 +7,7 @@ import os
 from Envs.StockSignalEnv import StockSignalEnv
 from ray.tune.registry import get_trainable_cls
 import ray
+from ray import air, tune
 from ray.rllib.algorithms.ppo import PPO
 ray.init()
 
@@ -29,7 +30,18 @@ config = (
 
 )
 
-algo = config.build()
-algo.train()
+stop = {
+    "training_iteration": 50,
+    "timesteps_total": 100000,
+    "episode_reward_mean": 40
+}
+
+print("Training automatically with Ray Tune")
+tuner = tune.Tuner(
+    "PPO",
+    param_space=config.to_dict(),
+    run_config=air.RunConfig(stop=stop),
+)
+results = tuner.fit()
 
 
