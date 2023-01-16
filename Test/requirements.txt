@@ -1,3 +1,5 @@
 pandas
 yfinance
 gym
+matplotlib
+numpy
