@@ -1,8 +1,5 @@
 import unittest
-from Agents.Renotte import Renotte
-from unittest.mock import MagicMock
 from Envs.stocksEnv import StocksEnv
-import pandas as pd
 from Connectors.Loader import Loader
 from Envs.tradingEnv import Actions,Positions
 
