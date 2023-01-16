@@ -1,5 +1,4 @@
 tensorflow===2.1.4
-stable-baselines3
 gym
 gym-anytrading
 finta

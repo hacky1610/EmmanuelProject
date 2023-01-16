@@ -4,6 +4,7 @@ from gym.utils import seeding
 import numpy as np
 from enum import Enum
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 
 class Actions(Enum):
@@ -64,12 +65,23 @@ class TradingEnv(gym.Env):
         self.history = {}
         return self._get_observation()
 
+    def plot(self):
+
+
+        plt.figure(figsize=(15, 6))
+        plt.cla()
+        self.render_all()
+        t = datetime.now().strftime("%Y%m%d_%H%M%S")
+        plt.savefig(f"/tmp/foo{t}.png")
+
     def step(self, action):
         self._done = False
         self._current_tick += 1
 
         if self._current_tick == self._end_tick:
             self.tracer.write(f"Reward: {self._total_reward} Profit: {self._total_profit}")
+            if self._total_profit > 1.0:
+                self.plot()
             self._done = True
 
         step_reward = self._calculate_reward(action)
