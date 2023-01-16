@@ -9,6 +9,7 @@ class StockEnvTest(unittest.TestCase):
     def setUp(self):
         currentDir = pathlib.Path(__file__).parent.resolve()
         csvPath = os.path.join(currentDir, "Data", "testData.csv")
+
         self.df = Loader.loadFromFile(csvPath)
 
     def test_tradingFirstBuy_shouldNotHaveAProfit(self):
