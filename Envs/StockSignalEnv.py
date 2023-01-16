@@ -1,4 +1,4 @@
-from Envs.stocks_env import StocksEnv
+from Envs.stocksEnv import StocksEnv
 class StockSignalEnv(StocksEnv):
     def add_signals(env):
         start = env.frame_bound[0] - env.window_size

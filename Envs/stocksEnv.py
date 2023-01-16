@@ -1,6 +1,6 @@
 import numpy as np
 
-from Envs.trading_env import TradingEnv, Actions, Positions
+from Envs.tradingEnv import TradingEnv, Actions, Positions
 from ray.rllib.env.env_context import EnvContext
 
 class StocksEnv(TradingEnv):
