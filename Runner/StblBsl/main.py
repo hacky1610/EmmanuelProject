@@ -27,7 +27,7 @@ config = (
     .framework("tf2")
 )
 
-config["gamma"] = tune.uniform(0.9, 0.99)
+#config["gamma"] = tune.uniform(0.9, 0.99)
 #config["epsilon"] = tune.uniform(0.1, 0.99)
 #config["lr"] = tune.uniform(0.1, 10e-6)
 

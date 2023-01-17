@@ -44,6 +44,7 @@ class TradingEnv(gym.Env):
         self._last_trade_tick = None
         self._position = None
         self._position_history = None
+        self._trade_history = None
         self._total_reward = None
         self._total_profit = None
         self._first_rendering = None
@@ -58,7 +59,8 @@ class TradingEnv(gym.Env):
         self._current_tick = self._start_tick
         self._last_trade_tick = self._current_tick - 1
         self._position = Positions.Short
-        self._position_history = (self.window_size * [None]) + [self._position]
+        self._position_history = (self.window_size * [None]) + [self._position] #TODO:?
+        self._trade_history = {}
         self._total_reward = 0.
         self._total_profit = 1.  # unit
         self._first_rendering = True
@@ -72,7 +74,7 @@ class TradingEnv(gym.Env):
         plt.cla()
         self.render_all()
         t = datetime.now().strftime("%Y%m%d_%H%M%S")
-        plt.savefig(f"/tmp/graphs/graph_{t}.png")
+        plt.savefig(f"/tmp/graph_{t}.png")
 
     def step(self, action):
         self._done = False
@@ -80,7 +82,7 @@ class TradingEnv(gym.Env):
 
         if self._current_tick == self._end_tick:
             self.tracer.write(f"Reward: {self._total_reward} Profit: {self._total_profit}")
-            if self._total_profit > 1.0:
+            if self._total_profit > 0.75:
                 self.plot()
             self._done = True
 
@@ -96,6 +98,7 @@ class TradingEnv(gym.Env):
         if trade:
             self._position = self._position.opposite()
             self._last_trade_tick = self._current_tick
+            self._trade_history[self._current_tick] = action
 
         self._position_history.append(self._position)
         observation = self._get_observation()
@@ -151,15 +154,26 @@ class TradingEnv(gym.Env):
 
         short_ticks = []
         long_ticks = []
-        for i, tick in enumerate(window_ticks):
+        buy_ticks = []
+        sell_ticks = []
+        for i, tick in enumerate(window_ticks): #Todo: Refactor to Dictionary
             if self._position_history[i] == Positions.Short:
                 short_ticks.append(tick)
             elif self._position_history[i] == Positions.Long:
                 long_ticks.append(tick)
 
+        for i in self._trade_history:  # Todo: GetIndexes from Value
+            if Actions.Buy.value == self._trade_history[i]:
+                buy_ticks.append(i)
+            elif Actions.Sell.value == self._trade_history[i]:
+                sell_ticks.append(i)
+
+
         #Markers: https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html#sphx-glr-gallery-lines-bars-and-markers-marker-reference-py
-        plt.plot(short_ticks, self.prices[short_ticks], 'ro')
-        plt.plot(long_ticks, self.prices[long_ticks], 'go')
+        #plt.plot(short_ticks, self.prices[short_ticks], 'ro')
+        #plt.plot(long_ticks, self.prices[long_ticks], 'go')
+        plt.plot(sell_ticks, self.prices[sell_ticks], 'ro')
+        plt.plot(buy_ticks, self.prices[buy_ticks], 'go')
 
         plt.suptitle(
             "Total Reward: %.6f" % self._total_reward + ' ~ ' +
