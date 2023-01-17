@@ -1,10 +1,10 @@
-from Tracer import Tracer
+from Tracing.Tracer import Tracer
 class ConsoleTracer(Tracer):
-    def Info(self, message):
+    def write(self, message):
         print(message)
 
-    def Error(self, message):
+    def error(self, message):
         print("Error: {}:".format(message))
 
-    def Result(self, message):
+    def result(self, message):
         print("Result: {}:".format(message))

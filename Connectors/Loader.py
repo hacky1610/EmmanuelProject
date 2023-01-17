@@ -3,6 +3,7 @@ import yfinance as yf
 from finta import TA
 class Loader:
 
+    @staticmethod
     def loadFromFile(file):
         df = pd.read_csv(file)
         df["Date"] = pd.to_datetime(df["Date"])
@@ -14,7 +15,7 @@ class Loader:
         df['OBV'] = TA.OBV(df)
         df.fillna(0, inplace=True)
         return df
-
+    @staticmethod
     def loadFromOnline(stock, start, end,interval="60m"):
         df = yf.download(stock, start, end, interval )
         df['SMA'] = TA.SMA(df, 12)
