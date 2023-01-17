@@ -5,7 +5,7 @@ from ray.rllib.env.env_context import EnvContext
 
 class StocksEnv(TradingEnv):
 
-    def __init__(self, config: EnvContext):
+    def __init__(self, config: dict):
         assert len(config["frame_bound"]) == 2
 
         self.frame_bound = config["frame_bound"]

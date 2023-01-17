@@ -72,7 +72,7 @@ class TradingEnv(gym.Env):
         plt.cla()
         self.render_all()
         t = datetime.now().strftime("%Y%m%d_%H%M%S")
-        plt.savefig(f"/tmp/foo{t}.png")
+        plt.savefig(f"/tmp/graphs/graph_{t}.png")
 
     def step(self, action):
         self._done = False
@@ -157,6 +157,7 @@ class TradingEnv(gym.Env):
             elif self._position_history[i] == Positions.Long:
                 long_ticks.append(tick)
 
+        #Markers: https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html#sphx-glr-gallery-lines-bars-and-markers-marker-reference-py
         plt.plot(short_ticks, self.prices[short_ticks], 'ro')
         plt.plot(long_ticks, self.prices[long_ticks], 'go')
 
