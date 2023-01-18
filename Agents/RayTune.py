@@ -5,14 +5,14 @@ from Connectors.FileOperations import FileOperations
 
 class RayTune:
 
-    def __init__(self, framework: str = "tf2", algorithm: str = "PPO"):
+    def __init__(self, framework: str = "tf2", algorithm: str = "PPO", runsDirectory: str = "./runs"):
         self._algorithm = algorithm
         self._algoConfig = RayTune._create_algorith_config(framework, algorithm)
 
     def _get_stop_config(self):
         return {
             #"training_iteration": 50,
-            "timesteps_total": 500000,
+            "timesteps_total": 10000,
             #"episode_reward_mean": 1.0
         }
 
@@ -53,6 +53,7 @@ class RayTune:
 
         env.plot()
         print(info)
+        return info
 
     @staticmethod
     def _create_algorith_config(framework: str = "tf2", algo: str = "PPO"):
