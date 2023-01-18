@@ -5,22 +5,24 @@ from Connectors.FileOperations import FileOperations
 
 class RayTune:
 
-    def __init__(self, framework: str = "tf2", algorithm: str = "PPO"):
+    def __init__(self, framework: str = "tf2", algorithm: str = "PPO", runsDirectory: str = "./runs"):
         self._algorithm = algorithm
         self._algoConfig = RayTune._create_algorith_config(framework, algorithm)
 
     def _get_stop_config(self):
         return {
-            "training_iteration": 50,
-            "timesteps_total": 100000,
-            "episode_reward_mean": 25
+            #"training_iteration": 50,
+            "timesteps_total": 10000,
+            #"episode_reward_mean": 1.0
         }
 
     def train(self, environment, env_conf: dict):
-        # self._algoConfig["gamma"] = tune.uniform(0.9, 0.99)
-        # self._algoConfig["epsilon"] = tune.uniform(0.1, 0.99)
-        # self._algoConfig["lr"] = tune.uniform(0.1, 10e-6)
-
+        #https://docs.ray.io/en/latest/tune/api_docs/search_space.html
+        #https://medium.com/aureliantactics/ppo-hyperparameters-and-ranges-6fc2d29bccbe
+        #self._algoConfig["gamma"] = tune.uniform(0.9, 0.99)
+        #self._algoConfig["lr"] = tune.uniform(0.003, 5e-6)
+        #self._algoConfig["clip_param"] = tune.choice([0.1, 0.2, 0.3])
+        ##self._algoConfig["entropy_coeff"] = tune.uniform(0.0, 0.01)
         self._algoConfig.environment(environment, env_config=env_conf)
 
         tuner = tune.Tuner(
@@ -51,6 +53,7 @@ class RayTune:
 
         env.plot()
         print(info)
+        return info
 
     @staticmethod
     def _create_algorith_config(framework: str = "tf2", algo: str = "PPO"):
