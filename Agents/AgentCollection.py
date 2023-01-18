@@ -22,11 +22,11 @@ class AgentCollection:
         for i, run in self.runs.iterrows():
             ag = AgentCollection.CreateAgent(plt, tracer, run, logdir)
 
-            env_train = StockSignalEnv(df=df, frame_bound=(12, 100),
+            env_train = StockSignalEnv(df=df,
                                       window_size=12)  # Why 5? See here https://youtu.be/D9sU1hLT0QY?t=949
             ag.createAndLearn(env_train)
             # Evaluate
-            env_test = StockSignalEnv(df=df, frame_bound=(100, 125), window_size=12)
+            env_test = StockSignalEnv(df=df, window_size=12)
             ag.loadModel()
             ag.Evaluate(env_test)
 

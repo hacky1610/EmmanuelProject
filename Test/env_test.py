@@ -15,7 +15,6 @@ class StockEnvTest(unittest.TestCase):
         self.envConfig = {
             "df": df,
             "window_size":2,
-            "frame_bound":(2,6),
             "tracer":ConsoleTracer()
         }
 
@@ -46,7 +45,6 @@ class StockEnvTest(unittest.TestCase):
 
     def test_tradingThirdBuy_negativReward(self):
         c = self.envConfig.copy()
-        c["frame_bound"] = (2, 10)
         se = StocksEnv(c)
         se.reset()
         se.step(Actions.Buy.value)
@@ -55,4 +53,17 @@ class StockEnvTest(unittest.TestCase):
         obs, re, done, info = se.step(Actions.Sell.value)
         assert -10 == re
         assert 0.886545 == info["total_profit"]
+
+    def test_doneFeature(self):
+        se = StocksEnv(self.envConfig)
+        se.reset()
+        done = False
+        loops = 0
+        while not done:
+            obs, re, done, info = se.step(Actions.Sell.value)
+            loops += 1
+
+        assert True == done
+        assert 7 == loops
+
 

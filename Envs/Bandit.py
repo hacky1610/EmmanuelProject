@@ -27,9 +27,6 @@ class Bandit(gym.Env):
     def _process_data(self):
         prices = self.df.loc[:, 'Close'].to_numpy()
 
-        prices[self.frame_bound[0] - self.window_size]  # validate index (TODO: Improve validation)
-        prices = prices[self.frame_bound[0] - self.window_size:self.frame_bound[1]]
-
         diff = np.insert(np.diff(prices), 0, 0)
         signal_features = np.column_stack((prices, diff))
 

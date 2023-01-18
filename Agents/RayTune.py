@@ -62,10 +62,9 @@ class RayTune:
         return config
 
     @staticmethod
-    def create_env_config(dataframe, frame_bound, window_size, tracer):
+    def create_env_config(dataframe, window_size, tracer):
         config = {
             "df": dataframe,
-            "frame_bound": frame_bound,
             "window_size": window_size,
             "tracer": tracer
         }
