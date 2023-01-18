@@ -26,6 +26,7 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    pip install pytest pytest-azurepipelines
-    pytest ./Test
+    pip install pytest pytest-azurepipelines coverage
+    coverage run -m pytest ./Test
+    coverage report -m
   displayName: 'pytest'
