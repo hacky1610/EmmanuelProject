@@ -1,7 +1,8 @@
 from ray.tune.registry import get_trainable_cls
 from ray import tune, air
+from ray.tune import ResultGrid
 from Connectors.FileOperations import FileOperations
-
+from ray.tune.search.bayesopt import BayesOptSearch
 
 class RayTune:
 
@@ -16,25 +17,33 @@ class RayTune:
             #"episode_reward_mean": 1.0
         }
 
+    def _get_tune_config(self,algo,metric="episode_reward_mean",mode="max"):
+        return tune.TuneConfig(
+            metric=metric,
+            mode=mode,
+            search_alg=algo)
+
     def train(self, environment, env_conf: dict):
         #https://docs.ray.io/en/latest/tune/api_docs/search_space.html
         #https://medium.com/aureliantactics/ppo-hyperparameters-and-ranges-6fc2d29bccbe
         #self._algoConfig["gamma"] = tune.uniform(0.9, 0.99)
         #self._algoConfig["lr"] = tune.uniform(0.003, 5e-6)
-        #self._algoConfig["clip_param"] = tune.choice([0.1, 0.2, 0.3])
+        #self._algoConfig["clip_param"] =  tune.grid_search([0.1, 0.2, 0.3])
         ##self._algoConfig["entropy_coeff"] = tune.uniform(0.0, 0.01)
         self._algoConfig.environment(environment, env_config=env_conf)
+        algo = BayesOptSearch(random_search_steps=4)
 
         tuner = tune.Tuner(
             self._algorithm,
             param_space=self._algoConfig.to_dict(),
             run_config=air.RunConfig(stop=self._get_stop_config()),
+            tune_config=self._get_tune_config(algo)
         )
         results = tuner.fit()
         # Todo: check on success
         print("best hyperparameters: ", results.get_best_result().config)
         print("best hyperparameters dir: ", results.get_best_result().log_dir)
-        return True, FileOperations.get_folder_by_regex(results.get_best_result().log_dir, "checkpoint.+")
+        return results, FileOperations.get_folder_by_regex(results.get_best_result().log_dir, "checkpoint.+")
 
     def evaluate(self, environment, env_conf: dict, checkpointFolder: str):
         self._algoConfig.environment(environment, env_config=env_conf)
