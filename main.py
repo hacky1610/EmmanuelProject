@@ -13,8 +13,8 @@ tracer = FileTracer(os.path.join(Path.home(),"Emmanuel.log"))
 train_df = Loader.loadFromOnline("GBPUSD=X", datetime(2022, 6, 11), datetime(2022, 11, 15))
 test_df = Loader.loadFromOnline("GBPUSD=X", datetime(2022, 11, 3), datetime(2023, 12, 20))
 
-train_env_conf = RayTune.create_env_config(train_df, (12, len(train_df)), 12, tracer)
-test_env_conf = RayTune.create_env_config(test_df, (12, len(test_df)), 12, tracer)
+train_env_conf = RayTune.create_env_config(train_df, 12, tracer)
+test_env_conf = RayTune.create_env_config(test_df, 12, tracer)
 
 agTrain = RayTune()
 result, checkpoint = agTrain.train(StockSignalEnv, train_env_conf)
