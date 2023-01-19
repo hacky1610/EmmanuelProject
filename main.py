@@ -5,14 +5,17 @@ import ray
 from datetime import datetime
 from Agents.RayTune import RayTune
 from Connectors.runMetrics import RunMetric,FileHandler
+from pathlib import Path
+import os
+from matplotlib import pyplot as plt
 
 ray.init()
 symbol = "GBPUSD=X"
-tracer = FileTracer("/tmp/foo.log")
+tracer = FileTracer(os.path.join(Path.home(),"Emmanuel.log"))
 train_df = Loader.loadFromOnline(symbol,datetime(2022, 6, 11), datetime(2022, 11, 15))
 test_df = Loader.loadFromOnline(symbol, datetime(2022, 11, 3), datetime(2023, 12, 20))
 
-train_env_conf = RayTune.create_env_config(train_df,12, tracer)
+train_env_conf = RayTune.create_env_config(train_df, 12, tracer)
 test_env_conf = RayTune.create_env_config(test_df, 12, tracer)
 
 agTrain = RayTune()
