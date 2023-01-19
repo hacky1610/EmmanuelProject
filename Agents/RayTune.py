@@ -13,8 +13,8 @@ class RayTune:
     def _get_stop_config(self):
         return {
             #"training_iteration": 50,
-            "timesteps_total": 10000,
-            #"episode_reward_mean": 1.0
+            #"timesteps_total": 200000,
+            "episode_reward_mean": 0.36
         }
 
     def _get_tune_config(self,algo,metric="episode_reward_mean",mode="max"):
@@ -26,18 +26,22 @@ class RayTune:
     def train(self, environment, env_conf: dict):
         #https://docs.ray.io/en/latest/tune/api_docs/search_space.html
         #https://medium.com/aureliantactics/ppo-hyperparameters-and-ranges-6fc2d29bccbe
-        #self._algoConfig["gamma"] = tune.uniform(0.9, 0.99)
-        #self._algoConfig["lr"] = tune.uniform(0.003, 5e-6)
+        self._algoConfig["gamma"] = tune.uniform(0.9, 0.99)
+        self._algoConfig["lr"] = tune.uniform(0.003, 5e-6)
         #self._algoConfig["clip_param"] =  tune.grid_search([0.1, 0.2, 0.3])
         ##self._algoConfig["entropy_coeff"] = tune.uniform(0.0, 0.01)
+        #env_conf["windows_size"] = tune.choice([8, 16, 32, 64])
+
         self._algoConfig.environment(environment, env_config=env_conf)
         algo = BayesOptSearch(random_search_steps=4)
+
 
         tuner = tune.Tuner(
             self._algorithm,
             param_space=self._algoConfig.to_dict(),
             run_config=air.RunConfig(stop=self._get_stop_config()),
-            tune_config=self._get_tune_config(algo)
+            tune_config=self._get_tune_config(algo),
+
         )
         results = tuner.fit()
         # Todo: check on success
