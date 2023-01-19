@@ -7,5 +7,7 @@ matplotlib
 protobuf
 yfinance
 ray
+ray[rllib]
+ray[tune]
 dm-tree==0.1.5
 tensorflow_probability

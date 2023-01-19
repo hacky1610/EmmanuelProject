@@ -6,9 +6,6 @@ from ray.rllib.env.env_context import EnvContext
 class StocksEnv(TradingEnv):
 
     def __init__(self, config: dict):
-        assert len(config["frame_bound"]) == 2
-
-        self.frame_bound = config["frame_bound"]
         super().__init__(config["df"], config["window_size"])
 
         self.trade_fee_bid_percent = 0.01  # unit
@@ -18,10 +15,6 @@ class StocksEnv(TradingEnv):
 
     def _process_data(self):
         prices = self.df.loc[:, 'Close'].to_numpy()
-
-        prices[self.frame_bound[0] - self.window_size]  # validate index (TODO: Improve validation)
-        prices = prices[self.frame_bound[0]-self.window_size:self.frame_bound[1]]
-
         diff = np.insert(np.diff(prices), 0, 0)
         signal_features = np.column_stack((prices, diff))
 
