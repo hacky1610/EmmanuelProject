@@ -4,10 +4,12 @@ from Envs.StockSignalEnv import StockSignalEnv
 import ray
 from datetime import datetime
 from Agents.RayTune import RayTune
+from pathlib import Path
+import os
 from matplotlib import pyplot as plt
 
 ray.init()
-tracer = FileTracer("/tmp/foo.log")
+tracer = FileTracer(os.path.join(Path.home(),"Emmanuel.log"))
 train_df = Loader.loadFromOnline("GBPUSD=X", datetime(2022, 6, 11), datetime(2022, 11, 15))
 test_df = Loader.loadFromOnline("GBPUSD=X", datetime(2022, 11, 3), datetime(2023, 12, 20))
 
