@@ -1,26 +1,20 @@
 import numpy as np
 
 from Envs.tradingEnv import TradingEnv, Actions, Positions
-
+from ray.rllib.env.env_context import EnvContext
 
 class StocksEnv(TradingEnv):
 
-    def __init__(self, df, window_size, frame_bound):
-        assert len(frame_bound) == 2
-
-        self.frame_bound = frame_bound
-        super().__init__(df, window_size)
+    def __init__(self, config: dict):
+        super().__init__(config["df"], config["window_size"])
 
         self.trade_fee_bid_percent = 0.01  # unit
         self.trade_fee_ask_percent = 0.005  # unit
+        self.tracer = config["tracer"]
 
 
     def _process_data(self):
         prices = self.df.loc[:, 'Close'].to_numpy()
-
-        prices[self.frame_bound[0] - self.window_size]  # validate index (TODO: Improve validation)
-        prices = prices[self.frame_bound[0]-self.window_size:self.frame_bound[1]]
-
         diff = np.insert(np.diff(prices), 0, 0)
         signal_features = np.column_stack((prices, diff))
 

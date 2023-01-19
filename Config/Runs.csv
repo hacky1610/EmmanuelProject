@@ -1,3 +1,4 @@
 Type,Model,Discount,Policy
-"Renotte",DQN,0.85,MlpPolicy
-
+"Renotte",DQN,0.9,MlpPolicy
+"Renotte",A2C,0.9,MlpPolicy
+"Renotte",PPO,0.9,MlpPolicy

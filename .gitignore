@@ -1,6 +1,5 @@
 .idea
 logs
-runs
 __pycache__
 trace.log
 .coverage

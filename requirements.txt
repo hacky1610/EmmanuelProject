@@ -1,0 +1,14 @@
+tensorflow===2.1.4
+gym
+gym-anytrading
+finta
+pandas
+matplotlib
+protobuf
+yfinance
+ray
+ray[rllib]
+ray[tune]
+dm-tree==0.1.5
+tensorflow_probability
+bayesian-optimization

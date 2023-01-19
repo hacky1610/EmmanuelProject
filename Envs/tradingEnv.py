@@ -3,8 +3,8 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 from enum import Enum
-import matplotlib.pyplot as plt
-
+from datetime import datetime
+from matplotlib import pyplot as plt
 
 class Actions(Enum):
     Sell = 0
@@ -22,7 +22,7 @@ class Positions(Enum):
 class TradingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, window_size, ):
+    def __init__(self, df, window_size):
         assert df.ndim == 2
 
         self.seed()
@@ -43,10 +43,12 @@ class TradingEnv(gym.Env):
         self._last_trade_tick = None
         self._position = None
         self._position_history = None
+        self._trade_history = None
         self._total_reward = None
         self._total_profit = None
         self._first_rendering = None
         self.history = None
+
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -57,18 +59,27 @@ class TradingEnv(gym.Env):
         self._current_tick = self._start_tick
         self._last_trade_tick = self._current_tick - 1
         self._position = Positions.Short
-        self._position_history = (self.window_size * [None]) + [self._position]
+        self._position_history = (self.window_size * [None]) + [self._position]  # TODO:?
+        self._trade_history = {}
         self._total_reward = 0.
         self._total_profit = 1.  # unit
         self._first_rendering = True
         self.history = {}
         return self._get_observation()
 
+    def plot(self):
+        plt.figure(figsize=(15, 6))
+        plt.cla()
+        self.render_all()
+        t = datetime.now().strftime("%Y%m%d_%H%M%S")
+        plt.savefig(f"/tmp/graph_{t}.png")  # Todo: make configurable
+
     def step(self, action):
         self._done = False
         self._current_tick += 1
 
         if self._current_tick == self._end_tick:
+            self.tracer.write(f"Reward: {self._total_reward} Profit: {self._total_profit}")
             self._done = True
 
         step_reward = self._calculate_reward(action)
@@ -83,6 +94,7 @@ class TradingEnv(gym.Env):
         if trade:
             self._position = self._position.opposite()
             self._last_trade_tick = self._current_tick
+            self._trade_history[self._current_tick] = action
 
         self._position_history.append(self._position)
         observation = self._get_observation()
@@ -138,14 +150,25 @@ class TradingEnv(gym.Env):
 
         short_ticks = []
         long_ticks = []
-        for i, tick in enumerate(window_ticks):
+        buy_ticks = []
+        sell_ticks = []
+        for i, tick in enumerate(window_ticks):  # Todo: Refactor to Dictionary
             if self._position_history[i] == Positions.Short:
                 short_ticks.append(tick)
             elif self._position_history[i] == Positions.Long:
                 long_ticks.append(tick)
 
-        plt.plot(short_ticks, self.prices[short_ticks], 'ro')
-        plt.plot(long_ticks, self.prices[long_ticks], 'go')
+        for i in self._trade_history:  # Todo: GetIndexes from Value
+            if Actions.Buy.value == self._trade_history[i]:
+                buy_ticks.append(i)
+            elif Actions.Sell.value == self._trade_history[i]:
+                sell_ticks.append(i)
+
+        # Markers: https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html#sphx-glr-gallery-lines-bars-and-markers-marker-reference-py
+        # plt.plot(short_ticks, self.prices[short_ticks], 'ro')
+        # plt.plot(long_ticks, self.prices[long_ticks], 'go')
+        plt.plot(sell_ticks, self.prices[sell_ticks], 'ro')
+        plt.plot(buy_ticks, self.prices[buy_ticks], 'go')
 
         plt.suptitle(
             "Total Reward: %.6f" % self._total_reward + ' ~ ' +

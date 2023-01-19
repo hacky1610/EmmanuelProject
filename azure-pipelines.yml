@@ -6,6 +6,7 @@
 trigger:
 - main
 - dev
+- RayTune
 
 pool:
   vmImage: ubuntu-latest
