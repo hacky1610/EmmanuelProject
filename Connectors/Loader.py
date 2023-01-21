@@ -19,7 +19,16 @@ class Loader:
     def loadFromOnline(stock, start, end,interval="60m"):
         df = yf.download(stock, start, end, interval )
         df['SMA'] = TA.SMA(df, 12)
-        df['RSI'] = TA.RSI(df)
-        df['OBV'] = TA.OBV(df)
+        df['RSI'] = TA.RSI(df,period=14)
+        df['ROC'] = TA.ROC(df, period=10)
+        df['%R'] = TA.WILLIAMS(df,period=14)
+        #df['OBV'] = TA.OBV(df)
+        md = TA.MACD(df)
+        df['MACD'] = md['MACD']
+        df['SIGNAL'] = md['SIGNAL']
+        df.drop(columns=["Volume"], inplace=True)
+        df.drop(columns=["Dividends"], inplace=True)
+        df.drop(columns=["Stock Splits"], inplace=True)
+
         df.fillna(0, inplace=True)
         return df
