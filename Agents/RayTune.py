@@ -34,7 +34,9 @@ class RayTune:
         self._algoConfig["sgd_minibatch_size"] = 128
         self._algoConfig["num_sgd_iter"] = 30
 
-        ##self._algoConfig["entropy_coeff"] = tune.uniform(0.0, 0.01)
+        self._algoConfig["kl_target"] = 0.003
+        self._algoConfig["kl_coeff"] = 0.003
+        self._algoConfig["entropy_coeff"] = 0.0
         #env_conf["windows_size"] = tune.choice([8, 16, 32, 64])
 
         self._algoConfig.environment(environment, env_config=env_conf)
