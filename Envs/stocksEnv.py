@@ -31,7 +31,7 @@ class StocksEnv(TradingEnv):
         if trade:
             current_price = self.prices[self._current_tick]
             last_trade_price = self.prices[self._last_trade_tick]
-            price_diff = current_price - last_trade_price
+            price_diff = current_price - last_trade_price #Todo: gebühr
 
             if self._position == Positions.Long:
                 step_reward += price_diff
