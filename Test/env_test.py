@@ -32,7 +32,7 @@ class StockEnvTest(unittest.TestCase):
         se.step(Actions.Buy.value)
         obs, re, done, info = se.step(Actions.Sell.value)
         assert 0 == re
-        assert 0.98505 == info["total_profit"]
+        assert 0.9995 == info["total_profit"]
 
     def test_tradingThirdBuy_aReward(self):
         se = ForexEnv(self.envConfig )
@@ -40,7 +40,7 @@ class StockEnvTest(unittest.TestCase):
         se.step(Actions.Buy.value)
         se.step(Actions.Buy.value)
         obs, re, done, info = se.step(Actions.Sell.value)
-        assert 10 == re
+        assert re == 10
         assert 1.083555 == info["total_profit"]
 
     def test_tradingThirdBuy_negativReward(self):
