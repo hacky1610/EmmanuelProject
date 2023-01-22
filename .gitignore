@@ -3,3 +3,4 @@ logs
 **/__pycache__
 trace.log
 .coverage
+.pytest_cache

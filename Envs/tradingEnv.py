@@ -5,6 +5,8 @@ import numpy as np
 from enum import Enum
 from datetime import datetime
 from matplotlib import pyplot as plt
+from typing import List
+
 
 class Actions(Enum):
     Sell = 0
@@ -66,6 +68,7 @@ class TradingEnv(gym.Env):
         self._first_rendering = True
         self.history = {}
         return self._get_observation()
+
 
     def plot(self):
         plt.figure(figsize=(15, 6))
@@ -174,6 +177,7 @@ class TradingEnv(gym.Env):
             "Total Reward: %.6f" % self._total_reward + ' ~ ' +
             "Total Profit: %.6f" % self._total_profit
         )
+
 
     def close(self):
         plt.close()

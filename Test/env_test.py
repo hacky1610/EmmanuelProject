@@ -1,5 +1,5 @@
 import unittest
-from Envs.stocksEnv import StocksEnv
+from Envs.forexEnv import ForexEnv
 from Connectors.Loader import Loader
 from Envs.tradingEnv import Actions,Positions
 import pathlib
@@ -20,14 +20,14 @@ class StockEnvTest(unittest.TestCase):
 
     def test_tradingFirstBuy_shouldNotHaveAProfit(self):
 
-        se = StocksEnv(self.envConfig )
+        se = ForexEnv(self.envConfig )
         se.reset()
         obs, re, done, info = se.step(Actions.Buy.value)
         assert re == 0
         assert info["total_profit"] == 1.0
 
     def test_tradingSecondBuy_noReward(self):
-        se = StocksEnv(self.envConfig )
+        se = ForexEnv(self.envConfig )
         se.reset()
         se.step(Actions.Buy.value)
         obs, re, done, info = se.step(Actions.Sell.value)
@@ -35,7 +35,7 @@ class StockEnvTest(unittest.TestCase):
         assert 0.98505 == info["total_profit"]
 
     def test_tradingThirdBuy_aReward(self):
-        se = StocksEnv(self.envConfig )
+        se = ForexEnv(self.envConfig )
         se.reset()
         se.step(Actions.Buy.value)
         se.step(Actions.Buy.value)
@@ -45,7 +45,7 @@ class StockEnvTest(unittest.TestCase):
 
     def test_tradingThirdBuy_negativReward(self):
         c = self.envConfig.copy()
-        se = StocksEnv(c)
+        se = ForexEnv(c)
         se.reset()
         se.step(Actions.Buy.value)
         se.step(Actions.Buy.value)
@@ -55,7 +55,7 @@ class StockEnvTest(unittest.TestCase):
         assert 0.886545 == info["total_profit"]
 
     def test_doneFeature(self):
-        se = StocksEnv(self.envConfig)
+        se = ForexEnv(self.envConfig)
         se.reset()
         done = False
         loops = 0

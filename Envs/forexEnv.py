@@ -3,21 +3,21 @@ import numpy as np
 from Envs.tradingEnv import TradingEnv, Actions, Positions
 from ray.rllib.env.env_context import EnvContext
 
-class StocksEnv(TradingEnv):
+class ForexEnv(TradingEnv):
 
     def __init__(self, config: dict):
         super().__init__(config["df"], config["window_size"])
 
-        self.trade_fee_bid_percent = 0.01  # unit
-        self.trade_fee_ask_percent = 0.005  # unit
-        self.tracer = config["tracer"]
+        self.trade_fee_bid_percent = 0.00  # unit
+        self.trade_fee_ask_percent = 0.0005 # unit
+        self.tracer = config["tracer"] #TODO: Add tracer to parent class
 
 
     def _process_data(self):
-        prices = self.df.loc[:, 'Close'].to_numpy()
-        diff = np.insert(np.diff(prices), 0, 0)
-        signal_features = np.column_stack((prices, diff))
-
+        start = 0
+        end = len(self.df) #TODO: Das geht bestimmt einfacher
+        prices = self.df.loc[:, 'Low'].to_numpy()[start:end]
+        signal_features = self.df.loc[:, ['Low', 'SMA', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']].to_numpy()[start:end] #TODO: Make it dynamic
         return prices, signal_features
 
 

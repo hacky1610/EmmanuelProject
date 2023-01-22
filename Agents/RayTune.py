@@ -37,6 +37,8 @@ class RayTune:
         self._algoConfig["kl_target"] = 0.003
         self._algoConfig["kl_coeff"] = 0.003
         self._algoConfig["entropy_coeff"] = 0.0
+        #self._algoConfig["vf_loss_coeff"] = tune.grid_search([1.0,0.6,0.8])
+
         #env_conf["windows_size"] = tune.choice([8, 16, 32, 64])
 
         self._algoConfig.environment(environment, env_config=env_conf)
