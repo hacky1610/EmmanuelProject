@@ -2,18 +2,20 @@ from Tracing.FileTracer import FileTracer
 from Connectors.Loader import Loader
 from Envs.forexEnv import ForexEnv
 import ray
+from ray import tune
 from datetime import datetime
 from Agents.RayTune import RayTune
 from Connectors.runMetrics import RunMetric,FileHandler
 from pathlib import Path
 import os
-from matplotlib import pyplot as plt
+from Data.data_processor import DataProcessor
 
 ray.init()
 symbol = "GBPUSD=X"
 tracer = FileTracer(os.path.join(Path.home(),"Emmanuel.log"))
-train_df = Loader.loadFromOnline(symbol,datetime(2021, 6, 11), datetime(2022, 11, 15))
-test_df = Loader.loadFromOnline(symbol, datetime(2022, 10, 3), datetime(2023, 12, 20))
+dataProcessor = DataProcessor()
+train_df = Loader.loadFromOnline(symbol,datetime(2021, 6, 11), datetime(2022, 11, 15),dataProcessor)
+test_df = Loader.loadFromOnline(symbol, datetime(2022, 10, 3), datetime(2023, 12, 20),dataProcessor)
 
 train_env_conf = RayTune.create_env_config(train_df, 8, tracer)
 test_env_conf = RayTune.create_env_config(test_df, 8, tracer)

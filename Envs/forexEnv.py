@@ -8,15 +8,14 @@ class ForexEnv(TradingEnv):
     def __init__(self, config: dict):
         super().__init__(config["df"], config["window_size"])
 
-        self.trade_fee_bid_percent = 0.00  # unit
-        self.trade_fee_ask_percent = 0.0005 # unit
+        self.spread = 0.0005 # unit
         self.tracer = config["tracer"] #TODO: Add tracer to parent class
 
 
     def _process_data(self):
         start = 0
         end = len(self.df) #TODO: Das geht bestimmt einfacher
-        prices = self.df.loc[:, 'Low'].to_numpy()[start:end]
+        prices = self.df.loc[:, 'Close'].to_numpy()[start:end]
         signal_features = self.df.loc[:, ['Low', 'SMA', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']].to_numpy()[start:end] #TODO: Make it dynamic
         return prices, signal_features
 
@@ -48,9 +47,10 @@ class ForexEnv(TradingEnv):
             current_price = self.prices[self._current_tick]
             last_trade_price = self.prices[self._last_trade_tick]
 
+            current_price = current_price * (1-self.spread)
             if self._position == Positions.Long:
-                shares = (self._total_profit * (1 - self.trade_fee_ask_percent)) / last_trade_price
-                self._total_profit = (shares * (1 - self.trade_fee_bid_percent)) * current_price
+                shares = self._total_profit / last_trade_price
+                self._total_profit = shares * current_price
 
 
 

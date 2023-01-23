@@ -3,10 +3,8 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 from enum import Enum
-from datetime import datetime
 from matplotlib import pyplot as plt
-from typing import List
-
+from pandas import DataFrame
 
 class Actions(Enum):
     Sell = 0
@@ -70,12 +68,11 @@ class TradingEnv(gym.Env):
         return self._get_observation()
 
 
-    def plot(self):
+    def plot(self,filename:str):
         plt.figure(figsize=(15, 6))
         plt.cla()
         self.render_all()
-        t = datetime.now().strftime("%Y%m%d_%H%M%S")
-        plt.savefig(f"/tmp/graph_{t}.png")  # Todo: make configurable
+        plt.savefig(filename)  # Todo: make configurable
 
     def step(self, action):
         self._done = False
@@ -120,33 +117,6 @@ class TradingEnv(gym.Env):
         for key, value in info.items():
             self.history[key].append(value)
 
-    def render(self, mode='human'):
-
-        def _plot_position(position, tick):
-            color = None
-            if position == Positions.Short:
-                color = 'red'
-            elif position == Positions.Long:
-                color = 'green'
-            if color:
-                plt.scatter(tick, self.prices[tick], color=color)
-
-        if self._first_rendering:
-            self._first_rendering = False
-            plt.cla()
-            plt.plot(self.prices)
-            start_position = self._position_history[self._start_tick]
-            _plot_position(start_position, self._start_tick)
-
-        _plot_position(self._position, self._current_tick)
-
-        plt.suptitle(
-            "Total Reward: %.6f" % self._total_reward + ' ~ ' +
-            "Total Profit: %.6f" % self._total_profit
-        )
-
-        plt.pause(0.01)
-
     def render_all(self, mode='human'):
         window_ticks = np.arange(len(self._position_history))
         plt.plot(self.prices)
@@ -168,8 +138,6 @@ class TradingEnv(gym.Env):
                 sell_ticks.append(i)
 
         # Markers: https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html#sphx-glr-gallery-lines-bars-and-markers-marker-reference-py
-        # plt.plot(short_ticks, self.prices[short_ticks], 'ro')
-        # plt.plot(long_ticks, self.prices[long_ticks], 'go')
         plt.plot(sell_ticks, self.prices[sell_ticks], 'ro')
         plt.plot(buy_ticks, self.prices[buy_ticks], 'go')
 
