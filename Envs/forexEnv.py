@@ -13,10 +13,8 @@ class ForexEnv(TradingEnv):
 
 
     def _process_data(self):
-        start = 0
-        end = len(self.df) #TODO: Das geht bestimmt einfacher
-        prices = self.df.loc[:, 'Close'].to_numpy()[start:end]
-        signal_features = self.df.loc[:, ['Low', 'SMA', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']].to_numpy()[start:end] #TODO: Make it dynamic
+        prices = self.df.loc[:, 'Close'].to_numpy()
+        signal_features = self.df.loc[:, ['Low', 'SMA', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']].to_numpy()
         return prices, signal_features
 
 
