@@ -82,7 +82,8 @@ class RayTune:
             if _done:
                 break
 
-        env.plot(os.path.join(logFolder,"graph.png"))
+        env.plot(os.path.join(logFolder))
+        env.save_report(logFolder)
         print(info)
         return info
 

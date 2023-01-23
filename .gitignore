@@ -4,3 +4,4 @@ logs
 trace.log
 .coverage
 .pytest_cache
+runs

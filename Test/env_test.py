@@ -67,6 +67,17 @@ class StockEnvTest(unittest.TestCase):
         assert True == done
         assert 7 == loops
 
+    def test_reporting(self):
+        c = self.envConfig.copy()
+        se = ForexEnv(c)
+        se.reset()
+        se.step(Actions.Buy.value)
+        se.step(Actions.Buy.value)
+        se.step(Actions.Buy.value)
+        obs, re, done, info = se.step(Actions.Sell.value)
+        report = se.get_report()
+        assert len(report) > 0
+
     def test_rendering(self):
         c = self.envConfig.copy()
         se = ForexEnv(c)
@@ -75,6 +86,6 @@ class StockEnvTest(unittest.TestCase):
         se.step(Actions.Buy.value)
         se.step(Actions.Buy.value)
         obs, re, done, info = se.step(Actions.Sell.value)
-        se.plot("C:\\tmp\\foo.png")
+        se.plot("./")
 
 

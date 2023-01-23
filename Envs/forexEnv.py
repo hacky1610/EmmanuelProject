@@ -14,8 +14,9 @@ class ForexEnv(TradingEnv):
 
     def _process_data(self):
         prices = self.df.loc[:, 'Close'].to_numpy()
+        times = self.df.index.to_numpy()
         signal_features = self.df.loc[:, ['Low', 'SMA', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']].to_numpy()
-        return prices, signal_features
+        return prices, times, signal_features
 
 
     def _calculate_reward(self, action):
@@ -26,7 +27,7 @@ class ForexEnv(TradingEnv):
             trade = True
 
         if trade:
-            current_price = self.prices[self._current_tick]
+            current_price = self.get_current_price()
             last_trade_price = self.prices[self._last_trade_tick]
             price_diff = current_price - last_trade_price #Todo: gebühr
 
@@ -42,15 +43,10 @@ class ForexEnv(TradingEnv):
             trade = True
 
         if trade or self._done:
-            current_price = self.prices[self._current_tick]
-            last_trade_price = self.prices[self._last_trade_tick]
-
-            current_price = current_price * (1-self.spread)
+            current_price = self.get_current_price() * (1-self.spread)
             if self._position == Positions.Long:
-                shares = self._total_profit / last_trade_price
+                shares = self._total_profit / self.get_last_trade_price()
                 self._total_profit = shares * current_price
-
-
 
     def max_possible_profit(self):
         current_tick = self._start_tick
