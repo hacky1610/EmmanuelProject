@@ -13,7 +13,7 @@ def get_log_dir():
 
 def read_config():
 
-    with open(os.path.join(get_project_dir(),"Config/credentials.json")) as f:
+    with open(os.path.join(get_project_dir(),"Config/config.json")) as f:
         return json.load(f)
 
 

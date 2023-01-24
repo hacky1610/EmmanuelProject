@@ -87,6 +87,17 @@ class RayTune:
         print(info)
         return info
 
+    def trade(self,environment, env_conf: dict, checkpointFolder: str):
+        self._algoConfig.environment(environment, env_config=env_conf)
+        algorithm = self._algoConfig.build()
+        algorithm.restore(checkpointFolder)
+
+        env = environment(env_conf)
+        obs = env.reset()
+        a = algorithm.compute_single_action(obs)
+        env.step(a)
+
+
     @staticmethod
     def _create_algorith_config(framework: str = "tf2", algo: str = "PPO"):
         config = (

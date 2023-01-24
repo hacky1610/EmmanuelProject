@@ -16,8 +16,8 @@ tracer = FileTracer(os.path.join(Path.home(),"Emmanuel.log"))
 ig = IG()
 
 #Load Data
-train_df = ig.load_data(symbol,"2022-12-01 00:00:00","2022-12-31 00:00:00",dataProcessor)
-test_df = ig.load_data(symbol,"2023-01-01 00:00:00","2023-01-10 00:00:00",dataProcessor)
+train_df = ig.load_data_by_date(symbol, "2022-12-15 00:00:00", "2022-12-31 00:00:00", dataProcessor)
+test_df = ig.load_data_by_date(symbol, "2023-01-01 00:00:00", "2023-01-10 00:00:00", dataProcessor)
 
 ray.init()
 
