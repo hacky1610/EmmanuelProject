@@ -11,4 +11,4 @@ ray[rllib]
 ray[tune]
 dm-tree==0.1.5
 tensorflow_probability
-bayesian-optimization
+trading_ig
