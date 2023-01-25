@@ -95,7 +95,7 @@ class RayTune:
         env = environment(env_conf)
         obs = env.reset()
         a = algorithm.compute_single_action(obs)
-        env.step(a)
+        env.trade(a)
 
 
     @staticmethod

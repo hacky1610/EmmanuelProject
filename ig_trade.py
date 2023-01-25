@@ -16,7 +16,7 @@ trade_df = ig.load_data_by_range(symbol,40 , dataProcessor)
 trade_env_conf = RayTune.create_env_config(trade_df, 24, tracer)
 
 agTest = RayTune()
-checkpoint =  "/home/daniel/ray_results/PPO/PPO_StockSignalEnv_54042863_1_disable_action_flattening=False,disable_execution_plan_api=True,disable_preprocessor_api=False,fake__2023-01-19_13-17-46"
+checkpoint =  "/home/daniel/ray_results/PPO/PPO_ForexEnv_17412_00000_0_2023-01-25_00-37-40/checkpoint_000125"
 info = agTest.trade(IgEnv,trade_env_conf,checkpoint)
 
 
