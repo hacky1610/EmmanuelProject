@@ -3,6 +3,7 @@ import ray
 from Agents.RayTune import RayTune
 from Connectors.runMetrics import RunMetric,FileHandler
 from Connectors.IG import IG
+from Connectors.tiingo import Tiingo
 from Data.data_processor import DataProcessor
 import Utils.Utils
 from Tracing.FileTracer import FileTracer
@@ -10,16 +11,17 @@ from pathlib import Path
 import os
 
 #Variables
-symbol = "CS.D.GBPUSD.CFD.IP"
+symbol = "GBPUSD"
 dataProcessor = DataProcessor()
 tracer = FileTracer(os.path.join(Path.home(),"Emmanuel.log"))
 ig = IG()
+tiingo = Tiingo()
 
 #Load Data
-train_df = ig.load_data_by_date(symbol, "2022-12-15 00:00:00", "2022-12-31 00:00:00", dataProcessor)
-test_df = ig.load_data_by_date(symbol, "2023-01-01 00:00:00", "2023-01-10 00:00:00", dataProcessor)
+train_df = tiingo.load_data_by_date(symbol, "2022-12-15", "2022-12-31", dataProcessor)
+test_df = tiingo.load_data_by_date(symbol, "2023-01-01", "2023-01-10", dataProcessor)
 
-ray.init()
+ray.init(num_cpus=6)
 
 train_env_conf = RayTune.create_env_config(train_df, 8, tracer)
 test_env_conf = RayTune.create_env_config(test_df, 8, tracer)

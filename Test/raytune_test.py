@@ -7,8 +7,6 @@ from unittest.mock import MagicMock
 
 class RayTuneAgentTest(unittest.TestCase):
 
-    def test_init(self):
-        ag = RayTune()
 
     def test_train(self):
         ag = RayTune()
