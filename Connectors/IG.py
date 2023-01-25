@@ -33,14 +33,16 @@ class IG:
         data_processor.clean_data(df)
         return df
 
-
-
-
-
     def buy(self,epic:str):
+        self.open(epic,"BUY")
+
+    def sell(self, epic: str):
+        self.open(epic, "SELL")
+
+    def open(self,epic:str,direction:str):
         response = self.ig_service.create_open_position(
             currency_code="USD",
-            direction="BUY",
+            direction=direction,
             epic=epic,
             expiry="-",
             force_open=False,
@@ -57,18 +59,24 @@ class IG:
             trailing_stop_increment=None
         )
 
+
+
     def has_opened_positions(self):
         positions =  self.ig_service.fetch_open_positions()
         return len(positions) > 0
 
-    def get_opened_position_id(self):
+    def get_opened_position_ids_by_direction(self,direction:str):
         positions = self.ig_service.fetch_open_positions()
-        return positions["dealId"][0]
+        return positions.loc[positions["direction"] == direction]
 
-    def sell(self,deal_id:str):
+    def get_opened_positions(self):
+        return self.ig_service.fetch_open_positions()
+
+
+    def exit(self,deal_id:str,direction:str):
         response = self.ig_service.close_open_position(
             deal_id=deal_id,
-            direction="SELL",
+            direction=direction,
             epic=None,
             expiry="-",
             order_type="MARKET",

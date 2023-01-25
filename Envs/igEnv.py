@@ -11,13 +11,29 @@ class IgEnv(ForexEnv):
         self.ig = IG()
         self.symbol = "CS.D.GBPUSD.CFD.IP"
 
-    def trade(self, action):
-        if action == Actions.Buy.value:
+    def exit_position(self,action:Actions):
+        if self.ig.has_opened_positions():
+            directionToSearch = Actions.get_name(Actions.opposite(action))
+            direction = Actions.get_name(action)
+            positions = self.ig.get_opened_position_ids_by_direction(directionToSearch)
+            for p in positions.iterrows():
+                self.ig.exit(p[1]["dealId"],direction)
+
+    def trade(self, action_value):
+        self.tracer.write(f"Got a {Actions.get_name_by_value(action_value)} signal")
+        action = Actions.get_enum_by_value(action_value)
+
+        self.exit_position(action)
+
+        if self.ig.has_opened_positions(): #Aktuell wird nur eine Pos gehalten
+            return
+
+        if action == Actions.Buy:
+            self.tracer.write("Open Buy Trade")
             self.ig.buy(self.symbol)
         else:
-            if self.ig.has_opened_positions():
-                deal = self.ig.get_opened_position_id()
-                self.ig.sell(deal)
+            self.tracer.write("Open Sell Trade")
+            self.ig.sell(self.symbol)
 
     def _get_observation(self):
         obs = self.signal_features[(len(self.signal_features) - self.window_size ):]

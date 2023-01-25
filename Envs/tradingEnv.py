@@ -11,6 +11,28 @@ class Actions(Enum):
     Sell = 0
     Buy = 1
 
+    def get_name_by_value(value):
+        if value == Actions.Buy.value:
+            return "BUY"
+        else:
+            return "SELL"
+
+    def get_name(value):
+        if value == Actions.Buy:
+            return "BUY"
+        else:
+            return "SELL"
+
+    def get_enum_by_value(value):
+        if value == Actions.Buy.value:
+            return Actions.Buy
+        else:
+            return Actions.Sell
+
+    def opposite(self):
+        return Actions.Sell if self == Actions.Buy else Actions.Buy
+
+
 
 class Positions(Enum):
     Short = 0
