@@ -33,21 +33,9 @@ class IG:
         data_processor.clean_data(df)
         return df
 
-    def load_data_by_date(self, epic:str, start:str, end:str, data_processor:DataProcessor, resolution:str= "H"):
-        resolution = "H"
-        response = self.ig_service.fetch_historical_prices_by_epic_and_date_range(
-            epic, resolution, start,end
-        )
-        ig_df = response["prices"]
-        return self.create_dataframe(ig_df,data_processor)
 
-    def load_data_by_range(self, epic:str, range, data_processor:DataProcessor, resolution:str= "H"):
-        resolution = "H"
-        response = self.ig_service.fetch_historical_prices_by_epic(
-            epic, resolution, numpoints=range
-        )
-        ig_df = response["prices"]
-        return self.create_dataframe(ig_df,data_processor)
+
+
 
     def buy(self,epic:str):
         response = self.ig_service.create_open_position(
