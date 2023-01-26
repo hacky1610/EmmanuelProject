@@ -34,9 +34,9 @@ class RayTune:
         self._algoConfig["gamma"] = 0.9
         self._algoConfig["lr"] = 0.0001
         self._algoConfig["clip_param"] = 0.1
-        self._algoConfig["sgd_minibatch_size"] = 128
+        self._algoConfig["sgd_minibatch_size"] = 64
         self._algoConfig["num_sgd_iter"] = 30
-        self._algoConfig["kl_target"] = 0.003
+        self._algoConfig["kl_target"] = 0.001
         self._algoConfig["kl_coeff"] = 0.003
         self._algoConfig["entropy_coeff"] = 0.0
 
