@@ -4,11 +4,34 @@ from gym.utils import seeding
 import numpy as np
 from enum import Enum
 from matplotlib import pyplot as plt
-from pandas import DataFrame
+from pandas import DataFrame, Series
+import os
 
 class Actions(Enum):
     Sell = 0
     Buy = 1
+
+    def get_name_by_value(value):
+        if value == Actions.Buy.value:
+            return "BUY"
+        else:
+            return "SELL"
+
+    def get_name(value):
+        if value == Actions.Buy:
+            return "BUY"
+        else:
+            return "SELL"
+
+    def get_enum_by_value(value):
+        if value == Actions.Buy.value:
+            return Actions.Buy
+        else:
+            return Actions.Sell
+
+    def opposite(self):
+        return Actions.Sell if self == Actions.Buy else Actions.Buy
+
 
 
 class Positions(Enum):
@@ -22,13 +45,13 @@ class Positions(Enum):
 class TradingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, df, window_size):
+    def __init__(self, df: DataFrame, window_size):
         assert df.ndim == 2
 
         self.seed()
         self.df = df
         self.window_size = window_size
-        self.prices, self.signal_features = self._process_data()
+        self.prices, self.times, self.signal_features = self._process_data()
         self.shape = (window_size, self.signal_features.shape[1])
 
         # spaces
@@ -40,15 +63,13 @@ class TradingEnv(gym.Env):
         self._end_tick = len(self.prices) - 1
         self._done = None
         self._current_tick = None
-        self._last_trade_tick = None
+        self._last_trade_tick = None  # TODO: should be removed
         self._position = None
         self._position_history = None
         self._trade_history = None
         self._total_reward = None
         self._total_profit = None
-        self._first_rendering = None
         self.history = None
-
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -63,16 +84,21 @@ class TradingEnv(gym.Env):
         self._trade_history = {}
         self._total_reward = 0.
         self._total_profit = 1.  # unit
-        self._first_rendering = True
         self.history = {}
         return self._get_observation()
 
+    def add_to_history(self, tick: int, price: float, date: str, action: Actions):
+        self._trade_history[tick] = {
+            "Date":date,
+            "Price":price,
+            "Action":action
+        }
 
-    def plot(self,filename:str):
+    def plot(self, folder: str, file_name:str = "graph.png"):
         plt.figure(figsize=(15, 6))
         plt.cla()
         self.render_all()
-        plt.savefig(filename)  # Todo: make configurable
+        plt.savefig(os.path.join(folder,file_name))
 
     def step(self, action):
         self._done = False
@@ -94,7 +120,7 @@ class TradingEnv(gym.Env):
         if trade:
             self._position = self._position.opposite()
             self._last_trade_tick = self._current_tick
-            self._trade_history[self._current_tick] = action
+            self.add_to_history(self._current_tick, self.get_current_price(), self.get_current_date(), action)
 
         self._position_history.append(self._position)
         observation = self._get_observation()
@@ -107,6 +133,26 @@ class TradingEnv(gym.Env):
 
         return observation, step_reward, self._done, info
 
+    def get_report(self) -> str:
+        text = ""
+        lastBuy = 0
+        for key,value in self._trade_history.items():  # Todo: GetIndexes from Value
+            if value["Action"] == Actions.Buy.value:
+                lastBuy = value['Price']
+                text += f"{value['Date']} - Buy by {value['Price']} \n"
+            else:
+                diff = value['Price'] - lastBuy
+                if diff >= 0:
+                    result = "WON"
+                else:
+                    result = "LOST"
+                text += f"{value['Date']} - Sell by {value['Price']} - {result}: {diff}\n"
+        return text
+
+    def save_report(self,folder:str):
+        with open(os.path.join(folder,"report.txt"), "a") as f:
+            f.write(self.get_report())
+
     def _get_observation(self):
         return self.signal_features[(self._current_tick - self.window_size + 1):self._current_tick + 1]
 
@@ -118,24 +164,15 @@ class TradingEnv(gym.Env):
             self.history[key].append(value)
 
     def render_all(self, mode='human'):
-        window_ticks = np.arange(len(self._position_history))
         plt.plot(self.prices)
-
-        short_ticks = []
-        long_ticks = []
         buy_ticks = []
         sell_ticks = []
-        for i, tick in enumerate(window_ticks):  # Todo: Refactor to Dictionary
-            if self._position_history[i] == Positions.Short:
-                short_ticks.append(tick)
-            elif self._position_history[i] == Positions.Long:
-                long_ticks.append(tick)
 
-        for i in self._trade_history:  # Todo: GetIndexes from Value
-            if Actions.Buy.value == self._trade_history[i]:
-                buy_ticks.append(i)
-            elif Actions.Sell.value == self._trade_history[i]:
-                sell_ticks.append(i)
+        for key,value in self._trade_history.items():  # Todo: GetIndexes from Value
+            if value["Action"] == Actions.Buy.value:
+                buy_ticks.append(key)
+            else:
+                sell_ticks.append(key)
 
         # Markers: https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html#sphx-glr-gallery-lines-bars-and-markers-marker-reference-py
         plt.plot(sell_ticks, self.prices[sell_ticks], 'ro')
@@ -145,7 +182,6 @@ class TradingEnv(gym.Env):
             "Total Reward: %.6f" % self._total_reward + ' ~ ' +
             "Total Profit: %.6f" % self._total_profit
         )
-
 
     def close(self):
         plt.close()
@@ -167,3 +203,12 @@ class TradingEnv(gym.Env):
 
     def max_possible_profit(self):  # trade fees are ignored
         raise NotImplementedError
+
+    def get_current_price(self):
+        return self.prices[self._current_tick]
+
+    def get_current_date(self):
+        return self.times[self._current_tick]
+
+    def get_last_trade_price(self):
+        return self.prices[self._last_trade_tick]

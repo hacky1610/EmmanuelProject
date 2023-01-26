@@ -1,3 +1,4 @@
+import Utils.Utils
 from Tracing.FileTracer import FileTracer
 from Connectors.Loader import Loader
 from Envs.forexEnv import ForexEnv
@@ -51,7 +52,7 @@ results, checkpoint = agTrain.train(ForexEnv, train_env_conf)
 
 agTest = RayTune()
 #checkpoint =  "/home/daniel/ray_results/PPO/PPO_StockSignalEnv_54042863_1_disable_action_flattening=False,disable_execution_plan_api=True,disable_preprocessor_api=False,fake__2023-01-19_13-17-46"
-info = agTest.evaluate(ForexEnv, test_env_conf,checkpoint)
+info = agTest.evaluate(ForexEnv, test_env_conf,checkpoint,Utils.Utils.get_runs_dir())
 #info = agTest.evaluate(ForexEnv, train_env_conf,checkpoint)
 
 rm = RunMetric(FileHandler("./runs"))
