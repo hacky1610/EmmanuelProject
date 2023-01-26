@@ -6,11 +6,13 @@ from Envs.igEnv import IgEnv
 from Connectors.tiingo import Tiingo
 import time
 from datetime import date, timedelta
+from Utils.Utils import read_config
 
 #Variables
 symbol = "GBPUSD"
 dataProcessor = DataProcessor()
-tracer = LogglyTracer("09c24ff6-bf8b-494b-aaa9-ff2f42750657")
+config = read_config()
+tracer = LogglyTracer(config["loggly_api_key"])
 tiingo = Tiingo()
 
 
