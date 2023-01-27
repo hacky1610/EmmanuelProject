@@ -10,7 +10,9 @@ class ForexEnv(TradingEnv):
 
         self.spread = 0.0005 # unit
         self.tracer = config["tracer"] #TODO: Add tracer to parent class
+        self._limit = config["limit"]
 
+        self._stop = config["stop"]
 
     def _process_data(self):
         prices = self.df.loc[:, 'close'].to_numpy()
@@ -19,20 +21,24 @@ class ForexEnv(TradingEnv):
         return prices, times, signal_features
 
 
-    def _calculate_reward(self, action):
+    def _calculate_reward(self, action:Actions):
         step_reward = 0
-        trade = False
-        if ((action == Actions.Buy.value and self._position == Positions.Short) or
-            (action == Actions.Sell.value and self._position == Positions.Long)):
-            trade = True
+        current_price = self.get_current_price()
 
-        if trade:
-            current_price = self.get_current_price()
-            last_trade_price = self.prices[self._last_trade_tick]
-            price_diff = current_price - last_trade_price #Todo: gebühr
+        for futurePrice in self.prices[self._current_tick:]:
+            if (action == Actions.Buy):
+                if futurePrice > current_price + self._limit:
+                    return futurePrice - current_price
+                elif futurePrice < current_price - self._stop:
+                    return futurePrice - current_price
+            else:
+                if futurePrice < current_price - self._limit:
+                    return  current_price - futurePrice
+                elif futurePrice > current_price + self._stop:
+                    return  current_price - futurePrice
 
-            if self._position == Positions.Long:
-                step_reward += price_diff
+
+
         return step_reward
 
 

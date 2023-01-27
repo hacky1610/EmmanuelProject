@@ -38,7 +38,8 @@ class RayTune:
         self._algoConfig["kl_target"] = 0.003
         self._algoConfig["kl_coeff"] = 0.003
         self._algoConfig["entropy_coeff"] = 0.0
-
+        env_conf["stop"] = tune.grid_search([0.0004,0.0009,0.00012, 0.00016])
+        env_conf["limit"] = tune.grid_search([0.0004, 0.0009, 0.00012, 0.00016])
         self._algoConfig.environment(environment, env_config=env_conf)
 
         return tune.Tuner(
@@ -107,10 +108,12 @@ class RayTune:
         return config
 
     @staticmethod
-    def create_env_config(dataframe, window_size, tracer):
+    def create_env_config(dataframe, window_size, tracer,limit=9,stop=10):
         config = {
             "df": dataframe,
             "window_size": window_size,
-            "tracer": tracer
+            "tracer": tracer,
+            "limit": limit,
+            "stop": stop,
         }
         return config

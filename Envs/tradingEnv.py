@@ -100,9 +100,10 @@ class TradingEnv(gym.Env):
         self.render_all()
         plt.savefig(os.path.join(folder,file_name))
 
-    def step(self, action):
+    def step(self, action_value):
         self._done = False
         self._current_tick += 1
+        action = Actions.get_enum_by_value(action_value)
 
         if self._current_tick == self._end_tick:
             self.tracer.write(f"Reward: {self._total_reward} Profit: {self._total_profit}")
@@ -110,17 +111,6 @@ class TradingEnv(gym.Env):
 
         step_reward = self._calculate_reward(action)
         self._total_reward += step_reward
-        self._update_profit(action)
-
-        trade = False
-        if ((action == Actions.Buy.value and self._position == Positions.Short) or
-                (action == Actions.Sell.value and self._position == Positions.Long)):
-            trade = True
-
-        if trade:
-            self._position = self._position.opposite()
-            self._last_trade_tick = self._current_tick
-            self.add_to_history(self._current_tick, self.get_current_price(), self.get_current_date(), action)
 
         self._position_history.append(self._position)
         observation = self._get_observation()
@@ -195,7 +185,7 @@ class TradingEnv(gym.Env):
     def _process_data(self):
         raise NotImplementedError
 
-    def _calculate_reward(self, action):
+    def _calculate_reward(self, action:Actions):
         raise NotImplementedError
 
     def _update_profit(self, action):

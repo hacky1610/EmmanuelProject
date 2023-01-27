@@ -16,7 +16,9 @@ class StockEnvTest(unittest.TestCase):
         self.envConfig = {
             "df": df,
             "window_size":2,
-            "tracer":ConsoleTracer()
+            "tracer":ConsoleTracer(),
+            "stop": 11,
+            "limit": 5
         }
 
     def test_tradingFirstBuy_shouldNotHaveAProfit(self):
