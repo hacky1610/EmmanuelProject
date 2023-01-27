@@ -50,10 +50,10 @@ class IG:
             order_type="MARKET",
             size=1,
             level=None,
-            limit_distance=6,
+            limit_distance=9,
             limit_level=None,
             quote_id=None,
-            stop_distance=10,
+            stop_distance=9,
             stop_level=None,
             trailing_stop=False,
             trailing_stop_increment=None

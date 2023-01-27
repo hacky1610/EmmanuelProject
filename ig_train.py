@@ -18,13 +18,13 @@ ig = IG()
 tiingo = Tiingo()
 
 #Load Data
-train_df = tiingo.load_data_by_date(symbol, "2022-12-15", "2022-12-31", dataProcessor)
-test_df = tiingo.load_data_by_date(symbol, "2023-01-01", "2023-01-10", dataProcessor)
+train_df = tiingo.load_data_by_date(symbol, "2022-10-15", "2022-12-31", dataProcessor,"4hour")
+test_df = tiingo.load_data_by_date(symbol, "2023-01-01", "2023-01-10", dataProcessor,"4hour")
 
 ray.init(num_cpus=6)
 
-train_env_conf = RayTune.create_env_config(train_df, 8, tracer,0.0003,0.0005)
-test_env_conf = RayTune.create_env_config(test_df, 8, tracer,0.0003,0.0005)
+train_env_conf = RayTune.create_env_config(train_df, 12, tracer,0.0003,0.0005)
+test_env_conf = RayTune.create_env_config(test_df, 12, tracer,0.0003,0.0005)
 
 #Train
 agTrain = RayTune(tracer)
