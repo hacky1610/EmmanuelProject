@@ -25,7 +25,7 @@ class IgEnv(ForexEnv):
         self.tracer.write(f"Got a {Actions.get_name_by_value(action_value)} signal")
         action = Actions.get_enum_by_value(action_value)
 
-        self.exit_position(action)
+        #self.exit_position(action)
 
         if self.ig.has_opened_positions():  # Aktuell wird nur eine Pos gehalten
             self.tracer.write(f"Dont trade because there are open positions")
