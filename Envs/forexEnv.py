@@ -16,6 +16,8 @@ class ForexEnv(TradingEnv):
 
     def _process_data(self):
         prices = self.df.loc[:, 'close'].to_numpy()
+        self.high = self.df.loc[:, 'high'].to_numpy()
+        self.low = self.df.loc[:, 'low'].to_numpy()
         times = self.df.index.to_numpy()
         signal_features = self.df.loc[:, ['close', 'SMA', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']].to_numpy()
         return prices, times, signal_features
@@ -25,17 +27,19 @@ class ForexEnv(TradingEnv):
         step_reward = 0
         current_price = self.get_current_price()
 
-        for futurePrice in self.prices[self._current_tick:]:
+        for i in range(self._current_tick,len(self.prices)):
+            futureHighPrice = self.high[i]
+            futureLowPrice = self.low[i]
             if (action == Actions.Buy):
-                if futurePrice > current_price + self._limit:
-                    return futurePrice - current_price
-                elif futurePrice < current_price - self._stop:
-                    return futurePrice - current_price
+                if futureHighPrice > current_price + self._limit:
+                    return futureHighPrice - current_price
+                elif futureLowPrice < current_price - self._stop:
+                    return futureLowPrice - current_price
             else:
-                if futurePrice < current_price - self._limit:
-                    return  current_price - futurePrice
-                elif futurePrice > current_price + self._stop:
-                    return  current_price - futurePrice
+                if futureLowPrice < current_price - self._limit:
+                    return  current_price - futureLowPrice
+                elif futureHighPrice > current_price + self._stop:
+                    return  current_price - futureHighPrice
 
 
 

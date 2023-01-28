@@ -23,8 +23,8 @@ test_df = tiingo.load_data_by_date(symbol, "2023-01-01", "2023-01-10", dataProce
 
 ray.init(num_cpus=6)
 
-train_env_conf = RayTune.create_env_config(train_df, 12, tracer,0.0003,0.0005)
-test_env_conf = RayTune.create_env_config(test_df, 12, tracer,0.0003,0.0005)
+train_env_conf = RayTune.create_env_config(train_df, 12, tracer,0.0009,0.0009)
+test_env_conf = RayTune.create_env_config(test_df, 12, tracer,0.0009,0.0009)
 
 #Train
 agTrain = RayTune(tracer)

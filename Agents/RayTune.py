@@ -38,8 +38,6 @@ class RayTune:
         self._algoConfig["kl_target"] = 0.003
         self._algoConfig["kl_coeff"] = 0.003
         self._algoConfig["entropy_coeff"] = 0.0
-        env_conf["stop"] = tune.grid_search([0.00021,0.0009,0.00012, 0.00016])
-        env_conf["limit"] = tune.grid_search([0.00021, 0.0009, 0.00012, 0.00016])
         self._algoConfig.environment(environment, env_config=env_conf)
 
         return tune.Tuner(
