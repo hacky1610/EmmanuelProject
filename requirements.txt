@@ -12,3 +12,4 @@ ray[tune]
 dm-tree==0.1.5
 tensorflow_probability
 trading_ig
+torch
