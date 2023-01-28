@@ -113,6 +113,7 @@ class TradingEnv(gym.Env):
         self._total_reward += step_reward
 
         self._position_history.append(self._position)
+        self.add_to_history(self._current_tick,self.get_current_price(),self.get_current_date(),action)
         observation = self._get_observation()
         info = dict(
             total_reward=self._total_reward,

@@ -18,8 +18,8 @@ ig = IG()
 tiingo = Tiingo()
 
 #Load Data
-train_df = tiingo.load_data_by_date(symbol, "2022-10-15", "2022-12-31", dataProcessor,"4hour")
-test_df = tiingo.load_data_by_date(symbol, "2023-01-01", "2023-01-10", dataProcessor,"4hour")
+train_df = tiingo.load_data_by_date(symbol, "2022-10-15", "2022-12-31", dataProcessor,"1hour")
+test_df = tiingo.load_data_by_date(symbol, "2023-01-01", "2023-01-10", dataProcessor,"1hour")
 
 ray.init(num_cpus=6)
 
