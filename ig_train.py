@@ -27,11 +27,11 @@ train_env_conf = RayTune.create_env_config(train_df, 12, tracer,0.0009,0.0009)
 test_env_conf = RayTune.create_env_config(test_df, 12, tracer,0.0009,0.0009)
 
 #Train
-agTrain = RayTune(tracer)
+agTrain = RayTune(tracer,algorithm="DQN")
 results, checkpoint = agTrain.train(ForexEnv, train_env_conf)
 
 #Test
-agTest = RayTune(tracer)
+agTest = RayTune(tracer,algorithm="DQN")
 info = agTest.evaluate(ForexEnv, test_env_conf,checkpoint,Utils.Utils.get_runs_dir())
 
 rm = RunMetric(FileHandler("./runs"))

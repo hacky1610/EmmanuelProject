@@ -43,7 +43,7 @@ class RunMetric():
         if last == None:
             return True
         else:
-            return content["total_profit"] > last["total_profit"]
+            return content["total_reward"] > last["total_reward"]
 
     def save(self, id: str, content: dict):
         self._fileHandler.set_last_run(id, content)

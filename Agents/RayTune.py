@@ -30,14 +30,7 @@ class RayTune:
     def _create_tuner(self, environment, env_conf: dict) -> Tuner:
         # https://docs.ray.io/en/latest/tune/api_docs/search_space.html
         # https://medium.com/aureliantactics/ppo-hyperparameters-and-ranges-6fc2d29bccbe
-        self._algoConfig["gamma"] = 0.9
-        self._algoConfig["lr"] = 0.0001
-        self._algoConfig["clip_param"] = 0.1
-        self._algoConfig["sgd_minibatch_size"] = 128
-        self._algoConfig["num_sgd_iter"] = 30
-        self._algoConfig["kl_target"] = 0.003
-        self._algoConfig["kl_coeff"] = 0.003
-        self._algoConfig["entropy_coeff"] = 0.0
+
         self._algoConfig.environment(environment, env_config=env_conf)
 
         return tune.Tuner(
