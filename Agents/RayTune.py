@@ -9,10 +9,12 @@ from datetime import datetime
 class RayTune:
     _metric = "episode_reward_mean"
 
-    def __init__(self, tracer: Tracer, framework: str = "tf2", algorithm: str = "PPO", runsDirectory: str = "./runs"):
+    def __init__(self, tracer: Tracer, framework: str = "tf2", algorithm: str = "PPO", logDirectory: str = "./logs",name:str=""):
         self._algorithm = algorithm
         self._algoConfig = RayTune._create_algorith_config(framework, algorithm)
         self._tracer: Tracer = tracer
+        self._logDirectory = logDirectory
+        self._name = name
 
     def _get_stop_config(self):
         return {
@@ -33,9 +35,9 @@ class RayTune:
         self._algoConfig["gamma"] = 0.9
         self._algoConfig["lr"] = 0.0001
         self._algoConfig["clip_param"] = 0.1
-        self._algoConfig["sgd_minibatch_size"] = 128
+        self._algoConfig["sgd_minibatch_size"] = 64
         self._algoConfig["num_sgd_iter"] = 30
-        self._algoConfig["kl_target"] = 0.003
+        self._algoConfig["kl_target"] = 0.001
         self._algoConfig["kl_coeff"] = 0.003
         self._algoConfig["entropy_coeff"] = 0.0
 
@@ -44,7 +46,7 @@ class RayTune:
         return tune.Tuner(
             self._algorithm,
             param_space=self._algoConfig.to_dict(),
-            run_config=air.RunConfig(stop=self._get_stop_config(), log_to_file=True),
+            run_config=air.RunConfig(stop=self._get_stop_config(), log_to_file=True, local_dir=self._logDirectory,name=self._name),
             tune_config=self._get_tune_config(),
 
         )
