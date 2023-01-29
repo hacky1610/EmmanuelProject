@@ -160,7 +160,7 @@ class TradingEnv(gym.Env):
         sell_ticks = []
 
         for key,value in self._trade_history.items():  # Todo: GetIndexes from Value
-            if value["Action"] == Actions.Buy.value:
+            if value["Action"] == Actions.Buy:
                 buy_ticks.append(key)
             else:
                 sell_ticks.append(key)
