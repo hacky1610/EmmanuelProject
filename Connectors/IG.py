@@ -45,9 +45,19 @@ class IG:
     def sell(self, epic: str):
         self.open(epic, "SELL")
 
+    def get_spread(self,epic:str):
+        try:
+            res = self.ig_service.fetch_market_by_epic(epic)
+            return (res["snapshot"]['offer'] - res["snapshot"]['bid']) * 10000
+        except IGException as ex:
+            self._tracer.error(f"Error during open a position. {ex}")
+            return None
+
+
+
     def open(self,epic:str,direction:str):
         try:
-            response = self.ig_service.create_open_position(
+            response = self.ig_service.fetch_create_open_position(
                 currency_code="USD",
                 direction=direction,
                 epic=epic,
@@ -57,10 +67,10 @@ class IG:
                 order_type="MARKET",
                 size=1,
                 level=None,
-                limit_distance=6,
+                limit_distance=9,
                 limit_level=None,
                 quote_id=None,
-                stop_distance=10,
+                stop_distance=None,
                 stop_level=None,
                 trailing_stop=False,
                 trailing_stop_increment=None

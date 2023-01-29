@@ -31,6 +31,10 @@ class IgEnv(ForexEnv):
             self.tracer.write(f"Dont trade because there are open positions")
             return
 
+        if self.ig.get_spread(self.symbol) > 6:
+            self.tracer.write(f"Current spread is to high")
+            return
+
         if action == Actions.Buy:
             self.tracer.write("Open Buy Trade")
             self.ig.buy(self.symbol)
