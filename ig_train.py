@@ -9,6 +9,7 @@ import Utils.Utils
 from Tracing.FileTracer import FileTracer
 from pathlib import Path
 import os
+import datetime
 
 #Variables
 symbol = "GBPUSD"
@@ -16,18 +17,23 @@ dataProcessor = DataProcessor()
 tracer = FileTracer(os.path.join(Path.home(),"Emmanuel.log"))
 ig = IG()
 tiingo = Tiingo()
+logDir = Utils.Utils.get_log_dir()
+window = 8
+resolution = "1hour"
+date = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+trainName = f"Win{window}_Res{resolution}_{date}"
 
 #Load Data
-train_df = tiingo.load_data_by_date(symbol, "2022-12-15", "2022-12-31", dataProcessor)
-test_df = tiingo.load_data_by_date(symbol, "2023-01-01", "2023-01-10", dataProcessor)
+train_df = tiingo.load_data_by_date(symbol, "2022-12-15", "2022-12-31", dataProcessor,resolution)
+test_df = tiingo.load_data_by_date(symbol, "2023-01-01", "2023-01-10", dataProcessor,resolution)
 
 ray.init(num_cpus=6)
 
-train_env_conf = RayTune.create_env_config(train_df, 8, tracer)
-test_env_conf = RayTune.create_env_config(test_df, 8, tracer)
+train_env_conf = RayTune.create_env_config(train_df, window, tracer)
+test_env_conf = RayTune.create_env_config(test_df, window, tracer)
 
 #Train
-agTrain = RayTune(tracer)
+agTrain = RayTune(tracer,logDirectory=logDir,name=trainName)
 results, checkpoint = agTrain.train(ForexEnv, train_env_conf)
 
 #Test
