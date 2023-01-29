@@ -1,25 +1,33 @@
 from trading_ig import IGService
+from trading_ig.rest import IGException
 import Utils.Utils
 from pandas import DataFrame
 from Data.data_processor import DataProcessor
+from Tracing.ConsoleTracer import ConsoleTracer
+from Tracing.Tracer import Tracer
 
 class IG:
 
-    def __init__(self):
+    def __init__(self,tracer:Tracer=ConsoleTracer()):
         c = Utils.Utils.read_config()
         self.user = c["ig_demo_user"]
         self.password = c["ig_demo_pass"]
         self.key = c["ig_demo_key"]
         self.accNr = c["ig_demo_acc_nr"]
         self.type = "DEMO"
+        self._tracer:Tracer = tracer
         self.connect()
+
 
     def connect(self):
         # no cache
         self.ig_service = IGService(
             self.user, self.password, self.key, self.type, acc_number=self.accNr
         )
-        self.ig_service.create_session()
+        try:
+            self.ig_service.create_session()
+        except Exception as ex:
+            self._tracer.error(f"Error during open a IG Connection {ex}")
 
     def create_dataframe(self,ig_dataframe,data_processor:DataProcessor):
         df = DataFrame()
@@ -34,30 +42,37 @@ class IG:
         return df
 
     def buy(self,epic:str):
-        self.open(epic,"BUY")
+        return self.open(epic,"BUY")
 
     def sell(self, epic: str):
-        self.open(epic, "SELL")
+       return self.open(epic, "SELL")
 
-    def open(self,epic:str,direction:str):
-        response = self.ig_service.create_open_position(
-            currency_code="USD",
-            direction=direction,
-            epic=epic,
-            expiry="-",
-            force_open=False,
-            guaranteed_stop=False,
-            order_type="MARKET",
-            size=1,
-            level=None,
-            limit_distance=None,
-            limit_level=None,
-            quote_id=None,
-            stop_distance=None,
-            stop_level=None,
-            trailing_stop=False,
-            trailing_stop_increment=None
-        )
+    def open(self,epic:str,direction:str) -> bool:
+        try:
+            response = self.ig_service.create_open_position(
+                currency_code="USD",
+                direction=direction,
+                epic=epic,
+                expiry="-",
+                force_open=False,
+                guaranteed_stop=False,
+                order_type="MARKET",
+                size=1,
+                level=None,
+                limit_distance=None,
+                limit_level=None,
+                quote_id=None,
+                stop_distance=None,
+                stop_level=None,
+                trailing_stop=False,
+                trailing_stop_increment=None
+            )
+            return True
+        except IGException as ex:
+            self._tracer.error(f"Error during open a position. {ex}")
+            return False
+
+
 
 
 

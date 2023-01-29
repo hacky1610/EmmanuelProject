@@ -1,28 +1,29 @@
 from ray.tune.registry import get_trainable_cls
 from ray import tune, air
 from ray.tune import Tuner
-from ray.tune import ResultGrid
-from Connectors.FileOperations import FileOperations
-from ray.tune.search.bayesopt import BayesOptSearch
 import os
+from Tracing.Tracer import Tracer
 from datetime import datetime
 
-class RayTune:
 
+class RayTune:
     _metric = "episode_reward_mean"
 
-    def __init__(self, framework: str = "tf2", algorithm: str = "PPO", runsDirectory: str = "./runs"):
+    def __init__(self, tracer: Tracer, framework: str = "tf2", algorithm: str = "PPO", logDirectory: str = "./logs",name:str=""):
         self._algorithm = algorithm
         self._algoConfig = RayTune._create_algorith_config(framework, algorithm)
+        self._tracer: Tracer = tracer
+        self._logDirectory = logDirectory
+        self._name = name
 
     def _get_stop_config(self):
         return {
-            #"training_iteration": 50,
+            # "training_iteration": 50,
             "timesteps_total": 500000,
-            #"episode_reward_mean": 0.36
+            # "episode_reward_mean": 0.36
         }
 
-    def _get_tune_config(self,mode="max"):
+    def _get_tune_config(self, mode="max"):
         return tune.TuneConfig(
             metric=self._metric,
             mode=mode,
@@ -45,14 +46,14 @@ class RayTune:
         return tune.Tuner(
             self._algorithm,
             param_space=self._algoConfig.to_dict(),
-            run_config=air.RunConfig(stop=self._get_stop_config(), log_to_file=True),
+            run_config=air.RunConfig(stop=self._get_stop_config(), log_to_file=True, local_dir=self._logDirectory,name=self._name),
             tune_config=self._get_tune_config(),
 
         )
 
     def train(self, environment, env_conf: dict):
 
-        tuner = self._create_tuner(environment,env_conf)
+        tuner = self._create_tuner(environment, env_conf)
         results = tuner.fit()
         # Todo: check on success
         best_result = results.get_best_result(metric=self._metric)
@@ -60,12 +61,13 @@ class RayTune:
         print("best hyperparameters dir: ", best_result.log_dir)
         return results, best_result.checkpoint
 
-    def create_log_folder(self,logFolderParent:str):
+    def create_log_folder(self, logFolderParent: str):
         t = datetime.now().strftime("%Y%m%d_%H%M%S")
         logFolder = os.path.join(logFolderParent, f"Evaluation_{t}")
         os.mkdir(logFolder)
         return logFolder
-    def evaluate(self, environment, env_conf: dict, checkpointFolder: str,logFolderParent:str):
+
+    def evaluate(self, environment, env_conf: dict, checkpointFolder: str, logFolderParent: str):
         logFolder = self.create_log_folder(logFolderParent)
 
         self._algoConfig.environment(environment, env_config=env_conf)
@@ -87,7 +89,7 @@ class RayTune:
         print(info)
         return info
 
-    def trade(self,environment, env_conf: dict, checkpointFolder: str):
+    def trade(self, environment, env_conf: dict, checkpointFolder: str):
         self._algoConfig.environment(environment, env_config=env_conf)
         algorithm = self._algoConfig.build()
         algorithm.restore(checkpointFolder)
@@ -96,7 +98,6 @@ class RayTune:
         obs = env.reset()
         a = algorithm.compute_single_action(obs)
         env.trade(a)
-
 
     @staticmethod
     def _create_algorith_config(framework: str = "tf2", algo: str = "PPO"):
