@@ -1,1 +1,1 @@
-../venv/sb/bin/tensorboard --logdir /home/daniel/ray_results
+../venv/sb/bin/tensorboard --logdir logs --port 8080
