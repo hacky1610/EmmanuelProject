@@ -1,0 +1,5 @@
+Failure # 1 (occurred at 2023-02-01_12-10-01)
+[36mray::QTrainer.train()[39m (pid=2124878, ip=192.168.2.198, repr=<Trainer.q_trainer.QTrainer object at 0x7f48a0c5bd10>)
+  File "/home/daniel/Documents/Projects/EmmanuelProject/Trainer/q_trainer.py", line 13, in train
+    return tune.TrainingResult(timesteps_this_iter=30, mean_loss=2.0)
+AttributeError: module 'ray.tune' has no attribute 'TrainingResult'
