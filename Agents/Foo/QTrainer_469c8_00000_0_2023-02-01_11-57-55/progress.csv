@@ -1,3 +1,0 @@
-num_resets,done,episode_reward_mean,timesteps_total,episodes_total,training_iteration,trial_id,experiment_id,date,timestamp,time_this_iter_s,time_total_s,pid,hostname,node_ip,time_since_restore,timesteps_since_restore,iterations_since_restore,warmup_time
-0,False,3,,,1,469c8_00000,ba97d1489a424e078fd8ec7a9b9fbb73,2023-02-01_11-57-57,1675249077,1.430511474609375e-05,1.430511474609375e-05,2009741,acer,192.168.2.198,1.430511474609375e-05,0,1,0.005096435546875
-0,True,3,,,2,469c8_00000,ba97d1489a424e078fd8ec7a9b9fbb73,2023-02-01_11-57-57,1675249077,1.3589859008789062e-05,2.7894973754882812e-05,2009741,acer,192.168.2.198,2.7894973754882812e-05,0,2,0.005096435546875

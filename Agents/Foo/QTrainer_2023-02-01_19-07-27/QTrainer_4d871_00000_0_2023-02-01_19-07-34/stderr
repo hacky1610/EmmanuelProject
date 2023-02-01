@@ -1,2 +1,0 @@
-D:\Code\EmmanuelProject\venv39\lib\site-packages\keras\optimizers\optimizer_v2\adam.py:117: UserWarning: The `lr` argument is deprecated, use `learning_rate` instead.
-  super().__init__(name, **kwargs)
