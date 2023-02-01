@@ -27,4 +27,15 @@ class Loader:
 
         return df
 
+    # returns the vector containing stock data from a fixed file
+    @staticmethod
+    def getStockDataVec(key):
+        vec = []
+        #lines = open("Data/" + key + ".csv", "r").read().splitlines()
+        lines = open("D:\\Code\\EmmanuelProject\\Data\\GSPC.csv", "r").read().splitlines()
+        for line in lines[1:]:
+            vec.append(float(line.split(",")[4]))
+
+        return vec
+
 

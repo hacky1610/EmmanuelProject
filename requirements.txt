@@ -1,4 +1,4 @@
-tensorflow===2.1.4
+tensorflow
 gym
 gym-anytrading
 finta
@@ -12,3 +12,4 @@ ray[tune]
 dm-tree==0.1.5
 tensorflow_probability
 trading_ig
+keras

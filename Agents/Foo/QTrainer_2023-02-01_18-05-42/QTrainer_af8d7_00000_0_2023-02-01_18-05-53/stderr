@@ -1,0 +1,19 @@
+D:\Code\EmmanuelProject\venv39\lib\site-packages\keras\optimizers\optimizer_v2\adam.py:117: UserWarning: The `lr` argument is deprecated, use `learning_rate` instead.
+  super().__init__(name, **kwargs)
+[ERROR 2023-02-01 18:05:59,395] worker.py: 763  Exception raised in creation task: The actor died because of an error raised in its creation task, [36mray::QTrainer.__init__()[39m (pid=29716, ip=127.0.0.1, repr=<Trainer.q_trainer.QTrainer object at 0x0000025713536070>)
+  File "python\ray\_raylet.pyx", line 830, in ray._raylet.execute_task
+  File "python\ray\_raylet.pyx", line 834, in ray._raylet.execute_task
+  File "python\ray\_raylet.pyx", line 780, in ray._raylet.execute_task.function_executor
+  File "D:\Code\EmmanuelProject\venv39\lib\site-packages\ray\_private\function_manager.py", line 674, in actor_method_executor
+    return method(__ray_actor, *args, **kwargs)
+  File "D:\Code\EmmanuelProject\venv39\lib\site-packages\ray\util\tracing\tracing_helper.py", line 466, in _resume_span
+    return method(self, *_args, **_kwargs)
+  File "D:\Code\EmmanuelProject\venv39\lib\site-packages\ray\tune\trainable\trainable.py", line 169, in __init__
+    self.setup(copy.deepcopy(self.config))
+  File "D:\Code\EmmanuelProject\venv39\lib\site-packages\ray\util\tracing\tracing_helper.py", line 466, in _resume_span
+    return method(self, *_args, **_kwargs)
+  File "D:\Code\EmmanuelProject\Trainer\q_trainer.py", line 12, in setup
+    self.data = Loader.getStockDataVec("GSPC")
+  File "D:\Code\EmmanuelProject\Connectors\Loader.py", line 34, in getStockDataVec
+    lines = open("Data/" + key + ".csv", "r").read().splitlines()
+FileNotFoundError: [Errno 2] No such file or directory: 'Data/GSPC.csv'
