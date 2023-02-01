@@ -1,0 +1,11 @@
+[ERROR 2023-02-02 00:11:43,586] trial_runner.py: 1088  Trial QTrainer_c9f67_00000: Error processing event.
+ray.exceptions.RayTaskError(TypeError): [36mray::QTrainer.train()[39m (pid=2463918, ip=192.168.2.198, repr=<Trainer.q_trainer._modify_class.<locals>.Class object at 0x7ff4a3575c10>)
+  File "/home/daniel/Documents/Projects/EmmanuelProject/venv/sb/lib/python3.7/site-packages/ray/tune/trainable/trainable.py", line 367, in train
+    raise skipped from exception_cause(skipped)
+  File "/home/daniel/Documents/Projects/EmmanuelProject/venv/sb/lib/python3.7/site-packages/ray/tune/trainable/trainable.py", line 364, in train
+    result = self.step()
+  File "/home/daniel/Documents/Projects/EmmanuelProject/Trainer/q_trainer.py", line 38, in step
+    state = Utils.getState(self.data, 0, self.windows_size + 1)
+  File "/home/daniel/Documents/Projects/EmmanuelProject/Utils/Utils.py", line 40, in getState
+    block = data[d:t + 1] if d >= 0 else -d * [data[0]] + data[0:t + 1]  # pad with t0
+TypeError: 'NoneType' object is not subscriptable

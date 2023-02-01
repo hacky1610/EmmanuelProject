@@ -1,0 +1,10 @@
+{
+  "scaling_config": {
+    "_max_cpu_fraction_per_node": null,
+    "num_workers": null,
+    "placement_strategy": "PACK",
+    "resources_per_worker": null,
+    "trainer_resources": null,
+    "use_gpu": true
+  }
+}

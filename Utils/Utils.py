@@ -10,6 +10,9 @@ def get_project_dir():
 def get_runs_dir():
     return os.path.join(get_project_dir(), "runs")
 
+def get_models_dir():
+    return os.path.join(get_project_dir(), "Models")
+
 def get_log_dir():
     return os.path.join(get_project_dir(), "logs")
 
