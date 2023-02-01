@@ -4,7 +4,6 @@ from ray.tune import Tuner
 import os
 import Tracing.ConsoleTracer
 from Tracing.Tracer import Tracer
-from datetime import datetime
 from Trainer.q_trainer import QTrainer
 from Connectors.Loader import *
 from ray.air.config import ScalingConfig
@@ -12,7 +11,7 @@ from ray.air.config import ScalingConfig
 class QlRayTune:
     _metric = "total_profit"
 
-    def __init__(self, stock_name:str, tracer: Tracer, logDirectory: str = "./logs",name:str=""):
+    def __init__(self,  tracer: Tracer, logDirectory: str = "./logs",name:str=""):
         self._tracer: Tracer = tracer
         self._logDirectory = logDirectory
         self._name = name
@@ -32,7 +31,6 @@ class QlRayTune:
     def _create_tuner(self) -> Tuner:
         param_space = {
             "scaling_config": ScalingConfig(use_gpu=True),
-
         }
 
         return tune.Tuner(
@@ -40,11 +38,9 @@ class QlRayTune:
             param_space=param_space,
             run_config=air.RunConfig(stop=self._get_stop_config(), log_to_file=True, local_dir=self._logDirectory,name=self._name),
             tune_config=self._get_tune_config(),
-
         )
 
     def train(self):
-
         tuner = self._create_tuner()
         results = tuner.fit()
         # Todo: check on success

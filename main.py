@@ -5,7 +5,7 @@ from Envs.forexEnv import ForexEnv
 import ray
 from ray import tune
 from datetime import datetime
-from Agents.RayTune import RayTune
+from Tuning.RayTune import RayTune
 from Connectors.runMetrics import RunMetric,FileHandler
 from pathlib import Path
 import os

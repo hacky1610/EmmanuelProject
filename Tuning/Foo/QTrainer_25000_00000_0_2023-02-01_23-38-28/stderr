@@ -1,0 +1,8 @@
+[ERROR 2023-02-01 23:38:32,200] worker.py: 763  Exception raised in creation task: The actor died because of an error raised in its creation task, [36mray::QTrainer.__init__()[39m (pid=2457667, ip=192.168.2.198, repr=<Trainer.q_trainer.QTrainer object at 0x7f2329199d10>)
+  File "/home/daniel/Documents/Projects/EmmanuelProject/venv/sb/lib/python3.7/site-packages/ray/tune/trainable/trainable.py", line 169, in __init__
+    self.setup(copy.deepcopy(self.config))
+  File "/home/daniel/Documents/Projects/EmmanuelProject/Trainer/q_trainer.py", line 12, in setup
+    self.data = Loader.getStockDataVec("GSPC")
+  File "/home/daniel/Documents/Projects/EmmanuelProject/Connectors/Loader.py", line 35, in getStockDataVec
+    lines = open("D:\\Code\\EmmanuelProject\\Data\\GSPC.csv", "r").read().splitlines()
+FileNotFoundError: [Errno 2] No such file or directory: 'D:\\Code\\EmmanuelProject\\Data\\GSPC.csv'

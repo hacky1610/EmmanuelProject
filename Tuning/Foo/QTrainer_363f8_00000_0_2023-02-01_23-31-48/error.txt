@@ -1,0 +1,17 @@
+Failure # 1 (occurred at 2023-02-01_23-31-52)
+Traceback (most recent call last):
+  File "/home/daniel/Documents/Projects/EmmanuelProject/venv/sb/lib/python3.7/site-packages/ray/tune/execution/ray_trial_executor.py", line 1070, in get_next_executor_event
+    future_result = ray.get(ready_future)
+  File "/home/daniel/Documents/Projects/EmmanuelProject/venv/sb/lib/python3.7/site-packages/ray/_private/client_mode_hook.py", line 105, in wrapper
+    return func(*args, **kwargs)
+  File "/home/daniel/Documents/Projects/EmmanuelProject/venv/sb/lib/python3.7/site-packages/ray/_private/worker.py", line 2311, in get
+    raise value
+ray.exceptions.RayActorError: The actor died because of an error raised in its creation task, [36mray::QTrainer.__init__()[39m (pid=2456314, ip=192.168.2.198, repr=<Trainer.q_trainer.QTrainer object at 0x7f26da851b90>)
+  File "/home/daniel/Documents/Projects/EmmanuelProject/venv/sb/lib/python3.7/site-packages/ray/tune/trainable/trainable.py", line 169, in __init__
+    self.setup(copy.deepcopy(self.config))
+  File "/home/daniel/Documents/Projects/EmmanuelProject/Trainer/q_trainer.py", line 11, in setup
+    self.agent = QlAgent(10)
+  File "/home/daniel/Documents/Projects/EmmanuelProject/Agents/QlAgent.py", line 27, in __init__
+    keras.utils.disable_interactive_logging()
+AttributeError: module 'keras.utils' has no attribute 'disable_interactive_logging'
+

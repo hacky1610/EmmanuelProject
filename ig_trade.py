@@ -1,7 +1,7 @@
 from Connectors.IG import IG
 from Data.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
-from Agents.RayTune import RayTune
+from Tuning.RayTune import RayTune
 from Envs.igEnv import IgEnv
 from Connectors.tiingo import Tiingo
 import time

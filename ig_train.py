@@ -1,6 +1,6 @@
 from Envs.forexEnv import ForexEnv
 import ray
-from Agents.RayTune import RayTune
+from Tuning.RayTune import RayTune
 from Connectors.runMetrics import RunMetric,FileHandler
 from Connectors.IG import IG
 from Connectors.tiingo import Tiingo

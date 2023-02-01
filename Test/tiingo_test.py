@@ -1,5 +1,5 @@
 import unittest
-from Agents.RayTune import RayTune
+from Tuning.RayTune import RayTune
 from Envs.forexEnv import ForexEnv
 from Tracing.ConsoleTracer import ConsoleTracer
 from unittest.mock import MagicMock

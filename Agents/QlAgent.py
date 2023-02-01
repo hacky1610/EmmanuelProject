@@ -3,10 +3,11 @@ from keras.models import Sequential
 from keras.models import load_model
 from keras.layers import Dense
 from keras.optimizers import Adam
-
 import numpy as np
 import random
 from collections import deque
+import tensorflow as tf
+
 
 class QlAgent:
 	def __init__(self, state_size, is_eval=False, model_name=""):
@@ -23,6 +24,8 @@ class QlAgent:
 		self.epsilon_decay = 0.995
 
 		self.model = load_model("models/" + model_name) if is_eval else self._model()
+		tf.logging.set_verbosity(tf.logging.ERROR)
+
 
 	def _model(self):
 		model = Sequential()
