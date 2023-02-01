@@ -1,6 +1,7 @@
 from ray import tune, air
 from ray.tune import Tuner
 import Tracing.ConsoleTracer
+import Utils.Utils
 from Tracing.Tracer import Tracer
 from Trainer.q_trainer import QTrainer
 from Connectors.Loader import *
@@ -117,13 +118,13 @@ ray.init(local_mode=True)
 #Train
 q = QlRayTune(stock_name="GSPC",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
-              logDirectory="./",
-              name="Foo")
+              logDirectory=Utils.Utils.get_log_dir(),
+              name="QL")
 q.train()
 
 #Evaluate
 q = QlRayTune(stock_name="GSPC_test",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
-              logDirectory="./",
-              name="Foo")
+              logDirectory=Utils.Utils.get_log_dir(),
+              name="QL")
 q.evaluate()

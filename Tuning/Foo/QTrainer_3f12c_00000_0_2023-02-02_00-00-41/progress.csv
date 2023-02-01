@@ -1,2 +1,0 @@
-num_resets,done,total_profit,timesteps_total,episodes_total,training_iteration,trial_id,experiment_id,date,timestamp,time_this_iter_s,time_total_s,pid,hostname,node_ip,time_since_restore,timesteps_since_restore,iterations_since_restore,warmup_time
-0,False,-62.11962600000061,,,1,3f12c_00000,831d8a9d9a6843ca82934316882bbc7f,2023-02-02_00-01-16,1675292476,30.62314224243164,30.62314224243164,2462254,acer,192.168.2.198,30.62314224243164,0,1,0.07960057258605957
