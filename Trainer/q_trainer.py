@@ -20,7 +20,7 @@ class QTrainer(Trainable):
     def step(self):
         self.iter += 1
 
-        print(f"Step {self.iter}")
+        self._tracer.write(f"Step {self.iter}")
 
         state = Utils.getState(self.data, 0, self.windows_size + 1)
         total_profit = 0
@@ -50,29 +50,30 @@ class QTrainer(Trainable):
             state = next_state
 
             if done:
-                print("--------------------------------")
-                print("Total Profit: " + Utils.formatPrice(total_profit))
-                print("--------------------------------")
+                self._tracer.write("--------------------------------")
+                self._tracer.write("Total Profit: " + Utils.formatPrice(total_profit))
+                self._tracer.write("--------------------------------")
 
             if len(self.agent.memory) > self.batch_size:
                 self.agent.expReplay(self.batch_size)
 
 
-        #if self.iter % 2 == 0:
-        #    self.agent.model.save("Models/model_ep" + str(self.iter))
+        if self.iter % 2 == 0:
+            #self.agent.model.save("Models/model_ep" + str(self.iter))
+            self._tracer.write("Model can be saved (own logic)")
         return {"num_resets": self.num_resets, "done": False, "total_profit": total_profit}
 
     def save_checkpoint(self, chkpt_dir):
-        checkpoint_dir = Utils.get_models_dir()
-        checkpoint_path = os.path.join(checkpoint_dir, "model_ep" + str(self.iter))
+        checkpoint_path = os.path.join(chkpt_dir, "model.h5")
         self.agent.model.save(checkpoint_path)
-        self._tracer.write("Model saved (function save_checkpoint)")
-        return checkpoint_dir
+        self._tracer.write(f"Model saved (function save_checkpoint) under path {checkpoint_path}")
+        return chkpt_dir
 
     def load_checkpoint(self, item):
         self.iter = item["iter"]
 
     def reset_config(self, new_config):
+        self._tracer.write("reset_config called")
         if "fake_reset_not_supported" in self.config:
             return False
         self.num_resets += 1

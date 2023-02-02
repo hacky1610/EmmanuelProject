@@ -65,12 +65,13 @@ class QlRayTune:
         os.mkdir(logFolder)
         return logFolder
 
-    def evaluate(self, model_name:str):
-        model = load_model("models/" + model_name)
+    def evaluate(self, model_path:str):
+        #TODO: Model wird zwei mal geladen
+        model = load_model(model_path)
         window_size = model.layers[0].input.shape.as_list()[1]
 
-        agent = QlAgent(window_size, True, model_name)
-        data = getStockDataVec(self.stock_name)
+        agent = QlAgent(state_size=window_size, is_eval=True, model_path=model_path)
+        data = getStockDataVec(self._stock_name)
         l = len(data) - 1
 
         state = getState(data, 0, window_size + 1)
@@ -79,7 +80,7 @@ class QlRayTune:
 
         for t in range(l):
             action = agent.act(state)
-
+            self._tracer.write(f"Signal {action}")
             # sit
             next_state = getState(data, t + 1, window_size + 1)
             reward = 0
@@ -113,18 +114,19 @@ class QlRayTune:
         a = algorithm.compute_single_action(obs)
         env.trade(a)
 
-ray.init(local_mode=True)
+ray.init(local_mode=True,num_gpus=1 )
 
 #Train
 q = QlRayTune(stock_name="GSPC",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
               logDirectory=Utils.Utils.get_log_dir(),
               name="QL")
-q.train()
+#q.train()
+
 
 #Evaluate
 q = QlRayTune(stock_name="GSPC_test",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
               logDirectory=Utils.Utils.get_log_dir(),
               name="QL")
-q.evaluate()
+q.evaluate(model_path="D:\\Code\\EmmanuelProject\\logs\\QL\\QTrainer_275ec_00000_0_2023-02-02_12-17-19\\checkpoint_000005\\model_ep5.h5")

@@ -26,7 +26,9 @@ def formatPrice(n):
 # returns the vector containing stock data from a fixed file
 def getStockDataVec(key):
     vec = []
-    lines = open("data/" + key + ".csv", "r").read().splitlines()
+    file = f"{key}.csv"
+    path = os.path.join(get_project_dir(),"Data",file)
+    lines = open(path, "r").read().splitlines()
 
     for line in lines[1:]:
         vec.append(float(line.split(",")[4]))

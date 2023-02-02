@@ -32,8 +32,8 @@ class Loader:
     def getStockDataVec(key):
         vec = []
         #lines = open("Data/" + key + ".csv", "r").read().splitlines()
-        #lines = open("D:\\Code\\EmmanuelProject\\Data\\GSPC.csv", "r").read().splitlines()
-        lines = open("/home/daniel/Documents/Projects/EmmanuelProject/Data/GSPC.csv", "r").read().splitlines()
+        lines = open(f"D:\\Code\\EmmanuelProject\\Data\\{key}.csv", "r").read().splitlines()
+        #lines = open("/home/daniel/Documents/Projects/EmmanuelProject/Data/GSPC.csv", "r").read().splitlines()
         for line in lines[1:]:
             vec.append(float(line.split(",")[4]))
 
