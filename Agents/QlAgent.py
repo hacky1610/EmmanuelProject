@@ -41,8 +41,8 @@ class QlAgent:
 		if not self.is_eval and random.random() <= self.epsilon:
 			return random.randrange(self.action_size)
 
-		options = self.model.predict(state)
-		return np.argmax(options[0])
+		options = self.model.predict(state) #Array von allen möglichen Aktionen
+		return np.argmax(options[0]) #argmax sucht nach dem Index mit dem höchsten wert
 
 	def expReplay(self, batch_size):
 		mini_batch = []

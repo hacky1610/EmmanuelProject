@@ -55,7 +55,7 @@ class QTrainer(Trainable):
                         break
 
             total_profit += reward
-
+            reward = max(reward, 0)
             done = True if t == self.l - 1 else False
             self.agent.memory.append((state, action, reward, next_state, done))
             state = next_state

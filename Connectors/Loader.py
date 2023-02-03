@@ -1,6 +1,10 @@
+import os.path
+
 import pandas as pd
 import yfinance as yf
 from finta import TA
+
+import Utils.Utils
 from Data.data_processor import DataProcessor
 from datetime import datetime
 
@@ -32,7 +36,8 @@ class Loader:
     def getStockDataVec(key):
         vec = []
         #lines = open("Data/" + key + ".csv", "r").read().splitlines()
-        lines = open(f"D:\\Code\\EmmanuelProject\\Data\\{key}.csv", "r").read().splitlines()
+        path = os.path.join(Utils.Utils.get_project_dir(),"Data",f"{key}.csv")
+        lines = open(path, "r").read().splitlines()
         #lines = open("/home/daniel/Documents/Projects/EmmanuelProject/Data/GSPC.csv", "r").read().splitlines()
         for line in lines[1:]:
             vec.append(float(line.split(",")[4]))
