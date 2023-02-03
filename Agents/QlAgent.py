@@ -1,7 +1,7 @@
 import keras
 from keras.models import Sequential
 from keras.models import load_model
-from keras.layers import Dense
+from keras.layers import Dense,InputLayer
 from keras.optimizers import Adam
 import numpy as np
 import random
@@ -10,8 +10,8 @@ import tensorflow as tf
 
 
 class QlAgent:
-	def __init__(self, state_size, is_eval=False,model_path:str="", gamma:float=0.95,lr:float=0.001 ):
-		self.state_size = state_size # normalized previous days
+	def __init__(self, shape, is_eval=False,model_path:str="", gamma:float=0.95,lr:float=0.001 ):
+		self.shape = shape # normalized previous days
 		self.action_size = 2 # sit, buy, sell
 		self.memory = deque(maxlen=1000)
 		self.inventory = []
@@ -29,7 +29,8 @@ class QlAgent:
 
 	def _model(self):
 		model = Sequential()
-		model.add(Dense(units=64, input_dim=self.state_size, activation="relu"))
+		model.add(InputLayer(input_shape=(11,)))
+		model.add(Dense(units=64, activation="relu"))
 		model.add(Dense(units=32, activation="relu"))
 		model.add(Dense(units=8, activation="relu"))
 		model.add(Dense(self.action_size, activation="linear"))

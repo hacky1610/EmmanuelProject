@@ -34,14 +34,13 @@ class Loader:
     # returns the vector containing stock data from a fixed file
     @staticmethod
     def getStockDataVec(key):
-        vec = []
-        #lines = open("Data/" + key + ".csv", "r").read().splitlines()
         path = os.path.join(Utils.Utils.get_project_dir(),"Data",f"{key}.csv")
-        lines = open(path, "r").read().splitlines()
-        #lines = open("/home/daniel/Documents/Projects/EmmanuelProject/Data/GSPC.csv", "r").read().splitlines()
-        for line in lines[1:]:
-            vec.append(float(line.split(",")[4]))
-
-        return vec
+        df = pd.read_csv(filepath_or_buffer=path,delimiter=",")
+        df.drop(columns=["Date"],inplace=True)
+        dp = DataProcessor()
+        dp.addSignals(df)
+        dp.clean_data(df)
+        df.reset_index(inplace=True)
+        return df.loc[:, ['Close', 'SMA7','SMA13',"BB_UPPER",'BB_LOWER','BB_MIDDLE', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']]
 
 

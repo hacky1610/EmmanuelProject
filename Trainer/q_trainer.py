@@ -10,8 +10,8 @@ class QTrainer(Trainable):
         self.config = config
         self.num_resets = 0
         self.iter = 0
-        self.agent = QlAgent(10,gamma=config.get("gamma",0.95),lr=config.get("lr",0.001))
         self.data = Loader.getStockDataVec(config.get("stock_name"))
+        self.agent = QlAgent(shape=(len(self.data),10),gamma=config.get("gamma",0.95),lr=config.get("lr",0.001))
         self.l = len(self.data) - 1
         self.batch_size = 32
         self.windows_size = 10
@@ -24,7 +24,7 @@ class QTrainer(Trainable):
 
         self._tracer.write(f"Step {self.iter}")
 
-        state = Utils.getState(self.data, 0, self.windows_size + 1)
+        state = self.data[0:self.windows_size]
         total_profit = 0
         self.agent.inventory = []
 
@@ -32,13 +32,13 @@ class QTrainer(Trainable):
             action = self.agent.act(state)
 
             # sit
-            next_state = Utils.getState(self.data, t + 1, self.windows_size + 1)
+            next_state = self.data[t:t+self.windows_size]
             reward = 0
 
-            current_price = self.data[t]
+            current_price = self.data["Close"][t]
 
             for i in range(t, len(self.data)):
-                futurePrice = self.data[i]
+                futurePrice = self.data["Close"][i]
                 if (action == 0): #Buy
                     if futurePrice > current_price + self._limit:
                         reward =  futurePrice - current_price
