@@ -1,6 +1,7 @@
 import os.path
 
 import pandas as pd
+import sklearn.preprocessing
 import yfinance as yf
 from finta import TA
 
@@ -41,6 +42,7 @@ class Loader:
         dp.addSignals(df)
         dp.clean_data(df)
         df.reset_index(inplace=True)
-        return df.loc[:, ['Close', 'SMA7','SMA13',"BB_UPPER",'BB_LOWER','BB_MIDDLE', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']]
-
+        signals =  df.loc[:, ['Close', 'SMA7','SMA13',"BB_UPPER",'BB_LOWER','BB_MIDDLE', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']]
+        scaler = sklearn.preprocessing.MinMaxScaler()
+        return scaler.fit(signals).transform(signals)
 
