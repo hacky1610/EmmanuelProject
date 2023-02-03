@@ -22,7 +22,7 @@ class QlRayTune:
 
     def _get_stop_config(self):
         return {
-            "training_iteration": 5,
+            "training_iteration": 100,
             # "episode_reward_mean": 0.36
         }
 
@@ -36,7 +36,9 @@ class QlRayTune:
         param_space = {
             "scaling_config": ScalingConfig(use_gpu=True),
             "stock_name": self._stock_name,
-            "tracer": self._tracer
+            "tracer": self._tracer,
+            "gamma": tune.grid_search([0.90,0.95]),
+            "lr": tune.grid_search([0.00008, 0.0001]),
         }
 
         return tune.Tuner(
@@ -78,22 +80,34 @@ class QlRayTune:
         total_profit = 0
         agent.inventory = []
 
+
+
         for t in range(l):
             action = agent.act(state)
-            self._tracer.write(f"Signal {action}")
             # sit
             next_state = getState(data, t + 1, window_size + 1)
             reward = 0
 
-            if action == 1:  # buy
-                agent.inventory.append(data[t])
-                print("Buy: " + formatPrice(data[t]))
+            current_price = data[t]
 
-            elif action == 2 and len(agent.inventory) > 0:  # sell
-                bought_price = agent.inventory.pop(0)
-                reward = max(data[t] - bought_price, 0)
-                total_profit += data[t] - bought_price
-                print("Sell: " + formatPrice(data[t]) + " | Profit: " + formatPrice(data[t] - bought_price))
+            for i in range(t, len(data)):
+                futurePrice = data[i]
+                if (action == 0):  # Buy
+                    if futurePrice > current_price + 10:
+                        reward = futurePrice - current_price
+                        break
+                    elif futurePrice < current_price - 10:
+                        reward = futurePrice - current_price
+                        break
+                elif action == 1:  # Sell
+                    if futurePrice < current_price - 10:
+                        reward = current_price - futurePrice
+                        break
+                    elif futurePrice > current_price + 10:
+                        reward = current_price - futurePrice
+                        break
+
+            total_profit += reward
 
             done = True if t == l - 1 else False
             agent.memory.append((state, action, reward, next_state, done))
@@ -121,7 +135,7 @@ q = QlRayTune(stock_name="GSPC",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
               logDirectory=Utils.Utils.get_log_dir(),
               name="QL")
-#q.train()
+_, checkpoint = q.train()
 
 
 #Evaluate
@@ -129,4 +143,4 @@ q = QlRayTune(stock_name="GSPC_test",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
               logDirectory=Utils.Utils.get_log_dir(),
               name="QL")
-q.evaluate(model_path="D:\\Code\\EmmanuelProject\\logs\\QL\\QTrainer_275ec_00000_0_2023-02-02_12-17-19\\checkpoint_000005\\model_ep5.h5")
+q.evaluate(model_path=os.path.join(checkpoint._local_path,"model.h5"))

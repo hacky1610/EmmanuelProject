@@ -10,17 +10,18 @@ import tensorflow as tf
 
 
 class QlAgent:
-	def __init__(self, state_size, is_eval=False,model_path:str="" ):
+	def __init__(self, state_size, is_eval=False,model_path:str="", gamma:float=0.95,lr:float=0.001 ):
 		self.state_size = state_size # normalized previous days
-		self.action_size = 3 # sit, buy, sell
+		self.action_size = 2 # sit, buy, sell
 		self.memory = deque(maxlen=1000)
 		self.inventory = []
 		self.is_eval = is_eval
 
-		self.gamma = 0.95
+		self.gamma = gamma
 		self.epsilon = 1.0
 		self.epsilon_min = 0.01
 		self.epsilon_decay = 0.995
+		self.lr = lr
 
 		self.model = load_model(model_path) if is_eval else self._model()
 		tf.logging.set_verbosity(tf.logging.ERROR)
@@ -32,7 +33,7 @@ class QlAgent:
 		model.add(Dense(units=32, activation="relu"))
 		model.add(Dense(units=8, activation="relu"))
 		model.add(Dense(self.action_size, activation="linear"))
-		model.compile(loss="mse", optimizer=Adam(lr=0.001))
+		model.compile(loss="mse", optimizer=Adam(lr=self.lr))
 
 		return model
 

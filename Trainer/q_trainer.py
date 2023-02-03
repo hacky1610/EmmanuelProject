@@ -10,12 +10,14 @@ class QTrainer(Trainable):
         self.config = config
         self.num_resets = 0
         self.iter = 0
-        self.agent = QlAgent(10)
+        self.agent = QlAgent(10,gamma=config.get("gamma",0.95),lr=config.get("lr",0.001))
         self.data = Loader.getStockDataVec(config.get("stock_name"))
         self.l = len(self.data) - 1
         self.batch_size = 32
         self.windows_size = 10
         self._tracer:Tracer = config.get("tracer",Tracer())
+        self._limit = 10
+        self._stop = 10
 
     def step(self):
         self.iter += 1
@@ -33,17 +35,26 @@ class QTrainer(Trainable):
             next_state = Utils.getState(self.data, t + 1, self.windows_size + 1)
             reward = 0
 
-            if action == 1:  # buy
-                self.agent.inventory.append(self.data[t])
-                #print("Buy: " + Utils.formatPrice(self.data[t]))
+            current_price = self.data[t]
 
-            elif action == 2 and len(self.agent.inventory) > 0:  # sell
-                bought_price = self.agent.inventory.pop(0)
-                reward = max(self.data[t] - bought_price, 0)
-                total_profit += self.data[t] - bought_price
-                self._tracer.write("Sell: " + Utils.formatPrice(self.data[t]) + " | Profit: " + Utils.formatPrice(
-                    self.data[t] - bought_price))
+            for i in range(t, len(self.data)):
+                futurePrice = self.data[i]
+                if (action == 0): #Buy
+                    if futurePrice > current_price + self._limit:
+                        reward =  futurePrice - current_price
+                        break
+                    elif futurePrice < current_price - self._stop:
+                        reward = futurePrice - current_price
+                        break
+                elif action == 1: #Sell
+                    if futurePrice < current_price - self._limit:
+                        reward =  current_price - futurePrice
+                        break
+                    elif futurePrice > current_price + self._stop:
+                        reward =  current_price - futurePrice
+                        break
 
+            total_profit += reward
 
             done = True if t == self.l - 1 else False
             self.agent.memory.append((state, action, reward, next_state, done))
