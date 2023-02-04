@@ -39,7 +39,7 @@ class QlRayTune:
             "tracer": self._tracer,
             "gamma": 0.90, #tune.grid_search([0.90,0.95]),
             "lr": 0.0001, #tune.grid_search([0.00008, 0.0001]),
-            "hiddens": tune.grid_search([[32,16,8],[64,32,16],[128,64,32]])
+            "hiddens": [64,32,16]
         }
 
         return tune.Tuner(
