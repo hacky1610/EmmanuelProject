@@ -44,5 +44,6 @@ class Loader:
         df.reset_index(inplace=True)
         signals =  df.loc[:, ['Close', 'SMA7','SMA13',"BB_UPPER",'BB_LOWER','BB_MIDDLE', 'RSI', 'ROC', '%R', 'MACD', 'SIGNAL']]
         scaler = sklearn.preprocessing.MinMaxScaler()
-        return scaler.fit(signals).transform(signals)
+        signals[signals.columns] =  scaler.fit(signals).transform(signals)
+        return signals
 

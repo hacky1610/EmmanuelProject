@@ -10,8 +10,8 @@ import tensorflow as tf
 
 
 class QlAgent:
-	def __init__(self, shape, is_eval=False,model_path:str="", gamma:float=0.95,lr:float=0.001 ):
-		self.shape = shape # normalized previous days
+	def __init__(self, shape, is_eval=False,model_path:str="", gamma:float=0.95,lr:float=0.001,hiddens=[32,16,8] ):
+		self.shape = shape #TODO:
 		self.action_size = 2 # sit, buy, sell
 		self.memory = deque(maxlen=1000)
 		self.inventory = []
@@ -22,6 +22,7 @@ class QlAgent:
 		self.epsilon_min = 0.01
 		self.epsilon_decay = 0.995
 		self.lr = lr
+		self.hiddens = hiddens
 
 		self.model = load_model(model_path) if is_eval else self._model()
 		tf.logging.set_verbosity(tf.logging.ERROR)
@@ -30,9 +31,9 @@ class QlAgent:
 	def _model(self):
 		model = Sequential()
 		model.add(InputLayer(input_shape=(11,)))
-		model.add(Dense(units=64, activation="relu"))
-		model.add(Dense(units=32, activation="relu"))
-		model.add(Dense(units=8, activation="relu"))
+		model.add(Dense(units=self.hiddens[0], activation="relu"))
+		model.add(Dense(units=self.hiddens[1], activation="relu"))
+		model.add(Dense(units=self.hiddens[2], activation="relu"))
 		model.add(Dense(self.action_size, activation="linear"))
 		model.compile(loss="mse", optimizer=Adam(lr=self.lr))
 

@@ -11,13 +11,18 @@ class QTrainer(Trainable):
         self.num_resets = 0
         self.iter = 0
         self.data = Loader.getStockDataVec(config.get("stock_name"))
-        self.agent = QlAgent(shape=(len(self.data),10),gamma=config.get("gamma",0.95),lr=config.get("lr",0.001))
+        self.agent = QlAgent(
+            shape=(len(self.data),10),
+            gamma=config.get("gamma",0.95),
+            lr=config.get("lr",0.001),
+            hiddens=config.get("hiddens",[32,16,8]))
         self.l = len(self.data) - 1
         self.batch_size = 32
         self.windows_size = 10
         self._tracer:Tracer = config.get("tracer",Tracer())
-        self._limit = 10
-        self._stop = 10
+        self._limit = 0.08
+        self._stop = 0.08
+
 
     def step(self):
         self.iter += 1

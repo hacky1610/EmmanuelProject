@@ -22,7 +22,7 @@ class QlRayTune:
 
     def _get_stop_config(self):
         return {
-            "training_iteration": 100,
+            "training_iteration": 25,
             # "episode_reward_mean": 0.36
         }
 
@@ -37,8 +37,9 @@ class QlRayTune:
             "scaling_config": ScalingConfig(use_gpu=True),
             "stock_name": self._stock_name,
             "tracer": self._tracer,
-            "gamma": tune.grid_search([0.90,0.95]),
-            "lr": tune.grid_search([0.00008, 0.0001]),
+            "gamma": 0.90, #tune.grid_search([0.90,0.95]),
+            "lr": 0.0001, #tune.grid_search([0.00008, 0.0001]),
+            "hiddens": tune.grid_search([[32,16,8],[64,32,16],[128,64,32]])
         }
 
         return tune.Tuner(
@@ -72,7 +73,7 @@ class QlRayTune:
         model = load_model(model_path)
         window_size = model.layers[0].input.shape.as_list()[1]
 
-        agent = QlAgent(state_size=window_size, is_eval=True, model_path=model_path)
+        agent = QlAgent(shape=(1,10), is_eval=True, model_path=model_path)
         data = getStockDataVec(self._stock_name)
         l = len(data) - 1
 
@@ -134,13 +135,14 @@ ray.init(local_mode=True,num_gpus=1 )
 q = QlRayTune(stock_name="GSPC",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
               logDirectory=Utils.Utils.get_log_dir(),
-              name="QL")
+              name="QL_Indi")
 _, checkpoint = q.train()
 
-
+checkpoint_path = checkpoint._local_path
+#checkpoint_path = "D:\\Code\\EmmanuelProject\\logs\\QL_Indi\\QTrainer_6eb60_00000_0_2023-02-03_17-11-38\\checkpoint_000025"
 #Evaluate
 q = QlRayTune(stock_name="GSPC_test",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
               logDirectory=Utils.Utils.get_log_dir(),
-              name="QL")
-q.evaluate(model_path=os.path.join(checkpoint._local_path,"model.h5"))
+              name="QL_Indi")
+q.evaluate(model_path=os.path.join(checkpoint_path,"model.h5"))
