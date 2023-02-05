@@ -139,6 +139,7 @@ q = QlRayTune(stock_name="GSPC",
 _, checkpoint = q.train()
 
 checkpoint_path = checkpoint._local_path
+print(f"use checkpoint {checkpoint_path}")
 #checkpoint_path = "D:\\Code\\EmmanuelProject\\logs\\QL_Indi\\QTrainer_6eb60_00000_0_2023-02-03_17-11-38\\checkpoint_000025"
 #Evaluate
 q = QlRayTune(stock_name="GSPC_test",

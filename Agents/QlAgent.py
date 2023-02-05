@@ -52,6 +52,8 @@ class QlAgent:
 		for i in range(l - batch_size + 1, l):
 			mini_batch.append(self.memory[i])
 
+		mini_batch = random.choices(mini_batch,k=len(mini_batch))
+
 		for state, action, reward, next_state, done in mini_batch:
 			target = reward
 			if not done:
