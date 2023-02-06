@@ -10,6 +10,7 @@ from keras.models import load_model
 from Utils.Utils import *
 from Agents.QlAgent import QlAgent
 import ray
+from ray.tune.search.bayesopt import BayesOptSearch
 
 class QlRayTune:
     _metric:str = "total_profit"
@@ -27,9 +28,11 @@ class QlRayTune:
         }
 
     def _get_tune_config(self, mode="max"):
+        bayesopt = BayesOptSearch(metric=self._metric, mode="max")
+
         return tune.TuneConfig(
-            metric=self._metric,
-            mode=mode,
+            search_alg=bayesopt ,
+            num_samples=60
         )
 
     def _create_tuner(self) -> Tuner:
@@ -38,9 +41,14 @@ class QlRayTune:
             "stock_name": self._stock_name,
             "tracer": self._tracer,
             "gamma": 0.90, #tune.grid_search([0.90,0.95]),
-            "lr": 0.0001, #tune.grid_search([0.00008, 0.0001]),
-            "hiddens": [64,32,16]
+            "lr": tune.uniform(0.0001, 0.005), #tune.grid_search([0.00008, 0.0001]),
+            "hiddens": [64,32,16],
+            "beta1": tune.uniform(0.85, 0.95),
+            "beta2": tune.uniform(0.95, 0.999),
+            "epsilon":  tune.uniform(0.75, 0.95),
+            "decay": tune.uniform(0.001, 0.006),
         }
+
 
         return tune.Tuner(
             QTrainer,
@@ -136,11 +144,11 @@ q = QlRayTune(stock_name="GSPC",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
               logDirectory=Utils.Utils.get_log_dir(),
               name="QL_Indi")
-_, checkpoint = q.train()
+#_, checkpoint = q.train()
 
-checkpoint_path = checkpoint._local_path
-print(f"use checkpoint {checkpoint_path}")
-#checkpoint_path = "D:\\Code\\EmmanuelProject\\logs\\QL_Indi\\QTrainer_6eb60_00000_0_2023-02-03_17-11-38\\checkpoint_000025"
+#checkpoint_path = checkpoint._local_path
+#print(f"use checkpoint {checkpoint_path}")
+checkpoint_path = "D:\\Code\\EmmanuelProject\\logs\\QL_Indi\\QTrainer_5982e314_5_beta1=0.9112,beta2=0.9568,decay=0.0025,epsilon=0.8233,gamma=0.9000,hiddens=64_32_16,lr=0.0023,max_cpu_fraction_2023-02-06_01-12-42\\checkpoint_000025"
 #Evaluate
 q = QlRayTune(stock_name="GSPC_test",
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),

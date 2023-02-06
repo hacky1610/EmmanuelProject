@@ -10,7 +10,7 @@ import tensorflow as tf
 
 
 class QlAgent:
-	def __init__(self, shape, is_eval=False,model_path:str="", gamma:float=0.95,lr:float=0.001,hiddens=[32,16,8] ):
+	def __init__(self, shape, is_eval=False,model_path:str="", gamma:float=0.95,lr:float=0.001,hiddens=[32,16,8],beta1:float=0.9,beta2:float=0.99,epsilon:float=None,decay:float=0. ):
 		self.shape = shape #TODO:
 		self.action_size = 2 # sit, buy, sell
 		self.memory = deque(maxlen=1000)
@@ -23,6 +23,10 @@ class QlAgent:
 		self.epsilon_decay = 0.995
 		self.lr = lr
 		self.hiddens = hiddens
+		self.opt_beta_1 = beta1
+		self.opt_beta_2 = beta2
+		self.opt_epsilon = epsilon
+		self.opt_decay = decay
 
 		self.model = load_model(model_path) if is_eval else self._model()
 		tf.logging.set_verbosity(tf.logging.ERROR)
@@ -35,7 +39,7 @@ class QlAgent:
 		model.add(Dense(units=self.hiddens[1], activation="relu"))
 		model.add(Dense(units=self.hiddens[2], activation="relu"))
 		model.add(Dense(self.action_size, activation="linear"))
-		model.compile(loss="mse", optimizer=Adam(lr=self.lr))
+		model.compile(loss="mse", optimizer=Adam(lr=self.lr,beta_1=self.opt_beta_1,beta_2=self.opt_beta_2,epsilon=self.opt_epsilon,decay=self.opt_decay))
 
 		return model
 

@@ -15,7 +15,11 @@ class QTrainer(Trainable):
             shape=(len(self.data),10),
             gamma=config.get("gamma",0.95),
             lr=config.get("lr",0.001),
-            hiddens=config.get("hiddens",[32,16,8]))
+            hiddens=config.get("hiddens",[32,16,8]),
+            beta1=config.get("beta1",0.9),
+            beta2=config.get("beta2",0.99),
+            epsilon=config.get("epsilon",None),
+            decay=config.get("decay",0.0))
         self.l = len(self.data) - 1
         self.batch_size = 32
         self.windows_size = 10
