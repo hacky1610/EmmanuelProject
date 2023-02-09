@@ -8,6 +8,8 @@ from Utils.Utils import *
 import ray
 from pandas import DataFrame
 from Connectors.tiingo import Tiingo
+from ray.tune.search.bayesopt import BayesOptSearch
+
 
 class QlRayTune:
 
@@ -29,15 +31,21 @@ class QlRayTune:
             mode=mode
         )
 
+    def _get_bayes_tune_config(self,num_samples=25) -> tune.TuneConfig:
+        bayesopt = BayesOptSearch(metric=LSTM_Trainer.METRIC, mode="max")
+
+        return tune.TuneConfig(
+            search_alg=bayesopt,
+            num_samples=num_samples
+        )
+
     def _create_tuner(self) -> Tuner:
         param_space = {
             "df": self._data,
             "tracer": self._tracer,
-            "window_size": tune.grid_search([16, 32, 64]),
-            "lstm1_len": tune.grid_search([512, 256, 128, 64]),
-            "lstm2_len": tune.grid_search([512, 256, 128, 64]),
-            "dense_len": tune.grid_search([512, 256, 128, 64]),
-            "optimizer": tune.grid_search(["Adam", "SGD"]),
+            "learning_rate" : tune.uniform(0.0001,0.001),
+            "beta1": tune.uniform(0.88, 0.92),
+            "beta2": tune.uniform(0.995, 0.99999)
         }
 
         return tune.Tuner(
@@ -48,7 +56,8 @@ class QlRayTune:
                                      local_dir=self._logDirectory,
                                      name=self._name,
                                      checkpoint_config=air.CheckpointConfig(checkpoint_frequency=2)),
-            tune_config=self._get_tune_config(),
+            #tune_config=self._get_tune_config(),
+            tune_config=self._get_bayes_tune_config(30)
         )
 
     def train(self):

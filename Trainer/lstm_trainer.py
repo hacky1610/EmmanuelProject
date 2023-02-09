@@ -6,7 +6,13 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import LSTM, Dense
-import matplotlib.pyplot as plt
+import tensorflow
+from keras.optimizers import *
+
+Optimizers = {
+    "Adam":Adam,
+    "SGD":SGD
+}
 
 
 class LSTM_Trainer(Trainable):
@@ -28,7 +34,11 @@ class LSTM_Trainer(Trainable):
         self._name = config.get("name ", "default")
         self._model = None
         self._model_path = f"{self._name}.h5"
-        self._optimizer = config.get("optimizer ", "Adam")
+        self._optimizerName = config.get("optimizer ", "Adam")
+        self._learning_rate = config.get("learning_rate", 0.001)
+
+        self._beta1 = config.get("beta1", 0.9)
+        self._beta2 = config.get("beta1", 0.999)
 
     def create_model(self):
         model = Sequential()
@@ -40,6 +50,11 @@ class LSTM_Trainer(Trainable):
         model.add(Dense(self._dens_len))
         model.add(Dense(1))
         return model
+
+    def create_optimizer(self):
+       return Adam(learning_rate=self._learning_rate,
+                   beta_1=self._beta1,
+                   beta_2=self._beta2)
 
     def step(self):
         train_data = self._all_data_scaled[0:self._train_data_len, :]
@@ -56,7 +71,7 @@ class LSTM_Trainer(Trainable):
 
         self._model = self.create_model()
 
-        self._model.compile(optimizer=self._optimizer, loss="mean_squared_error")
+        self._model.compile(optimizer=self.create_optimizer(), loss="mean_squared_error")
         self._model.fit(x_train, y_train, batch_size=1, epochs=1)
 
         accuracy = self.calc_accuracy(self._all_data_df)
