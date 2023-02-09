@@ -9,7 +9,6 @@ import ray
 from pandas import DataFrame
 from Connectors.tiingo import Tiingo
 
-
 class QlRayTune:
 
     def __init__(self, data: DataFrame, tracer: Tracer, logDirectory: str = "./logs", name: str = ""):
@@ -34,11 +33,11 @@ class QlRayTune:
         param_space = {
             "df": self._data,
             "tracer": self._tracer,
-            "window_size": tune.grid_search([16,32,64]),
-            "lstm1_len": tune.grid_search([512,256,128,64]),
-            "lstm2_len": tune.grid_search([512,256,128,64]),
+            "window_size": tune.grid_search([16, 32, 64]),
+            "lstm1_len": tune.grid_search([512, 256, 128, 64]),
+            "lstm2_len": tune.grid_search([512, 256, 128, 64]),
             "dense_len": tune.grid_search([512, 256, 128, 64]),
-            "optimizer": tune.grid_search(["Adam","SGD"]),
+            "optimizer": tune.grid_search(["Adam", "SGD"]),
         }
 
         return tune.Tuner(
