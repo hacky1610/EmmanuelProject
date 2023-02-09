@@ -1,4 +1,4 @@
-tensorflow==1.15
+tensorflow==2.10.0
 gym
 gym-anytrading
 finta
@@ -12,5 +12,4 @@ ray[tune]
 dm-tree==0.1.5
 tensorflow_probability
 trading_ig
-keras==2.1.5
 bayesian-optimization
