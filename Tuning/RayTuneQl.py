@@ -70,13 +70,16 @@ class QlRayTune:
         # TODO: Model wird zwei mal geladen
         pass
 
+    @staticmethod
+    def get_training_data(tiingo:Tiingo):
+        return tiingo.load_data_by_date("GBPUSD", "2022-08-15", "2022-12-31", dp, "1hour")
 
 ray.init(local_mode=True, num_gpus=1)
 
 # Prep
 dp = DataProcessor()
 ti = Tiingo()
-df = ti.load_data_by_date("GBPUSD", "2022-08-15", "2022-12-31", dp, "1hour")
+df = QlRayTune.get_training_data(ti)
 
 # Train
 q = QlRayTune(data=df,
