@@ -20,7 +20,8 @@ class LSTM_Trainer(Trainable):
 
     def setup(self, config):
         df = config.get("df")
-        self._best_signal_accuracy = 0.0
+        self._max_signal_accuracy = 0.0
+        self._min_rsme = 100.0
         self._all_data_df = df.filter(["close"])
         self._all_data = self._all_data_df.values
         self._train_data_len = math.ceil(len(self._all_data) * 0.8)
@@ -34,6 +35,9 @@ class LSTM_Trainer(Trainable):
         self._name = config.get("name ", "default")
         self._model = None
         self._model_path = f"{self._name}.h5"
+        self._optimizer = config.get("optimizer ", "Adam")
+        self._epoch_count = config.get("epoch_count",5)
+        self._batch_size = config.get("batch_size", 5)
         self._optimizerName = config.get("optimizer ", "Adam")
         self._learning_rate = config.get("learning_rate", 0.001)
 
@@ -72,14 +76,21 @@ class LSTM_Trainer(Trainable):
         self._model = self.create_model()
 
         self._model.compile(optimizer=self.create_optimizer(), loss="mean_squared_error")
-        self._model.fit(x_train, y_train, batch_size=1, epochs=1)
+        self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
 
         accuracy = self.calc_accuracy(self._all_data_df)
-        if accuracy > self._best_signal_accuracy:
+        if accuracy > self._max_signal_accuracy:
             self._model.save(os.path.join(self.logdir, f"model_{self._iteration}.h5"))
-            self._best_signal_accuracy = accuracy
+            self._max_signal_accuracy = accuracy
 
-        return {"done": False, self.METRIC: accuracy, "rmse": self.calc_rmse()}
+        current_rmse = self.calc_rmse()
+        if current_rmse < self._min_rsme:
+            self._min_rsme = current_rmse
+
+        return {"done": False, self.METRIC: accuracy,
+                "rmse": current_rmse,
+                "max_signal_accuracy": self._max_signal_accuracy,
+                "min_rsme": self._min_rsme}
 
     def save_model(self):
         self._model.save(self._model_path)
@@ -88,14 +99,14 @@ class LSTM_Trainer(Trainable):
         self._model = self.create_model()
         self._model.load_weights(self._model_path)
 
-    def trade(self, model, data):
+    def trade(self, data):
 
         last_scaled = self._scaler.transform(data)
         X_test = []
         X_test.append(last_scaled)
         X_test = np.array(X_test)
         X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
-        pred = model.predict(X_test)
+        pred = self._model.predict(X_test)
         now = X_test[0][-1][0]
         futureScaled = pred[0][0]
         signal = LSTM_Trainer.get_signal(now, futureScaled)
@@ -125,7 +136,7 @@ class LSTM_Trainer(Trainable):
             future = close_prices.to_numpy()[-i][0]
             now = close_prices.to_numpy()[-i - 1][0]
 
-            prediction, signal = self.trade(self._model, last_prices)
+            prediction, signal = self.trade(last_prices)
             correct_signal = LSTM_Trainer.get_signal(now, future)
 
             if correct_signal == signal:
