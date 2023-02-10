@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import LSTM, Dense
-import matplotlib.pyplot as plt
+from pandas import DataFrame
 
 
 class LSTM_Trainer(Trainable):
@@ -16,12 +16,19 @@ class LSTM_Trainer(Trainable):
         df = config.get("df")
         self._max_signal_accuracy = 0.0
         self._min_rsme = 100.0
-        self._all_data_df = df.filter(["close"])
-        self._all_data = self._all_data_df.values
-        self._train_data_len = math.ceil(len(self._all_data) * 0.8)
+
+        self._all_close_prices_df:DataFrame = df.filter(["close"])
+        self._all_features_df:DataFrame = df.filter(["close","SMA7"])
+
+        self._all_close_prices = self._all_close_prices_df.values
+        self._all_features = self._all_features_df.values
+
+        self._train_data_len = math.ceil(len(self._all_close_prices) * 0.8)
 
         self._scaler = MinMaxScaler(feature_range=(0, 1))
-        self._all_data_scaled = self._scaler.fit_transform(self._all_data)
+        self._all_close_prices_scaled = self._scaler.fit_transform(self._all_close_prices)
+        self._all_features_scaled = self._scaler.fit_transform(self._all_features)
+
         self._window_size: int = config.get("window_size", 60)
         self._lstm1_len = config.get("lstm1_len", 50)
         self._lstm2_len = config.get("lstm2_len ", 50)
@@ -45,7 +52,7 @@ class LSTM_Trainer(Trainable):
         return model
 
     def step(self):
-        train_data = self._all_data_scaled[0:self._train_data_len, :]
+        train_data = self._all_features_df[0:self._train_data_len, :]
 
         x_train = []
         y_train = []
@@ -62,7 +69,7 @@ class LSTM_Trainer(Trainable):
         self._model.compile(optimizer=self._optimizer, loss="mean_squared_error")
         self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
 
-        accuracy = self.calc_accuracy(self._all_data_df)
+        accuracy = self.calc_accuracy(self._all_close_prices_df)
         if accuracy > self._max_signal_accuracy:
             self._model.save(os.path.join(self.logdir, f"model_{self._iteration}.h5"))
             self._max_signal_accuracy = accuracy
@@ -99,9 +106,9 @@ class LSTM_Trainer(Trainable):
         return pred[0][0], signal
 
     def calc_rmse(self):
-        test_data = self._all_data_scaled[self._train_data_len - self._window_size:, :]
+        test_data = self._all_close_prices_scaled[self._train_data_len - self._window_size:, :]
         x_test = []
-        y_test = self._all_data[self._train_data_len:, :]
+        y_test = self._all_close_prices[self._train_data_len:, :]
         for i in range(self._window_size, len(test_data)):
             x_test.append(test_data[i - self._window_size:i, 0])
 
