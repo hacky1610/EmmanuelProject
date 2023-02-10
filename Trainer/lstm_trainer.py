@@ -1,12 +1,11 @@
 from ray.tune import Trainable
-from Utils import Utils
 import os
 import math
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
-from keras.layers import LSTM, Dense
-import matplotlib.pyplot as plt
+from keras.layers import LSTM, Dense, TimeDistributed, BatchNormalization, Flatten
+from keras.layers.convolutional import Conv1D, MaxPooling1D
 
 
 class LSTM_Trainer(Trainable):
@@ -41,6 +40,19 @@ class LSTM_Trainer(Trainable):
         model.add(LSTM(units=self._lstm2_len,
                        return_sequences=False))
         model.add(Dense(self._dens_len))
+        model.add(Dense(1))
+        return model
+
+    def create_model_v2(self):
+        model = Sequential()
+        model.add(TimeDistributed(Conv1D(filters=128, kernel_size=1, activation='relu'),
+                                  input_shape=(None, self._window_size, 1)))
+        model.add(TimeDistributed(MaxPooling1D(pool_size=2, strides=None)))
+        model.add(TimeDistributed(Conv1D(filters=128, kernel_size=1, activation='relu')))
+        model.add(TimeDistributed(Flatten()))
+        model.add(LSTM(128, return_sequences=True))
+        model.add(LSTM(64))
+        model.add(BatchNormalization())
         model.add(Dense(1))
         return model
 
