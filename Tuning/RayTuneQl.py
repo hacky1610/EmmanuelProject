@@ -19,7 +19,7 @@ class QlRayTune:
 
     def _get_stop_config(self):
         return {
-            "training_iteration": 25,
+            "training_iteration": 3,
             # "episode_reward_mean": 0.36
         }
 
@@ -33,11 +33,13 @@ class QlRayTune:
         param_space = {
             "df": self._data,
             "tracer": self._tracer,
-            "window_size": tune.grid_search([16, 32, 64]),
-            "lstm1_len": tune.grid_search([512, 256, 128, 64]),
-            "lstm2_len": tune.grid_search([512, 256, 128, 64]),
-            "dense_len": tune.grid_search([512, 256, 128, 64]),
+            "window_size": tune.grid_search([ 32, 64]),
+            "lstm1_len": tune.grid_search([ 256, 128]),
+            "lstm2_len": tune.grid_search([ 256, 128]),
+            "dense_len": tune.grid_search([ 32, 16]),
             "optimizer": tune.grid_search(["Adam", "SGD"]),
+            "batch_size": tune.grid_search([8, 16,32]),
+            "epoch_count": tune.grid_search([8, 16, 32]),
         }
 
         return tune.Tuner(
