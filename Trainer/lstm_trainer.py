@@ -31,6 +31,7 @@ class LSTM_Trainer(Trainable):
         self._optimizer = config.get("optimizer ", "Adam")
         self._epoch_count = config.get("epoch_count",5)
         self._batch_size = config.get("batch_size", 5)
+        self._num_features = 1
 
     def create_model(self):
         model = Sequential()
@@ -46,7 +47,7 @@ class LSTM_Trainer(Trainable):
     def create_model_v2(self):
         model = Sequential()
         model.add(TimeDistributed(Conv1D(filters=128, kernel_size=1, activation='relu'),
-                                  input_shape=(None, self._window_size, 1)))
+                                  input_shape=(None,self._window_size, self._num_features )))
         model.add(TimeDistributed(MaxPooling1D(pool_size=2, strides=None)))
         model.add(TimeDistributed(Conv1D(filters=128, kernel_size=1, activation='relu')))
         model.add(TimeDistributed(Flatten()))
@@ -67,9 +68,9 @@ class LSTM_Trainer(Trainable):
             y_train.append(train_data[i, 0])
 
         x_train, y_train = np.array(x_train), np.array(y_train)
-        x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+        x_train = np.reshape(x_train, (len(x_train), 1, self._window_size,self._num_features ))
 
-        self._model = self.create_model()
+        self._model = self.create_model_v2()
 
         self._model.compile(optimizer=self._optimizer, loss="mean_squared_error")
         self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
@@ -92,23 +93,22 @@ class LSTM_Trainer(Trainable):
         self._model.save(self._model_path)
 
     def load_model(self):
-        self._model = self.create_model()
+        self._model = self.create_model_v2()
         self._model.load_weights(self._model_path)
 
     def trade(self, data):
 
         last_scaled = self._scaler.transform(data)
-        X_test = []
-        X_test.append(last_scaled)
-        X_test = np.array(X_test)
-        X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
-        pred = self._model.predict(X_test)
-        now = X_test[0][-1][0]
-        futureScaled = pred[0][0]
-        signal = LSTM_Trainer.get_signal(now, futureScaled)
+        x_test = [last_scaled]
+        x_test = np.array(x_test)
+        x_test = np.reshape(x_test, (len(x_test), 1, self._window_size, 1))
+        prediction = self._model.predict(x_test)
+        now = x_test[0][-1][0]
+        future_scaled = prediction[0][0]
+        signal = LSTM_Trainer.get_signal(now, future_scaled)
 
-        pred = self._scaler.inverse_transform(pred)
-        return pred[0][0], signal
+        prediction = self._scaler.inverse_transform(prediction)
+        return prediction[0][0], signal
 
     def calc_rmse(self):
         test_data = self._all_data_scaled[self._train_data_len - self._window_size:, :]
@@ -118,7 +118,7 @@ class LSTM_Trainer(Trainable):
             x_test.append(test_data[i - self._window_size:i, 0])
 
         x_test = np.array(x_test)
-        x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+        x_test = np.reshape(x_test, (len(x_test), 1, self._window_size, 1))
         predictions = self._model.predict(x_test)
         predictions = self._scaler.inverse_transform(predictions)
         return np.sqrt(np.mean(predictions - y_test) ** 2)
