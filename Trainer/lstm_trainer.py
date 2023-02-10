@@ -14,7 +14,8 @@ class LSTM_Trainer(Trainable):
 
     def setup(self, config):
         df = config.get("df")
-        self._best_signal_accuracy = 0.0
+        self._max_signal_accuracy = 0.0
+        self._min_rsme = 100.0
         self._all_data_df = df.filter(["close"])
         self._all_data = self._all_data_df.values
         self._train_data_len = math.ceil(len(self._all_data) * 0.8)
@@ -29,6 +30,8 @@ class LSTM_Trainer(Trainable):
         self._model = None
         self._model_path = f"{self._name}.h5"
         self._optimizer = config.get("optimizer ", "Adam")
+        self._epoch_count = config.get("epoch_count",5)
+        self._batch_size = config.get("batch_size", 5)
 
     def create_model(self):
         model = Sequential()
@@ -57,14 +60,21 @@ class LSTM_Trainer(Trainable):
         self._model = self.create_model()
 
         self._model.compile(optimizer=self._optimizer, loss="mean_squared_error")
-        self._model.fit(x_train, y_train, batch_size=1, epochs=1)
+        self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
 
         accuracy = self.calc_accuracy(self._all_data_df)
-        if accuracy > self._best_signal_accuracy:
+        if accuracy > self._max_signal_accuracy:
             self._model.save(os.path.join(self.logdir, f"model_{self._iteration}.h5"))
-            self._best_signal_accuracy = accuracy
+            self._max_signal_accuracy = accuracy
 
-        return {"done": False, self.METRIC: accuracy, "rmse": self.calc_rmse()}
+        current_rmse = self.calc_rmse()
+        if current_rmse < self._min_rsme:
+            self._min_rsme = current_rmse
+
+        return {"done": False, self.METRIC: accuracy,
+                "rmse": current_rmse,
+                "max_signal_accuracy": self._max_signal_accuracy,
+                "min_rsme": self._min_rsme}
 
     def save_model(self):
         self._model.save(self._model_path)
