@@ -32,14 +32,7 @@ class QlRayTune:
     def _create_tuner(self) -> Tuner:
         param_space = {
             "df": self._data,
-            "tracer": self._tracer,
-            "window_size": tune.grid_search([ 32, 64]),
-            "lstm1_len": tune.grid_search([ 256, 128]),
-            "lstm2_len": tune.grid_search([ 256, 128]),
-            "dense_len": tune.grid_search([ 32, 16]),
-            "optimizer": tune.grid_search(["Adam", "SGD"]),
-            "batch_size": tune.grid_search([8, 16,32]),
-            "epoch_count": tune.grid_search([8, 16, 32]),
+            "tracer": self._tracer
         }
 
         return tune.Tuner(

@@ -22,16 +22,16 @@ class LSTM_Trainer(Trainable):
 
         self._scaler = MinMaxScaler(feature_range=(0, 1))
         self._all_data_scaled = self._scaler.fit_transform(self._all_data)
-        self._window_size: int = config.get("window_size", 60)
-        self._lstm1_len = config.get("lstm1_len", 50)
-        self._lstm2_len = config.get("lstm2_len ", 50)
-        self._dens_len = config.get("dense_len ", 25)
+        self._window_size: int = config.get("window_size", 32)
+        self._lstm1_len = config.get("lstm1_len", 256)
+        self._lstm2_len = config.get("lstm2_len ", 256)
+        self._dens_len = config.get("dense_len ", 32)
         self._name = config.get("name ", "default")
         self._model = None
         self._model_path = f"{self._name}.h5"
         self._optimizer = config.get("optimizer ", "Adam")
-        self._epoch_count = config.get("epoch_count",5)
-        self._batch_size = config.get("batch_size", 5)
+        self._epoch_count = config.get("epoch_count",16)
+        self._batch_size = config.get("batch_size", 32)
 
     def create_model(self):
         model = Sequential()
