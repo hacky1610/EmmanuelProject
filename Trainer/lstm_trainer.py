@@ -33,6 +33,10 @@ class LSTM_Trainer(Trainable):
         self._batch_size = config.get("batch_size", 5)
         self._num_features = 1
 
+        self._td1_len = config.get("td1_len",128)
+        self._td2_poolsize = config.get("td2_poolsize", 2)
+        self._td3_len = config.get("td3_len", 128)
+
     def create_model(self):
         model = Sequential()
         model.add(LSTM(units=self._lstm1_len,
@@ -46,13 +50,13 @@ class LSTM_Trainer(Trainable):
 
     def create_model_v2(self):
         model = Sequential()
-        model.add(TimeDistributed(Conv1D(filters=128, kernel_size=1, activation='relu'),
+        model.add(TimeDistributed(Conv1D(filters=self._td1_len, kernel_size=1, activation='relu'),
                                   input_shape=(None,self._window_size, self._num_features )))
-        model.add(TimeDistributed(MaxPooling1D(pool_size=2, strides=None)))
-        model.add(TimeDistributed(Conv1D(filters=128, kernel_size=1, activation='relu')))
+        model.add(TimeDistributed(MaxPooling1D(pool_size=self._td2_poolsize, strides=None)))
+        model.add(TimeDistributed(Conv1D(filters=self._td3_len, kernel_size=1, activation='relu')))
         model.add(TimeDistributed(Flatten()))
-        model.add(LSTM(128, return_sequences=True))
-        model.add(LSTM(64))
+        model.add(LSTM(self._lstm1_len, return_sequences=True))
+        model.add(LSTM(self._lstm2_len))
         model.add(BatchNormalization())
         model.add(Dense(1))
         return model

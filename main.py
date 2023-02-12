@@ -16,7 +16,7 @@ df = ti.load_data_by_date("GBPUSD", "2022-08-15", "2022-12-31", dp, "1hour")
 q = QlRayTune(data=df,
               tracer=Tracing.ConsoleTracer.ConsoleTracer(),
               logDirectory=Utils.Utils.get_log_dir(),
-              name="LSTM")
+              name="NewModel")
 _, checkpoint = q.train()
 
 exit(0)
