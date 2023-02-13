@@ -1,13 +1,11 @@
 from ray import tune, air
 from ray.tune import Tuner
-import Tracing.ConsoleTracer
 from Tracing.Tracer import Tracer
 from Trainer.lstm_trainer import LSTM_Trainer
 from Connectors.Loader import *
 from Utils.Utils import *
-import ray
 from pandas import DataFrame
-from Connectors.tiingo import Tiingo
+from Models import *
 
 class QlRayTune:
 
@@ -19,21 +17,30 @@ class QlRayTune:
 
     def _get_stop_config(self):
         return {
-            "training_iteration": 3,
+            "training_iteration": 10,
             # "episode_reward_mean": 0.36
         }
 
     def _get_tune_config(self, mode="max") -> tune.TuneConfig:
         return tune.TuneConfig(
             metric=LSTM_Trainer.METRIC,
-            mode=mode
+            mode=mode,
+            num_samples=40
         )
 
     def _create_tuner(self) -> Tuner:
+        model_type = Saturn
+
         param_space = {
             "df": self._data,
-            "tracer": self._tracer
+            "tracer": self._tracer,
+            "window_size": 32,
+            "model_type": model_type,
+            "optimizer": "Adam",
+            "batch_size": 32,
+            "epoch_count": 5,
         }
+        param_space.update(model_type.get_tuner())
 
         return tune.Tuner(
             LSTM_Trainer,
