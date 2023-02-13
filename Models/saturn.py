@@ -9,9 +9,9 @@ class Saturn(BaseModel):
 
     def __init__(self, config: dict):
         super().__init__(config)
-        self._lstm1_len = config.get("lstm1_len", 50)
-        self._lstm2_len = config.get("lstm2_len ", 50)
-        self._dens_len = config.get("dense_len ", 25)
+        self._lstm1_len = config.get("lstm1_len", 64)
+        self._lstm2_len = config.get("lstm2_len ", 64)
+        self._dens_len = config.get("dense_len ", 16)
         self._model = self._create()
 
     def _create(self):
@@ -31,7 +31,7 @@ class Saturn(BaseModel):
     @staticmethod
     def get_tuner():
         return {
-            "lstm1_len": tune.grid_search([64, 128, 256]),
-            "lstm2_len": tune.grid_search([64, 128, 256]),
+            "lstm1_len": 64,
+            "lstm2_len": 64,
             "dense_len": 16,
         }
