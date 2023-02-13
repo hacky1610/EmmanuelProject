@@ -6,6 +6,7 @@ from Connectors.Loader import *
 from Utils.Utils import *
 from pandas import DataFrame
 from Models import *
+from ray.tune.search.bayesopt import BayesOptSearch
 
 class QlRayTune:
 
@@ -20,6 +21,14 @@ class QlRayTune:
             "training_iteration": 30,
             # "episode_reward_mean": 0.36
         }
+
+    def _get_bayes_tune_config(self, num_samples=25) -> tune.TuneConfig:
+        bayesopt = BayesOptSearch(metric=LSTM_Trainer.METRIC, mode="max")
+
+        return tune.TuneConfig(
+            search_alg=bayesopt,
+            num_samples=num_samples
+        )
 
     def _get_tune_config(self, mode="max") -> tune.TuneConfig:
         return tune.TuneConfig(
@@ -37,7 +46,10 @@ class QlRayTune:
             "model_type": model_type,
             "optimizer": "Adam",
             "num_features":12,
-            "window_size": 16
+            "window_size": 16,
+            "learning_rate": tune.uniform(0.0001, 0.001),
+            "beta1": tune.uniform(0.88, 0.92),
+            "beta2": tune.uniform(0.995, 0.99999)
         }
         param_space.update(model_type.get_tuner())
 
@@ -49,7 +61,8 @@ class QlRayTune:
                                      local_dir=self._logDirectory,
                                      name=self._name,
                                      checkpoint_config=air.CheckpointConfig(checkpoint_frequency=2)),
-            tune_config=self._get_tune_config(),
+            #tune_config=self._get_tune_config(),
+            tune_config=self._get_bayes_tune_config(30)
         )
 
     def train(self):

@@ -9,6 +9,7 @@ from keras.layers import LSTM, Dense
 from pandas import DataFrame
 from Models import Saturn, BaseModel
 from pandas import DataFrame
+from keras.optimizers import *
 
 
 class LSTM_Trainer(Trainable):
@@ -52,9 +53,14 @@ class LSTM_Trainer(Trainable):
         self._name = config.get("name ", "default")
         self._model = None
         self._model_path = f"{self._name}.h5"
-        self._optimizer = config.get("optimizer ", "Adam")
         self._epoch_count = config.get("epoch_count", 5)
         self._batch_size = config.get("batch_size", 32)
+
+        self._optimizerName = config.get("optimizer ", "Adam")
+        self._learning_rate = config.get("learning_rate", 0.001)
+
+        self._beta1 = config.get("beta1", 0.9)
+        self._beta2 = config.get("beta1", 0.999)
 
     def step(self):
         self._model = self._model_type(self._config)
@@ -71,7 +77,7 @@ class LSTM_Trainer(Trainable):
         x_train, y_train = np.array(x_train), np.array(y_train)
         x_train = self._model.reshape(x_train)
 
-        self._model.compile(optimizer=self._optimizer)
+        self._model.compile(optimizer=self.create_optimizer())
         self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
 
         accuracy = self.calc_accuracy(self._all_features_df)
@@ -154,6 +160,10 @@ class LSTM_Trainer(Trainable):
     def load_checkpoint(self, item):
         self.iter = item["iter"]
 
+    def create_optimizer(self):
+        return Adam(learning_rate=self._learning_rate,
+                    beta_1=self._beta1,
+                    beta_2=self._beta2)
 
     def reset_config(self, new_config):
         self._tracer.write("reset_config called")
