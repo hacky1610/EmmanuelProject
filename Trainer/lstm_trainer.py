@@ -39,17 +39,16 @@ class LSTM_Trainer(Trainable):
         self._scaler = MinMaxScaler(feature_range=(0, 1))
         self._all_data_scaled = self._scaler.fit_transform(self._all_data)
         self._window_size: int = config.get("window_size", 16)
+        self._optimizer = config.get("optimizer ", "Adam")
 
         self._name = config.get("name ", "default")
-        self._model = None
+        self._model = self._model_type(self._config)
+        self._model.compile(optimizer=self._optimizer)
         self._model_path = f"{self._name}.h5"
-        self._optimizer = config.get("optimizer ", "Adam")
         self._epoch_count = config.get("epoch_count", 5)
         self._batch_size = config.get("batch_size", 32)
 
     def step(self):
-        self._model = self._model_type(self._config)
-
         train_data = self._all_data_scaled[0:self._train_data_len, :]
 
         x_train = []
@@ -62,7 +61,6 @@ class LSTM_Trainer(Trainable):
         x_train, y_train = np.array(x_train), np.array(y_train)
         x_train = self._model.reshape(x_train)
 
-        self._model.compile(optimizer=self._optimizer)
         self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
 
         accuracy = self.calc_accuracy(self._all_data_df)
