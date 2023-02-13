@@ -17,7 +17,7 @@ class QlRayTune:
 
     def _get_stop_config(self):
         return {
-            "training_iteration": 10,
+            "training_iteration": 30,
             # "episode_reward_mean": 0.36
         }
 
@@ -25,7 +25,7 @@ class QlRayTune:
         return tune.TuneConfig(
             metric=LSTM_Trainer.METRIC,
             mode=mode,
-            num_samples=40
+            num_samples=20
         )
 
     def _create_tuner(self) -> Tuner:
