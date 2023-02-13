@@ -3,28 +3,34 @@ import os
 import math
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from Models import Saturn,BaseModel
+from Models import Saturn, BaseModel
 from pandas import DataFrame
 
 
 class LSTM_Trainer(Trainable):
     METRIC = "signal_accuracy"
     _min_rsme: float
-    _model_type:BaseModel
-    _config:dict
-    _max_signal_accuracy:float
+    _model_type: BaseModel
+    _model: BaseModel
+    _config: dict
+    _max_signal_accuracy: float
     _all_data_df: DataFrame
-    _all_data:np.array
-    _train_data_len:int
-    _scaler:MinMaxScaler
-    _all_data_scaled:np.array
-    _window_size:int
+    _all_data: np.array
+    _train_data_len: int
+    _scaler: MinMaxScaler
+    _all_data_scaled: np.array
+    _window_size: int
+    _batch_size: int
+    _epoch_count: int
+    _name: str
+    _model_path: str
+    _num_features = 1
 
     def setup(self, config):
         df = config.get("df")
         self._model_type = config.get("model_type", Saturn)
         self._config = config
-        self._max_signal_accuracy  = 0.0
+        self._max_signal_accuracy = 0.0
         self._min_rsme = 100.0
         self._all_data_df = df.filter(["close"])
         self._all_data = self._all_data_df.values
@@ -32,15 +38,14 @@ class LSTM_Trainer(Trainable):
 
         self._scaler = MinMaxScaler(feature_range=(0, 1))
         self._all_data_scaled = self._scaler.fit_transform(self._all_data)
-        self._window_size: int = config.get("window_size", 60)
+        self._window_size: int = config.get("window_size", 16)
 
         self._name = config.get("name ", "default")
         self._model = None
         self._model_path = f"{self._name}.h5"
         self._optimizer = config.get("optimizer ", "Adam")
         self._epoch_count = config.get("epoch_count", 5)
-        self._batch_size = config.get("batch_size", 5)
-        self._num_features = 1
+        self._batch_size = config.get("batch_size", 32)
 
     def step(self):
         self._model = self._model_type(self._config)
@@ -109,8 +114,8 @@ class LSTM_Trainer(Trainable):
         return np.sqrt(np.mean(predictions - y_test) ** 2)
 
     def calc_accuracy(self, close_prices):
-        correctSignals = 0
-        incorrectSignals = 0
+        correct_signals = 0
+        incorrect_signals = 0
 
         for i in range(1, 30):
             last_prices = close_prices[-self._window_size - i:-i].values
@@ -121,11 +126,11 @@ class LSTM_Trainer(Trainable):
             correct_signal = LSTM_Trainer.get_signal(now, future)
 
             if correct_signal == signal:
-                correctSignals += 1
+                correct_signals += 1
             else:
-                incorrectSignals += 1
+                incorrect_signals += 1
 
-        return 100 * correctSignals / (correctSignals + incorrectSignals)
+        return 100 * correct_signals / (correct_signals + incorrect_signals)
 
     @staticmethod
     def get_signal(now: float, future: float) -> str:
@@ -139,6 +144,7 @@ class LSTM_Trainer(Trainable):
 
     def load_checkpoint(self, item):
         self.iter = item["iter"]
+
 
     def reset_config(self, new_config):
         self._tracer.write("reset_config called")

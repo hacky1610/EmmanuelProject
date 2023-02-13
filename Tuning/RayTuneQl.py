@@ -34,11 +34,8 @@ class QlRayTune:
         param_space = {
             "df": self._data,
             "tracer": self._tracer,
-            "window_size": 32,
             "model_type": model_type,
-            "optimizer": "Adam",
-            "batch_size": 32,
-            "epoch_count": 5,
+            "optimizer": "Adam"
         }
         param_space.update(model_type.get_tuner())
 
