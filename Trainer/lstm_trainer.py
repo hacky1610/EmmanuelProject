@@ -3,73 +3,78 @@ from Utils import Utils
 import os
 import math
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
+from Data.scaler import Scaler
 from keras.models import Sequential
 from keras.layers import LSTM, Dense
+from pandas import DataFrame
+from Models import Saturn, BaseModel
 from pandas import DataFrame
 
 
 class LSTM_Trainer(Trainable):
     METRIC = "signal_accuracy"
+    _min_rsme: float
+    _model_type: BaseModel
+    _model: BaseModel
+    _config: dict
+    _max_signal_accuracy: float
+    _train_data_len: int
+    _scaler: Scaler
+    _window_size: int
+    _batch_size: int
+    _epoch_count: int
+    _name: str
+    _model_path: str
+    _num_features = 1
 
     def setup(self, config):
         df = config.get("df")
+        self._model_type = config.get("model_type", Saturn)
+        self._config = config
         self._max_signal_accuracy = 0.0
         self._min_rsme = 100.0
 
         self._all_close_prices_df:DataFrame = df.filter(["close"])
-        self._all_features_df:DataFrame = df.filter(["close","SMA7"])
+        self._all_features_df:DataFrame = df.filter(["close","SMA7","SMA13","EMA","BB_UPPER","BB_MIDDLE","BB_LOWER","RSI","ROC","%R","MACD","SIGNAL"])
 
         self._all_close_prices = self._all_close_prices_df.values
         self._all_features = self._all_features_df.values
 
         self._train_data_len = math.ceil(len(self._all_close_prices) * 0.8)
 
-        self._scaler = MinMaxScaler(feature_range=(0, 1))
-        self._all_close_prices_scaled = self._scaler.fit_transform(self._all_close_prices)
+        self._scaler = Scaler()
+        self._window_size: int = config.get("window_size", 16)
+
         self._all_features_scaled = self._scaler.fit_transform(self._all_features)
+        self._all_close_prices_scaled = self._scaler.transform(self._all_close_prices)
 
         self._window_size: int = config.get("window_size", 60)
-        self._lstm1_len = config.get("lstm1_len", 50)
-        self._lstm2_len = config.get("lstm2_len ", 50)
-        self._dens_len = config.get("dense_len ", 25)
         self._name = config.get("name ", "default")
         self._model = None
         self._model_path = f"{self._name}.h5"
         self._optimizer = config.get("optimizer ", "Adam")
-        self._epoch_count = config.get("epoch_count",5)
-        self._batch_size = config.get("batch_size", 5)
-
-    def create_model(self):
-        model = Sequential()
-        model.add(LSTM(units=self._lstm1_len,
-                       return_sequences=True,
-                       input_shape=(self._window_size, 1)))
-        model.add(LSTM(units=self._lstm2_len,
-                       return_sequences=False))
-        model.add(Dense(self._dens_len))
-        model.add(Dense(1))
-        return model
+        self._epoch_count = config.get("epoch_count", 5)
+        self._batch_size = config.get("batch_size", 32)
 
     def step(self):
-        train_data = self._all_features_df[0:self._train_data_len, :]
+        self._model = self._model_type(self._config)
+
+        train_data = self._all_features_scaled[0:self._train_data_len]
 
         x_train = []
         y_train = []
 
         for i in range(self._window_size, len(train_data)):
-            x_train.append(train_data[i - self._window_size:i, 0])
-            y_train.append(train_data[i, 0])
+            x_train.append(train_data[i - self._window_size:i])
+            y_train.append(self._all_close_prices_scaled[i:i+1])
 
         x_train, y_train = np.array(x_train), np.array(y_train)
-        x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
+        x_train = self._model.reshape(x_train)
 
-        self._model = self.create_model()
-
-        self._model.compile(optimizer=self._optimizer, loss="mean_squared_error")
+        self._model.compile(optimizer=self._optimizer)
         self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
 
-        accuracy = self.calc_accuracy(self._all_close_prices_df)
+        accuracy = self.calc_accuracy(self._all_features_df)
         if accuracy > self._max_signal_accuracy:
             self._model.save(os.path.join(self.logdir, f"model_{self._iteration}.h5"))
             self._max_signal_accuracy = accuracy
@@ -87,40 +92,39 @@ class LSTM_Trainer(Trainable):
         self._model.save(self._model_path)
 
     def load_model(self):
-        self._model = self.create_model()
-        self._model.load_weights(self._model_path)
+        self._model = self._model_type({})
+        self._model.load(self._model_path)
 
     def trade(self, data):
 
         last_scaled = self._scaler.transform(data)
-        X_test = []
-        X_test.append(last_scaled)
-        X_test = np.array(X_test)
-        X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
-        pred = self._model.predict(X_test)
-        now = X_test[0][-1][0]
-        futureScaled = pred[0][0]
-        signal = LSTM_Trainer.get_signal(now, futureScaled)
+        x_test = [last_scaled]
+        x_test = np.array(x_test)
+        x_test = self._model.reshape(x_test)
+        prediction = self._model.predict(x_test)
+        now = x_test[0][-1][0]
+        future_scaled = prediction[0][0]
+        signal = LSTM_Trainer.get_signal(now, future_scaled)
 
-        pred = self._scaler.inverse_transform(pred)
-        return pred[0][0], signal
+        prediction = self._scaler.inverse_transform(prediction)
+        return prediction[0][0], signal
 
     def calc_rmse(self):
-        test_data = self._all_close_prices_scaled[self._train_data_len - self._window_size:, :]
+        test_data = self._all_features_scaled[self._train_data_len - self._window_size:]
         x_test = []
         y_test = self._all_close_prices[self._train_data_len:, :]
         for i in range(self._window_size, len(test_data)):
-            x_test.append(test_data[i - self._window_size:i, 0])
+            x_test.append(test_data[i - self._window_size:i])
 
         x_test = np.array(x_test)
-        x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+        x_test = self._model.reshape(x_test)
         predictions = self._model.predict(x_test)
         predictions = self._scaler.inverse_transform(predictions)
         return np.sqrt(np.mean(predictions - y_test) ** 2)
 
     def calc_accuracy(self, close_prices):
-        correctSignals = 0
-        incorrectSignals = 0
+        correct_signals = 0
+        incorrect_signals = 0
 
         for i in range(1, 30):
             last_prices = close_prices[-self._window_size - i:-i].values
@@ -131,11 +135,11 @@ class LSTM_Trainer(Trainable):
             correct_signal = LSTM_Trainer.get_signal(now, future)
 
             if correct_signal == signal:
-                correctSignals += 1
+                correct_signals += 1
             else:
-                incorrectSignals += 1
+                incorrect_signals += 1
 
-        return 100 * correctSignals / (correctSignals + incorrectSignals)
+        return 100 * correct_signals / (correct_signals + incorrect_signals)
 
     @staticmethod
     def get_signal(now: float, future: float) -> str:
@@ -149,6 +153,7 @@ class LSTM_Trainer(Trainable):
 
     def load_checkpoint(self, item):
         self.iter = item["iter"]
+
 
     def reset_config(self, new_config):
         self._tracer.write("reset_config called")
