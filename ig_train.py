@@ -18,7 +18,7 @@ tracer = FileTracer(os.path.join(Path.home(),"Emmanuel.log"))
 ig = IG()
 tiingo = Tiingo()
 logDir = Utils.Utils.get_log_dir()
-window = 8
+window = 5
 resolution = "1hour"
 date = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 trainName = f"Win{window}_Res{resolution}_{date}"
@@ -27,7 +27,7 @@ trainName = f"Win{window}_Res{resolution}_{date}"
 train_df = tiingo.load_data_by_date(symbol, "2022-12-15", "2022-12-31", dataProcessor,resolution)
 test_df = tiingo.load_data_by_date(symbol, "2023-01-01", "2023-01-10", dataProcessor,resolution)
 
-ray.init(num_cpus=6)
+ray.init(num_cpus=os.cpu_count() - 1)
 
 train_env_conf = RayTune.create_env_config(train_df, window, tracer)
 test_env_conf = RayTune.create_env_config(test_df, window, tracer)
