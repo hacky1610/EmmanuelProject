@@ -1,12 +1,8 @@
 from ray.tune import Trainable
-from Utils import Utils
 import os
 import math
 import numpy as np
 from Data.scaler import Scaler
-from keras.models import Sequential
-from keras.layers import LSTM, Dense
-from pandas import DataFrame
 from Models import Saturn, BaseModel
 from pandas import DataFrame
 
@@ -26,16 +22,23 @@ class LSTM_Trainer(Trainable):
     _name: str
     _model_path: str
     _num_features = 1
+    _all_close_prices_df: DataFrame
+    _all_features_df: DataFrame
+    _all_close_prices: np.array
+    _all_features: np.array
+    _all_features_scaled: np.ndarray
+    _all_close_prices_scaled: np.ndarray
 
     def setup(self, config):
         df = config.get("df")
         self._model_type = config.get("model_type", Saturn)
         self._config = config
+
         self._max_signal_accuracy = 0.0
         self._min_rsme = 100.0
 
-        self._all_close_prices_df:DataFrame = df.filter(["close"])
-        self._all_features_df:DataFrame = self.filter_dataframe(df)
+        self._all_close_prices_df = df.filter(["close"])
+        self._all_features_df = self.filter_dataframe(df)
         self._all_close_prices = self._all_close_prices_df.values
         self._all_features = self._all_features_df.values
 
@@ -55,11 +58,15 @@ class LSTM_Trainer(Trainable):
         self._epoch_count = config.get("epoch_count", 5)
         self._batch_size = config.get("batch_size", 32)
 
-    def filter_dataframe(self,df):
-        return df.filter(["close","SMA7","SMA13","EMA","BB_UPPER","BB_MIDDLE","BB_LOWER","RSI","ROC","%R","MACD","SIGNAL"])
+    @staticmethod
+    def filter_dataframe(df):
+        return df.filter(
+            ["close", "SMA7", "SMA13", "EMA", "BB_UPPER", "BB_MIDDLE", "BB_LOWER", "RSI", "ROC", "%R", "MACD",
+             "SIGNAL"])
 
     def init_model(self):
         self._model = self._model_type(self._config)
+
     def step(self):
         self.init_model()
 
@@ -70,7 +77,7 @@ class LSTM_Trainer(Trainable):
 
         for i in range(self._window_size, len(train_data)):
             x_train.append(train_data[i - self._window_size:i])
-            y_train.append(self._all_close_prices_scaled[i:i+1])
+            y_train.append(self._all_close_prices_scaled[i:i + 1])
 
         x_train, y_train = np.array(x_train), np.array(y_train)
         x_train = self._model.reshape(x_train)
@@ -95,7 +102,7 @@ class LSTM_Trainer(Trainable):
     def save_model(self):
         self._model.save(self._model_path)
 
-    def load_model(self,model_path):
+    def load_model(self, model_path):
         self._model = self._model_type({})
         self._model.load(model_path)
 
@@ -156,7 +163,6 @@ class LSTM_Trainer(Trainable):
 
     def load_checkpoint(self, item):
         self.iter = item["iter"]
-
 
     def reset_config(self, new_config):
         self._tracer.write("reset_config called")
