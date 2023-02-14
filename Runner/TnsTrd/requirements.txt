@@ -1,5 +1,0 @@
-tensorflow===1.15.0
-stable-baselines
-gym==0.19.0
-gym-anytrading
-finta

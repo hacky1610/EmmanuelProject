@@ -1,11 +1,12 @@
 class Tracer:
 
+    def write(self, text):
+        pass
+    def info(self, message):
+        pass
 
-    def Info(self, message):
-        raise NotImplementedError
+    def error(self, message):
+        pass
 
-    def Error(self, message):
-        raise NotImplementedError
-
-    def Result(self, message):
-        raise NotImplementedError
+    def result(self, message):
+        pass

@@ -1,5 +1,8 @@
 .idea
 logs
-runs
-__pycache__
+**/__pycache__
 trace.log
+.coverage
+.pytest_cache
+runs
+Config/config.json

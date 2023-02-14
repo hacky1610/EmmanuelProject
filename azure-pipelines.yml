@@ -5,6 +5,8 @@
 
 trigger:
 - main
+- dev
+- RayTune
 
 pool:
   vmImage: ubuntu-latest
@@ -21,10 +23,11 @@ steps:
 
 - script: |
     python -m pip install --upgrade pip
-    pip install -r ./Test/requirements.txt
+    pip install -r requirements.txt
   displayName: 'Install dependencies'
 
 - script: |
-    pip install pytest pytest-azurepipelines
-    pytest ./Test
+    pip install pytest pytest-azurepipelines coverage
+    coverage run -m pytest ./Test
+    coverage report -m
   displayName: 'pytest'

@@ -13,11 +13,11 @@ class FileTracer(Tracing.Tracer.Tracer):
         with open(self._file, "a") as f:
             f.write("{}\n".format(text))
 
-    def Info(self, message):
+    def info(self, message):
         self.write(message)
 
-    def Error(self, message):
+    def error(self, message):
         self.write("Error: {}:".format(message))
 
-    def Result(self, message):
+    def result(self, message):
         self.write("Result: {}:".format(message))
