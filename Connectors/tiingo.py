@@ -27,7 +27,11 @@ class Tiingo:
             return ""
 
     def _send_history_request(self, ticker: str, start: str, end: str, resolution: str) -> DataFrame:
-        res = self._send_request(f"{ticker}/prices?resampleFreq={resolution}&startDate={start}&endDate={end}")
+        end_date_string = ""
+        if end != None:
+            end_date_string = f"&endDate={end}"
+
+        res = self._send_request(f"{ticker}/prices?resampleFreq={resolution}&startDate={start}{end_date_string}")
         if len(res) == 0:
             self._tracer.error("Could not load history")
             return DataFrame()

@@ -26,7 +26,7 @@ trainer.load_model("Models/Saturn.h5")
 
 while True:
     trade_df = tiingo.load_data_by_date(symbol, (date.today() - timedelta(days=20)).strftime("%Y-%m-%d"),
-                                        date.today().strftime("%Y-%m-%d"), dataProcessor)
+                                        None, dataProcessor)
     if len(trade_df) == 0:
         tracer.error("Could not load train data")
         break
