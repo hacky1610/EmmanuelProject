@@ -34,7 +34,7 @@ class QlRayTune:
         return tune.TuneConfig(
             metric=LSTM_Trainer.METRIC,
             mode=mode,
-            num_samples=20
+            num_samples=50
         )
 
     def _create_tuner(self) -> Tuner:
@@ -47,9 +47,9 @@ class QlRayTune:
             "optimizer": "Adam",
             "num_features":12,
             "window_size": 16,
-            "learning_rate": tune.uniform(0.0001, 0.001),
+            "learning_rate": tune.uniform(0.000001, 0.001),
             "beta1": tune.uniform(0.88, 0.92),
-            "beta2": tune.uniform(0.995, 0.99999)
+            "beta2": tune.uniform(0.998, 0.99999)
         }
         param_space.update(model_type.get_tuner())
 
