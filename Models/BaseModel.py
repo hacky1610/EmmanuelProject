@@ -6,7 +6,7 @@ class BaseModel:
 
     def __init__(self, config:dict):
         self._window_size = config.get("window_size",16)
-        self._num_features = config.get("num_features",1)
+        self._num_features = config.get("num_features",12)
 
     def save(self,path):
         self._model.save(path)

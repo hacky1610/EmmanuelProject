@@ -35,8 +35,7 @@ class LSTM_Trainer(Trainable):
         self._min_rsme = 100.0
 
         self._all_close_prices_df:DataFrame = df.filter(["close"])
-        self._all_features_df:DataFrame = df.filter(["close","SMA7","SMA13","EMA","BB_UPPER","BB_MIDDLE","BB_LOWER","RSI","ROC","%R","MACD","SIGNAL"])
-
+        self._all_features_df:DataFrame = self.filter_dataframe(df)
         self._all_close_prices = self._all_close_prices_df.values
         self._all_features = self._all_features_df.values
 
@@ -56,8 +55,13 @@ class LSTM_Trainer(Trainable):
         self._epoch_count = config.get("epoch_count", 5)
         self._batch_size = config.get("batch_size", 32)
 
-    def step(self):
+    def filter_dataframe(self,df):
+        return df.filter(["close","SMA7","SMA13","EMA","BB_UPPER","BB_MIDDLE","BB_LOWER","RSI","ROC","%R","MACD","SIGNAL"])
+
+    def init_model(self):
         self._model = self._model_type(self._config)
+    def step(self):
+        self.init_model()
 
         train_data = self._all_features_scaled[0:self._train_data_len]
 
@@ -91,12 +95,11 @@ class LSTM_Trainer(Trainable):
     def save_model(self):
         self._model.save(self._model_path)
 
-    def load_model(self):
+    def load_model(self,model_path):
         self._model = self._model_type({})
-        self._model.load(self._model_path)
+        self._model.load(model_path)
 
     def trade(self, data):
-
         last_scaled = self._scaler.transform(data)
         x_test = [last_scaled]
         x_test = np.array(x_test)
