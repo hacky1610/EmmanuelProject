@@ -58,6 +58,12 @@ class LSTM_Trainer(Trainable):
         self._epoch_count = config.get("epoch_count", 5)
         self._batch_size = config.get("batch_size", 32)
 
+        self._optimizerName = config.get("optimizer ", "Adam")
+        self._learning_rate = config.get("learning_rate", 0.001)
+
+        self._beta1 = config.get("beta1", 0.9)
+        self._beta2 = config.get("beta1", 0.999)
+
     @staticmethod
     def filter_dataframe(df):
         return df.filter(
@@ -67,11 +73,7 @@ class LSTM_Trainer(Trainable):
     def init_model(self):
         self._model = self._model_type(self._config)
 
-        self._optimizerName = config.get("optimizer ", "Adam")
-        self._learning_rate = config.get("learning_rate", 0.001)
 
-        self._beta1 = config.get("beta1", 0.9)
-        self._beta2 = config.get("beta1", 0.999)
 
     def step(self):
         self.init_model()
