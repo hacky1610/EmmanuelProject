@@ -11,7 +11,7 @@ class DataProcessor:
         df['BB_UPPER'] = bb['BB_UPPER']
         df['BB_MIDDLE'] = bb['BB_MIDDLE']
         df['BB_LOWER'] = bb['BB_LOWER']
-        df['RSI'] = TA.RSI(df, period=14)
+        #df['RSI'] = TA.RSI(df, period=14)
         df['ROC'] = TA.ROC(df, period=10)
         df['%R'] = TA.WILLIAMS(df, period=14)
         md = TA.MACD(df)

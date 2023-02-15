@@ -106,13 +106,21 @@ class LSTM_Trainer(Trainable):
         self._model = self._model_type({})
         self._model.load(model_path)
 
-    def trade(self, data):
+    def trade(self,data, pre_data):
         last_scaled = self._scaler.transform(data)
         x_test = [last_scaled]
         x_test = np.array(x_test)
         x_test = self._model.reshape(x_test)
         prediction = self._model.predict(x_test)
-        now = x_test[0][-1][0]
+
+        pre_scaled = self._scaler.transform(pre_data)
+        pre_x_test = [pre_scaled]
+        pre_x_test = np.array(pre_x_test)
+        pre_x_test = self._model.reshape(pre_x_test)
+        pre_prediction = self._model.predict(pre_x_test)
+
+
+        now = pre_prediction[0][0]
         future_scaled = prediction[0][0]
         signal = LSTM_Trainer.get_signal(now, future_scaled)
 
