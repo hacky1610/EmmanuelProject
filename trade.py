@@ -32,7 +32,7 @@ while True:
         break
 
     trade_data = trainer.filter_dataframe(trade_df)
-    val, signal = trainer.trade(trade_data.values[-16:])
+    signal = trainer.trade(trade_data.values[-16:])
     if not ig.has_opened_positions():
         if signal == "buy":
             res = ig.buy("CS.D.GBPUSD.CFD.IP")

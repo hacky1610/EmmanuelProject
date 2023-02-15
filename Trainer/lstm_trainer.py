@@ -77,7 +77,12 @@ class LSTM_Trainer(Trainable):
 
         for i in range(self._window_size, len(train_data)):
             x_train.append(train_data[i - self._window_size:i])
-            y_train.append(self._all_close_prices_scaled[i:i + 1])
+            last = self._all_close_prices_scaled[i-1:i][0][0]
+            next = self._all_close_prices_scaled[i:i+1][0][0]
+            signal = 0
+            if next > last:
+                signal = 1
+            y_train.append([[signal]])
 
         x_train, y_train = np.array(x_train), np.array(y_train)
         x_train = self._model.reshape(x_train)
@@ -112,12 +117,12 @@ class LSTM_Trainer(Trainable):
         x_test = np.array(x_test)
         x_test = self._model.reshape(x_test)
         prediction = self._model.predict(x_test)
-        now = x_test[0][-1][0]
         future_scaled = prediction[0][0]
-        signal = LSTM_Trainer.get_signal(now, future_scaled)
+        signal = "sell"
+        if future_scaled > 0.5:
+            signal = "buy"
 
-        prediction = self._scaler.inverse_transform(prediction)
-        return prediction[0][0], signal
+        return signal
 
     def calc_rmse(self):
         test_data = self._all_features_scaled[self._train_data_len - self._window_size:]
@@ -141,7 +146,7 @@ class LSTM_Trainer(Trainable):
             future = close_prices.to_numpy()[-i][0]
             now = close_prices.to_numpy()[-i - 1][0]
 
-            prediction, signal = self.trade(last_prices)
+            signal = self.trade(last_prices)
             correct_signal = LSTM_Trainer.get_signal(now, future)
 
             if correct_signal == signal:
