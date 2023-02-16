@@ -145,11 +145,12 @@ class LSTM_Trainer(Trainable):
         incorrect_signals = 0
 
         for i in range(1, 30):
+            pre_last_prices = close_prices[-self._window_size - i -1 :-i -1].values
             last_prices = close_prices[-self._window_size - i:-i].values
             future = close_prices.to_numpy()[-i][0]
             now = close_prices.to_numpy()[-i - 1][0]
 
-            prediction, signal = self.trade(last_prices)
+            prediction, signal = self.trade(last_prices,pre_last_prices)
             correct_signal = LSTM_Trainer.get_signal(now, future)
 
             if correct_signal == signal:
