@@ -24,8 +24,7 @@ class QlRayTune:
     def _get_tune_config(self, mode="max") -> tune.TuneConfig:
         return tune.TuneConfig(
             metric=LSTM_Trainer.METRIC,
-            mode=mode,
-            num_samples=30
+            mode=mode
         )
 
     def _create_tuner(self) -> Tuner:
@@ -37,7 +36,8 @@ class QlRayTune:
             "model_type": model_type,
             "optimizer": "Adam",
             "num_features":12,
-            "window_size": 16
+            "window_size": 16,
+            "epoch_count": 30
         }
         param_space.update(model_type.get_tuner())
 
