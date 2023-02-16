@@ -6,7 +6,7 @@
 trigger:
 - main
 - dev
-- RayTune
+- LSTM_V2
 
 pool:
   vmImage: ubuntu-latest
