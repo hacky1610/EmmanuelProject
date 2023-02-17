@@ -20,7 +20,7 @@ class Trader:
             assert False
 
         self._trainer = Trainer({"df": train_data})
-        self._trainer.load_model("Models/model_22030216.h5")
+        self._trainer.load_model("Models/model_20230217.h5")
 
     def trade(self):
         trade_df = self._tiingo.load_data_by_date(self._symbol,
