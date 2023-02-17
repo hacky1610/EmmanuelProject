@@ -61,7 +61,7 @@ class LSTM_Trainer(Trainable):
     @staticmethod
     def filter_dataframe(df):
         return df.filter(
-            ["close", "SMA7", "SMA13", "EMA", "BB_UPPER", "BB_MIDDLE", "BB_LOWER", "RSI", "ROC", "%R", "MACD",
+            ["close", "SMA7", "EMA", "BB_UPPER", "BB_MIDDLE", "BB_LOWER", "ROC", "%R", "MACD",
              "SIGNAL"])
 
     def init_model(self):

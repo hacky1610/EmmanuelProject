@@ -35,9 +35,9 @@ class QlRayTune:
             "tracer": self._tracer,
             "model_type": model_type,
             "optimizer": "Adam",
-            "num_features":12,
-            "window_size": 16,
-            "epoch_count": 30
+            "num_features":10,
+            "window_size": 5,
+            "epoch_count": 100
         }
         param_space.update(model_type.get_tuner())
 
