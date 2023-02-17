@@ -1,13 +1,13 @@
 from ray import tune, air
 from ray.tune import Tuner
 from Tracing.Tracer import Tracer
-from Trainer.lstm_trainer import LSTM_Trainer
+from Logic.trainer import Trainer
 from Connectors.Loader import *
-from Utils.Utils import *
+from Logic.Utils import *
 from pandas import DataFrame
 from Models import *
 
-class QlRayTune:
+class Tuner:
 
     def __init__(self, data: DataFrame, tracer: Tracer, logDirectory: str = "./logs", name: str = ""):
         self._tracer: Tracer = tracer
@@ -23,7 +23,7 @@ class QlRayTune:
 
     def _get_tune_config(self, mode="max") -> tune.TuneConfig:
         return tune.TuneConfig(
-            metric=LSTM_Trainer.METRIC,
+            metric=Trainer.METRIC,
             mode=mode,
             num_samples=20
         )
@@ -42,7 +42,7 @@ class QlRayTune:
         param_space.update(model_type.get_tuner())
 
         return tune.Tuner(
-            LSTM_Trainer,
+            Trainer,
             param_space=param_space,
             run_config=air.RunConfig(stop=self._get_stop_config(),
                                      log_to_file=True,
@@ -56,7 +56,7 @@ class QlRayTune:
         tuner = self._create_tuner()
         results = tuner.fit()
         # Todo: check on success
-        best_result = results.get_best_result(metric=LSTM_Trainer.METRIC)
+        best_result = results.get_best_result(metric=Trainer.METRIC)
         print("best hyperparameters: ", best_result.config)
         print("best hyperparameters dir: ", best_result.log_dir)
         return results, best_result.checkpoint

@@ -1,6 +1,5 @@
 from Data.data_processor import DataProcessor
 import requests
-import Utils.Utils
 from pandas import DataFrame
 from Tracing.Tracer import Tracer
 
@@ -9,7 +8,7 @@ class Tiingo:
     _BASEURL = "https://api.tiingo.com/tiingo/fx/"
 
     def __init__(self, tracer: Tracer = Tracer()):
-        c = Utils.Utils.read_config()
+        c = Logic.Utils.read_config()
         self._apykey = c["ti_api_key"]
         self._tracer = tracer
 

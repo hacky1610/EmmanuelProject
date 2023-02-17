@@ -7,7 +7,7 @@ from Models import Saturn, BaseModel
 from pandas import DataFrame
 
 
-class LSTM_Trainer(Trainable):
+class Trainer(Trainable):
     METRIC = "signal_accuracy"
     _min_rsme: float
     _model_type: BaseModel
@@ -114,7 +114,7 @@ class LSTM_Trainer(Trainable):
         prediction = self._model.predict(x_test)
         now = x_test[0][-1][0]
         future_scaled = prediction[0][0]
-        signal = LSTM_Trainer.get_signal(now, future_scaled)
+        signal = Trainer.get_signal(now, future_scaled)
 
         prediction = self._scaler.inverse_transform(prediction)
         return prediction[0][0], signal
@@ -142,7 +142,7 @@ class LSTM_Trainer(Trainable):
             now = close_prices.to_numpy()[-i - 1][0]
 
             prediction, signal = self.trade(last_prices)
-            correct_signal = LSTM_Trainer.get_signal(now, future)
+            correct_signal = Trainer.get_signal(now, future)
 
             if correct_signal == signal:
                 correct_signals += 1
