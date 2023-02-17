@@ -4,12 +4,13 @@ from pandas import DataFrame
 from Data.data_processor import DataProcessor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
+from Logic import Utils
 
 
 class IG:
 
     def __init__(self, tracer: Tracer = ConsoleTracer()):
-        c = Logic.Utils.read_config()
+        c = Utils.read_config()
         self.user = c["ig_demo_user"]
         self.password = c["ig_demo_pass"]
         self.key = c["ig_demo_key"]
