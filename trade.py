@@ -22,7 +22,7 @@ if len(train_data) == 0:
     exit(1)
 
 trainer = LSTM_Trainer({"df": train_data})
-trainer.load_model("Models/Saturn.h5")
+trainer.load_model("Models/model_22030216.h5")
 
 while True:
     trade_df = tiingo.load_data_by_date(symbol, (date.today() - timedelta(days=20)).strftime("%Y-%m-%d"),
@@ -36,10 +36,10 @@ while True:
     if not ig.has_opened_positions():
         if signal == "buy":
             res = ig.buy("CS.D.GBPUSD.CFD.IP")
-            tracer.write(f"Buy -> expected {val}")
+            tracer.write(f"Buy")
         else:
             res = ig.sell("CS.D.GBPUSD.CFD.IP")
-            tracer.write(f"Sell -> expected {val}")
+            tracer.write(f"Sell")
 
         if not res:
             tracer.error("Error while open trade")
