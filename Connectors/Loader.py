@@ -3,9 +3,7 @@ import os.path
 import pandas as pd
 import sklearn.preprocessing
 import yfinance as yf
-from finta import TA
 
-import Utils.Utils
 from Data.data_processor import DataProcessor
 from datetime import datetime
 
@@ -35,7 +33,7 @@ class Loader:
     # returns the vector containing stock data from a fixed file
     @staticmethod
     def getStockDataVec(key):
-        path = os.path.join(Utils.Utils.get_project_dir(),"Data",f"{key}.csv")
+        path = os.path.join(Logic.Utils.get_project_dir(), "Data", f"{key}.csv")
         df = pd.read_csv(filepath_or_buffer=path,delimiter=",")
         df.drop(columns=["Date"],inplace=True)
         dp = DataProcessor()
