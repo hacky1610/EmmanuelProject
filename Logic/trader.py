@@ -31,14 +31,14 @@ class Trader:
             return
 
         trade_data = self._trainer.filter_dataframe(trade_df)
-        val, signal = self._trainer.trade(trade_data.values[-16:])
+        signal = self._trainer.trade(trade_data.values[-5:])
         if not self._ig.has_opened_positions():
             if signal == "buy":
                 res = self._ig.buy("CS.D.GBPUSD.CFD.IP")
-                self._tracer.write(f"Buy -> expected {val}")
+                self._tracer.write(f"Buy")
             else:
                 res = self._ig.sell("CS.D.GBPUSD.CFD.IP")
-                self._tracer.write(f"Sell -> expected {val}")
+                self._tracer.write(f"Sell")
 
             if not res:
                 self._tracer.error("Error while open trade")
