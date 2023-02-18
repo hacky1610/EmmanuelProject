@@ -5,7 +5,8 @@ from Data.data_processor import DataProcessor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 from Logic import Utils
-
+import matplotlib.pyplot as plt
+import pandas as pd
 
 class IG:
 
@@ -86,6 +87,9 @@ class IG:
     def get_opened_positions(self):
         return self.ig_service.fetch_open_positions()
 
+    def get_transaction_history(self,hours:int = 24):
+        return self.ig_service.fetch_transaction_history(trans_type="ALL",from_date="2023-01-01",max_span_seconds=60*50)
+
     def exit(self, deal_id: str, direction: str):
         response = self.ig_service.close_open_position(
             deal_id=deal_id,
@@ -97,3 +101,69 @@ class IG:
             level=None,
             quote_id=None
         )
+
+    def create_report(self,df:DataFrame,symbol_name:str):
+        limit = 0.0009
+        stopp = 0.0018
+        hist = self.get_transaction_history()
+        hist = hist.set_index("openDateUtc")
+        hist = hist[hist["transactionType"] == "TRADE"]
+        hist.sort_index(inplace=True)
+        hist.reset_index(inplace=True)
+        hist['profitAndLoss'] = hist['profitAndLoss'].str.replace('E', '', regex=True).astype('float64')
+        hist["openDateUtc"] = pd.to_datetime(hist["openDateUtc"])
+        hist["dateUtc"] = pd.to_datetime(hist["dateUtc"])
+        hist["openLevel"] = hist["openLevel"].astype("float")
+        hist["closeLevel"] = hist["closeLevel"].astype("float")
+
+        df = df.filter(["close","date"])
+
+        winner = hist[hist["profitAndLoss"] >= 0]
+        looser = hist[hist["profitAndLoss"] < 0]
+
+        long_winner = winner[winner["closeLevel"] >= winner["openLevel"]]
+        short_winner = winner[winner["closeLevel"] <= winner["openLevel"]]
+
+        long_looser = looser[looser["closeLevel"] < looser["openLevel"]]
+        short_looser= looser[looser["closeLevel"] > looser["openLevel"]]
+
+        shorts = short_winner.append(short_looser)
+        longs = long_winner.append(long_looser)
+
+        plt.figure(figsize=(15, 6))
+        plt.cla()
+        chart, = plt.plot(pd.to_datetime(df["date"]),df["close"], color='#d3d3d3', alpha=0.5, label=symbol_name)
+
+        for i in range(len(shorts)):
+            row = shorts[i:i + 1]
+            stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - limit, row.openLevel - limit], color="#00ff00")
+            limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + stopp, row.openLevel + stopp], color="#ff0000", label= "Limit")
+
+        for i in range(len(longs)):
+            row = longs[i:i + 1]
+            plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + limit, row.openLevel + limit], color="#00ff00")
+            plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - stopp, row.openLevel - stopp], color="#ff0000")
+
+        #long open
+        buy, = plt.plot(long_winner["openDateUtc"], long_winner["openLevel"], 'b^', label="Buy")
+        plt.plot(long_looser["openDateUtc"], long_looser["openLevel"], 'b^')
+
+        # short open
+        sell, = plt.plot(short_winner["openDateUtc"], short_winner["openLevel"], 'bv', label="Sell")
+        plt.plot(short_looser["openDateUtc"], short_looser["openLevel"], 'bv')
+
+        # long close
+        profit, = plt.plot(long_winner["dateUtc"], long_winner["closeLevel"], 'go', label="Profit")
+        loss, = plt.plot(long_looser["dateUtc"], long_looser["closeLevel"], 'rx', label="Loss")
+
+        # short close
+        plt.plot(short_winner["dateUtc"], short_winner["closeLevel"], 'go')
+        plt.plot(short_looser["dateUtc"], short_looser["closeLevel"], 'rx')
+
+        plt.legend(handles=[stopLine, limitLine,chart,buy,sell,profit,loss])
+
+        plt.show(block=True)
+        return
+
+
+
