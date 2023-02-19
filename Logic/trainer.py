@@ -7,6 +7,7 @@ from Models import Saturn, BaseModel
 from pandas import DataFrame
 from Connectors.tiingo import Tiingo
 from Data.data_processor import DataProcessor
+import matplotlib.pyplot as plt
 
 
 class Trainer(Trainable):
@@ -85,7 +86,9 @@ class Trainer(Trainable):
         x_train = self._model.reshape(x_train)
 
         self._model.compile(optimizer=self._optimizer)
-        self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
+        res = self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
+
+        self._print_training_loss(res.history)
 
         accuracy = self.calc_accuracy(self._all_features_df)
         if accuracy > self._max_signal_accuracy:
@@ -100,6 +103,12 @@ class Trainer(Trainable):
                 "rmse": current_rmse,
                 "max_signal_accuracy": self._max_signal_accuracy,
                 "min_rsme": self._min_rsme}
+
+    def _print_training_loss(self,losses):
+        plt.figure(figsize=(15, 6))
+        plt.cla()
+        plt.plot(losses["loss"])
+        plt.savefig(os.path.join(self.logdir, f"loss_{self._iteration}.png"))
 
     def save_model(self):
         self._model.save(self._model_path)

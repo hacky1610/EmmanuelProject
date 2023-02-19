@@ -7,12 +7,12 @@ from Tracing.ConsoleTracer import ConsoleTracer
 from Logic import Utils
 from Logic.trainer import Trainer
 
-ray.init(local_mode=True, num_gpus=1,num_cpus=os.cpu_count()-2)
+ray.init(local_mode=True, num_gpus=1, num_cpus=os.cpu_count() - 2)
 
 # Prep
 dp = DataProcessor()
 ti = Tiingo()
-df = Trainer.get_train_data(ti,"GBPUSD",dp)
+df = Trainer.get_train_data(ti, "GBPUSD", dp)
 
 # Train
 q = Tuner(data=df,
@@ -20,4 +20,3 @@ q = Tuner(data=df,
           logDirectory=Utils.get_log_dir(),
           name="Saturn")
 _, checkpoint = q.train()
-
