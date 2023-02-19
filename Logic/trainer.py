@@ -5,6 +5,8 @@ import numpy as np
 from Data.scaler import Scaler
 from Models import Saturn, BaseModel
 from pandas import DataFrame
+from Connectors.tiingo import Tiingo
+from Data.data_processor import DataProcessor
 
 
 class Trainer(Trainable):
@@ -170,3 +172,10 @@ class Trainer(Trainable):
             return False
         self.num_resets += 1
         return True
+
+    @staticmethod
+    def get_train_data(tiingo,symbol:str,dataprocessor:DataProcessor):
+        train_data = tiingo.load_data_by_date(symbol, "2022-08-15", "2022-12-31",dataprocessor , "1hour")
+        if len(train_data) == 0:
+            assert False
+        return train_data

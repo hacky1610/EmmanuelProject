@@ -8,16 +8,13 @@ from datetime import date, timedelta
 
 class Trader:
 
-    def __init__(self, symbol: str, ig: IG, tiingo: Tiingo, tracer: Tracer):
+    def __init__(self, symbol: str, ig: IG, tiingo: Tiingo, tracer: Tracer, trainer:Trainer, dataprocessor:DataProcessor):
         self._ig = ig
-        self._dataprocessor = DataProcessor()
+        self._dataprocessor = dataprocessor
         self._symbol = symbol
         self._tiingo = tiingo
         self._tracer = tracer
-        train_data = tiingo.load_data_by_date(symbol, "2022-08-15", "2022-12-31", self._dataprocessor, "1hour")
-        if len(train_data) == 0:
-            tracer.error("Could not load train data")
-            assert False
+        self._trainer = trainer
 
         self._trainer = Trainer({"df": train_data})
         self._trainer.load_model("Models/Saturn.h5")
@@ -32,7 +29,7 @@ class Trader:
                                                   None, self._dataprocessor)
         if len(trade_df) == 0:
             self._tracer.error("Could not load train data")
-            return
+            return False
 
         trade_data = self._trainer.filter_dataframe(trade_df)
         val, signal = self._trainer.trade(trade_data.values[-16:])
@@ -52,3 +49,5 @@ class Trader:
 
         if not res:
             self._tracer.error("Error while open trade")
+
+        return True
