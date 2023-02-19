@@ -22,6 +22,10 @@ class Trader:
         self._trainer = Trainer({"df": train_data})
         self._trainer.load_model("Models/Saturn.h5")
 
+        #features
+        self._consider_spread = True
+        self._spread_limit = 6
+
     def trade(self):
         trade_df = self._tiingo.load_data_by_date(self._symbol,
                                                   (date.today() - timedelta(days=20)).strftime("%Y-%m-%d"),
@@ -32,13 +36,19 @@ class Trader:
 
         trade_data = self._trainer.filter_dataframe(trade_df)
         val, signal = self._trainer.trade(trade_data.values[-16:])
-        if not self._ig.has_opened_positions():
-            if signal == "buy":
-                res = self._ig.buy("CS.D.GBPUSD.CFD.IP")
-                self._tracer.write(f"Buy -> expected {val}")
-            else:
-                res = self._ig.sell("CS.D.GBPUSD.CFD.IP")
-                self._tracer.write(f"Sell -> expected {val}")
+        if self._ig.has_opened_positions():
+            return
 
-            if not res:
-                self._tracer.error("Error while open trade")
+        if self._ig.get_spread("CS.D.GBPUSD.CFD.IP") > self._spread_limit:
+            self._tracer.write(f"Spread is greater that {self._spread_limit}")
+            return
+
+        if signal == "buy":
+            res = self._ig.buy("CS.D.GBPUSD.CFD.IP")
+            self._tracer.write(f"Buy")
+        else:
+            res = self._ig.sell("CS.D.GBPUSD.CFD.IP")
+            self._tracer.write(f"Sell")
+
+        if not res:
+            self._tracer.error("Error while open trade")

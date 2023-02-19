@@ -30,6 +30,14 @@ class IG:
         except Exception as ex:
             self._tracer.error(f"Error during open a IG Connection {ex}")
 
+    def get_spread(self, epic: str):
+        try:
+            res = self.ig_service.fetch_market_by_epic(epic)
+            return (res["snapshot"]['offer'] - res["snapshot"]['bid']) * 10000
+        except IGException as ex:
+            self._tracer.error(f"Error during open a position. {ex}")
+            return None
+
     def create_dataframe(self, ig_dataframe, data_processor: DataProcessor):
         df = DataFrame()
         df["Open"] = ig_dataframe["bid", "Open"]
