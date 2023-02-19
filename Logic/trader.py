@@ -28,14 +28,15 @@ class Trader:
             self._tracer.error("Could not load train data")
             return False
 
-        trade_data = self._trainer.filter_dataframe(trade_df)
-        signal = self._trainer.trade(trade_data.values[-5:])
         if self._ig.has_opened_positions():
             return
 
         if self._ig.get_spread("CS.D.GBPUSD.CFD.IP") > self._spread_limit:
             self._tracer.write(f"Spread is greater that {self._spread_limit}")
             return
+
+        trade_data = self._trainer.filter_dataframe(trade_df)
+        signal = self._trainer.trade(trade_data.values[-5:])
 
         if signal == "buy":
             res = self._ig.buy("CS.D.GBPUSD.CFD.IP")
