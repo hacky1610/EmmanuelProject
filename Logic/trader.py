@@ -8,19 +8,17 @@ from datetime import date, timedelta
 
 class Trader:
 
-    def __init__(self, symbol: str, ig: IG, tiingo: Tiingo, tracer: Tracer):
+    def __init__(self, symbol: str, ig: IG, tiingo: Tiingo, tracer: Tracer, trainer:Trainer, dataprocessor:DataProcessor):
         self._ig = ig
-        self._dataprocessor = DataProcessor()
+        self._dataprocessor = dataprocessor
         self._symbol = symbol
         self._tiingo = tiingo
         self._tracer = tracer
-        train_data = tiingo.load_data_by_date(symbol, "2022-08-15", "2022-12-31", self._dataprocessor, "1hour")
-        if len(train_data) == 0:
-            tracer.error("Could not load train data")
-            assert False
+        self._trainer = trainer
 
-        self._trainer = Trainer({"df": train_data})
-        self._trainer.load_model("Models/model_20230217.h5")
+        #features
+        self._consider_spread = True
+        self._spread_limit = 6
 
     def trade(self):
         trade_df = self._tiingo.load_data_by_date(self._symbol,
@@ -28,17 +26,25 @@ class Trader:
                                                   None, self._dataprocessor)
         if len(trade_df) == 0:
             self._tracer.error("Could not load train data")
-            return
+            return False
 
         trade_data = self._trainer.filter_dataframe(trade_df)
         signal = self._trainer.trade(trade_data.values[-5:])
-        if not self._ig.has_opened_positions():
-            if signal == "buy":
-                res = self._ig.buy("CS.D.GBPUSD.CFD.IP")
-                self._tracer.write(f"Buy")
-            else:
-                res = self._ig.sell("CS.D.GBPUSD.CFD.IP")
-                self._tracer.write(f"Sell")
+        if self._ig.has_opened_positions():
+            return
 
-            if not res:
-                self._tracer.error("Error while open trade")
+        if self._ig.get_spread("CS.D.GBPUSD.CFD.IP") > self._spread_limit:
+            self._tracer.write(f"Spread is greater that {self._spread_limit}")
+            return
+
+        if signal == "buy":
+            res = self._ig.buy("CS.D.GBPUSD.CFD.IP")
+            self._tracer.write(f"Buy")
+        else:
+            res = self._ig.sell("CS.D.GBPUSD.CFD.IP")
+            self._tracer.write(f"Sell")
+
+        if not res:
+            self._tracer.error("Error while open trade")
+
+        return True
