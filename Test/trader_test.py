@@ -57,3 +57,16 @@ class TraderTest(unittest.TestCase):
         res = t.trade()
         ig.buy.assert_called()
 
+    def test_trade_spread_to_big(self):
+        tiingo = MagicMock()
+        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
+        ig = MagicMock()
+        ig.buy = MagicMock(return_value=True)
+        ig.has_opened_positions = MagicMock(return_value=True)
+        ig.get_spread = MagicMock(return_value=10)
+        trainer = MagicMock()
+        trainer.trade = MagicMock(return_value=(None, "buy"))
+        t = Trader("USD", ig, tiingo, self._tracer, trainer, self._dataProcessor)
+        res = t.trade()
+        ig.buy.assert_not_called()
+
