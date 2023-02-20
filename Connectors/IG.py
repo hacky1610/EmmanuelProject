@@ -8,6 +8,7 @@ from Logic import Utils
 import matplotlib.pyplot as plt
 import pandas as pd
 
+
 class IG:
 
     def __init__(self, tracer: Tracer = ConsoleTracer()):
@@ -95,8 +96,9 @@ class IG:
     def get_opened_positions(self):
         return self.ig_service.fetch_open_positions()
 
-    def get_transaction_history(self,hours:int = 24):
-        return self.ig_service.fetch_transaction_history(trans_type="ALL",from_date="2023-01-01",max_span_seconds=60*50)
+    def get_transaction_history(self, start_time:str):
+        return self.ig_service.fetch_transaction_history(trans_type="ALL", from_date=start_time,
+                                                         max_span_seconds=60 * 50)
 
     def exit(self, deal_id: str, direction: str):
         response = self.ig_service.close_open_position(
@@ -110,10 +112,10 @@ class IG:
             quote_id=None
         )
 
-    def create_report(self,df:DataFrame,symbol_name:str):
+    def create_report(self, df: DataFrame, symbol_name: str, start_time:str):
         limit = 0.0009
         stopp = 0.0018
-        hist = self.get_transaction_history()
+        hist = self.get_transaction_history(start_time)
         hist = hist.set_index("openDateUtc")
         hist = hist[hist["transactionType"] == "TRADE"]
         hist.sort_index(inplace=True)
@@ -124,7 +126,7 @@ class IG:
         hist["openLevel"] = hist["openLevel"].astype("float")
         hist["closeLevel"] = hist["closeLevel"].astype("float")
 
-        df = df.filter(["close","date"])
+        df = df.filter(["close", "date"])
 
         winner = hist[hist["profitAndLoss"] >= 0]
         looser = hist[hist["profitAndLoss"] < 0]
@@ -133,26 +135,28 @@ class IG:
         short_winner = winner[winner["closeLevel"] <= winner["openLevel"]]
 
         long_looser = looser[looser["closeLevel"] < looser["openLevel"]]
-        short_looser= looser[looser["closeLevel"] > looser["openLevel"]]
+        short_looser = looser[looser["closeLevel"] > looser["openLevel"]]
 
         shorts = short_winner.append(short_looser)
         longs = long_winner.append(long_looser)
 
         plt.figure(figsize=(15, 6))
         plt.cla()
-        chart, = plt.plot(pd.to_datetime(df["date"]),df["close"], color='#d3d3d3', alpha=0.5, label=symbol_name)
+        chart, = plt.plot(pd.to_datetime(df["date"]), df["close"], color='#d3d3d3', alpha=0.5, label=symbol_name)
 
         for i in range(len(shorts)):
             row = shorts[i:i + 1]
-            stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - limit, row.openLevel - limit], color="#00ff00")
-            limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + stopp, row.openLevel + stopp], color="#ff0000", label= "Limit")
+            stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - limit, row.openLevel - limit],
+                                 color="#00ff00")
+            limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + stopp, row.openLevel + stopp],
+                                  color="#ff0000", label="Limit")
 
         for i in range(len(longs)):
             row = longs[i:i + 1]
             plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + limit, row.openLevel + limit], color="#00ff00")
             plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - stopp, row.openLevel - stopp], color="#ff0000")
 
-        #long open
+        # long open
         buy, = plt.plot(long_winner["openDateUtc"], long_winner["openLevel"], 'b^', label="Buy")
         plt.plot(long_looser["openDateUtc"], long_looser["openLevel"], 'b^')
 
@@ -168,10 +172,8 @@ class IG:
         plt.plot(short_winner["dateUtc"], short_winner["closeLevel"], 'go')
         plt.plot(short_looser["dateUtc"], short_looser["closeLevel"], 'rx')
 
-        plt.legend(handles=[stopLine, limitLine,chart,buy,sell,profit,loss])
-
+        plt.legend(handles=[stopLine, limitLine, chart, buy, sell, profit, loss])
+        plt.suptitle(
+            f"Summary of last 24 hours: Profit {hist['profitAndLoss'].sum()} Won: {len(winner)} Lost: {len(looser)}")
         plt.show(block=True)
         return
-
-
-
