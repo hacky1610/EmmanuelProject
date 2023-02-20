@@ -5,10 +5,13 @@ import numpy as np
 from Data.scaler import Scaler
 from Models import Saturn, BaseModel
 from pandas import DataFrame
+from Connectors.tiingo import Tiingo
+from Data.data_processor import DataProcessor
+import matplotlib.pyplot as plt
 from keras.optimizers import *
 
 
-class LSTM_Trainer(Trainable):
+class Trainer(Trainable):
     METRIC = "signal_accuracy"
     _min_rsme: float
     _model_type: BaseModel
@@ -55,7 +58,7 @@ class LSTM_Trainer(Trainable):
         self._name = config.get("name ", "default")
         self._model = None
         self._model_path = f"{self._name}.h5"
-        self._epoch_count = config.get("epoch_count", 5)
+        self._epoch_count = config.get("epoch_count", 200)
         self._batch_size = config.get("batch_size", 32)
 
         self._optimizerName = config.get("optimizer ", "Adam")
@@ -91,7 +94,8 @@ class LSTM_Trainer(Trainable):
         x_train = self._model.reshape(x_train)
 
         self._model.compile(optimizer=self.create_optimizer())
-        self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
+        res = self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
+        self._print_training_loss(res.history)
 
         accuracy = self.calc_accuracy(self._all_features_df)
         if accuracy > self._max_signal_accuracy:
@@ -106,6 +110,12 @@ class LSTM_Trainer(Trainable):
                 "rmse": current_rmse,
                 "max_signal_accuracy": self._max_signal_accuracy,
                 "min_rsme": self._min_rsme}
+
+    def _print_training_loss(self,losses):
+        plt.figure(figsize=(15, 6))
+        plt.cla()
+        plt.plot(losses["loss"])
+        plt.savefig(os.path.join(self.logdir, f"loss_{self._iteration}.png"))
 
     def save_model(self):
         self._model.save(self._model_path)
@@ -122,7 +132,7 @@ class LSTM_Trainer(Trainable):
         prediction = self._model.predict(x_test)
         now = x_test[0][-1][0]
         future_scaled = prediction[0][0]
-        signal = LSTM_Trainer.get_signal(now, future_scaled)
+        signal = Trainer.get_signal(now, future_scaled)
 
         prediction = self._scaler.inverse_transform(prediction)
         return prediction[0][0], signal
@@ -150,7 +160,7 @@ class LSTM_Trainer(Trainable):
             now = close_prices.to_numpy()[-i - 1][0]
 
             prediction, signal = self.trade(last_prices)
-            correct_signal = LSTM_Trainer.get_signal(now, future)
+            correct_signal = Trainer.get_signal(now, future)
 
             if correct_signal == signal:
                 correct_signals += 1
@@ -183,3 +193,10 @@ class LSTM_Trainer(Trainable):
             return False
         self.num_resets += 1
         return True
+
+    @staticmethod
+    def get_train_data(tiingo,symbol:str,dataprocessor:DataProcessor):
+        train_data = tiingo.load_data_by_date(symbol, "2022-08-15", "2022-12-31",dataprocessor , "1hour")
+        if len(train_data) == 0:
+            assert False
+        return train_data

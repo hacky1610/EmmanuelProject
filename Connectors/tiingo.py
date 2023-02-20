@@ -1,15 +1,15 @@
 from Data.data_processor import DataProcessor
 import requests
-import Utils.Utils
 from pandas import DataFrame
 from Tracing.Tracer import Tracer
+from Logic import Utils
 
 
 class Tiingo:
     _BASEURL = "https://api.tiingo.com/tiingo/fx/"
 
     def __init__(self, tracer: Tracer = Tracer()):
-        c = Utils.Utils.read_config()
+        c = Utils.read_config()
         self._apykey = c["ti_api_key"]
         self._tracer = tracer
 
@@ -27,7 +27,11 @@ class Tiingo:
             return ""
 
     def _send_history_request(self, ticker: str, start: str, end: str, resolution: str) -> DataFrame:
-        res = self._send_request(f"{ticker}/prices?resampleFreq={resolution}&startDate={start}&endDate={end}")
+        end_date_string = ""
+        if end != None:
+            end_date_string = f"&endDate={end}"
+
+        res = self._send_request(f"{ticker}/prices?resampleFreq={resolution}&startDate={start}{end_date_string}")
         if len(res) == 0:
             self._tracer.error("Could not load history")
             return DataFrame()
