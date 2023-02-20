@@ -19,7 +19,7 @@ trainer = Trainer({"df": train_data})
 trainer.load_model("Models/model_20230217.h5")
 
 
-trader = Trader(symbol, ig, tiingo, tracer,dataProcessor)
+trader = Trader(symbol, ig, tiingo, tracer, trainer, dataProcessor)
 
 while True:
     trader.trade()
