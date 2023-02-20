@@ -67,7 +67,7 @@ class IG:
                 epic=epic,
                 expiry="-",
                 force_open=True,
-                guaranteed_stop=True,
+                guaranteed_stop=False,
                 order_type="MARKET",
                 size=1,
                 level=None,
