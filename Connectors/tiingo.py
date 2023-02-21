@@ -40,10 +40,12 @@ class Tiingo:
         return df
 
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
-                          resolution: str = "1hour") -> DataFrame:
+                          resolution: str = "1hour", add_signals:bool=True, clean_data:bool = True) -> DataFrame:
         res = self._send_history_request(ticker, start, end, resolution)
         if len(res) == 0:
             return res
-        data_processor.addSignals(res)
-        data_processor.clean_data(res)
+        if add_signals:
+            data_processor.addSignals(res)
+        if clean_data:
+            data_processor.clean_data(res)
         return res
