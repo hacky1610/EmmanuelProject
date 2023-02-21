@@ -75,7 +75,7 @@ class IG:
                 limit_distance=9,
                 limit_level=None,
                 quote_id=None,
-                stop_distance=18,
+                stop_distance=15,
                 stop_level=None,
                 trailing_stop=False,
                 trailing_stop_increment=None
