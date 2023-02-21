@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from Logic import Utils
 
+from datetime import datetime, timedelta
 
 
 class IG:
@@ -114,6 +115,16 @@ class IG:
             quote_id=None
         )
 
+    def _get_hours(self, start_date):
+        start_time = pd.to_datetime(start_date.openDateUtc.values[0])
+        first_hours = datetime(start_time.year, start_time.month, start_time.day, start_time.hour)
+        hours = [first_hours]
+        for i in range(23):
+            hours.append(hours[i] + timedelta(hours=1))
+
+        return hours
+
+
     def create_report(self, df: DataFrame, symbol_name: str, start_time:str):
         limit = 0.0009
         stopp = 0.0018
@@ -174,6 +185,11 @@ class IG:
         plt.plot(short_winner["dateUtc"], short_winner["closeLevel"], 'go')
         plt.plot(short_looser["dateUtc"], short_looser["closeLevel"], 'rx')
 
+        hours = self._get_hours(hist[0:1])
+        for h in hours:
+            plt.axvline(x=h, color='b', label='axvline - full height', alpha=0.1)
+
+        #plot legend
         plt.legend(handles=[stopLine, limitLine, chart, buy, sell, profit, loss])
         plt.suptitle(
             f"Summary of last 24 hours: Profit {hist['profitAndLoss'].sum()} Won: {len(winner)} Lost: {len(looser)}")
