@@ -7,6 +7,7 @@ trigger:
 - main
 - dev
 - LSTM_V2
+- LSTM_V2_PredictSignal_WinSize
 
 pool:
   vmImage: ubuntu-latest
