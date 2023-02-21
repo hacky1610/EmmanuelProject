@@ -18,7 +18,7 @@ ig = IG(tracer)
 train_data = Trainer.get_train_data(tiingo, symbol, dataProcessor)
 trainer = Trainer({"df": train_data})
 analytics  = Analytics(tracer)
-#trainer.load_model("Models/model_20230217.h5")
+trainer.load_model("Models/model_20230217.h5")
 
 
 trader = Trader(symbol, ig, tiingo, tracer, trainer, dataProcessor,analytics)
