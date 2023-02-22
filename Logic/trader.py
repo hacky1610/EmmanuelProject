@@ -41,6 +41,10 @@ class Trader:
             self._tracer.write(f"Dont trade because there is a peak")
             return
 
+        if self._analytics.is_sleeping(trade_df):
+            self._tracer.write(f"Dont trade because the market is not moving")
+            return
+
         trade_data = self._trainer.filter_dataframe(trade_df)
         val, signal = self._trainer.trade(trade_data.values[-16:])
 
