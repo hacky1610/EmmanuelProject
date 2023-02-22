@@ -15,3 +15,14 @@ class Analytics:
             return True
 
         return False
+
+    def is_sleeping(self, df: DataFrame, lockback: int = 2, max_limit: float = 0.6):
+        mean_diff = (df["high"] - df["low"]).mean()
+        m = (df[lockback * -1:]["high"] - df[lockback * -1:]["low"]).mean()
+
+        if m < mean_diff * max_limit:
+            #
+            self._tracer.write(f"No movement {m} in the last {lockback} dates")
+            return True
+
+        return False
