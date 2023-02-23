@@ -36,7 +36,7 @@ class Tuner:
             "tracer": self._tracer,
             "model_type": model_type,
             "optimizer": "Adam",
-            "num_features":12,
+            "num_features":1,
             "window_size": 16
         }
         param_space.update(model_type.get_tuner())

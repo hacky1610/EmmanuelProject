@@ -64,8 +64,7 @@ class Trainer(Trainable):
     @staticmethod
     def filter_dataframe(df):
         return df.filter(
-            ["close", "SMA7", "SMA13", "EMA", "BB_UPPER", "BB_MIDDLE", "BB_LOWER", "RSI", "ROC", "%R", "MACD",
-             "SIGNAL"])
+            ["close"])
 
     def init_model(self):
         self._model = self._model_type(self._config)
@@ -88,7 +87,7 @@ class Trainer(Trainable):
         self._model.compile(optimizer=self._optimizer)
         res = self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
 
-        self._print_training_loss(res.history)
+        #self._print_training_loss(res.history)
 
         accuracy = self.calc_accuracy(self._all_features_df)
         if accuracy > self._max_signal_accuracy:
@@ -146,20 +145,21 @@ class Trainer(Trainable):
     def calc_accuracy(self, close_prices):
         correct_signals = 0
         incorrect_signals = 0
-
+        plt.figure(figsize=(15, 6))
+        plt.cla()
         for i in range(1, 30):
             last_prices = close_prices[-self._window_size - i:-i].values
             future = close_prices.to_numpy()[-i][0]
             now = close_prices.to_numpy()[-i - 1][0]
-
             prediction, signal = self.trade(last_prices)
             correct_signal = Trainer.get_signal(now, future)
-
+            plt.plot(i,prediction,"go")
+            plt.plot(i, future,"ro")
             if correct_signal == signal:
                 correct_signals += 1
             else:
                 incorrect_signals += 1
-
+        plt.show()
         return 100 * correct_signals / (correct_signals + incorrect_signals)
 
     @staticmethod
