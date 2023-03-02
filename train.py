@@ -1,6 +1,6 @@
 import os
 import ray
-from Data.data_processor import DataProcessor
+from Data.data_processor import DataProcessorGan
 from Connectors.tiingo import Tiingo
 from Logic.tuner import Tuner
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -10,13 +10,14 @@ from Logic.trainer import Trainer
 ray.init(local_mode=True, num_gpus=1, num_cpus=os.cpu_count() - 2)
 
 # Prep
-dp = DataProcessor()
+dp = DataProcessorGan()
 ti = Tiingo()
 df = Trainer.get_train_data(ti, "GBPUSD", dp)
+
 
 # Train
 q = Tuner(data=df,
           tracer=ConsoleTracer(),
           logDirectory=Utils.get_log_dir(),
-          name="WindowSize")
+          name="Gan")
 _, checkpoint = q.train()

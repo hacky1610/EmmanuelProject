@@ -8,10 +8,14 @@ from pandas import DataFrame
 from Connectors.tiingo import Tiingo
 from Data.data_processor import DataProcessor
 import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from pickle import dump
+from Models.gan import *
 
 
 class Trainer(Trainable):
-    METRIC = "signal_accuracy"
+    METRIC = "min_loss"
     _min_rsme: float
     _model_type: BaseModel
     _model: BaseModel
@@ -33,26 +37,13 @@ class Trainer(Trainable):
     _all_close_prices_scaled: np.ndarray
 
     def setup(self, config):
-        df = config.get("df")
+        dataset = config.get("df")
+
         self._model_type = config.get("model_type", Saturn)
         self._config = config
-
         self._max_signal_accuracy = 0.0
         self._min_rsme = 100.0
-
-        self._all_close_prices_df = df.filter(["close"])
-        self._all_features_df = self.filter_dataframe(df)
-        self._all_close_prices = self._all_close_prices_df.values
-        self._all_features = self._all_features_df.values
-
-        self._train_data_len = math.ceil(len(self._all_close_prices) * 0.8)
-
-        self._scaler = Scaler()
         self._window_size: int = config.get("window_size", 16)
-
-        self._all_features_scaled = self._scaler.fit_transform(self._all_features)
-        self._all_close_prices_scaled = self._scaler.transform(self._all_close_prices)
-
         self._window_size: int = config.get("window_size", 60)
         self._name = config.get("name ", "default")
         self._model = None
@@ -60,6 +51,70 @@ class Trainer(Trainable):
         self._optimizer = config.get("optimizer ", "Adam")
         self._epoch_count = config.get("epoch_count", 5)
         self._batch_size = config.get("batch_size", 32)
+
+        # Get features and target
+        X_value = pd.DataFrame(dataset.iloc[:, :])
+        y_value = pd.DataFrame(dataset.iloc[:, 3])
+
+        # Normalized the data
+        self._X_scaler = MinMaxScaler(feature_range=(-1, 1))
+        self._y_scaler = MinMaxScaler(feature_range=(-1, 1))
+        self._X_scaler.fit(X_value)
+        self._y_scaler.fit(y_value)
+
+        X_scale_dataset = self._X_scaler.fit_transform(X_value)
+        y_scale_dataset = self._y_scaler.fit_transform(y_value)
+
+
+        # Reshape the data
+        '''Set the data input steps and output steps, 
+            we use 30 days data to predict 1 day price here, 
+            reshape it to (None, input_step, number of features) used for LSTM input'''
+        n_steps_in = 3
+        n_features = X_value.shape[1]
+        n_steps_out = 1
+
+        # Get data and check shape
+        X, y, yc = self.get_X_y(X_scale_dataset, y_scale_dataset, n_steps_in, n_steps_out)
+        self._X_train, X_test, = self.split_train_test(X)
+        self._y_train, y_test, = self.split_train_test(y)
+        self._yc_train, yc_test, = self.split_train_test(yc)
+        index_train, index_test, = self.predict_index(dataset, self._X_train, n_steps_in, n_steps_out)
+        # %% --------------------------------------- Save dataset -----------------------------------------------------------------
+
+    @staticmethod
+    def predict_index(dataset, X_train, n_steps_in, n_steps_out):
+
+        # get the predict data (remove the in_steps days)
+        train_predict_index = dataset.iloc[n_steps_in: X_train.shape[0] + n_steps_in + n_steps_out - 1, :].index
+        test_predict_index = dataset.iloc[X_train.shape[0] + n_steps_in:, :].index
+
+        return train_predict_index, test_predict_index
+
+    @staticmethod
+    def split_train_test(data):
+        train_size = round(len(data) * 0.7)
+        data_train = data[0:train_size]
+        data_test = data[train_size:]
+        return data_train, data_test
+
+    @staticmethod
+    def get_X_y(X_data, y_data, n_steps_in, n_steps_out):
+        X = list()
+        y = list()
+        yc = list()
+
+        length = len(X_data)
+        for i in range(0, length, 1):
+            X_value = X_data[i: i + n_steps_in][:, :]
+            y_value = y_data[i + n_steps_in: i + (n_steps_in + n_steps_out)][:, 0]
+            yc_value = y_data[i: i + n_steps_in][:, :]
+            if len(X_value) == 3 and len(y_value) == 1:
+                X.append(X_value)
+                y.append(y_value)
+                yc.append(yc_value)
+
+        return np.array(X), np.array(y), np.array(yc)
 
     @staticmethod
     def filter_dataframe(df):
@@ -71,43 +126,17 @@ class Trainer(Trainable):
         self._model = self._model_type(self._config)
 
     def step(self):
-        self.init_model()
+        input_dim = self._X_train.shape[1]
+        feature_size = self._X_train.shape[2]
+        output_dim = self._y_train.shape[1]
+        epoch = 100
 
-        train_data = self._all_features_scaled[0:self._train_data_len]
+        generator = Generator(self._X_train.shape[1], output_dim, self._X_train.shape[2])
+        discriminator = Discriminator()
+        gan = GAN(generator, discriminator)
+        Predicted_price, Real_price, RMSPE, min_loss = gan.train(self._X_train, self._y_train, self._yc_train, epoch)
 
-        x_train = []
-        y_train = []
-
-        for i in range(self._window_size, len(train_data)):
-            x_train.append(train_data[i - self._window_size:i])
-            last = self._all_close_prices_scaled[i-1:i][0][0]
-            next = self._all_close_prices_scaled[i:i+1][0][0]
-            signal = 0
-            if next > last:
-                signal = 1
-            y_train.append([[signal]])
-
-        x_train, y_train = np.array(x_train), np.array(y_train)
-        x_train = self._model.reshape(x_train)
-
-        self._model.compile(optimizer=self._optimizer)
-        res = self._model.fit(x_train, y_train, batch_size=self._batch_size, epochs=self._epoch_count)
-
-        self._print_training_loss(res.history)
-
-        accuracy = self.calc_accuracy(self._all_features_df)
-        if accuracy > self._max_signal_accuracy:
-            self._model.save(os.path.join(self.logdir, f"model_{self._iteration}.h5"))
-            self._max_signal_accuracy = accuracy
-
-        current_rmse = self.calc_rmse()
-        if current_rmse < self._min_rsme:
-            self._min_rsme = current_rmse
-
-        return {"done": False, self.METRIC: accuracy,
-                "rmse": current_rmse,
-                "max_signal_accuracy": self._max_signal_accuracy,
-                "min_rsme": self._min_rsme}
+        return {"done": False, self.METRIC: min_loss}
 
     def _print_training_loss(self,losses):
         plt.figure(figsize=(15, 6))

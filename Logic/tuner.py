@@ -17,7 +17,7 @@ class Tuner:
 
     def _get_stop_config(self):
         return {
-            "training_iteration": 50,
+            "training_iteration": 5,
             # "episode_reward_mean": 0.36
         }
 

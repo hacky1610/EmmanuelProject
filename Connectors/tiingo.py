@@ -45,7 +45,7 @@ class Tiingo:
         if len(res) == 0:
             return res
         if add_signals:
-            data_processor.addSignals(res)
+            res = data_processor.addSignals(res)
         if clean_data:
-            data_processor.clean_data(res)
+            res = data_processor.clean_data(res)
         return res
