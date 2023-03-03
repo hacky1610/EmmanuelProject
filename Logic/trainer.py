@@ -15,7 +15,7 @@ from Models.gan import *
 
 
 class Trainer(Trainable):
-    METRIC = "min_loss"
+    METRIC = "signal_accuracy"
     _min_rsme: float
     _model_type: BaseModel
     _model: BaseModel
@@ -131,12 +131,20 @@ class Trainer(Trainable):
         output_dim = self._y_train.shape[1]
         epoch = 100
 
-        generator = Generator(self._X_train.shape[1], output_dim, self._X_train.shape[2])
+        generator = Generator(self._X_train.shape[1], output_dim, self._X_train.shape[2],self._config )
         discriminator = Discriminator()
         gan = GAN(generator, discriminator)
         Predicted_price, Real_price, RMSPE, min_loss = gan.train(self._X_train, self._y_train, self._yc_train, epoch)
 
-        return {"done": False, self.METRIC: min_loss}
+        correct = 0
+        for i in range(len(Real_price)-1):
+            if Real_price[i + 1] > Real_price[i] and Predicted_price[i + 1] > Predicted_price[i]:
+                correct += 1
+            if Real_price[i + 1] < Real_price[i] and Predicted_price[i + 1] < Predicted_price[i]:
+                correct += 1
+
+        accuracy =  100 * correct / len(Real_price)
+        return {"done": False, self.METRIC: accuracy, "min_loss": min_loss}
 
     def _print_training_loss(self,losses):
         plt.figure(figsize=(15, 6))

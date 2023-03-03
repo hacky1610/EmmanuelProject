@@ -143,23 +143,22 @@ class GAN():
         return Predicted_price, Real_price, np.sqrt(mean_squared_error(Real_price, Predicted_price)) / np.mean(
             Real_price), np.min(train_hist['D_losses'])
 
-def Generator(input_dim, output_dim, feature_size) -> tf.keras.models.Model:
+def Generator(input_dim, output_dim, feature_size,params:dict) -> tf.keras.models.Model:
     model = Sequential()
-    model.add(GRU(units=256,
+    model.add(GRU(units=params.get("gen_gru_1_units",256),
                   return_sequences=True,
                   input_shape=(input_dim, feature_size),
-                  recurrent_dropout=0.02,
+                  recurrent_dropout=params.get("gen_gru_1_dropout",0.02),
                   recurrent_regularizer=regularizers.l2(1e-3)))
-    model.add(GRU(units=128,
+    model.add(GRU(units=params.get("gen_gru_2_units",128),
                   # return_sequences=True,
-                  recurrent_dropout=0.02,
+                  recurrent_dropout=params.get("gen_gru_2_dropout",0.02),
                   recurrent_regularizer=regularizers.l2(1e-3)))
-    # model.add(Dense(128,
-    #              kernel_regularizer=regularizers.l2(1e-3)))
-    model.add(Dense(64, kernel_regularizer=regularizers.l2(1e-3)))
-    model.add(Dense(32, kernel_regularizer=regularizers.l2(1e-3)))
-    # model.add(Dense(16, kernel_regularizer=regularizers.l2(1e-3)))
-    # model.add(Dense(8, kernel_regularizer=regularizers.l2(1e-3)))
+
+    dense_list = params.get("dens_list",[128,64,32,16,8])
+    for i in dense_list:
+        model.add(Dense(i,
+                      kernel_regularizer=regularizers.l2(1e-3)))
     model.add(Dense(units=output_dim))
     return model
 

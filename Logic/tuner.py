@@ -37,7 +37,12 @@ class Tuner:
             "optimizer": "Adam",
             "num_features":10,
             "window_size": 5,
-            "epoch_count": 100
+            "epoch_count": 100,
+            "gen_gru_1_units": tune.grid_search([512,256]),
+            "gen_gru_1_dropout": tune.grid_search([0.01, 0.02, 0.03]),
+            "gen_gru_2_units": tune.grid_search([256, 128,64]),
+            "gen_gru_2_dropout": tune.grid_search([0.01, 0.02, 0.03]),
+            "dens_list": tune.grid_search([[256,128,64,32,16,8], [128,64,32,16,8,4]])
         }
         param_space.update(model_type.get_tuner())
 
