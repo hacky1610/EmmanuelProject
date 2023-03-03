@@ -42,7 +42,8 @@ class Tuner:
             "gen_gru_1_dropout": tune.grid_search([0.01, 0.02, 0.03]),
             "gen_gru_2_units": tune.grid_search([256, 128,64]),
             "gen_gru_2_dropout": tune.grid_search([0.01, 0.02, 0.03]),
-            "dens_list": tune.grid_search([[256,128,64,32,16,8], [128,64,32,16,8,4]])
+            "dens_list": tune.grid_search([[256,128,64,32,16,8], [128,64,32,16,8,4]]),
+            "gen_regu": tune.grid_search([1e-4, 1e-3]),
         }
         param_space.update(model_type.get_tuner())
 

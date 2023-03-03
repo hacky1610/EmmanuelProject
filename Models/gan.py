@@ -149,16 +149,16 @@ def Generator(input_dim, output_dim, feature_size,params:dict) -> tf.keras.model
                   return_sequences=True,
                   input_shape=(input_dim, feature_size),
                   recurrent_dropout=params.get("gen_gru_1_dropout",0.02),
-                  recurrent_regularizer=regularizers.l2(1e-3)))
+                  recurrent_regularizer=regularizers.l2(params.get("gen_regu",1e-3))))
     model.add(GRU(units=params.get("gen_gru_2_units",128),
                   # return_sequences=True,
                   recurrent_dropout=params.get("gen_gru_2_dropout",0.02),
-                  recurrent_regularizer=regularizers.l2(1e-3)))
+                  recurrent_regularizer=regularizers.l2(params.get("gen_regu",1e-3))))
 
     dense_list = params.get("dens_list",[128,64,32,16,8])
     for i in dense_list:
         model.add(Dense(i,
-                      kernel_regularizer=regularizers.l2(1e-3)))
+                      kernel_regularizer=regularizers.l2(params.get("gen_regu",1e-3))))
     model.add(Dense(units=output_dim))
     return model
 
