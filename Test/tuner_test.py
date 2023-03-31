@@ -1,7 +1,7 @@
 import unittest
 from Tracing.ConsoleTracer import ConsoleTracer
 from unittest.mock import MagicMock
-from Logic.tuner import Tuner
+from LSTM_Logic.tuner import Tuner
 
 
 class TunerTest(unittest.TestCase):

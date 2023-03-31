@@ -2,7 +2,7 @@ from Data.data_processor import DataProcessor
 import requests
 from pandas import DataFrame
 from Tracing.Tracer import Tracer
-from Logic import Utils
+from LSTM_Logic import Utils
 
 
 class Tiingo:

@@ -2,7 +2,7 @@ import os.path
 import pandas as pd
 import sklearn.preprocessing
 import yfinance as yf
-from Logic import Utils
+from LSTM_Logic import Utils
 from Data.data_processor import DataProcessor
 from datetime import datetime
 

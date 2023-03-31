@@ -1,19 +1,19 @@
 from ray import tune, air
 from ray.tune import Tuner
 from Tracing.Tracer import Tracer
-from Logic.trainer import Trainer
 from Connectors.Loader import *
-from Logic.Utils import *
+from LSTM_Logic.Utils import *
 from pandas import DataFrame
-from Models import *
+from Predictors.base_predictor import BasePredictor
 
 class Tuner:
 
-    def __init__(self, data: DataFrame, tracer: Tracer, logDirectory: str = "./logs", name: str = ""):
+    def __init__(self, data: DataFrame, tracer: Tracer,predictor_type:BasePredictor, logDirectory: str = "./logs", name: str = ""):
         self._tracer: Tracer = tracer
         self._logDirectory: str = logDirectory
         self._name: str = name
         self._data: DataFrame = data
+        self._predictor_type = predictor_type
 
     def _get_stop_config(self):
         return {
@@ -23,26 +23,20 @@ class Tuner:
 
     def _get_tune_config(self, mode="max") -> tune.TuneConfig:
         return tune.TuneConfig(
-            metric=Trainer.METRIC,
+            metric=BasePredictor.METRIC,
             mode=mode,
             num_samples=20
         )
 
     def _create_tuner(self) -> Tuner:
-        model_type = Saturn
 
         param_space = {
             "df": self._data,
             "tracer": self._tracer,
-            "model_type": model_type,
-            "optimizer": "Adam",
-            "num_features":12,
-            "window_size": 16
         }
-        param_space.update(model_type.get_tuner())
 
         return tune.Tuner(
-            Trainer,
+            self._predictor_type,
             param_space=param_space,
             run_config=air.RunConfig(stop=self._get_stop_config(),
                                      log_to_file=True,

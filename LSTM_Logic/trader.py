@@ -1,10 +1,10 @@
 from Connectors.IG import IG
 from Data.data_processor import DataProcessor
-from Logic.trainer import Trainer
+from LSTM_Logic.trainer import Trainer
 from Connectors.tiingo import Tiingo
 from Tracing.Tracer import Tracer
 from datetime import date, timedelta
-from Logic.analytics import Analytics
+from LSTM_Logic.analytics import Analytics
 
 
 class Trader:

@@ -2,7 +2,7 @@ from Connectors.IG import IG
 from Connectors.tiingo import Tiingo
 from datetime import date, timedelta, datetime
 from Data.data_processor import DataProcessor
-from Logic.analytics import Analytics
+from LSTM_Logic.analytics import Analytics
 from Tracing.ConsoleTracer import ConsoleTracer
 
 symbol = "GBPUSD"

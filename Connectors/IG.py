@@ -4,7 +4,7 @@ from pandas import DataFrame
 from Data.data_processor import DataProcessor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
-from Logic import Utils
+from LSTM_Logic import Utils
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime, timedelta

@@ -3,10 +3,10 @@ from Connectors.IG import IG
 from Data.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo
-from Logic.Utils import read_config
-from Logic.trader import Trader
-from Logic.trainer import Trainer
-from Logic.analytics import Analytics
+from LSTM_Logic.Utils import read_config
+from LSTM_Logic.trader import Trader
+from LSTM_Logic.trainer import Trainer
+from LSTM_Logic.analytics import Analytics
 
 # Variables
 symbol = "GBPUSD"

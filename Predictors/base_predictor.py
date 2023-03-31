@@ -1,16 +1,22 @@
 from pandas import DataFrame
+from ray.tune import Trainable
 
-class BasePredictor:
+class BasePredictor(Trainable):
 
     SELL = "sell"
     BUY = "buy"
     NONE = "none"
     limit = 0.0009
     stop = 0.0018
+    METRIC = "reward"
 
     def __init__(self,config:dict):
-        self.limit = config.get("limit",self.limit)
+        self.setup(config)
+
+    def setup(self, config):
+        self.limit = config.get("limit", self.limit)
         self.stop = config.get("stop", self.stop)
+        self.df = config.get("df", self.stop)
 
     def predict(self,df:DataFrame) -> str:
         raise NotImplementedError
@@ -55,6 +61,12 @@ class BasePredictor:
 
 
         return reward, wins / (wins + losses)
+
+    def step(self):
+        reward, success = self.evaluate(self.df)
+
+        return {"done": True, self.METRIC: reward, "success": success }
+
 
 
 
