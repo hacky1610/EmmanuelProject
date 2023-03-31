@@ -23,6 +23,7 @@ class DataProcessor:
         DataProcessor.drop_column(df, "Dividends")
         DataProcessor.drop_column(df, "Stock Splits")
         df.dropna(0, inplace=True)
+        df.reset_index(inplace=True)
 
     @staticmethod
     def drop_column(df: DataFrame, name: str):

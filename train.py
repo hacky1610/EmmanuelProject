@@ -10,6 +10,7 @@ from Predictors.rsi import RSI
 dp = DataProcessor()
 ti = Tiingo()
 df = ti.load_data_by_date("GBPUSD","2023-01-02","2023-02-28",dp)
-rsi = RSI()
-rsi.evaluate(df)
+rsi = RSI({})
+reward, success = rsi.evaluate(df)
+print("")
 

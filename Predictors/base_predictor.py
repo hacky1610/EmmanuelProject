@@ -8,38 +8,53 @@ class BasePredictor:
     limit = 0.0009
     stop = 0.0018
 
-
-    def __init__(self):
-        pass
+    def __init__(self,config:dict):
+        self.limit = config.get("limit",self.limit)
+        self.stop = config.get("stop", self.stop)
 
     def predict(self,df:DataFrame) -> str:
         raise NotImplementedError
 
     def evaluate(self,df):
         reward = 0
+        losses = 0
+        wins = 0
         for i in range(len(df)):
-            action = self.predict(df[:i])
+            action = self.predict(df[:i+1])
             if action == self.NONE:
                 continue
 
             open_price = df.close[i]
             if action == self.BUY:
-                for j in range(i,len(df)):
-                    if df[j].high > open_price + self.limit:
+                for j in range(i+1,len(df)):
+                    high = df.high[j]
+                    low = df.low[j]
+                    if high > open_price + self.limit:
                         #Won
-                        reward += df[j].high - open_price
-                    elif df[j].low < open_price - self.stop:
+                        reward += high - open_price
+                        wins += 1
+                        break
+                    elif low < open_price - self.stop:
                         #Loss
-                        reward += df[j].low - open_price
+                        reward += low - open_price
+                        losses += 1
+                        break
             elif action == self.SELL:
+                high = df.high[j]
+                low = df.low[j]
                 for j in range(i,len(df)):
-                    if df[j].low < open_price - self.limit:
+                    if low < open_price - self.limit:
                         #Won
-                        reward += open_price - df[j].low
-                    elif df[j].high > open_price + self.stop:
-                        reward += open_price - df[j].high
+                        reward += open_price - low
+                        wins += 1
+                        break
+                    elif high > open_price + self.stop:
+                        reward += open_price - high
+                        losses += 1
+                        break
 
-        return reward
+
+        return reward, wins / (wins + losses)
 
 
 

@@ -5,6 +5,15 @@ from pandas import DataFrame
 
 class RSI(BasePredictor):
 
+    upper_limit = 70
+    lower_limit = 30
+
+    def __init__(self, config: dict):
+        super().__init__(config)
+        self.upper_limit = config.get("upper_limit", self.upper_limit)
+        self.lower_limit = config.get("lower_limit", self.lower_limit)
+
+
     def print(self,df):
 
         df = df.tail(77)
@@ -20,8 +29,9 @@ class RSI(BasePredictor):
 
     def predict(self,df:DataFrame) -> str:
 
-        if df[-1].RSI > 70:
+        last_rsi = df.tail(1).RSI.values[0]
+        if last_rsi> self.upper_limit:
             return self.SELL
 
-        if df[-1].RSI < 30:
+        if last_rsi < self.lower_limit:
             return self.BUY
