@@ -1,21 +1,21 @@
 from Connectors.IG import IG
 from Data.data_processor import DataProcessor
-from LSTM_Logic.trainer import Trainer
 from Connectors.tiingo import Tiingo
 from Tracing.Tracer import Tracer
 from datetime import date, timedelta
-from LSTM_Logic.analytics import Analytics
+from BL.analytics import Analytics
+from Predictors.predictor_collection import PredictorCollection
 
 
 class Trader:
 
-    def __init__(self, symbol: str, ig: IG, tiingo: Tiingo, tracer: Tracer, trainer:Trainer, dataprocessor:DataProcessor, analytics:Analytics):
+    def __init__(self, symbol: str, ig: IG, tiingo: Tiingo, tracer: Tracer, predictors:PredictorCollection, dataprocessor:DataProcessor, analytics:Analytics):
         self._ig = ig
         self._dataprocessor = dataprocessor
         self._symbol = symbol
         self._tiingo = tiingo
         self._tracer = tracer
-        self._trainer = trainer
+        self._predictors = predictors
         self._analytics = analytics
 
         #features
@@ -24,7 +24,7 @@ class Trader:
 
     def trade(self):
         trade_df = self._tiingo.load_data_by_date(self._symbol,
-                                                  (date.today() - timedelta(days=20)).strftime("%Y-%m-%d"),
+                                                  (date.today() - timedelta(days=5)).strftime("%Y-%m-%d"),
                                                   None, self._dataprocessor)
         if len(trade_df) == 0:
             self._tracer.error("Could not load train data")
@@ -45,8 +45,10 @@ class Trader:
             self._tracer.write(f"Dont trade because the market is not moving")
             return
 
-        trade_data = self._trainer.filter_dataframe(trade_df)
-        val, signal = self._trainer.trade(trade_data.values[-16:])
+
+
+        signal = self._predictors.predict(trade_df)
+
 
         if signal == "buy":
             res = self._ig.buy("CS.D.GBPUSD.CFD.IP")

@@ -7,7 +7,7 @@ class BasePredictor(Trainable):
     BUY = "buy"
     NONE = "none"
     limit = 0.0009
-    stop = 0.0018
+    stop = 0.0009
     METRIC = "reward"
 
     def __init__(self,config:dict):
@@ -16,54 +16,57 @@ class BasePredictor(Trainable):
     def setup(self, config):
         self.limit = config.get("limit", self.limit)
         self.stop = config.get("stop", self.stop)
-        self.df = config.get("df", self.stop)
+        self.df = config.get("df")
+        self.df_eval = config.get("df_eval")
 
     def predict(self,df:DataFrame) -> str:
         raise NotImplementedError
 
-    def evaluate(self,df):
+    def evaluate(self,df_train,df_eval):
         reward = 0
         losses = 0
         wins = 0
-        for i in range(len(df)):
-            action = self.predict(df[:i+1])
+        for i in range(len(df_train)):
+            action = self.predict(df_train[:i+1])
             if action == self.NONE:
                 continue
 
-            open_price = df.close[i]
+            open_price = df_train.close[i]
+            future = df_eval[df_eval["date"] > df_train.date[i]]
+            future.reset_index(inplace=True)
             if action == self.BUY:
-                for j in range(i+1,len(df)):
-                    high = df.high[j]
-                    low = df.low[j]
-                    if high > open_price + self.limit:
+
+                for j in range(len(future)):
+                    close = future.close[j]
+
+                    if close > open_price + self.limit:
                         #Won
-                        reward += high - open_price
+                        reward += close - open_price
                         wins += 1
                         break
-                    elif low < open_price - self.stop:
+                    elif close < open_price - self.stop:
                         #Loss
-                        reward += low - open_price
+                        reward += close - open_price
                         losses += 1
                         break
             elif action == self.SELL:
-                high = df.high[j]
-                low = df.low[j]
-                for j in range(i,len(df)):
-                    if low < open_price - self.limit:
+                for j in range(len(future)):
+                    close = future.close[j]
+                    if close < open_price - self.limit:
                         #Won
-                        reward += open_price - low
+                        reward += open_price - close
                         wins += 1
                         break
-                    elif high > open_price + self.stop:
-                        reward += open_price - high
+                    elif close > open_price + self.stop:
+                        reward += open_price - close
                         losses += 1
                         break
 
 
-        return reward, wins / (wins + losses)
+        return reward, wins / len(df_train)
 
     def step(self):
-        reward, success = self.evaluate(self.df)
+        reward, success = self.evaluate(self.df,self.df_eval)
 
         return {"done": True, self.METRIC: reward, "success": success }
 

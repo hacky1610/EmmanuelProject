@@ -17,6 +17,7 @@ class DataProcessor:
         md = TA.MACD(df)
         df['MACD'] = md['MACD']
         df['SIGNAL'] = md['SIGNAL']
+        df["CCI"] = TA.CCI(df)
 
     def clean_data(self, df: DataFrame):
         DataProcessor.drop_column(df, "Volume")

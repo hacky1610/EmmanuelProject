@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock
-from LSTM_Logic.trader import Trader
+from BL.trader import Trader
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame,Series
 from Data.data_processor import DataProcessor
