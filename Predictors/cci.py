@@ -5,8 +5,8 @@ from pandas import DataFrame
 
 class CCI(BasePredictor):
 
-    upper_limit = 116
-    lower_limit = -118
+    upper_limit = 90
+    lower_limit = -123
 
     def __init__(self, config: dict):
         super().__init__(config)
