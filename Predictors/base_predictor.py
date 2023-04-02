@@ -1,5 +1,7 @@
 from pandas import DataFrame
 from ray.tune import Trainable
+import matplotlib.pyplot as plt
+import pandas as pd
 
 class BasePredictor(Trainable):
 
@@ -26,6 +28,12 @@ class BasePredictor(Trainable):
         reward = 0
         losses = 0
         wins = 0
+
+        #plt.figure(figsize=(15, 6))
+        #plt.cla()
+        #chart, = plt.plot(pd.to_datetime(df_train["date"]), df_train["close"], color='#d3d3d3', alpha=0.5,
+                         # label="Chart")
+
         for i in range(len(df_train)):
             action = self.predict(df_train[:i+1])
             if action == self.NONE:
@@ -35,18 +43,20 @@ class BasePredictor(Trainable):
             future = df_eval[df_eval["date"] > df_train.date[i]]
             future.reset_index(inplace=True)
             if action == self.BUY:
-
+                #plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'b^', label="Buy")
                 for j in range(len(future)):
                     close = future.close[j]
 
                     if close > open_price + self.limit:
                         #Won
-                        reward += close - open_price
+                        #plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
+                        reward += self.limit
                         wins += 1
                         break
                     elif close < open_price - self.stop:
                         #Loss
-                        reward += close - open_price
+                        #plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
+                        reward -=  self.stop
                         losses += 1
                         break
             elif action == self.SELL:
@@ -54,21 +64,24 @@ class BasePredictor(Trainable):
                     close = future.close[j]
                     if close < open_price - self.limit:
                         #Won
-                        reward += open_price - close
+                        reward += self.limit
                         wins += 1
                         break
                     elif close > open_price + self.stop:
-                        reward += open_price - close
+                        reward -= self.stop
                         losses += 1
                         break
 
 
-        return reward, wins / len(df_train)
+        #plt.show()
+
+        trades = wins + losses
+        return reward, reward / trades, trades/ len(df_train) , wins / trades
 
     def step(self):
-        reward, success = self.evaluate(self.df,self.df_eval)
+        reward, success , trade_freq, win_loss = self.evaluate(self.df,self.df_eval)
 
-        return {"done": True, self.METRIC: reward, "success": success }
+        return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq , "win_loss":win_loss}
 
 
 
