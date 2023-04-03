@@ -22,6 +22,13 @@ class IG:
         self._tracer: Tracer = tracer
         self.connect()
 
+    def _get_symbol(self,symbol:str) -> str:
+        stock_dict = {
+            "GBPUSD":"CS.D.GBPUSD.CFD.IP",
+            "EURUSD":"CS.D.EURUSD.CFD.IP"
+        }
+        return stock_dict.get(symbol,None)
+
     def connect(self):
         # no cache
         self.ig_service = IGService(
@@ -34,7 +41,7 @@ class IG:
 
     def get_spread(self, epic: str):
         try:
-            res = self.ig_service.fetch_market_by_epic(epic)
+            res = self.ig_service.fetch_market_by_epic(self._get_symbol(epic))
             return (res["snapshot"]['offer'] - res["snapshot"]['bid']) * 10000
         except IGException as ex:
             self._tracer.error(f"Error during open a position. {ex}")
@@ -53,10 +60,10 @@ class IG:
         return df
 
     def buy(self, epic: str):
-        return self.open(epic, "BUY")
+        return self.open(self._get_symbol(epic), "BUY")
 
     def sell(self, epic: str):
-        return self.open(epic, "SELL")
+        return self.open(self._get_symbol(epic), "SELL")
 
     def open(self, epic: str, direction: str) -> bool:
         try:

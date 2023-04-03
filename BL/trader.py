@@ -4,57 +4,48 @@ from Connectors.tiingo import Tiingo
 from Tracing.Tracer import Tracer
 from datetime import date, timedelta
 from BL.analytics import Analytics
-from Predictors.predictor_collection import PredictorCollection
+from Predictors import BasePredictor
 
 
 class Trader:
 
-    def __init__(self, symbol: str, ig: IG, tiingo: Tiingo, tracer: Tracer, predictors:PredictorCollection, dataprocessor:DataProcessor, analytics:Analytics):
+    def __init__(self,ig: IG, tiingo: Tiingo, tracer: Tracer, predictor:BasePredictor, dataprocessor:DataProcessor, analytics:Analytics):
         self._ig = ig
         self._dataprocessor = dataprocessor
-        self._symbol = symbol
         self._tiingo = tiingo
         self._tracer = tracer
-        self._predictors = predictors
+        self._predictor = predictor
         self._analytics = analytics
 
         #features
         self._consider_spread = True
         self._spread_limit = 6
 
-    def trade(self):
-        trade_df = self._tiingo.load_data_by_date(self._symbol,
+    def trade(self,symbol):
+        if self._ig.has_opened_positions():
+            return
+
+        trade_df = self._tiingo.load_data_by_date(symbol,
                                                   (date.today() - timedelta(days=5)).strftime("%Y-%m-%d"),
                                                   None, self._dataprocessor)
         if len(trade_df) == 0:
             self._tracer.error("Could not load train data")
             return False
 
-        if self._ig.has_opened_positions():
-            return
-
-        if self._ig.get_spread("CS.D.GBPUSD.CFD.IP") > self._spread_limit:
+        if self._ig.get_spread(symbol) > self._spread_limit:
             self._tracer.write(f"Spread is greater that {self._spread_limit}")
             return
 
-        if self._analytics.has_peak(trade_df):
-            self._tracer.write(f"Dont trade because there is a peak")
-            return
+        signal = self._predictor.predict(trade_df)
 
-        if self._analytics.is_sleeping(trade_df):
-            self._tracer.write(f"Dont trade because the market is not moving")
-            return
+        if signal == BasePredictor.NONE:
+            return True
 
-
-
-        signal = self._predictors.predict(trade_df)
-
-
-        if signal == "buy":
-            res = self._ig.buy("CS.D.GBPUSD.CFD.IP")
+        if signal == BasePredictor.BUY:
+            res = self._ig.buy(symbol)
             self._tracer.write(f"Buy")
-        else:
-            res = self._ig.sell("CS.D.GBPUSD.CFD.IP")
+        elif signal == BasePredictor.SELL:
+            res = self._ig.sell(symbol)
             self._tracer.write(f"Sell")
 
         if not res:

@@ -35,12 +35,16 @@ class CCI_EMA(CCI):
             last_ema10 = df.tail(1).EMA_10.values[0]
             last_ema30 = df.tail(1).EMA_30.values[0]
 
-            foo = len(df[-5:][df.close < df.EMA_30])
-            if last_rsi < self.lower_limit and last_ema10 > last_ema30 and foo > 0:
+            if last_rsi < self.lower_limit and \
+                    last_ema10 > last_ema30 and \
+                    len(df[-10:][df.close < df.EMA_30]) > 0 and \
+                    len(df[-20:-1][df.EMA_10 < df.EMA_30]) > 0:
                 return self.BUY
 
-            foo = len(df[-5:][df.close > df.EMA_30])
-            if last_rsi > self.upper_limit and last_ema30 > last_ema10 and foo > 0:
+            if last_rsi > self.upper_limit and \
+                    last_ema30 > last_ema10 and \
+                    len(df[-10:][df.close > df.EMA_30]) > 0 and \
+                    len(df[-20:-1][df.EMA_10 > df.EMA_30]) > 0:
                 return self.SELL
 
 

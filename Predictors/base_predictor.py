@@ -29,10 +29,10 @@ class BasePredictor(Trainable):
         losses = 0
         wins = 0
 
-        #plt.figure(figsize=(15, 6))
-        #plt.cla()
-        #chart, = plt.plot(pd.to_datetime(df_train["date"]), df_train["close"], color='#d3d3d3', alpha=0.5,
-                         # label="Chart")
+        plt.figure(figsize=(15, 6))
+        plt.cla()
+        chart, = plt.plot(pd.to_datetime(df_train["date"]), df_train["close"], color='#d3d3d3', alpha=0.5,
+                          label="Chart")
 
         for i in range(len(df_train)):
             action = self.predict(df_train[:i+1])
@@ -43,19 +43,19 @@ class BasePredictor(Trainable):
             future = df_eval[df_eval["date"] > df_train.date[i]]
             future.reset_index(inplace=True)
             if action == self.BUY:
-                #plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'b^', label="Buy")
+                plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'b^', label="Buy")
                 for j in range(len(future)):
                     close = future.close[j]
 
                     if close > open_price + self.limit:
                         #Won
-                        #plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
+                        plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
                         reward += self.limit
                         wins += 1
                         break
                     elif close < open_price - self.stop:
                         #Loss
-                        #plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
+                        plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
                         reward -=  self.stop
                         losses += 1
                         break
