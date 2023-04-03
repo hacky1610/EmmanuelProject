@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 class IG:
 
-    def __init__(self, tracer: Tracer = ConsoleTracer()):
+    def __init__(self, tracer: Tracer = ConsoleTracer(),stock_list = []):
         c = Utils.read_config()
         self.user = c["ig_demo_user"]
         self.password = c["ig_demo_pass"]
@@ -20,14 +20,15 @@ class IG:
         self.accNr = c["ig_demo_acc_nr"]
         self.type = "DEMO"
         self._tracer: Tracer = tracer
+        self._stock_list = stock_list
         self.connect()
 
     def _get_symbol(self,symbol:str) -> str:
-        stock_dict = {
-            "GBPUSD":"CS.D.GBPUSD.CFD.IP",
-            "EURUSD":"CS.D.EURUSD.CFD.IP"
-        }
-        return stock_dict.get(symbol,None)
+        if len(self._stock_list) == 0:
+            return  symbol
+
+
+        return self._stock_list.IG[symbol]
 
     def connect(self):
         # no cache
@@ -68,19 +69,19 @@ class IG:
     def open(self, epic: str, direction: str) -> bool:
         try:
             response = self.ig_service.create_open_position(
-                currency_code="USD",
+                currency_code=epic[-10:-7],
                 direction=direction,
                 epic=epic,
                 expiry="-",
                 force_open=True,
-                guaranteed_stop=True,
+                guaranteed_stop=False,
                 order_type="MARKET",
                 size=1,
                 level=None,
-                limit_distance=9,
+                limit_distance=29,
                 limit_level=None,
                 quote_id=None,
-                stop_distance=27,
+                stop_distance=29,
                 stop_level=None,
                 trailing_stop=False,
                 trailing_stop_increment=None

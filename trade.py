@@ -6,13 +6,18 @@ from Connectors.tiingo import Tiingo
 from LSTM_Logic.Utils import read_config
 from BL import Trader,Analytics
 from Predictors import *
+import pandas as pd
 
 # Variables
+stock_list = pd.read_csv("./Data/ForexList.csv")
+stock_list.set_index(stock_list.currency_pair_code,inplace=True)
+
 dataProcessor = DataProcessor()
 config = read_config()
 tracer = LogglyTracer(config["loggly_api_key"])
 tiingo = Tiingo()
-ig = IG(tracer)
+ig = IG(tracer,stock_list)
+
 trader = Trader(
                 ig=ig,
                 tiingo=tiingo,
@@ -21,10 +26,9 @@ trader = Trader(
                 dataprocessor=dataProcessor,
                 analytics=Analytics(tracer))
 
-stock_list = ["EURUSD","GBPUSD"]
-
 while True:
-    for stock in stock_list:
-        trader.trade(stock)
+    for stock in stock_list.currency_pair_code:
+        if trader.trade(stock):
+            break
 
     time.sleep(60 * 60)

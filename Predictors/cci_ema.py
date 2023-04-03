@@ -47,4 +47,6 @@ class CCI_EMA(CCI):
                     len(df[-20:-1][df.EMA_10 > df.EMA_30]) > 0:
                 return self.SELL
 
+        return self.NONE
+
 
