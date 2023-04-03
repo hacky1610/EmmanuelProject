@@ -22,18 +22,18 @@ class Trader:
         self._spread_limit = 6
 
     def trade(self,symbol):
-        if self._ig.has_opened_positions():
-            return False
+        #if self._ig.has_opened_positions():
+        #    return False
 
         trade_df = self._tiingo.load_data_by_date(symbol,
                                                   (date.today() - timedelta(days=5)).strftime("%Y-%m-%d"),
                                                   None, self._dataprocessor)
         if len(trade_df) == 0:
-            self._tracer.error("Could not load train data")
+            self._tracer.error(f"Could not load train data for {symbol}")
             return False
 
         if self._ig.get_spread(symbol) > self._spread_limit:
-            self._tracer.write(f"Spread is greater that {self._spread_limit}")
+            self._tracer.write(f"Spread is greater that {self._spread_limit} for {symbol}")
             return False
 
         signal = self._predictor.predict(trade_df)
@@ -43,11 +43,11 @@ class Trader:
 
         if signal == BasePredictor.BUY:
             res = self._ig.buy(symbol)
-            self._tracer.write(f"Buy")
+            self._tracer.write(f"Buy {symbol}")
             return True
         elif signal == BasePredictor.SELL:
             res = self._ig.sell(symbol)
-            self._tracer.write(f"Sell")
+            self._tracer.write(f"Sell {symbol}")
             return True
 
 

@@ -45,7 +45,10 @@ class IG:
             res = self.ig_service.fetch_market_by_epic(self._get_symbol(epic))
             return (res["snapshot"]['offer'] - res["snapshot"]['bid']) * 10000
         except IGException as ex:
-            self._tracer.error(f"Error during open a position. {ex}")
+            self._tracer.error(f"Error fetching infos for {epic} {ex} ")
+            return None
+        except Exception as ex:
+            self._tracer.error(f"Error fetching infos for {epic} {ex} ")
             return None
 
     def create_dataframe(self, ig_dataframe, data_processor: DataProcessor):
@@ -87,11 +90,11 @@ class IG:
                 trailing_stop_increment=None
             )
             if response["dealStatus"] != "ACCEPTED":
-                self._tracer.error(f"could not open trade: {response['reason']}")
+                self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
                 return False
             return True
         except IGException as ex:
-            self._tracer.error(f"Error during open a position. {ex}")
+            self._tracer.error(f"Error during open a position. {ex} for {epic}")
             return False
 
     def has_opened_positions(self):
