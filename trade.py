@@ -26,7 +26,7 @@ trader = Trader(
                 dataprocessor=dataProcessor,
                 analytics=Analytics(tracer))
 
-time.sleep(60 * 22)
+time.sleep(60 * 33)
 
 while True:
     for stock in stock_list.currency_pair_code:
