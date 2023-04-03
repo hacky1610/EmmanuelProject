@@ -4,3 +4,4 @@ from Predictors.rsi import RSI
 from Predictors.cci_ema import CCI_EMA
 from Predictors.rsi_stoch_macd import RSI_STOCK_MACD
 from Predictors.predictor_collection import PredictorCollection
+from Predictors.evaluate import *

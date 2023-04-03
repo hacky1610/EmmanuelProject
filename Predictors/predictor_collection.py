@@ -1,9 +1,10 @@
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame
 
-class PredictorCollection:
+class PredictorCollection(BasePredictor):
 
-    def __init__(self,predicors:list):
+    def __init__(self, predicors: list, config: dict):
+        super().__init__(config)
         self._predictors = predicors
 
     def predict(self,df:DataFrame):
