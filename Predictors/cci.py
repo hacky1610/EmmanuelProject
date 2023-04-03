@@ -13,20 +13,6 @@ class CCI(BasePredictor):
         self.upper_limit = config.get("upper_limit", self.upper_limit)
         self.lower_limit = config.get("lower_limit", self.lower_limit)
 
-
-    def print(self,df):
-
-        df = df.tail(77)
-        plt.figure(figsize=(15, 6))
-        plt.cla()
-        plt.plot(df.close)
-        plt.savefig("close.png")
-
-        plt.figure(figsize=(15, 6))
-        plt.cla()
-        plt.plot(df.CCI)
-        plt.savefig("cci.png")
-
     def predict(self,df:DataFrame) -> str:
         last_rsi = df.tail(1).CCI.values[0]
         if last_rsi > self.upper_limit:

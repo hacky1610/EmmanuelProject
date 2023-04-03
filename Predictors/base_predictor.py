@@ -73,9 +73,11 @@ class BasePredictor(Trainable):
                         break
 
 
-        #plt.show()
+        plt.show()
 
         trades = wins + losses
+        if trades == 0:
+            return 0,0,0,0
         return reward, reward / trades, trades/ len(df_train) , wins / trades
 
     def step(self):

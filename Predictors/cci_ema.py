@@ -7,26 +7,16 @@ class CCI_EMA(CCI):
 
     upper_limit = 90
     lower_limit = -105
+    period_1 = 24
+    period_2 = 20
 
     def __init__(self, config: dict):
         super().__init__(config)
         self.upper_limit = config.get("upper_limit", self.upper_limit)
         self.lower_limit = config.get("lower_limit", self.lower_limit)
+        self.period_1 = config.get("period_1", self.period_1)
+        self.period_2 = config.get("period_2", self.period_2)
         self.limit = self.stop = 0.0029
-
-
-    def print(self,df):
-
-        df = df.tail(77)
-        plt.figure(figsize=(15, 6))
-        plt.cla()
-        plt.plot(df.close)
-        plt.savefig("close.png")
-
-        plt.figure(figsize=(15, 6))
-        plt.cla()
-        plt.plot(df.CCI)
-        plt.savefig("cci.png")
 
     def predict(self,df:DataFrame) -> str:
 
@@ -37,14 +27,14 @@ class CCI_EMA(CCI):
 
             if last_rsi < self.lower_limit and \
                     last_ema10 > last_ema30 and \
-                    len(df[-10:][df.close < df.EMA_30]) > 0 and \
-                    len(df[-20:-1][df.EMA_10 < df.EMA_30]) > 0:
+                    len(df[self.period_1 * -1:].loc[df.close < df.EMA_30]) > 0 and \
+                    len(df[self.period_2 * -1:-1].loc[df.EMA_10 < df.EMA_30]) > 0:
                 return self.BUY
 
             if last_rsi > self.upper_limit and \
                     last_ema30 > last_ema10 and \
-                    len(df[-10:][df.close > df.EMA_30]) > 0 and \
-                    len(df[-20:-1][df.EMA_10 > df.EMA_30]) > 0:
+                    len(df[self.period_1 * -1:].loc[df.close > df.EMA_30]) > 0 and \
+                    len(df[self.period_2 * -1:-1].loc[df.EMA_10 > df.EMA_30]) > 0:
                 return self.SELL
 
         return self.NONE

@@ -22,6 +22,9 @@ class DataProcessor:
         df["CCI"] = TA.CCI(df)
         df["CCI_7"] = TA.CCI(df,7)
 
+        df["STOCHK"] = TA.STOCH(df)
+        df["STOCHD"] = TA.STOCHD(df)
+
     def clean_data(self, df: DataFrame):
         DataProcessor.drop_column(df, "Volume")
         DataProcessor.drop_column(df, "Dividends")
