@@ -7,6 +7,8 @@ class DataProcessor:
         df['SMA7'] = TA.SMA(df, 7)
         df['SMA13'] = TA.SMA(df, 13)
         df['EMA'] = TA.EMA(df)
+        df['EMA_10'] = TA.EMA(df,10)
+        df['EMA_30'] = TA.EMA(df, 30)
         bb= TA.BBANDS(df)
         df['BB_UPPER'] = bb['BB_UPPER']
         df['BB_MIDDLE'] = bb['BB_MIDDLE']
@@ -18,6 +20,7 @@ class DataProcessor:
         df['MACD'] = md['MACD']
         df['SIGNAL'] = md['SIGNAL']
         df["CCI"] = TA.CCI(df)
+        df["CCI_7"] = TA.CCI(df,7)
 
     def clean_data(self, df: DataFrame):
         DataProcessor.drop_column(df, "Volume")
