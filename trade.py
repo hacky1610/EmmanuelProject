@@ -4,33 +4,32 @@ from Data.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo
 from LSTM_Logic.Utils import read_config
-from BL import Trader,Analytics
+from BL import Trader, Analytics
 from Predictors import *
 import pandas as pd
 
 # Variables
 stock_list = pd.read_csv("./Data/ForexList.csv")
-stock_list.set_index(stock_list.currency_pair_code,inplace=True)
+stock_list.set_index(stock_list.currency_pair_code, inplace=True)
 
 dataProcessor = DataProcessor()
 config = read_config()
 tracer = LogglyTracer(config["loggly_api_key"])
 tiingo = Tiingo()
-ig = IG(tracer,stock_list)
+ig = IG(tracer, stock_list)
 
 trader = Trader(
-                ig=ig,
-                tiingo=tiingo,
-                tracer=tracer,
-                predictor=CCI_EMA({}),
-                dataprocessor=dataProcessor,
-                analytics=Analytics(tracer))
+    ig=ig,
+    tiingo=tiingo,
+    tracer=tracer,
+    predictor=CCI_EMA({}),
+    dataprocessor=dataProcessor,
+    analytics=Analytics(tracer))
 
 time.sleep(60 * 33)
 
 while True:
     for stock in stock_list.currency_pair_code:
         trader.trade(stock)
-
 
     time.sleep(60 * 60)
