@@ -8,7 +8,7 @@ class CCI(BasePredictor):
     upper_limit = 90
     lower_limit = -123
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict = {}):
         super().__init__(config)
         self.upper_limit = config.get("upper_limit", self.upper_limit)
         self.lower_limit = config.get("lower_limit", self.lower_limit)

@@ -11,7 +11,7 @@ class BasePredictor(Trainable):
     stop = 0.0029
     METRIC = "reward"
 
-    def __init__(self,config:dict):
+    def __init__(self,config:dict={}):
         self.setup(config)
 
     def setup(self, config):

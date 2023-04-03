@@ -8,7 +8,7 @@ class RSI(BasePredictor):
     upper_limit = 66
     lower_limit = 33
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict={}):
         super().__init__(config)
         self.upper_limit = config.get("upper_limit", self.upper_limit)
         self.lower_limit = config.get("lower_limit", self.lower_limit)
