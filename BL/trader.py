@@ -25,11 +25,11 @@ class Trader:
         stop_limit = int(abs(df.close - df.close.shift(-1)).mean() * 25000)
         return stop_limit, stop_limit
 
-    def trade(self,symbol):
+    def trade(self,symbol:str, epic:str, spread:float):
         #if self._ig.has_opened_positions():
         #    return False
 
-        if self._ig.get_spread(symbol) > self._spread_limit:
+        if spread > self._spread_limit:
             self._tracer.write(f"Spread is greater that {self._spread_limit} for {symbol}")
             return False
 
@@ -52,11 +52,11 @@ class Trader:
 
 
         if signal == BasePredictor.BUY:
-            res = self._ig.buy(symbol,stop,limit)
+            res = self._ig.buy(epic,stop,limit)
             self._tracer.write(f"Buy {symbol}")
             return True
         elif signal == BasePredictor.SELL:
-            res = self._ig.sell(symbol,stop,limit)
+            res = self._ig.sell(epic,stop,limit)
             self._tracer.write(f"Sell {symbol}")
             return True
 

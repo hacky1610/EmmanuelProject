@@ -30,6 +30,18 @@ class IG:
 
         return self._stock_list.IG[symbol]
 
+    def get_markets(self):
+        market_df = self.ig_service.search_markets("CURRENCIES")
+        markets = []
+        market_df =  market_df[market_df.marketStatus == "TRADEABLE"]
+        for market in market_df.iterrows():
+            markets.append({
+                "symbol":market[1].instrumentName.replace("/",""),
+                "epic":market[1].epic,
+                "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor
+            })
+        return markets
+
     def connect(self):
         # no cache
         self.ig_service = IGService(
@@ -64,10 +76,10 @@ class IG:
         return df
 
     def buy(self, epic: str, stop:int,limit:int):
-        return self.open(self._get_symbol(epic), "BUY",stop,limit)
+        return self.open(epic, "BUY",stop,limit)
 
     def sell(self, epic: str,stop:int,limit:int):
-        return self.open(self._get_symbol(epic), "SELL",stop,limit)
+        return self.open(epic, "SELL",stop,limit)
 
     def open(self, epic: str, direction: str, stop:int = 25, limit:int = 25) -> bool:
         try:

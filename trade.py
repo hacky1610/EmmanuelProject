@@ -26,10 +26,11 @@ trader = Trader(
     dataprocessor=dataProcessor,
     analytics=Analytics(tracer))
 
-time.sleep(60 * 33)
+
 
 while True:
-    for stock in stock_list.currency_pair_code:
-        trader.trade(stock)
+    markets = ig.get_markets()
+    for market in markets:
+        trader.trade(market["symbol"],market["epic"],market["spread"])
 
     time.sleep(60 * 60)
