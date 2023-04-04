@@ -46,10 +46,10 @@ class IG:
             return (res["snapshot"]['offer'] - res["snapshot"]['bid']) * res["snapshot"]["scalingFactor"]
         except IGException as ex:
             self._tracer.error(f"Error fetching infos for {epic} {ex} ")
-            return None
+            return 1000
         except Exception as ex:
             self._tracer.error(f"Error fetching infos for {epic} {ex} ")
-            return None
+            return 1000
 
     def create_dataframe(self, ig_dataframe, data_processor: DataProcessor):
         df = DataFrame()
