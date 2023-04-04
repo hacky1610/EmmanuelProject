@@ -9,7 +9,7 @@ ti = Tiingo()
 df = ti.load_data_by_date("gbpusd","2023-01-02","2023-02-28",dp)
 df_eval = pd.read_csv("./Data/GBPUSD.csv")
 
-print(evaluate(RSI({}),df,df_eval))
+print(evaluate(PredictorCollection([RSI(),CCI_EMA()]),df,df_eval))
 #print(rsi.evaluate(df,df_eval))
 #print(cci.evaluate(df,df_eval))
 

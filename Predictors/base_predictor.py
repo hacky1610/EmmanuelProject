@@ -1,9 +1,8 @@
 from pandas import DataFrame
-from ray.tune import Trainable
 from Predictors import evaluate
 
-class BasePredictor(Trainable):
 
+class BasePredictor:
     SELL = "sell"
     BUY = "buy"
     NONE = "none"
@@ -11,7 +10,11 @@ class BasePredictor(Trainable):
     stop = 0.0029
     METRIC = "reward"
 
-    def __init__(self,config:dict):
+    def __init__(self, config=None):
+        self.df_eval = None
+        self.df = None
+        if config is None:
+            config = {}
         self.setup(config)
 
     def setup(self, config):
@@ -20,19 +23,11 @@ class BasePredictor(Trainable):
         self.df = config.get("df")
         self.df_eval = config.get("df_eval")
 
-    def predict(self,df:DataFrame) -> str:
+    def predict(self, df: DataFrame) -> str:
         raise NotImplementedError
 
-
-
     def step(self):
-        reward, success , trade_freq, win_loss = evaluate(self,self.df,self.df_eval)
+        reward, success, trade_freq, win_loss = evaluate(self, self.df, self.df_eval)
 
-        return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq , "win_loss":win_loss}
-
-
-
-
-
-
-
+        return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq,
+                "win_loss": win_loss}
