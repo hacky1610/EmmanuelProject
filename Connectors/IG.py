@@ -63,13 +63,13 @@ class IG:
         data_processor.clean_data(df)
         return df
 
-    def buy(self, epic: str):
-        return self.open(self._get_symbol(epic), "BUY")
+    def buy(self, epic: str, stop:int,limit:int):
+        return self.open(self._get_symbol(epic), "BUY",stop,limit)
 
-    def sell(self, epic: str):
-        return self.open(self._get_symbol(epic), "SELL")
+    def sell(self, epic: str,stop:int,limit:int):
+        return self.open(self._get_symbol(epic), "SELL",stop,limit)
 
-    def open(self, epic: str, direction: str) -> bool:
+    def open(self, epic: str, direction: str, stop:int = 25, limit:int = 25) -> bool:
         try:
             response = self.ig_service.create_open_position(
                 currency_code=epic[-10:-7],
@@ -81,10 +81,10 @@ class IG:
                 order_type="MARKET",
                 size=1,
                 level=None,
-                limit_distance=29,
+                limit_distance=limit,
                 limit_level=None,
                 quote_id=None,
-                stop_distance=29,
+                stop_distance=stop,
                 stop_level=None,
                 trailing_stop=False,
                 trailing_stop_increment=None
@@ -92,6 +92,7 @@ class IG:
             if response["dealStatus"] != "ACCEPTED":
                 self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
                 return False
+            self._tracer.write(f"{direction} {epic} with limit {limit} and stop {stop}")
             return True
         except IGException as ex:
             self._tracer.error(f"Error during open a position. {ex} for {epic}")

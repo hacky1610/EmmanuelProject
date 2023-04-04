@@ -21,6 +21,10 @@ class Trader:
         self._consider_spread = True
         self._spread_limit = 6
 
+    def get_stop_limit(self,df):
+        stop_limit = int(abs(df.close - df.close.shift(-1)).mean() * 25000)
+        return stop_limit, stop_limit
+
     def trade(self,symbol):
         #if self._ig.has_opened_positions():
         #    return False
@@ -28,6 +32,7 @@ class Trader:
         trade_df = self._tiingo.load_data_by_date(symbol,
                                                   (date.today() - timedelta(days=5)).strftime("%Y-%m-%d"),
                                                   None, self._dataprocessor)
+
         if len(trade_df) == 0:
             self._tracer.error(f"Could not load train data for {symbol}")
             return False
@@ -41,12 +46,15 @@ class Trader:
         if signal == BasePredictor.NONE:
             return False
 
+        stop, limit = self.get_stop_limit(trade_df)
+
+
         if signal == BasePredictor.BUY:
-            res = self._ig.buy(symbol)
+            res = self._ig.buy(symbol,stop,limit)
             self._tracer.write(f"Buy {symbol}")
             return True
         elif signal == BasePredictor.SELL:
-            res = self._ig.sell(symbol)
+            res = self._ig.sell(symbol,stop,limit)
             self._tracer.write(f"Sell {symbol}")
             return True
 
