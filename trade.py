@@ -27,7 +27,6 @@ trader = Trader(
     analytics=Analytics(tracer))
 
 
-
 while True:
     markets = ig.get_markets()
     for market in markets:

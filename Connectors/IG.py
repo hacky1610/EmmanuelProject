@@ -34,9 +34,10 @@ class IG:
         market_df = self.ig_service.search_markets("CURRENCIES")
         markets = []
         market_df =  market_df[market_df.marketStatus == "TRADEABLE"]
+        market_df =market_df[~market_df["instrumentName"].str.contains("Mini")]
         for market in market_df.iterrows():
             markets.append({
-                "symbol":market[1].instrumentName.replace("/",""),
+                "symbol":market[1].instrumentName.replace("/","").replace(" Kassa",""),
                 "epic":market[1].epic,
                 "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor
             })
