@@ -43,7 +43,7 @@ class IG:
     def get_spread(self, epic: str):
         try:
             res = self.ig_service.fetch_market_by_epic(self._get_symbol(epic))
-            return (res["snapshot"]['offer'] - res["snapshot"]['bid']) * 10000
+            return (res["snapshot"]['offer'] - res["snapshot"]['bid']) * res["snapshot"]["scalingFactor"]
         except IGException as ex:
             self._tracer.error(f"Error fetching infos for {epic} {ex} ")
             return None
