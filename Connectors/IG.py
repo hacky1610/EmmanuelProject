@@ -40,6 +40,7 @@ class IG:
                 "symbol":market[1].instrumentName.replace("/","").replace(" Kassa",""),
                 "epic":market[1].epic,
                 "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor
+                "scaling": market[1].scalingFactor
             })
         return markets
 

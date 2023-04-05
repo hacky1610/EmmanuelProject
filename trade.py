@@ -30,6 +30,6 @@ trader = Trader(
 while True:
     markets = ig.get_markets()
     for market in markets:
-        trader.trade(market["symbol"],market["epic"],market["spread"])
+        trader.trade(market["symbol"],market["epic"],market["spread"],market["scaling"])
 
     time.sleep(60 * 60)
