@@ -21,11 +21,11 @@ class Trader:
         self._consider_spread = True
         self._spread_limit = 6
 
-    def get_stop_limit(self,df):
-        stop_limit = int(abs(df.close - df.close.shift(-1)).mean() * 25000)
+    def get_stop_limit(self,df,scaling:int):
+        stop_limit = int(abs(df.close - df.close.shift(-1)).mean() * 2.5 * scaling)
         return stop_limit, stop_limit
 
-    def trade(self,symbol:str, epic:str, spread:float):
+    def trade(self,symbol:str, epic:str, spread:float,scaling:int):
         #if self._ig.has_opened_positions():
         #    return False
 
@@ -48,7 +48,7 @@ class Trader:
         if signal == BasePredictor.NONE:
             return False
 
-        stop, limit = self.get_stop_limit(trade_df)
+        stop, limit = self.get_stop_limit(trade_df,scaling)
 
 
         if signal == BasePredictor.BUY:
