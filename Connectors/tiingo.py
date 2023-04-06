@@ -2,14 +2,14 @@ from Data.data_processor import DataProcessor
 import requests
 from pandas import DataFrame
 from Tracing.Tracer import Tracer
-from LSTM_Logic import Utils
+from BL.utils import read_config
 
 
 class Tiingo:
     _BASEURL = "https://api.tiingo.com/tiingo/fx/"
 
     def __init__(self, tracer: Tracer = Tracer()):
-        c = Utils.read_config()
+        c = read_config()
         self._apykey = c["ti_api_key"]
         self._tracer = tracer
 

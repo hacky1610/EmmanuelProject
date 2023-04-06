@@ -2,7 +2,8 @@ from ray import tune, air
 from ray.tune import Tuner
 from Tracing.Tracer import Tracer
 from Connectors.Loader import *
-from LSTM_Logic.Utils import *
+from BL.utils import *
+from BL import Trader
 from pandas import DataFrame
 from Predictors.base_predictor import BasePredictor
 
@@ -50,7 +51,7 @@ class Tuner:
         tuner = self._create_tuner()
         results = tuner.fit()
         # Todo: check on success
-        best_result = results.get_best_result(metric=Trainer.METRIC)
+        best_result = results.get_best_result(metric=BasePredictor.METRIC,)
         print("best hyperparameters: ", best_result.config)
         print("best hyperparameters dir: ", best_result.log_dir)
         return results, best_result.checkpoint

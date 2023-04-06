@@ -4,17 +4,17 @@ from pandas import DataFrame
 from Data.data_processor import DataProcessor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
-from LSTM_Logic import Utils
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime, timedelta
 import re
+from BL.utils import *
 
 
 class IG:
 
     def __init__(self, tracer: Tracer = ConsoleTracer(),stock_list = []):
-        c = Utils.read_config()
+        c = read_config()
         self.user = c["ig_demo_user"]
         self.password = c["ig_demo_pass"]
         self.key = c["ig_demo_key"]
