@@ -7,6 +7,8 @@ class DataProcessor:
         df['SMA7'] = TA.SMA(df, 7)
         df['SMA13'] = TA.SMA(df, 13)
         df['EMA'] = TA.EMA(df)
+        df['EMA_10'] = TA.EMA(df,10)
+        df['EMA_30'] = TA.EMA(df, 30)
         bb= TA.BBANDS(df)
         df['BB_UPPER'] = bb['BB_UPPER']
         df['BB_MIDDLE'] = bb['BB_MIDDLE']
@@ -17,12 +19,18 @@ class DataProcessor:
         md = TA.MACD(df)
         df['MACD'] = md['MACD']
         df['SIGNAL'] = md['SIGNAL']
+        df["CCI"] = TA.CCI(df)
+        df["CCI_7"] = TA.CCI(df,7)
+
+        df["STOCHK"] = TA.STOCH(df)
+        df["STOCHD"] = TA.STOCHD(df)
 
     def clean_data(self, df: DataFrame):
         DataProcessor.drop_column(df, "Volume")
         DataProcessor.drop_column(df, "Dividends")
         DataProcessor.drop_column(df, "Stock Splits")
         df.dropna(0, inplace=True)
+        df.reset_index(inplace=True)
 
     @staticmethod
     def drop_column(df: DataFrame, name: str):
