@@ -5,8 +5,7 @@
 
 trigger:
 - main
-- dev
-- LSTM_V2
+- TI
 
 pool:
   vmImage: ubuntu-latest
@@ -29,5 +28,8 @@ steps:
 - script: |
     pip install pytest pytest-azurepipelines coverage
     coverage run -m pytest ./Test
+  displayName: 'Test'
+
+- script: |
     coverage report -m
-  displayName: 'pytest'
+  displayName: 'Create report'
