@@ -8,6 +8,7 @@ from LSTM_Logic import Utils
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime, timedelta
+import re
 
 
 class IG:
@@ -124,7 +125,7 @@ class IG:
         return self.ig_service.fetch_open_positions()
 
     def get_transaction_history(self, start_time:str):
-        return self.ig_service.fetch_transaction_history(trans_type="ALL", from_date=start_time,
+        return self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", from_date=start_time,
                                                          max_span_seconds=60 * 50)
 
     def exit(self, deal_id: str, direction: str):
@@ -149,73 +150,93 @@ class IG:
         return hours
 
 
-    def create_report(self, df: DataFrame, symbol_name: str, start_time:str):
-        limit = 0.0009
-        stopp = 0.0018
+    def create_report(self,ti):
+        start_time = (datetime.now() - timedelta(hours=24))
+        start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
+
         hist = self.get_transaction_history(start_time)
         hist = hist.set_index("openDateUtc")
-        hist = hist[hist["transactionType"] == "TRADE"]
         hist.sort_index(inplace=True)
         hist.reset_index(inplace=True)
+
         hist['profitAndLoss'] = hist['profitAndLoss'].str.replace('E', '', regex=True).astype('float64')
         hist["openDateUtc"] = pd.to_datetime(hist["openDateUtc"])
         hist["dateUtc"] = pd.to_datetime(hist["dateUtc"])
         hist["openLevel"] = hist["openLevel"].astype("float")
         hist["closeLevel"] = hist["closeLevel"].astype("float")
 
-        df = df.filter(["close", "date"])
+        new_column = []
+        for values in hist.instrumentName:
+            new_column.append(re.search(r'\w{3}\/\w{3}', values).group().replace("/",""))
 
-        winner = hist[hist["profitAndLoss"] >= 0]
-        looser = hist[hist["profitAndLoss"] < 0]
+        hist['name'] = new_column
 
-        long_winner = winner[winner["closeLevel"] >= winner["openLevel"]]
-        short_winner = winner[winner["closeLevel"] <= winner["openLevel"]]
+        for ticker in hist['name'].unique():
 
-        long_looser = looser[looser["closeLevel"] < looser["openLevel"]]
-        short_looser = looser[looser["closeLevel"] > looser["openLevel"]]
 
-        shorts = short_winner.append(short_looser)
-        longs = long_winner.append(long_looser)
+            df = ti.load_data_by_date(ticker, start_time.strftime("%Y-%m-%d"),
+                                          None, DataProcessor(), "1min", False, False)
+            df = df[df["date"] > start_time_str]
 
-        plt.figure(figsize=(15, 6))
-        plt.cla()
-        chart, = plt.plot(pd.to_datetime(df["date"]), df["close"], color='#d3d3d3', alpha=0.5, label=symbol_name)
 
-        for i in range(len(shorts)):
-            row = shorts[i:i + 1]
-            stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - limit, row.openLevel - limit],
-                                 color="#00ff00")
-            limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + stopp, row.openLevel + stopp],
-                                  color="#ff0000", label="Limit")
+            temp_hist = hist[hist['name'] == ticker]
 
-        for i in range(len(longs)):
-            row = longs[i:i + 1]
-            plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + limit, row.openLevel + limit], color="#00ff00")
-            plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - stopp, row.openLevel - stopp], color="#ff0000")
+            df = df.filter(["close", "date"])
 
-        # long open
-        buy, = plt.plot(long_winner["openDateUtc"], long_winner["openLevel"], 'b^', label="Buy")
-        plt.plot(long_looser["openDateUtc"], long_looser["openLevel"], 'b^')
+            winner = temp_hist[temp_hist["profitAndLoss"] >= 0]
+            looser = temp_hist[temp_hist["profitAndLoss"] < 0]
 
-        # short open
-        sell, = plt.plot(short_winner["openDateUtc"], short_winner["openLevel"], 'bv', label="Sell")
-        plt.plot(short_looser["openDateUtc"], short_looser["openLevel"], 'bv')
+            long_winner = winner[winner["closeLevel"] >= winner["openLevel"]]
+            short_winner = winner[winner["closeLevel"] <= winner["openLevel"]]
 
-        # long close
-        profit, = plt.plot(long_winner["dateUtc"], long_winner["closeLevel"], 'go', label="Profit")
-        loss, = plt.plot(long_looser["dateUtc"], long_looser["closeLevel"], 'rx', label="Loss")
+            long_looser = looser[looser["closeLevel"] < looser["openLevel"]]
+            short_looser = looser[looser["closeLevel"] > looser["openLevel"]]
 
-        # short close
-        plt.plot(short_winner["dateUtc"], short_winner["closeLevel"], 'go')
-        plt.plot(short_looser["dateUtc"], short_looser["closeLevel"], 'rx')
+            shorts = short_winner.append(short_looser)
+            longs = long_winner.append(long_looser)
 
-        hours = self._get_hours(hist[0:1])
-        for h in hours:
-            plt.axvline(x=h, color='b', label='axvline - full height', alpha=0.1)
+            plt.figure(figsize=(15, 6))
+            plt.cla()
+            chart, = plt.plot(pd.to_datetime(df["date"]), df["close"], color='#d3d3d3', alpha=0.5, label=ticker)
+            for i in range(len(shorts)):
+                row = shorts[i:i + 1]
+                pl = row.openLevel - row.closeLevel
 
-        #plot legend
-        plt.legend(handles=[stopLine, limitLine, chart, buy, sell, profit, loss])
-        plt.suptitle(
-            f"Summary of last 24 hours: Profit {hist['profitAndLoss'].sum()} Won: {len(winner)} Lost: {len(looser)}")
-        plt.show(block=True)
+                stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
+                                     color="#00ff00")
+                limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
+                                      color="#ff0000", label="Limit")
+
+            for i in range(len(longs)):
+                row = longs[i:i + 1]
+                pl = row.closeLevel - row.openLevel
+
+                plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl], color="#00ff00")
+                plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl], color="#ff0000")
+
+            # long open
+            buy, = plt.plot(long_winner["openDateUtc"], long_winner["openLevel"], 'b^', label="Buy")
+            plt.plot(long_looser["openDateUtc"], long_looser["openLevel"], 'b^')
+
+            # short open
+            sell, = plt.plot(short_winner["openDateUtc"], short_winner["openLevel"], 'bv', label="Sell")
+            plt.plot(short_looser["openDateUtc"], short_looser["openLevel"], 'bv')
+
+            # long close
+            profit, = plt.plot(long_winner["dateUtc"], long_winner["closeLevel"], 'go', label="Profit")
+            loss, = plt.plot(long_looser["dateUtc"], long_looser["closeLevel"], 'rx', label="Loss")
+
+            # short close
+            plt.plot(short_winner["dateUtc"], short_winner["closeLevel"], 'go')
+            plt.plot(short_looser["dateUtc"], short_looser["closeLevel"], 'rx')
+
+            hours = self._get_hours(temp_hist[0:1])
+            for h in hours:
+                plt.axvline(x=h, color='b', label='axvline - full height', alpha=0.1)
+
+            #plot legend
+            #plt.legend(handles=[stopLine, limitLine, chart, buy, sell, profit, loss])
+            plt.suptitle(
+                f"{ticker} - Summary of last 24 hours: Profit {hist['profitAndLoss'].sum()} Won: {len(winner)} Lost: {len(looser)}")
+            plt.show(block=True)
         return
