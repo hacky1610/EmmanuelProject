@@ -9,7 +9,7 @@ from Predictors import *
 dataProcessor = DataProcessor()
 config = ConfigReader().read_config()
 tracer = LogglyTracer(config["loggly_api_key"])
-tiingo = Tiingo()
+tiingo = Tiingo(tracer)
 ig = IG(tracer)
 
 trader = Trader(
