@@ -13,9 +13,9 @@ from BL.utils import *
 
 class IG:
 
-    def __init__(self, tracer: Tracer = ConsoleTracer()):
+    def __init__(self, tracer: Tracer = ConsoleTracer(), conf_reader:ConfigReader=ConfigReader()):
         self.ig_service = None
-        c = read_config()
+        c = conf_reader.read_config()
         self.user = c["ig_demo_user"]
         self.password = c["ig_demo_pass"]
         self.key = c["ig_demo_key"]

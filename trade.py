@@ -3,12 +3,11 @@ from Connectors.IG import IG
 from Data.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo
-from BL.utils import read_config
-from BL import Trader, Analytics
+from BL import Trader, Analytics, ConfigReader
 from Predictors import *
 
 dataProcessor = DataProcessor()
-config = read_config()
+config = ConfigReader().read_config()
 tracer = LogglyTracer(config["loggly_api_key"])
 tiingo = Tiingo()
 ig = IG(tracer)
