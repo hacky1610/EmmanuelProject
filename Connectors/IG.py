@@ -4,42 +4,35 @@ from pandas import DataFrame
 from Data.data_processor import DataProcessor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
-from LSTM_Logic import Utils
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime, timedelta
 import re
+from BL.utils import *
 
 
 class IG:
 
-    def __init__(self, tracer: Tracer = ConsoleTracer(),stock_list = []):
-        c = Utils.read_config()
+    def __init__(self, tracer: Tracer = ConsoleTracer(), conf_reader:ConfigReader=ConfigReader()):
+        self.ig_service = None
+        c = conf_reader.read_config()
         self.user = c["ig_demo_user"]
         self.password = c["ig_demo_pass"]
         self.key = c["ig_demo_key"]
         self.accNr = c["ig_demo_acc_nr"]
         self.type = "DEMO"
         self._tracer: Tracer = tracer
-        self._stock_list = stock_list
         self.connect()
-
-    def _get_symbol(self,symbol:str) -> str:
-        if len(self._stock_list) == 0:
-            return  symbol
-
-
-        return self._stock_list.IG[symbol]
 
     def get_markets(self):
         market_df = self.ig_service.search_markets("CURRENCIES")
         markets = []
-        market_df =  market_df[market_df.marketStatus == "TRADEABLE"]
-        market_df =market_df[~market_df["instrumentName"].str.contains("Mini")]
+        market_df = market_df[market_df.marketStatus == "TRADEABLE"]
+        market_df = market_df[~market_df["instrumentName"].str.contains("Mini")]
         for market in market_df.iterrows():
             markets.append({
-                "symbol":market[1].instrumentName.replace("/","").replace(" Kassa",""),
-                "epic":market[1].epic,
+                "symbol": market[1].instrumentName.replace("/", "").replace(" Kassa", ""),
+                "epic": market[1].epic,
                 "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
                 "scaling": market[1].scalingFactor
             })
@@ -55,17 +48,6 @@ class IG:
         except Exception as ex:
             self._tracer.error(f"Error during open a IG Connection {ex}")
 
-    def get_spread(self, epic: str):
-        try:
-            res = self.ig_service.fetch_market_by_epic(self._get_symbol(epic))
-            return (res["snapshot"]['offer'] - res["snapshot"]['bid']) * res["snapshot"]["scalingFactor"]
-        except IGException as ex:
-            self._tracer.error(f"Error fetching infos for {epic} {ex} ")
-            return 1000
-        except Exception as ex:
-            self._tracer.error(f"Error fetching infos for {epic} {ex} ")
-            return 1000
-
     def create_dataframe(self, ig_dataframe, data_processor: DataProcessor):
         df = DataFrame()
         df["Open"] = ig_dataframe["bid", "Open"]
@@ -78,13 +60,13 @@ class IG:
         data_processor.clean_data(df)
         return df
 
-    def buy(self, epic: str, stop:int,limit:int):
-        return self.open(epic, "BUY",stop,limit)
+    def buy(self, epic: str, stop: int, limit: int):
+        return self.open(epic, "BUY", stop, limit)
 
-    def sell(self, epic: str,stop:int,limit:int):
-        return self.open(epic, "SELL",stop,limit)
+    def sell(self, epic: str, stop: int, limit: int):
+        return self.open(epic, "SELL", stop, limit)
 
-    def open(self, epic: str, direction: str, stop:int = 25, limit:int = 25) -> bool:
+    def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25) -> bool:
         try:
             response = self.ig_service.create_open_position(
                 currency_code=epic[-10:-7],
@@ -124,7 +106,7 @@ class IG:
     def get_opened_positions(self):
         return self.ig_service.fetch_open_positions()
 
-    def get_transaction_history(self, start_time:str):
+    def get_transaction_history(self, start_time: str):
         return self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", from_date=start_time,
                                                          max_span_seconds=60 * 50)
 
@@ -149,8 +131,7 @@ class IG:
 
         return hours
 
-
-    def create_report(self,ti):
+    def create_report(self, ti):
         start_time = (datetime.now() - timedelta(hours=24))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -167,17 +148,15 @@ class IG:
 
         new_column = []
         for values in hist.instrumentName:
-            new_column.append(re.search(r'\w{3}\/\w{3}', values).group().replace("/",""))
+            new_column.append(re.search(r'\w{3}\/\w{3}', values).group().replace("/", ""))
 
         hist['name'] = new_column
 
         for ticker in hist['name'].unique():
 
-
             df = ti.load_data_by_date(ticker, start_time.strftime("%Y-%m-%d"),
-                                          None, DataProcessor(), "1min", False, False)
+                                      None, DataProcessor(), "1min", False, False)
             df = df[df["date"] > start_time_str]
-
 
             temp_hist = hist[hist['name'] == ticker]
 
@@ -234,8 +213,8 @@ class IG:
             for h in hours:
                 plt.axvline(x=h, color='b', label='axvline - full height', alpha=0.1)
 
-            #plot legend
-            #plt.legend(handles=[stopLine, limitLine, chart, buy, sell, profit, loss])
+            # plot legend
+            # plt.legend(handles=[stopLine, limitLine, chart, buy, sell, profit, loss])
             plt.suptitle(
                 f"{ticker} - Summary of last 24 hours: Profit {hist['profitAndLoss'].sum()} Won: {len(winner)} Lost: {len(looser)}")
             plt.show(block=True)

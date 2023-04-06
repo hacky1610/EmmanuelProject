@@ -4,7 +4,7 @@ from Tracing.Tracer import Tracer
 class Analytics:
 
     def __init__(self,tracer:Tracer):
-        self._tracer = Tracer
+        self._tracer = tracer
     def has_peak(self, df:DataFrame, lockback:int = 3, max_limit:float=2.5):
         mean_diff = (df["high"] - df["low"]).mean()
 
