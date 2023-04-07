@@ -7,8 +7,7 @@ from BL import Trader, Analytics, ConfigReader
 from Predictors import *
 
 dataProcessor = DataProcessor()
-config = ConfigReader().read_config()
-tracer = LogglyTracer(config["loggly_api_key"])
+tracer = LogglyTracer(ConfigReader().get("loggly_api_key"))
 tiingo = Tiingo(tracer)
 ig = IG(tracer)
 
