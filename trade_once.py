@@ -5,10 +5,18 @@ from Connectors.tiingo import Tiingo
 from BL import Trader, Analytics, EnvReader
 from Predictors import *
 
+env_reader = EnvReader()
+type_ = env_reader.get("Type")
+
+if type_ == "DEMO":
+    live = False
+else:
+    live = True
+
 dataProcessor = DataProcessor()
-tracer = LogglyTracer(EnvReader().get("loggly_api_key"))
-tiingo = Tiingo(tracer,conf_reader=EnvReader())
-ig = IG(tracer,conf_reader=EnvReader())
+tracer = LogglyTracer(env_reader.get("loggly_api_key"),type_)
+tiingo = Tiingo(tracer,conf_reader=env_reader)
+ig = IG(tracer,conf_reader=env_reader,live=live)
 
 trader = Trader(
     ig=ig,

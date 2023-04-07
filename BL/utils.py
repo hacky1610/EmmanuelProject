@@ -13,8 +13,13 @@ class BaseReader:
 class ConfigReader(BaseReader):
     _config = {}
 
-    def __init__(self):
-        with open(os.path.join(get_project_dir(), "Config/config.json")) as f:
+    def __init__(self,live_config:bool=False):
+        if live_config:
+            path = "Config/live.json"
+        else:
+            path = "Config/demo.json"
+
+        with open(os.path.join(get_project_dir(), path)) as f:
             self._config =  json.load(f)
 
     def get(self,key:str):

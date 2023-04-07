@@ -6,10 +6,13 @@ from Connectors.tiingo import Tiingo
 from BL import Trader, Analytics, ConfigReader
 from Predictors import *
 
+live_trade = False
+
 dataProcessor = DataProcessor()
-tracer = LogglyTracer(ConfigReader().get("loggly_api_key"))
-tiingo = Tiingo(tracer)
-ig = IG(tracer)
+conf_reader = ConfigReader(live_config=live_trade)
+tracer = LogglyTracer(conf_reader.get("loggly_api_key"),"DEMO")
+tiingo = Tiingo(tracer,conf_reader)
+ig = IG(tracer,conf_reader,live=live_trade)
 
 trader = Trader(
     ig=ig,
