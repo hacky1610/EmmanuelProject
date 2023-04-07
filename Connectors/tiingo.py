@@ -2,15 +2,14 @@ from Data.data_processor import DataProcessor
 import requests
 from pandas import DataFrame
 from Tracing.Tracer import Tracer
-from BL.utils import ConfigReader
+from BL.utils import ConfigReader, BaseReader
 
 
 class Tiingo:
     _BASEURL = "https://api.tiingo.com/tiingo/fx/"
 
-    def __init__(self, tracer: Tracer = Tracer(), conf_reader:ConfigReader = ConfigReader()):
-        c = conf_reader.read_config()
-        self._apykey = c["ti_api_key"]
+    def __init__(self, conf_reader: BaseReader, tracer: Tracer = Tracer()):
+        self._apykey = conf_reader.get("ti_api_key")
         self._tracer = tracer
 
     def _send_request(self, suffix: str):
@@ -43,7 +42,7 @@ class Tiingo:
         return df
 
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
-                          resolution: str = "1hour", add_signals:bool=True, clean_data:bool = True) -> DataFrame:
+                          resolution: str = "1hour", add_signals: bool = True, clean_data: bool = True) -> DataFrame:
         res = self._send_history_request(ticker, start, end, resolution)
         if len(res) == 0:
             return res

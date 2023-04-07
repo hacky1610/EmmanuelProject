@@ -13,14 +13,16 @@ from BL.utils import *
 
 class IG:
 
-    def __init__(self, tracer: Tracer = ConsoleTracer(), conf_reader:ConfigReader=ConfigReader()):
+    def __init__(self, conf_reader: BaseReader, tracer: Tracer = ConsoleTracer(), live: bool = False):
         self.ig_service = None
-        c = conf_reader.read_config()
-        self.user = c["ig_demo_user"]
-        self.password = c["ig_demo_pass"]
-        self.key = c["ig_demo_key"]
-        self.accNr = c["ig_demo_acc_nr"]
-        self.type = "DEMO"
+        self.user = conf_reader.get("ig_demo_user")
+        self.password = conf_reader.get("ig_demo_pass")
+        self.key = conf_reader.get("ig_demo_key")
+        self.accNr = conf_reader.get("ig_demo_acc_nr")
+        if live:
+            self.type = "LIVE"
+        else:
+            self.type = "DEMO"
         self._tracer: Tracer = tracer
         self.connect()
 
@@ -31,7 +33,7 @@ class IG:
         market_df = market_df[~market_df["instrumentName"].str.contains("Mini")]
         for market in market_df.iterrows():
             markets.append({
-                "symbol": market[1].instrumentName.replace("/", "").replace(" Kassa", ""),
+                "symbol": (market[1].instrumentName.replace("/", "").replace(" Kassa", "")).strip(),
                 "epic": market[1].epic,
                 "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
                 "scaling": market[1].scalingFactor

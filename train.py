@@ -2,10 +2,11 @@ from Data.data_processor import DataProcessor
 from Connectors.tiingo import Tiingo
 from Predictors import *
 import pandas as pd
+from BL.utils import ConfigReader
 
 # Prep
 dp = DataProcessor()
-ti = Tiingo()
+ti = Tiingo(conf_reader=ConfigReader())
 df = ti.load_data_by_date("gbpusd","2023-01-02","2023-02-28",dp)
 df_eval = pd.read_csv("./Data/GBPUSD.csv")
 
