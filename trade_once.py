@@ -15,7 +15,7 @@ else:
 
 dataProcessor = DataProcessor()
 tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_)
-tiingo = Tiingo(tracer, conf_reader=env_reader)
+tiingo = Tiingo(tracer=tracer, conf_reader=env_reader)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
 
 trader = Trader(
