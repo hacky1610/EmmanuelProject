@@ -21,7 +21,10 @@ class Tiingo:
             request_response = requests.get(
                 f"{self._BASEURL}{suffix}&token={self._apykey}&format=json",
                 headers=headers)
-            return request_response.json()
+            if request_response.status_code == 200:
+                return request_response.json()
+            else:
+                self._tracer.error(f"Exception during _send_request {request_response.text}")
         except Exception as e:
             self._tracer.error(f"Exception during _send_request {e}")
             return ""
