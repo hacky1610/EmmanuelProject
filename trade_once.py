@@ -14,9 +14,9 @@ else:
     live = True
 
 dataProcessor = DataProcessor()
-tracer = LogglyTracer(env_reader.get("loggly_api_key"),type_)
-tiingo = Tiingo(tracer,conf_reader=env_reader)
-ig = IG(tracer,conf_reader=env_reader,live=live)
+tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_)
+tiingo = Tiingo(tracer, conf_reader=env_reader)
+ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
 
 trader = Trader(
     ig=ig,
@@ -29,4 +29,3 @@ trader = Trader(
 markets = ig.get_markets()
 for market in markets:
     trader.trade(market["symbol"], market["epic"], market["spread"], market["scaling"])
-

@@ -12,7 +12,7 @@ dataProcessor = DataProcessor()
 conf_reader = ConfigReader(live_config=live_trade)
 tracer = LogglyTracer(conf_reader.get("loggly_api_key"),"DEMO")
 tiingo = Tiingo(tracer,conf_reader)
-ig = IG(tracer,conf_reader,live=live_trade)
+ig = IG(conf_reader,tracer,live=live_trade)
 
 trader = Trader(
     ig=ig,

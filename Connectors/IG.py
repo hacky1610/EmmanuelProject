@@ -13,7 +13,7 @@ from BL.utils import *
 
 class IG:
 
-    def __init__(self, tracer: Tracer = ConsoleTracer(), conf_reader:BaseReader=ConfigReader(),live:bool=False):
+    def __init__(self, conf_reader: BaseReader, tracer: Tracer = ConsoleTracer(), live: bool = False):
         self.ig_service = None
         self.user = conf_reader.get("ig_demo_user")
         self.password = conf_reader.get("ig_demo_pass")
