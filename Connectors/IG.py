@@ -32,12 +32,14 @@ class IG:
         market_df = market_df[market_df.marketStatus == "TRADEABLE"]
         market_df = market_df[~market_df["instrumentName"].str.contains("Mini")]
         for market in market_df.iterrows():
-            markets.append({
-                "symbol": (market[1].instrumentName.replace("/", "").replace(" Kassa", "")).strip(),
-                "epic": market[1].epic,
-                "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
-                "scaling": market[1].scalingFactor
-            })
+            symbol = (market[1].instrumentName.replace("/", "").replace(" Kassa", "")).strip()
+            if symbol != "EURUSD":
+                markets.append({
+                    "symbol": symbol,
+                    "epic": market[1].epic,
+                    "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
+                    "scaling": market[1].scalingFactor
+                })
         return markets
 
     def connect(self):
@@ -134,7 +136,7 @@ class IG:
         return hours
 
     def create_report(self, ti):
-        start_time = (datetime.now() - timedelta(hours=24))
+        start_time = (datetime.now() - timedelta(days=6))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
 
         hist = self.get_transaction_history(start_time)
