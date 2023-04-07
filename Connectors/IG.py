@@ -184,9 +184,9 @@ class IG:
                 pl = row.openLevel - row.closeLevel
 
                 stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
-                                     color="#00ff00")
+                                     color="#ff0000")
                 limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
-                                      color="#ff0000", label="Limit")
+                                      color="#00ff00", label="Limit")
 
             for i in range(len(longs)):
                 row = longs[i:i + 1]
