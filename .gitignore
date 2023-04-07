@@ -6,3 +6,4 @@ trace.log
 .pytest_cache
 runs
 Config/demo.json
+Config/live.json
