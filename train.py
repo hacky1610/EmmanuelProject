@@ -6,11 +6,12 @@ from BL.utils import ConfigReader
 
 # Prep
 dp = DataProcessor()
+symbol = "GBPUSD"
 ti = Tiingo(conf_reader=ConfigReader())
-df = ti.load_data_by_date("gbpusd","2023-01-02","2023-02-28",dp)
-df_eval = pd.read_csv("./Data/GBPUSD.csv")
+df = ti.load_data_by_date(symbol,"2023-01-02","2023-02-28",dp)
+df_eval = pd.read_csv(f"./Data/{symbol}.csv",delimiter=",")
 
-print(evaluate(PredictorCollection([RSI(),CCI_EMA()]),df,df_eval))
+print(evaluate(CCI_EMA(),df,df_eval))
 #print(rsi.evaluate(df,df_eval))
 #print(cci.evaluate(df,df_eval))
 
