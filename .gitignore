@@ -7,3 +7,6 @@ trace.log
 runs
 Config/demo.json
 Config/live.json
+test-output.xml
+
+
