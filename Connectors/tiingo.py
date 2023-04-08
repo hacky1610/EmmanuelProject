@@ -24,6 +24,7 @@ class Tiingo:
                 return request_response.json()
             else:
                 self._tracer.error(f"Exception during _send_request {request_response.text}")
+                return ""
         except Exception as e:
             self._tracer.error(f"Exception during _send_request {e}")
             return ""

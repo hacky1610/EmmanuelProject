@@ -1,13 +1,13 @@
 from pandas import DataFrame
-from Predictors import evaluate
+from Predictors.evaluate import evaluate
 
 
 class BasePredictor:
     SELL = "sell"
     BUY = "buy"
     NONE = "none"
-    limit = 0.0029
-    stop = 0.0029
+    limit = 2.5
+    stop = 2.5
     METRIC = "reward"
 
     def __init__(self, config=None):
@@ -25,6 +25,10 @@ class BasePredictor:
 
     def predict(self, df: DataFrame) -> str:
         raise NotImplementedError
+
+    def get_stop_limit(self):
+        mean_diff = abs(self.df[-30:].close - self.df[-30:].close.shift(-1)).mean()
+        return mean_diff * self.stop, mean_diff * self.limit
 
     def step(self):
         reward, success, trade_freq, win_loss = evaluate(self, self.df, self.df_eval)

@@ -29,3 +29,20 @@ class EnvReader(BaseReader):
 
     def get(self,key:str):
         return os.getenv(key)
+
+
+def load_train_data(symbol:str,ti,dp):
+    df = ti.load_data_by_date(symbol, "2023-01-02", "2023-02-28", dp,"1hour")
+    df_eval_1 = ti.load_data_by_date(symbol, "2023-01-02", "2023-02-04", dp,"5min")
+    df_eval_2 = ti.load_data_by_date(symbol, "2023-02-01", "2023-02-28", dp, "5min")
+
+    df_complete = df_eval_1.append(df_eval_2[df_eval_2.date > df_eval_1.tail(1).date.values[0]])
+    df_complete.reset_index(inplace=True)
+
+    df.to_csv(f"Data/{symbol}_1hour.csv")
+    df_complete.to_csv(f"Data/{symbol}_5min.csv")
+
+
+
+
+

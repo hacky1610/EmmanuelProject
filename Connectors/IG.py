@@ -26,20 +26,19 @@ class IG:
         self._tracer: Tracer = tracer
         self.connect()
 
-    def get_markets(self):
+    def get_markets(self,tradebale:bool=True):
         market_df = self.ig_service.search_markets("CURRENCIES")
         markets = []
-        market_df = market_df[market_df.marketStatus == "TRADEABLE"]
+        if tradebale:
+            market_df = market_df[market_df.marketStatus == "TRADEABLE"]
         market_df = market_df[~market_df["instrumentName"].str.contains("Mini")]
         for market in market_df.iterrows():
             symbol = (market[1].instrumentName.replace("/", "").replace(" Kassa", "")).strip()
-            if symbol != "EURUSD":
-                markets.append({
-                    "symbol": symbol,
-                    "epic": market[1].epic,
-                    "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
-                    "scaling": market[1].scalingFactor
-                })
+            markets.append({
+                "symbol": symbol,
+                "epic": market[1].epic,
+                "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
+                "scaling": market[1].scalingFactor})
         return markets
 
     def connect(self):
