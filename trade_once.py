@@ -4,6 +4,9 @@ from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo
 from BL import Trader, Analytics, EnvReader
 from Predictors import *
+from datetime import datetime
+import dropbox
+from Connectors.dropboxservice import DropBoxService
 
 env_reader = EnvReader()
 type_ = env_reader.get("Type")
@@ -27,6 +30,8 @@ trader = Trader(
     dataprocessor=dataProcessor,
     analytics=Analytics(tracer))
 
+
+#trade
 markets = ig.get_markets()
 for market in markets:
     symbol = market["symbol"]
@@ -34,3 +39,9 @@ for market in markets:
         tracer.write(f"Dont trade {symbol}")
     else:
         trader.trade(market["symbol"], market["epic"], market["spread"], market["scaling"])
+
+#report
+if datetime.now().hour == 20:
+    dbx = dropbox.Dropbox(env_reader.get("dropbox"))
+    ds = DropBoxService(dbx)
+    ig.create_report(tiingo,ds)
