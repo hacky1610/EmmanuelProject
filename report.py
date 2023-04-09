@@ -7,7 +7,7 @@ from Connectors.dropboxservice import DropBoxService
 
 conf_reader = ConfigReader()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
-ds = DropBoxService(dbx)
+ds = DropBoxService(dbx,"DEMO")
 tiingo = Tiingo(conf_reader=conf_reader)
 ig = IG(conf_reader=conf_reader)
 
