@@ -261,7 +261,8 @@ class IG:
         for ticker in hist['name'].unique():
             temp_hist = hist[hist['name'] == ticker]
             profit = temp_hist.profitAndLoss.sum()
-            summary_text += f"\n\r {ticker}: {profit}"
+            mean = temp_hist.profitAndLoss.mean()
+            summary_text += f"\n\r {ticker}: Profit: {profit} Mean: {mean}"
 
         temp_file = os.path.join(tempfile.gettempdir(), f"summary_{name}.md")
 
