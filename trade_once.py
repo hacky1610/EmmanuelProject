@@ -43,5 +43,5 @@ for market in markets:
 #report
 if datetime.now().hour == 20:
     dbx = dropbox.Dropbox(env_reader.get("dropbox"))
-    ds = DropBoxService(dbx)
+    ds = DropBoxService(dbx,type_)
     ig.create_report(tiingo,ds)
