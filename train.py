@@ -4,13 +4,21 @@ from Predictors import *
 import pandas as pd
 from BL.utils import ConfigReader
 
+from BL.utils import load_train_data
+
+
+
 # Prep
 dp = DataProcessor()
+symbol = "USDSGD"
 ti = Tiingo(conf_reader=ConfigReader())
-df = ti.load_data_by_date("gbpusd","2023-01-02","2023-02-28",dp)
-df_eval = pd.read_csv("./Data/GBPUSD.csv")
 
-print(evaluate(PredictorCollection([RSI(),CCI_EMA()]),df,df_eval))
+
+df = pd.read_csv(f"./Data/{symbol}_1hour.csv", delimiter=",")
+df_eval = pd.read_csv(f"./Data/{symbol}_5min.csv", delimiter=",")
+df_eval.drop(columns=["level_0"], inplace=True)
+
+print(evaluate(CCI_EMA({"df": df, "df_eval": df_eval}),df,df_eval))
 #print(rsi.evaluate(df,df_eval))
 #print(cci.evaluate(df,df_eval))
 

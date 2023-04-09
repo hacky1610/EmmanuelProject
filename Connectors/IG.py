@@ -1,3 +1,5 @@
+import os.path
+
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from pandas import DataFrame
@@ -9,6 +11,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 import re
 from BL.utils import *
+import tempfile
+from datetime import datetime
 
 
 class IG:
@@ -26,18 +30,19 @@ class IG:
         self._tracer: Tracer = tracer
         self.connect()
 
-    def get_markets(self):
+    def get_markets(self,tradebale:bool=True):
         market_df = self.ig_service.search_markets("CURRENCIES")
         markets = []
-        market_df = market_df[market_df.marketStatus == "TRADEABLE"]
+        if tradebale:
+            market_df = market_df[market_df.marketStatus == "TRADEABLE"]
         market_df = market_df[~market_df["instrumentName"].str.contains("Mini")]
         for market in market_df.iterrows():
+            symbol = (market[1].instrumentName.replace("/", "").replace(" Kassa", "")).strip()
             markets.append({
-                "symbol": (market[1].instrumentName.replace("/", "").replace(" Kassa", "")).strip(),
+                "symbol": symbol,
                 "epic": market[1].epic,
                 "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
-                "scaling": market[1].scalingFactor
-            })
+                "scaling": market[1].scalingFactor})
         return markets
 
     def connect(self):
@@ -133,11 +138,26 @@ class IG:
 
         return hours
 
-    def create_report(self, ti):
+    def fix_hist(self,hist):
+        new_column = []
+        for values in hist.instrumentName:
+            new_column.append(re.search(r'\w{3}\/\w{3}', values).group().replace("/", ""))
+
+        hist['name'] = new_column
+
+        hist['profitAndLoss'] = hist.profitAndLoss.str.replace("E", "").astype(float)
+
+        return hist
+
+
+    def report_last_day(self,ti,dp_service):
         start_time = (datetime.now() - timedelta(hours=24))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
 
         hist = self.get_transaction_history(start_time)
+        if len(hist) == 0:
+            return
+
         hist = hist.set_index("openDateUtc")
         hist.sort_index(inplace=True)
         hist.reset_index(inplace=True)
@@ -148,11 +168,7 @@ class IG:
         hist["openLevel"] = hist["openLevel"].astype("float")
         hist["closeLevel"] = hist["closeLevel"].astype("float")
 
-        new_column = []
-        for values in hist.instrumentName:
-            new_column.append(re.search(r'\w{3}\/\w{3}', values).group().replace("/", ""))
-
-        hist['name'] = new_column
+        hist = self.fix_hist(hist)
 
         for ticker in hist['name'].unique():
 
@@ -184,9 +200,9 @@ class IG:
                 pl = row.openLevel - row.closeLevel
 
                 stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
-                                     color="#00ff00")
+                                     color="#ff0000")
                 limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
-                                      color="#ff0000", label="Limit")
+                                      color="#00ff00", label="Limit")
 
             for i in range(len(longs)):
                 row = longs[i:i + 1]
@@ -219,5 +235,48 @@ class IG:
             # plt.legend(handles=[stopLine, limitLine, chart, buy, sell, profit, loss])
             plt.suptitle(
                 f"{ticker} - Summary of last 24 hours: Profit {hist['profitAndLoss'].sum()} Won: {len(winner)} Lost: {len(looser)}")
-            plt.show(block=True)
+
+            tempng = os.path.join(tempfile.gettempdir(), f"{ticker}.png")
+            plt.savefig(tempng)
+
+            dp_service.upload(tempng,
+                              os.path.join(
+                                  datetime.now().strftime("%Y_%m_%d"),
+                                  f"{ticker}.png"))
+
+    def report_summary(self, ti, dp_service,delta:timedelta=timedelta(hours=24),name:str="lastday"):
+        start_time = (datetime.now() - delta)
+
+        hist = self.get_transaction_history(start_time)
+        if len(hist) == 0:
+            return
+
+        hist = self.fix_hist(hist)
+
+        summary_text = "Summary"
+
+        all_profit = hist.profitAndLoss.sum()
+        summary_text += f"Profit: {all_profit}"
+
+        for ticker in hist['name'].unique():
+            temp_hist = hist[hist['name'] == ticker]
+            profit = temp_hist.profitAndLoss.sum()
+            summary_text += f"\n\r {ticker}: {profit}"
+
+        temp_file = os.path.join(tempfile.gettempdir(), f"summary_{name}.md")
+
+        with open(temp_file, "w") as f:
+            f.write(summary_text)
+
+        dp_service.upload(temp_file,
+                          os.path.join(
+                              datetime.now().strftime("%Y_%m_%d"),
+                              f"summary_{name}.md"))
+
         return
+
+    def create_report(self, ti,dp_service):
+        self.report_summary(ti,dp_service,timedelta(hours=24),"lastday")
+        self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
+        self.report_last_day(ti,dp_service)
+

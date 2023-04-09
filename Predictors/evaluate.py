@@ -24,33 +24,37 @@ def evaluate(predictor,df_train:DataFrame, df_eval:DataFrame):
             plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'b^', label="Buy")
             for j in range(len(future)):
                 close = future.close[j]
-
-                if close > open_price + predictor.limit:
+                stop, limit = predictor.get_stop_limit()
+                if close > open_price + limit:
                     # Won
                     plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
-                    reward += predictor.limit
+                    reward += limit
                     wins += 1
                     break
-                elif close < open_price - predictor.stop:
+                elif close < open_price - stop:
                     # Loss
                     plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
-                    reward -= predictor.stop
+                    reward -= stop
                     losses += 1
                     break
         elif action == predictor.SELL:
+            plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'bv', label="Sell")
             for j in range(len(future)):
                 close = future.close[j]
-                if close < open_price - predictor.limit:
+                stop, limit = predictor.get_stop_limit()
+                if close < open_price - limit:
                     # Won
-                    reward += predictor.limit
+                    plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
+                    reward += limit
                     wins += 1
                     break
-                elif close > open_price + predictor.stop:
-                    reward -= predictor.stop
+                elif close > open_price + stop:
+                    plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
+                    reward -= stop
                     losses += 1
                     break
 
-    # plt.show()
+    #plt.show()
 
     trades = wins + losses
     if trades == 0:
