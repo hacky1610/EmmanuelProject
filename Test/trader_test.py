@@ -59,6 +59,19 @@ class TraderTest(unittest.TestCase):
         res = t.trade("myepic", "mysymbol", 1.0, 2)
         ig.buy.assert_called()
 
+    def test_trade_do_sell(self):
+        tiingo = MagicMock()
+        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
+        ig = MagicMock()
+        ig.sell = MagicMock(return_value=True)
+        ig.has_opened_positions = MagicMock(return_value=False)
+        ig.get_spread = MagicMock(return_value=2)
+        predictor = MagicMock()
+        predictor.predict = MagicMock(return_value="sell")
+        t = Trader(ig, tiingo, self._tracer, predictor, self._dataProcessor, self.analytics)
+        res = t.trade("myepic", "mysymbol", 1.0, 2)
+        ig.sell.assert_called()
+
     def test_trade_spread_to_big(self):
         tiingo = MagicMock()
         tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
@@ -68,3 +81,14 @@ class TraderTest(unittest.TestCase):
         t = Trader(ig, tiingo, self._tracer, predictor, self._dataProcessor, self.analytics)
         res = t.trade("myepic", "mysymbol", 10.0, 2)
         predictor.predict.assert_not_called()
+
+    def test_trade_no_action(self):
+        tiingo = MagicMock()
+        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
+        ig = MagicMock()
+        ig.buy = MagicMock(return_value=True)
+        predictor = MagicMock()
+        predictor.predict = MagicMock(return_value="none")
+        t = Trader(ig, tiingo, self._tracer, predictor, self._dataProcessor, self.analytics)
+        res = t.trade("myepic", "mysymbol", 4, 2)
+        ig.buy.assert_not_called()

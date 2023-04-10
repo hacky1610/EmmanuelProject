@@ -32,6 +32,9 @@ class IG:
 
     def get_markets(self,tradebale:bool=True):
         market_df = self.ig_service.search_markets("CURRENCIES")
+        if len(market_df) == 0:
+            return []
+
         markets = []
         if tradebale:
             market_df = market_df[market_df.marketStatus == "TRADEABLE"]
@@ -54,18 +57,6 @@ class IG:
             self.ig_service.create_session()
         except Exception as ex:
             self._tracer.error(f"Error during open a IG Connection {ex}")
-
-    def create_dataframe(self, ig_dataframe, data_processor: DataProcessor):
-        df = DataFrame()
-        df["Open"] = ig_dataframe["bid", "Open"]
-        df["Low"] = ig_dataframe["bid", "Low"]
-        df["High"] = ig_dataframe["bid", "High"]
-        df["Close"] = ig_dataframe["bid", "Close"]
-        df["Volume"] = ig_dataframe["last", "Volume"]
-
-        data_processor.addSignals(df)
-        data_processor.clean_data(df)
-        return df
 
     def buy(self, epic: str, stop: int, limit: int):
         return self.open(epic, "BUY", stop, limit)
