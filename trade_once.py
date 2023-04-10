@@ -41,7 +41,8 @@ for market in markets:
         trader.trade(market["symbol"], market["epic"], market["spread"], market["scaling"])
 
 #report
-if datetime.now().hour == 20:
+if datetime.now().hour == 18:
+    tracer.write("Create report")
     dbx = dropbox.Dropbox(env_reader.get("dropbox"))
     ds = DropBoxService(dbx,type_)
     ig.create_report(tiingo,ds)

@@ -117,6 +117,9 @@ class IG:
         return self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", from_date=start_time,
                                                          max_span_seconds=60 * 50)
 
+    def get_current_balance(self):
+        return self.ig_service.fetch_accounts().loc[0].balance
+
     def exit(self, deal_id: str, direction: str):
         response = self.ig_service.close_open_position(
             deal_id=deal_id,
@@ -162,7 +165,7 @@ class IG:
         hist.sort_index(inplace=True)
         hist.reset_index(inplace=True)
 
-        hist['profitAndLoss'] = hist['profitAndLoss'].str.replace('E', '', regex=True).astype('float64')
+        #hist['profitAndLoss'] = hist['profitAndLoss'].str.replace('E', '', regex=True).astype('float64')
         hist["openDateUtc"] = pd.to_datetime(hist["openDateUtc"])
         hist["dateUtc"] = pd.to_datetime(hist["dateUtc"])
         hist["openLevel"] = hist["openLevel"].astype("float")
@@ -174,6 +177,9 @@ class IG:
 
             df = ti.load_data_by_date(ticker, start_time.strftime("%Y-%m-%d"),
                                       None, DataProcessor(), "1min", False, False)
+            if len(df) == 0:
+                continue
+
             df = df[df["date"] > start_time_str]
 
             temp_hist = hist[hist['name'] == ticker]
@@ -253,16 +259,22 @@ class IG:
 
         hist = self.fix_hist(hist)
 
-        summary_text = "Summary"
+        summary_text = f"Summary {name}"
 
         all_profit = hist.profitAndLoss.sum()
-        summary_text += f"Profit: {all_profit}"
+        balance = self.get_current_balance()
 
+        profit_percentige = (balance * 100 / (balance - all_profit)) - 100
+
+        summary_text += f"\n\rProfit: {all_profit}€"
+        summary_text += f"\n\rPerformance: {profit_percentige}%"
+        summary_text += f"\n\r|Ticker| Profit| Mean |"
+        summary_text += f"\n|------| ------| ---- |"
         for ticker in hist['name'].unique():
             temp_hist = hist[hist['name'] == ticker]
             profit = temp_hist.profitAndLoss.sum()
             mean = temp_hist.profitAndLoss.mean()
-            summary_text += f"\n\r {ticker}: Profit: {profit} Mean: {mean}"
+            summary_text += f"\n|{ticker}| {profit} | {mean}"
 
         temp_file = os.path.join(tempfile.gettempdir(), f"summary_{name}.md")
 
