@@ -1,8 +1,8 @@
-from Data.data_processor import DataProcessor
+from BL.data_processor import DataProcessor
 import requests
 from pandas import DataFrame
 from Tracing.Tracer import Tracer
-from BL.utils import ConfigReader, BaseReader
+from BL.utils import BaseReader
 
 
 class Tiingo:

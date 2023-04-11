@@ -1,5 +1,5 @@
 from Connectors.IG import IG
-from Data.data_processor import DataProcessor
+from BL.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo
 from BL import Trader, Analytics, EnvReader

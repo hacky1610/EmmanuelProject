@@ -2,13 +2,12 @@ import os.path
 
 from trading_ig import IGService
 from trading_ig.rest import IGException
-from pandas import DataFrame
-from Data.data_processor import DataProcessor
+from BL.data_processor import DataProcessor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import matplotlib.pyplot as plt
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import timedelta
 import re
 from BL.utils import *
 import tempfile

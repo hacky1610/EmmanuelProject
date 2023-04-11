@@ -1,12 +1,8 @@
-from Data.data_processor import DataProcessor
+from BL.data_processor import DataProcessor
 from Connectors.tiingo import Tiingo
 from Predictors import *
 import pandas as pd
 from BL.utils import ConfigReader
-
-from BL.utils import load_train_data
-
-
 
 # Prep
 dp = DataProcessor()

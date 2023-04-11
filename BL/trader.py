@@ -1,5 +1,5 @@
 from Connectors import IG
-from Data.data_processor import DataProcessor
+from BL.data_processor import DataProcessor
 from Tracing.Tracer import Tracer
 from datetime import date, timedelta
 from BL.analytics import Analytics

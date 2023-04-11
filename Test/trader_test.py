@@ -4,7 +4,7 @@ from BL.trader import Trader
 from BL import Analytics
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame, Series
-from Data.data_processor import DataProcessor
+from BL.data_processor import DataProcessor
 
 
 class TraderTest(unittest.TestCase):
