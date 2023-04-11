@@ -37,9 +37,9 @@ class IG:
         markets = []
         if tradebale:
             market_df = market_df[market_df.marketStatus == "TRADEABLE"]
-        market_df = market_df[~market_df["instrumentName"].str.contains("Mini")]
+        market_df = market_df[market_df["instrumentName"].str.contains("Mini")]
         for market in market_df.iterrows():
-            symbol = (market[1].instrumentName.replace("/", "").replace(" Kassa", "")).strip()
+            symbol = (market[1].instrumentName.replace("/", "").replace(" Mini", "")).strip()
             markets.append({
                 "symbol": symbol,
                 "epic": market[1].epic,
@@ -57,16 +57,24 @@ class IG:
         except Exception as ex:
             self._tracer.error(f"Error during open a IG Connection {ex}")
 
+    def get_currency(self,epic:str):
+        m = re.match("[\w]+\.[\w]+\.[\w]{3}([\w]{3})", epic)
+        if len(m.groups()) == 1:
+            return m.groups()[0]
+        return ""
+
+
     def buy(self, epic: str, stop: int, limit: int):
         return self.open(epic, "BUY", stop, limit)
 
     def sell(self, epic: str, stop: int, limit: int):
         return self.open(epic, "SELL", stop, limit)
 
+
     def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25) -> bool:
         try:
             response = self.ig_service.create_open_position(
-                currency_code=epic[-10:-7],
+                currency_code=self.get_currency(epic),
                 direction=direction,
                 epic=epic,
                 expiry="-",

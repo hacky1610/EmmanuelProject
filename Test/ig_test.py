@@ -24,4 +24,11 @@ class IgTest(unittest.TestCase):
         res = self.ig.get_markets()
         assert len(res) == 1
 
+    def test_get_currency(self):
+        cur = self.ig.get_currency("CS.D.USDCAD.MINI.IP")
+        assert cur == "CAD"
+
+        cur = self.ig.get_currency("CS.D.USDEUR.CFD.IP")
+        assert cur == "EUR"
+
 
