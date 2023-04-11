@@ -18,7 +18,7 @@ class IgTest(unittest.TestCase):
 
     def test_get_markets_some_returns(self):
         df = DataFrame()
-        df = df.append(Series(["GBPUSD","TRADEABLE","GBPUSD.de",100,102,10],index=["instrumentName","marketStatus","epic","offer","bid","scalingFactor"]),ignore_index=True)
+        df = df.append(Series(["GBPUSD Mini","TRADEABLE","GBPUSD.de",100,102,10],index=["instrumentName","marketStatus","epic","offer","bid","scalingFactor"]),ignore_index=True)
         df = df.append(Series(["GBPUSD","NOTTRADEABLE","GBPUSD.de",100,102,10],index=["instrumentName","marketStatus","epic","offer","bid","scalingFactor"]),ignore_index=True)
         self.ig.ig_service.search_markets = MagicMock(return_value=df)
         res = self.ig.get_markets()

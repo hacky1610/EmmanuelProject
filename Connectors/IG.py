@@ -111,6 +111,14 @@ class IG:
     def get_opened_positions(self):
         return self.ig_service.fetch_open_positions()
 
+    def get_opened_positions_by_epic(self,epic:str):
+        positions = self.get_opened_positions()
+        epics = positions[positions.epic == epic]
+        if len(epics) == 1:
+            return epics.loc[0]
+        else:
+            return None
+
     def get_transaction_history(self, start_time: str):
         return self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", from_date=start_time,
                                                          max_span_seconds=60 * 50)

@@ -26,9 +26,6 @@ class Trader:
         return stop_limit, stop_limit
 
     def trade(self, symbol: str, epic: str, spread: float, scaling: int):
-        # if self._ig.has_opened_positions():
-        #    return False
-
         if spread > self._spread_limit:
             self._tracer.write(f"Spread is greater that {self._spread_limit} for {symbol}")
             return False
@@ -48,11 +45,20 @@ class Trader:
 
         stop, limit = self.get_stop_limit(trade_df, scaling)
 
+        openedPosition = self._ig.get_opened_positions_by_epic(epic)
+
         if signal == BasePredictor.BUY:
+            if openedPosition is not None and openedPosition.direction == "BUY":
+                self._tracer.write(f"There is already an opened position of {symbol} with direction {openedPosition.direction }")
+                return False
             res = self._ig.buy(epic, stop, limit)
             self._tracer.write(f"Buy {symbol}")
             return True
         elif signal == BasePredictor.SELL:
+            if openedPosition is not None and openedPosition.direction == "SELL":
+                self._tracer.write(
+                    f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
+                return False
             res = self._ig.sell(epic, stop, limit)
             self._tracer.write(f"Sell {symbol}")
             return True
