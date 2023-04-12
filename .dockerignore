@@ -2,3 +2,8 @@ venv
 azure-pipelines.yml
 logs
 Data
+.pytest_cache
+Test
+.git
+.idea
+__pycache__
