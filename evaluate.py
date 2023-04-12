@@ -17,9 +17,9 @@ for m in ig.get_markets(tradebale=False):
         df = pd.read_csv(f"./Data/{symbol}_1hour.csv", delimiter=",")
         df_eval = pd.read_csv(f"./Data/{symbol}_5min.csv", delimiter=",")
         df_eval.drop(columns=["level_0"], inplace=True)
-        reward, success, trade_freq, win_loss  = evaluate(CCI_EMA({"df": df, "df_eval": df_eval}), df, df_eval)
+        reward, success, trade_freq, win_loss, avg_minutes  = evaluate(CCI_EMA({"df": df, "df_eval": df_eval}), df, df_eval)
 
-        print(f"{symbol} - Reward {reward}, success {reward}, trade_freq {trade_freq}, win_loss {win_loss}")
+        print(f"{symbol} - Reward {reward}, success {reward}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes}")
     except Exception:
         print(f"{symbol} missing")
 

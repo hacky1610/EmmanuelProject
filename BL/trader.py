@@ -21,9 +21,10 @@ class Trader:
         self._consider_spread = True
         self._spread_limit = 6
 
-    def get_stop_limit(self, df, scaling: int):
-        stop_limit = int(abs(df.close - df.close.shift(-1)).mean() * 2.5 * scaling)
-        return stop_limit, stop_limit
+    def get_stop_limit(self, df, scaling: int, stop_factor:float=2.5, limit_factor:float=2.5):
+        stop = int(abs(df.close - df.close.shift(-1)).mean() * stop_factor * scaling)
+        limit = int(abs(df.close - df.close.shift(-1)).mean() * limit_factor * scaling)
+        return stop, limit
 
     def trade(self, symbol: str, epic: str, spread: float, scaling: int):
         if spread > self._spread_limit:
@@ -38,12 +39,13 @@ class Trader:
             self._tracer.error(f"Could not load train data for {symbol}")
             return False
 
+        self._predictor.set_config(symbol)
         signal = self._predictor.predict(trade_df)
 
         if signal == BasePredictor.NONE:
             return False
 
-        stop, limit = self.get_stop_limit(trade_df, scaling)
+        stop, limit = self.get_stop_limit(trade_df, scaling,self._predictor.stop,self._predictor.limit)
 
         openedPosition = self._ig.get_opened_positions_by_epic(epic)
 
@@ -52,7 +54,7 @@ class Trader:
                 self._tracer.write(f"There is already an opened position of {symbol} with direction {openedPosition.direction }")
                 return False
             res = self._ig.buy(epic, stop, limit)
-            self._tracer.write(f"Buy {symbol}")
+            self._tracer.write(f"Buy {symbol} with settings {self._predictor.get_config()}")
             return True
         elif signal == BasePredictor.SELL:
             if openedPosition is not None and openedPosition.direction == "SELL":
@@ -60,7 +62,7 @@ class Trader:
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
             res = self._ig.sell(epic, stop, limit)
-            self._tracer.write(f"Sell {symbol}")
+            self._tracer.write(f"Sell {symbol} with settings {self._predictor.get_config()}")
             return True
 
         return False
