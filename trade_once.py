@@ -20,13 +20,13 @@ dataProcessor = DataProcessor()
 tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_)
 tiingo = Tiingo(tracer=tracer, conf_reader=env_reader)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
-exclude = ["AUDUSD","CHFJPY","EURAUD","USDCHF","USDSGD","USDCAD","GBPAUD"]
+exclude = ["GBPAUD","EURAUD","EURSGD","AUDUSD"]
 
 trader = Trader(
     ig=ig,
     tiingo=tiingo,
     tracer=tracer,
-    predictor=CCI_EMA({}),
+    predictor=RSI_STOCK_MACD({}),
     dataprocessor=dataProcessor,
     analytics=Analytics(tracer))
 

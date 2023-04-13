@@ -7,8 +7,8 @@ class RSI_STOCK_MACD(BasePredictor):
     #https://www.youtube.com/watch?v=6c5exPYoz3U
     upper_limit = 80
     lower_limit = 20
-    period_1 = 5
-    period_2 = 5
+    period_1 = 11
+    period_2 = 11
 
     def __init__(self, config: dict):
         super().__init__(config)
