@@ -137,16 +137,19 @@ class CCI_EMA(CCI):
         self.stop = config.get("stop", self.stop)
 
     def predict(self, df: DataFrame) -> str:
+        p1 = self.period_1 * -1
+        p2 = self.period_1 * -1 + p1
 
-        if len(df) > 10:
+        if len(df) > p2:
             last_rsi = df.tail(1).CCI_7.values[0]
             last_ema10 = df.tail(1).EMA_10.values[0]
             last_ema30 = df.tail(1).EMA_30.values[0]
 
             if last_rsi < self.lower_limit and \
                     last_ema10 > last_ema30 and \
-                    len(df[self.period_1 * -1:].loc[df.close < df.EMA_30]) > 0 and \
-                    len(df[self.period_2 * -1:-1].loc[df.EMA_10 < df.EMA_30]) > 0:
+                    len(df[-2:].loc[df.close < df.EMA_30]) > 0 and \
+                    len(df[p1:-1].loc[df.EMA_10 > df.EMA_30]) == self.period_1 and \
+                    len(df[p2:p1].loc[df.EMA_10 < df.EMA_30]) > 0:
                 return self.BUY
 
             if last_rsi > self.upper_limit and \
@@ -154,6 +157,7 @@ class CCI_EMA(CCI):
                     len(df[self.period_1 * -1:].loc[df.close > df.EMA_30]) > 0 and \
                     len(df[self.period_2 * -1:-1].loc[df.EMA_10 > df.EMA_30]) > 0:
                 return self.SELL
+
 
         return self.NONE
 

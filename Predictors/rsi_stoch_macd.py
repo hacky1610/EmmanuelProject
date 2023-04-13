@@ -50,8 +50,8 @@ class RSI_STOCK_MACD(BasePredictor):
 
             #Sell
             if rsi < 50 and mac < sig and sd > self.lower_limit and sk > self.lower_limit:
-                stoch_D_overbought = len(df[p1:][df.STOCHD > self.upper_limit]) == 0
-                stoch_K_overbought = len(df[p1:][df.STOCHK > self.upper_limit]) == 0
+                stoch_D_overbought = len(df[p1:][df.STOCHD > self.upper_limit]) > 0
+                stoch_K_overbought = len(df[p1:][df.STOCHK > self.upper_limit]) > 0
                 MACD_OVER_SIGNAL = len(df[p2:-1][df.MACD > df.SIGNAL]) > 0
                 if stoch_D_overbought and stoch_K_overbought and MACD_OVER_SIGNAL:
                     return self.SELL
