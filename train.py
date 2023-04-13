@@ -4,7 +4,7 @@ from Connectors.IG import IG
 import random
 from BL.utils import ConfigReader
 
-def train(symbol:str):
+def train_CCI_EMA(symbol:str):
     print(f"#####Train {symbol}#######################")
     df = pd.read_csv(f"./Data/{symbol}_1hour.csv", delimiter=",")
     df_eval = pd.read_csv(f"./Data/{symbol}_5min.csv", delimiter=",")
@@ -50,7 +50,61 @@ def train(symbol:str):
                             w_l = res["win_loss"]
                             minutes = res["avg_minutes"]
 
-                            if avg_reward > best and frequ > 0.03:
+                            if avg_reward > best:
+                                best = avg_reward
+                                print(f"{symbol} - {predictor.get_config()} - "
+                                      f"Avg Reward: {avg_reward:6.5} "
+                                      f"Avg Min {int(minutes)}  "
+                                      f"Freq: {frequ:4.3} "
+                                      f"WL: {w_l:3.2}" )
+
+def train_RSI_STOCK_MACHD(symbol:str):
+    print(f"#####Train {symbol}#######################")
+    df = pd.read_csv(f"./Data/{symbol}_1hour.csv", delimiter=",")
+    df_eval = pd.read_csv(f"./Data/{symbol}_5min.csv", delimiter=",")
+    df_eval.drop(columns=["level_0"], inplace=True)
+
+    #print(evaluate(CCI_EMA({"df": df, "df_eval": df_eval}),df,df_eval))
+
+    p1_list = list(range(5,25,3))
+    p2_list = list(range(5 ,25,3))
+    stop_list = [1.5,1.8,2.1,2.5]
+    limit_list = [1.5,1.8,2.1,2.5,3.,3.5]
+    upper_limit_list = list(range(75,85,5))
+    lower_limit_list = list(range(15,25,5))
+    best = 0
+
+    random.shuffle(p1_list)
+    random.shuffle(p2_list)
+    random.shuffle(stop_list)
+    random.shuffle(limit_list)
+    random.shuffle(upper_limit_list)
+    random.shuffle(lower_limit_list)
+
+
+    for p1 in p1_list:
+        for p2 in p2_list:
+            for stop in stop_list:
+                for limit in limit_list:
+                    for upper_limit in upper_limit_list:
+                        for lower_limit in lower_limit_list:
+                            predictor = RSI_STOCK_MACD({
+                                "period_1":p1,
+                                "period_2":p2,
+                                "df":df,
+                                "df_eval":df_eval,
+                                "stop":stop,
+                                "limit":limit,
+                                "upper_limit":upper_limit,
+                                "lower_limit":lower_limit})
+                            res = predictor.step()
+                            reward = res["reward"]
+                            avg_reward = res["success"]
+                            frequ = res["trade_frequency"]
+                            w_l = res["win_loss"]
+                            minutes = res["avg_minutes"]
+
+                            if avg_reward > best:
                                 best = avg_reward
                                 print(f"{symbol} - {predictor.get_config()} - "
                                       f"Avg Reward: {avg_reward:6.5} "
@@ -61,5 +115,5 @@ def train(symbol:str):
 markets = IG(conf_reader=ConfigReader()).get_markets(tradebale=False)
 
 for m in markets:
-    train(m["symbol"])
+    train_CCI_EMA(m["symbol"])
 

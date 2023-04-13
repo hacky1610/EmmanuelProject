@@ -13,7 +13,10 @@ def evaluate(predictor,df_train:DataFrame, df_eval:DataFrame):
                      # label="Chart")
 
     trading_minutes = 0
+    last_exit = df_train.date[0]
     for i in range(len(df_train)):
+        if df_train.date[i] < last_exit:
+            continue
         action = predictor.predict(df_train[:i + 1])
         if action == predictor.NONE:
             continue
@@ -33,12 +36,14 @@ def evaluate(predictor,df_train:DataFrame, df_eval:DataFrame):
                     #plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
                     reward += limit
                     wins += 1
+                    last_exit = future.date[j]
                     break
                 elif close < open_price - stop:
                     # Loss
                     #plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
                     reward -= stop
                     losses += 1
+                    last_exit = future.date[j]
                     break
         elif action == predictor.SELL:
             plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'bv', label="Sell")
@@ -51,16 +56,18 @@ def evaluate(predictor,df_train:DataFrame, df_eval:DataFrame):
                     #plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
                     reward += limit
                     wins += 1
+                    last_exit = future.date[j]
                     break
                 elif close > open_price + stop:
                     #plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
                     reward -= stop
                     losses += 1
+                    last_exit = future.date[j]
                     break
 
     #plt.show()
 
     trades = wins + losses
     if trades == 0:
-        return 0, 0, 0, 0
+        return 0, 0, 0, 0, 0
     return reward, reward / trades, trades / len(df_train), wins / trades , trading_minutes / trades
