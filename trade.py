@@ -18,7 +18,7 @@ trader = Trader(
     ig=ig,
     tiingo=tiingo,
     tracer=tracer,
-    predictor=CCI_EMA({}),
+    predictor=RSI_STOCK_MACD({}),
     dataprocessor=dataProcessor,
     analytics=Analytics(tracer))
 

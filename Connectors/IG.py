@@ -30,7 +30,7 @@ class IG:
         self.connect()
 
     def get_markets(self,tradebale:bool=True):
-        market_df = self.ig_service.search_markets("Mini")
+        market_df = self.ig_service.search_markets("CURRENCIES")
         if len(market_df) == 0:
             return []
 

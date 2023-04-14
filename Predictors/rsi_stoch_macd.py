@@ -7,8 +7,89 @@ class RSI_STOCK_MACD(BasePredictor):
     #https://www.youtube.com/watch?v=6c5exPYoz3U
     upper_limit = 80
     lower_limit = 20
-    period_1 = 11
-    period_2 = 11
+    period_1 = 9
+    period_2 = 3
+
+    _settings = {
+        "default": {
+            "period_1": 15,
+            "period_2": 15,
+            "stop": 2.0,
+            "limit": 1.0
+        },
+        "EURUSD": {
+            "period_1": 18,
+            "period_2": 21,
+            "stop": 2.5,
+            "limit": 3.5
+        },
+        "EURGBP": {
+            "period_1": 18,
+            "period_2": 21,
+            "stop": 2.5,
+            "limit": 3.5
+        },
+        "USDJPY": {
+            "period_1": 15,
+            "period_2": 24,
+            "stop": 1.5,
+            "limit": 1.8
+        },
+        "EURCHF": {
+            "period_1": 15,
+            "period_2": 24,
+            "stop": 2.8,
+            "limit": 1.8
+        },
+        "GBPUSD": {
+            "period_1": 18,
+            "period_2": 18,
+            "stop": 2.5,
+            "limit": 2.1
+        },
+        "AUDUSD": {
+            "period_1": 15,
+            "period_2": 15,
+            "stop": 2.0,
+            "limit": 1.0
+        },
+        "EURJPY": {
+            "period_1": 15,
+            "period_2": 15,
+            "stop": 2.5,
+            "limit": 2.5
+        },
+        "AUDJPY": {
+            "period_1": 21,
+            "period_2": 15,
+            "stop": 1.5,
+            "limit": 1.5
+        },
+        "CHFJPY": {
+            "period_1": 15,
+            "period_2": 15,
+            "stop": 2.0,
+            "limit": 1.0
+        },
+        "EURAUD": {
+            "period_1": 15,
+            "period_2": 15,
+            "stop": 2.0,
+            "limit": 1.0
+        },
+        "EURSGD": {
+            "period_1": 15,
+            "period_2": 18,
+            "stop": 1.8,
+            "limit": 1.8
+        },
+        "GBPJPY": {
+            "period_1": 21,
+            "period_2": 24,
+            "stop": 2.5,
+            "limit": 1.8
+        }
+    }
 
     def __init__(self, config: dict):
         super().__init__(config)
@@ -20,11 +101,9 @@ class RSI_STOCK_MACD(BasePredictor):
         self.stop = config.get("stop", self.stop)
 
     def get_config(self) -> str:
-        stop, limit = self.get_stop_limit()
+        #stop, limit = self.get_stop_limit()
         return f"Stop *: {self.stop} " \
                f"Limit *: {self.limit} " \
-               f"Stop: {stop:5.4} " \
-               f"Limit: {limit:5.4} " \
                f"U-Limit: {self.upper_limit} " \
                f"L-Limit: {self.lower_limit} " \
                f"P1: {self.period_1} " \
@@ -59,5 +138,17 @@ class RSI_STOCK_MACD(BasePredictor):
 
 
         return self.NONE
+
+    def get_settings(self, ticker: str):
+        return self._settings.get(ticker, self._settings["default"])
+
+    def set_config(self, ticker: str):
+        settings = self.get_settings(ticker)
+
+        self.stop = settings["stop"]
+        self.limit = settings["limit"]
+        self.period_1 = settings["period_1"]
+        self.period_2 = settings["period_2"]
+
 
 

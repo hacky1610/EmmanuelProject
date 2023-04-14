@@ -60,16 +60,19 @@ def train_CCI_EMA(symbol:str):
 
 def train_RSI_STOCK_MACHD(symbol:str):
     print(f"#####Train {symbol}#######################")
-    df = pd.read_csv(f"./Data/{symbol}_1hour.csv", delimiter=",")
-    df_eval = pd.read_csv(f"./Data/{symbol}_5min.csv", delimiter=",")
+    try:
+        df = pd.read_csv(f"./Data/{symbol}_1hour.csv", delimiter=",")
+        df_eval = pd.read_csv(f"./Data/{symbol}_5min.csv", delimiter=",")
+    except:
+        return
     df_eval.drop(columns=["level_0"], inplace=True)
 
     #print(evaluate(CCI_EMA({"df": df, "df_eval": df_eval}),df,df_eval))
 
-    p1_list = list(range(2,25,3))
-    p2_list = list(range(2 ,25,3))
-    stop_list = [1.5,1.8,2.1,2.5]
-    limit_list = [1.5,1.8,2.1,2.5,3.]
+    p1_list = list(range(5,12,3))
+    p2_list = list(range(5 ,12,3))
+    stop_list = [1.8,2.1,2.5,3.,3.5]
+    limit_list = [2.1,2.5,3.,3.5]
     upper_limit_list = [80] #list(range(75,85,5))
     lower_limit_list = [20] #list(range(15,25,5))
     best = 0

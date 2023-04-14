@@ -39,7 +39,7 @@ class Trader:
             self._tracer.error(f"Could not load train data for {symbol}")
             return False
 
-        self._predictor.set_config(symbol)
+        #self._predictor.set_config(symbol)
         signal = self._predictor.predict(trade_df)
 
         if signal == BasePredictor.NONE:

@@ -114,15 +114,7 @@ class CCI_EMA(CCI):
             "period_2": 24,
             "stop": 2.5,
             "limit": 1.8
-        },
-        "GBPJPY": {
-            "upper_limit": 90,
-            "lower_limit": -105,
-            "period_1": 21,
-            "period_2": 24,
-            "stop": 2.5,
-            "limit": 1.8
-        },
+        }
     }
 
     def __init__(self, config=None):
