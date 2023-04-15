@@ -27,8 +27,8 @@ class Trainer:
             return result_df
 
         p1_list = list(range(2, 6))
-        stop_list = [2.1, 2.5, 3., 3.5]
-        limit_list = [2.1, 2.5, 3., 3.5]
+        stop_list = [1.8,2.0, 2.3, 2.7, 3., 3.5]
+        limit_list = [1.8,2.0, 2.3, 2.7, 3., 3.5]
         upper_limit_list = [75]  # list(range(75,85,5))
         lower_limit_list = [25]  # list(range(15,25,5))
         rsi_upper_limit_list = list(range(65, 85, 3))
@@ -42,11 +42,11 @@ class Trainer:
         random.shuffle(upper_limit_list)
         random.shuffle(lower_limit_list)
 
-        for p1 in p1_list:
-            for rsi_upper in rsi_upper_limit_list:
+        for stop in stop_list:
+            for limit   in limit_list:
                 predictor = RsiStoch({
-                    "period_1": p1,
-                    "rsi_upper_limit": rsi_upper})
+                    "stop": stop,
+                    "limit": limit})
                 res = predictor.step(df, df_eval)
                 reward = res["reward"]
                 avg_reward = res["success"]
