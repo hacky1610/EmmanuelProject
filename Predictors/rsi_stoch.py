@@ -10,6 +10,7 @@ class RsiStoch(BasePredictor):
     rsi_upper_limit = 83
     rsi_lower_limit = 25
     period_1 = 3
+    stoch_peeks = 2
 
     _settings = {
         "default": {
@@ -99,6 +100,7 @@ class RsiStoch(BasePredictor):
         self.rsi_upper_limit = config.get("rsi_upper_limit", self.rsi_upper_limit)
         self.rsi_lower_limit = config.get("rsi_lower_limit", self.rsi_lower_limit)
         self.period_1 = config.get("period_1", self.period_1)
+        self.stoch_peeks = config.get("stoch_peeks", self.stoch_peeks)
         self.limit = config.get("limit", self.limit)
         self.stop = config.get("stop", self.stop)
 
@@ -111,6 +113,7 @@ class RsiStoch(BasePredictor):
                f"RSI-U-Limit: {self.rsi_upper_limit} " \
                f"RSI-L-Limit: {self.rsi_lower_limit} " \
                f"P1: {self.period_1} " \
+               f"Peeks: {self.stoch_peeks} "
 
     def predict(self,df:DataFrame) -> str:
         p1 = self.period_1 * -1
@@ -122,15 +125,15 @@ class RsiStoch(BasePredictor):
         if (len(df) > abs(p1)):
 
             if rsi < self.rsi_lower_limit  and sd < self.upper_limit and sk < self.upper_limit:
-                stoch_D_oversold = len(df.loc[p1:][df.STOCHD < self.lower_limit]) >= 2
-                stoch_K_oversold = len(df.loc[p1:][df.STOCHK < self.lower_limit]) >= 2
+                stoch_D_oversold = len(df.loc[p1:][df.STOCHD < self.lower_limit]) >= self.stoch_peeks
+                stoch_K_oversold = len(df.loc[p1:][df.STOCHK < self.lower_limit]) >= self.stoch_peeks
                 if  stoch_D_oversold and stoch_K_oversold:
                     return self.BUY
 
             #Sell
             if rsi > self.rsi_upper_limit and sd > self.lower_limit and sk > self.lower_limit:
-                stoch_D_overbought = len(df.loc[p1:][df.STOCHD > self.upper_limit]) >= 2
-                stoch_K_overbought = len(df.loc[p1:][df.STOCHK > self.upper_limit]) >= 2
+                stoch_D_overbought = len(df.loc[p1:][df.STOCHD > self.upper_limit]) >= self.stoch_peeks
+                stoch_K_overbought = len(df.loc[p1:][df.STOCHK > self.upper_limit]) >= self.stoch_peeks
                 if stoch_D_overbought and stoch_K_overbought:
                     return self.SELL
 
