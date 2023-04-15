@@ -6,8 +6,8 @@ class BasePredictor:
     SELL = "sell"
     BUY = "buy"
     NONE = "none"
-    limit = 3.0
-    stop = 3.0
+    limit = 2.0
+    stop = 2.0
     METRIC = "reward"
 
     def __init__(self, config=None):
@@ -26,8 +26,8 @@ class BasePredictor:
         mean_diff = abs(df[-96:].close - df[-96:].close.shift(-1)).mean()
         return mean_diff * self.stop, mean_diff * self.limit
 
-    def step(self):
-        reward, success, trade_freq, win_loss, avg_minutes = evaluate(self, self.df, self.df_eval)
+    def step(self,df_train:DataFrame, df_eval:DataFrame):
+        reward, success, trade_freq, win_loss, avg_minutes = evaluate(self, df_train,df_eval)
 
         return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq,
                 "win_loss": win_loss, "avg_minutes": avg_minutes}

@@ -1,7 +1,5 @@
-from finta import TA
-from matplotlib import pyplot as plt
 from Predictors import BasePredictor
-from pandas import DataFrame
+from pandas import DataFrame,Series
 
 class RsiStochMacd(BasePredictor):
     #https://www.youtube.com/watch?v=6c5exPYoz3U
@@ -10,6 +8,7 @@ class RsiStochMacd(BasePredictor):
     rsi_upper_limit = 83
     rsi_lower_limit = 25
     period_1 = 3
+    diff_factor = 0.7
 
     _settings = {
         "default": {
@@ -101,6 +100,7 @@ class RsiStochMacd(BasePredictor):
         self.period_1 = config.get("period_1", self.period_1)
         self.limit = config.get("limit", self.limit)
         self.stop = config.get("stop", self.stop)
+        self.diff_factor = config.get("diff_factor", self.diff_factor)
 
     def get_config(self) -> str:
         #stop, limit = self.get_stop_limit()
@@ -118,30 +118,18 @@ class RsiStochMacd(BasePredictor):
         sk = df.tail(1).STOCHK.values[0]
         rsi = df.tail(1).RSI.values[0]
         df["MACD_DIFF"] = df.MACD - df.SIGNAL
-        pos_mean = df[df.MACD_DIFF > 0].MACD_DIFF.mean()
+        macd_diff = df.tail(1).MACD_DIFF.values[0]
+        pos_mean = (df[df.MACD_DIFF > 0].MACD_DIFF.mean()) * self.diff_factor
+        neg_mean = (abs(df[df.MACD_DIFF < 0].MACD_DIFF.mean())) * self.diff_factor
 
         if (len(df) > abs(p1)):
 
-            if rsi < self.rsi_lower_limit  and \
-                    sd < self.upper_limit and \
-                    sk < self.upper_limit and \
-                    signal > macd:
-                stoch_D_oversold = len(df.loc[p1:][df.STOCHD < self.lower_limit]) >= 2
-                stoch_K_oversold = len(df.loc[p1:][df.STOCHK < self.lower_limit]) >= 2
-                if  stoch_D_oversold and stoch_K_oversold:
-                    return self.BUY
+            if rsi < 50  and macd_diff > neg_mean:
+                return self.BUY
 
             #Sell
-            if rsi > self.rsi_upper_limit and \
-                    sd > self.lower_limit and \
-                    sk > self.lower_limit and \
-                    signal < macd:
-                stoch_D_overbought = len(df.loc[p1:][df.STOCHD > self.upper_limit]) >= 2
-                stoch_K_overbought = len(df.loc[p1:][df.STOCHK > self.upper_limit]) >= 2
-                if stoch_D_overbought and stoch_K_overbought:
-                    return self.SELL
-
-
+            if rsi > 50 and  macd_diff > pos_mean:
+                return self.SELL
 
         return self.NONE
 
@@ -155,6 +143,31 @@ class RsiStochMacd(BasePredictor):
         self.limit = settings["limit"]
         self.period_1 = settings["period_1"]
         self.period_2 = settings["period_2"]
+
+    def get_config_as_string(self) -> str:
+        # stop, limit = self.get_stop_limit()
+        return f"Stop *: {self.stop} " \
+               f"Limit *: {self.limit} " \
+               f"U-Limit: {self.upper_limit} " \
+               f"L-Limit: {self.lower_limit} " \
+               f"RSI-U-Limit: {self.rsi_upper_limit} " \
+               f"RSI-L-Limit: {self.rsi_lower_limit} " \
+               f"P1: {self.period_1} " \
+               f"Factor: {self.diff_factor} "
+
+    def get_config(self) -> Series:
+        return Series(["RSI_Stoch",
+                       self.stop,
+                       self.limit,
+                       self.upper_limit,
+                       self.lower_limit,
+                       self.rsi_upper_limit,
+                       self.rsi_lower_limit,
+                       self.period_1,
+                       self.diff_factor],
+                      index=["Type", "Stop", "Limit", "Upper Limit", "Lower Limit", "RSI Upper Limit",
+                             "RSI Lower Limit", "Period", "Diff Factor"])
+
 
 
 
