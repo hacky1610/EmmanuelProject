@@ -1,7 +1,5 @@
-from finta import TA
-from matplotlib import pyplot as plt
 from Predictors import BasePredictor
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 class RsiStoch(BasePredictor):
     #https://www.youtube.com/watch?v=6c5exPYoz3U
@@ -104,7 +102,7 @@ class RsiStoch(BasePredictor):
         self.limit = config.get("limit", self.limit)
         self.stop = config.get("stop", self.stop)
 
-    def get_config(self) -> str:
+    def get_config_as_string(self) -> str:
         #stop, limit = self.get_stop_limit()
         return f"Stop *: {self.stop} " \
                f"Limit *: {self.limit} " \
@@ -114,6 +112,18 @@ class RsiStoch(BasePredictor):
                f"RSI-L-Limit: {self.rsi_lower_limit} " \
                f"P1: {self.period_1} " \
                f"Peeks: {self.stoch_peeks} "
+
+    def get_config(self) -> Series:
+        return Series(["RSI_Stoch",
+                       self.stop,
+                       self.limit,
+                       self.upper_limit,
+                       self.lower_limit,
+                       self.rsi_upper_limit,
+                       self.rsi_lower_limit,
+                       self.period_1,
+                       self.stoch_peeks],
+                      index=["Type","Stop","Limit","Upper Limit","Lower Limit","RSI Upper Limit","RSI Lower Limit","Period","Stoch Peeks"])
 
     def predict(self,df:DataFrame) -> str:
         p1 = self.period_1 * -1

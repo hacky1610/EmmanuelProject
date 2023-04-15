@@ -1,8 +1,14 @@
 from Predictors import *
 import pandas as pd
+from pandas import DataFrame,Series
 from Connectors.IG import IG
 import random
 from BL.utils import ConfigReader
+import os
+import tempfile
+from datetime import datetime
+from Connectors.dropboxservice import DropBoxService
+import dropbox
 
 def train_CCI_EMA(symbol:str):
     print(f"#####Train {symbol}#######################")
@@ -58,13 +64,15 @@ def train_CCI_EMA(symbol:str):
                                       f"Freq: {frequ:4.3} "
                                       f"WL: {w_l:3.2}" )
 
-def train_RSI_STOCH(symbol:str):
+def train_RSI_STOCH(symbol:str) -> DataFrame:
     print(f"#####Train {symbol}#######################")
+    result_df = DataFrame()
+
     try:
         df = pd.read_csv(f"./Data/{symbol}_1hour.csv", delimiter=",")
         df_eval = pd.read_csv(f"./Data/{symbol}_5min.csv", delimiter=",")
     except:
-        return
+        return result_df
     df_eval.drop(columns=["level_0"], inplace=True)
 
     #print(evaluate(CCI_EMA({"df": df, "df_eval": df_eval}),df,df_eval))
@@ -86,12 +94,12 @@ def train_RSI_STOCH(symbol:str):
     random.shuffle(lower_limit_list)
 
     for p1 in p1_list:
-           for sp in stoch_peek_list:
+           for rsi_upper in rsi_upper_limit_list:
                 predictor = RsiStoch({
                     "period_1":p1,
                     "df":df,
                     "df_eval":df_eval,
-                    "stoch_peek":sp})
+                    "rsi_upper_limit":rsi_upper})
                 res = predictor.step()
                 reward = res["reward"]
                 avg_reward = res["success"]
@@ -99,16 +107,38 @@ def train_RSI_STOCH(symbol:str):
                 w_l = res["win_loss"]
                 minutes = res["avg_minutes"]
 
+                res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
+                                      index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
+                res = res.append(predictor.get_config())
+                result_df = result_df.append(res,
+                               ignore_index=True)
+
                 if avg_reward > best and frequ > 0.008:
                     best = avg_reward
-                    print(f"{symbol} - {predictor.get_config()} - "
+                    print(f"{symbol} - {predictor.get_config_as_string()} - "
                           f"Avg Reward: {avg_reward:6.5} "
                           f"Avg Min {int(minutes)}  "
                           f"Freq: {frequ:4.3} "
                           f"WL: {w_l:3.2}" )
+    return result_df
+
+dbx = dropbox.Dropbox(ConfigReader().get("dropbox"))
+ds = DropBoxService(dbx, "DEMO")
+temp_file = os.path.join(tempfile.gettempdir(), f"evaluate.xlsx")
 
 markets = IG(conf_reader=ConfigReader()).get_markets(tradebale=False)
 
 for m in markets:
-    train_RSI_STOCH(m["symbol"])
+    symbol = m["symbol"]
+    res = train_RSI_STOCH(symbol)
+    res.to_excel(temp_file)
+    t = datetime.now().strftime("%Y_%m_%d")
+    ds.upload(temp_file, os.path.join("Training", f"{t}_{symbol}.xlsx"))
+
+
+
+
+
+
+
 
