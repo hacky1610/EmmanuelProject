@@ -24,6 +24,7 @@ class DataProcessor:
 
         df["STOCHK"] = TA.STOCH(df)
         df["STOCHD"] = TA.STOCHD(df)
+        df["STOCHRSI"] = TA.STOCHRSI(df)
 
     def clean_data(self, df: DataFrame):
         DataProcessor.drop_column(df, "Volume")
