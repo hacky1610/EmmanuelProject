@@ -46,8 +46,6 @@ class Trainer:
             for rsi_upper in rsi_upper_limit_list:
                 predictor = RsiStoch({
                     "period_1": p1,
-                    "df": df,
-                    "df_eval": df_eval,
                     "rsi_upper_limit": rsi_upper})
                 res = predictor.step()
                 reward = res["reward"]
@@ -103,8 +101,6 @@ class Trainer:
                                 predictor = CCI_EMA({
                                     "period_1": p1,
                                     "period_2": p2,
-                                    "df": df,
-                                    "df_eval": df_eval,
                                     "stop": stop,
                                     "limit": limit,
                                     "upper_limit": upper_limit,

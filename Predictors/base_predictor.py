@@ -11,8 +11,6 @@ class BasePredictor:
     METRIC = "reward"
 
     def __init__(self, config=None):
-        self.df_eval = None
-        self.df = None
         if config is None:
             config = {}
         self.setup(config)
@@ -20,14 +18,12 @@ class BasePredictor:
     def setup(self, config):
         self.limit = config.get("limit", self.limit)
         self.stop = config.get("stop", self.stop)
-        self.df = config.get("df")
-        self.df_eval = config.get("df_eval")
 
     def predict(self, df: DataFrame) -> str:
         raise NotImplementedError
 
-    def get_stop_limit(self):
-        mean_diff = abs(self.df[-96:].close - self.df[-96:].close.shift(-1)).mean()
+    def get_stop_limit(self,df):
+        mean_diff = abs(df[-96:].close - df[-96:].close.shift(-1)).mean()
         return mean_diff * self.stop, mean_diff * self.limit
 
     def step(self):

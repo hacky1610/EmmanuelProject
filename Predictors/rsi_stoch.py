@@ -13,79 +13,66 @@ class RsiStoch(BasePredictor):
     _settings = {
         "default": {
             "period_1": 15,
-            "period_2": 15,
             "stop": 2.0,
             "limit": 1.0
         },
         "EURUSD": {
             "period_1": 18,
-            "period_2": 21,
             "stop": 2.5,
             "limit": 3.5
         },
         "EURGBP": {
             "period_1": 18,
-            "period_2": 21,
             "stop": 2.5,
             "limit": 3.5
         },
         "USDJPY": {
             "period_1": 15,
-            "period_2": 24,
             "stop": 1.5,
             "limit": 1.8
         },
         "EURCHF": {
             "period_1": 15,
-            "period_2": 24,
             "stop": 2.8,
             "limit": 1.8
         },
         "GBPUSD": {
             "period_1": 18,
-            "period_2": 18,
             "stop": 2.5,
             "limit": 2.1
         },
         "AUDUSD": {
             "period_1": 15,
-            "period_2": 15,
             "stop": 2.0,
             "limit": 1.0
         },
         "EURJPY": {
             "period_1": 15,
-            "period_2": 15,
             "stop": 2.5,
             "limit": 2.5
         },
         "AUDJPY": {
             "period_1": 21,
-            "period_2": 15,
             "stop": 1.5,
             "limit": 1.5
         },
         "CHFJPY": {
             "period_1": 15,
-            "period_2": 15,
             "stop": 2.0,
             "limit": 1.0
         },
         "EURAUD": {
             "period_1": 15,
-            "period_2": 15,
             "stop": 2.0,
             "limit": 1.0
         },
         "EURSGD": {
             "period_1": 15,
-            "period_2": 18,
             "stop": 1.8,
             "limit": 1.8
         },
         "GBPJPY": {
             "period_1": 21,
-            "period_2": 24,
             "stop": 2.5,
             "limit": 1.8
         }
@@ -134,14 +121,14 @@ class RsiStoch(BasePredictor):
 
         if (len(df) > abs(p1)):
 
-            if rsi < self.rsi_lower_limit  and sd < self.upper_limit and sk < self.upper_limit:
+            if rsi < self.rsi_lower_limit  and sd < self.upper_limit and sk < self.upper_limit and sd > self.lower_limit and sk > self.lower_limit:
                 stoch_D_oversold = len(df.loc[p1:][df.STOCHD < self.lower_limit]) >= self.stoch_peeks
                 stoch_K_oversold = len(df.loc[p1:][df.STOCHK < self.lower_limit]) >= self.stoch_peeks
                 if  stoch_D_oversold and stoch_K_oversold:
                     return self.BUY
 
             #Sell
-            if rsi > self.rsi_upper_limit and sd > self.lower_limit and sk > self.lower_limit:
+            if rsi > self.rsi_upper_limit and sd > self.lower_limit and sk > self.lower_limit and sd < self.upper_limit and sk < self.upper_limit:
                 stoch_D_overbought = len(df.loc[p1:][df.STOCHD > self.upper_limit]) >= self.stoch_peeks
                 stoch_K_overbought = len(df.loc[p1:][df.STOCHK > self.upper_limit]) >= self.stoch_peeks
                 if stoch_D_overbought and stoch_K_overbought:

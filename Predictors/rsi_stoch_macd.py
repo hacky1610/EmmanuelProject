@@ -117,8 +117,8 @@ class RsiStochMacd(BasePredictor):
         sd = df.tail(1).STOCHD.values[0]
         sk = df.tail(1).STOCHK.values[0]
         rsi = df.tail(1).RSI.values[0]
-        macd = df.tail(1).MACD.values[0]
-        signal = df.tail(1).SIGNAL.values[0]
+        df["MACD_DIFF"] = df.MACD - df.SIGNAL
+        pos_mean = df[df.MACD_DIFF > 0].MACD_DIFF.mean()
 
         if (len(df) > abs(p1)):
 

@@ -32,7 +32,7 @@ def evaluate(predictor,df_train:DataFrame, df_eval:DataFrame,print:bool=False):
             for j in range(len(future)):
                 trading_minutes += 5
                 close = future.close[j]
-                stop, limit = predictor.get_stop_limit()
+                stop, limit = predictor.get_stop_limit(df_train[:i + 1])
                 if close > open_price + limit:
                     # Won
                     if print:
@@ -55,7 +55,7 @@ def evaluate(predictor,df_train:DataFrame, df_eval:DataFrame,print:bool=False):
             for j in range(len(future)):
                 trading_minutes += 5
                 close = future.close[j]
-                stop, limit = predictor.get_stop_limit()
+                stop, limit = predictor.get_stop_limit(df_train[:i + 1])
                 if close < open_price - limit:
                     # Won
                     if print:
