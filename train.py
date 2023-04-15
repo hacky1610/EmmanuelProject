@@ -92,7 +92,7 @@ def train_RSI_STOCK_MACHD(symbol:str):
                         for rsil in rsi_lower_limit_list:
                             for upper_limit in upper_limit_list:
                                 for lower_limit in lower_limit_list:
-                                    predictor = RSI_STOCK_MACD({
+                                    predictor = RsiStoch({
                                         "period_1":p1,
                                         "df":df,
                                         "df_eval":df_eval,

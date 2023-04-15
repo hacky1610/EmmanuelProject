@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 from Predictors import BasePredictor
 from pandas import DataFrame
 
-class RSI_STOCK_MACD(BasePredictor):
+class RsiStoch(BasePredictor):
     #https://www.youtube.com/watch?v=6c5exPYoz3U
     upper_limit = 80
     lower_limit = 20

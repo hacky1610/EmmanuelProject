@@ -6,8 +6,8 @@ class BasePredictor:
     SELL = "sell"
     BUY = "buy"
     NONE = "none"
-    limit = 2.0
-    stop = 2.0
+    limit = 3.0
+    stop = 3.0
     METRIC = "reward"
 
     def __init__(self, config=None):
