@@ -10,17 +10,17 @@ dp = DataProcessor()
 ig = IG(ConfigReader())
 ti = Tiingo(conf_reader=ConfigReader())
 
-#load_train_data("USDCAD",ti,dp)
 
 for m in ig.get_markets(tradebale=False):
     symbol = m["symbol"]
-    #symbol = "USDCAD"
+    symbol = "AUDUSD"
+    #load_train_data(symbol,ti,dp)
 
     try:
         df = pd.read_csv(f"./Data/{symbol}_1hour.csv", delimiter=",")
         df_eval = pd.read_csv(f"./Data/{symbol}_5min.csv", delimiter=",")
         df_eval.drop(columns=["level_0"], inplace=True)
-        reward, success, trade_freq, win_loss, avg_minutes  = evaluate(RsiStoch({}), df, df_eval, False)
+        reward, success, trade_freq, win_loss, avg_minutes  = evaluate(RsiStoch({}), df, df_eval, True)
 
         print(f"{symbol} - Reward {reward}, success {reward}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes}")
     except Exception:
