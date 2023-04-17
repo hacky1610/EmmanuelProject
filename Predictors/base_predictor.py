@@ -31,3 +31,10 @@ class BasePredictor:
 
         return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq,
                 "win_loss": win_loss, "avg_minutes": avg_minutes}
+
+    def set_config(self,symbol:str):
+        raise NotImplementedError
+
+    def get_config(self) -> dict:
+        raise NotImplementedError
+

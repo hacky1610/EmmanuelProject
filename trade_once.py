@@ -1,7 +1,7 @@
 from Connectors.IG import IG
 from BL.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
-from Connectors.tiingo import Tiingo
+from Connectors.tiingo import Tiingo, TradeType
 from BL import Trader, Analytics, EnvReader
 from Predictors import *
 from datetime import datetime
@@ -32,7 +32,7 @@ trader = Trader(
     analytics=Analytics(tracer))
 
 # trade
-markets = ig.get_markets()
+markets = ig.get_markets(TradeType.FX)
 tracer.write(f"Trade with settings {predictor.get_config_as_string()}")
 for market in markets:
     symbol = market["symbol"]

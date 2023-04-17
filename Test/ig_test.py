@@ -3,6 +3,8 @@ from unittest.mock import MagicMock
 from Connectors.IG import IG
 from pandas import DataFrame,Series
 
+from Connectors.tiingo import TradeType
+
 
 class IgTest(unittest.TestCase):
 
@@ -13,7 +15,7 @@ class IgTest(unittest.TestCase):
 
     def test_get_markets_no_return(self):
         self.ig.ig_service.search_markets= MagicMock(return_value=[])
-        res = self.ig.get_markets()
+        res = self.ig.get_markets(TradeType.FX)
         assert len(res) == 0
 
     def test_get_markets_some_returns(self):
@@ -21,7 +23,7 @@ class IgTest(unittest.TestCase):
         df = df.append(Series(["GBPUSD Mini","TRADEABLE","GBPUSD.de",100,102,10],index=["instrumentName","marketStatus","epic","offer","bid","scalingFactor"]),ignore_index=True)
         df = df.append(Series(["GBPUSD","NOTTRADEABLE","GBPUSD.de",100,102,10],index=["instrumentName","marketStatus","epic","offer","bid","scalingFactor"]),ignore_index=True)
         self.ig.ig_service.search_markets = MagicMock(return_value=df)
-        res = self.ig.get_markets()
+        res = self.ig.get_markets(TradeType.FX)
         assert len(res) == 1
 
     def test_get_currency(self):

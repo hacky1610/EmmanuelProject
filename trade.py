@@ -2,7 +2,7 @@ import time
 from Connectors.IG import IG
 from BL.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
-from Connectors.tiingo import Tiingo
+from Connectors.tiingo import Tiingo,TradeType
 from BL import Trader, Analytics, ConfigReader
 from Predictors import *
 
@@ -23,8 +23,15 @@ trader = Trader(
     analytics=Analytics(tracer))
 
 while True:
-    markets = ig.get_markets()
-    for market in markets:
+    for market in ig.get_markets(TradeType.FX):
         trader.trade(market["symbol"], market["epic"], market["spread"], market["scaling"])
+
+    #for market in ig.get_markets(TradeType.CRYPTO):
+    #    if market["epic"] == "CS.D.BITCOIN.CFD.IP":
+    #        trader.trade("btcusd", market["epic"], market["spread"], market["scaling"],100,TradeType.CRYPTO,0.01)
+
+
+
+
 
     time.sleep(60 * 60)

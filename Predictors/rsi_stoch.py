@@ -14,60 +14,32 @@ class RsiStoch(BasePredictor):
     _settings = {
         "default": {
             "stop": 2.0,
-            "limit": 2.0
+            "limit": 2.0,
+            "upper_limit" : 80,
+            "lower_limit": 20,
+            "rsi_upper_limit": 83,
+            "rsi_lower_limit": 25,
+            "period_1" : 3,
+            "stoch_peeks" : 2
         },
-        "EURUSD": {
+        "btcusd": {
             "stop": 2.0,
-            "limit": 2.0
-        },
-        "EURGBP": {
-            "stop": 2.5,
-            "limit": 3.5
-        },
-        "USDJPY": {
-            "stop": 1.5,
-            "limit": 1.8
-        },
-        "EURCHF": {
-            "stop": 2.8,
-            "limit": 1.8
-        },
-        "GBPUSD": {
-            "stop": 2.5,
-            "limit": 2.1
-        },
-        "AUDUSD": {
-            "stop": 2.0,
-            "limit": 1.0
-        },
-        "EURJPY": {
-            "stop": 2.7,
-            "limit": 2.3
-        },
-        "AUDJPY": {
-            "stop": 1.5,
-            "limit": 1.5
-        },
-        "CHFJPY": {
-            "stop": 2.0,
-            "limit": 1.0
-        },
-        "EURAUD": {
-            "stop": 2.0,
-            "limit": 1.0
-        },
-        "EURSGD": {
-            "stop": 1.8,
-            "limit": 1.8
-        },
-        "GBPJPY": {
-            "stop": 2.5,
-            "limit": 1.8
+            "limit": 2.0,
+            "upper_limit": 75,
+            "lower_limit": 25,
+            "rsi_upper_limit": 74,
+            "rsi_lower_limit": 17,
+            "period_1": 3,
+            "stoch_peeks": 2
         }
     }
 
     def __init__(self, config: dict):
         super().__init__(config)
+        self._set_up(config)
+
+
+    def _set_up(self, config:dict):
         self.upper_limit = config.get("upper_limit", self.upper_limit)
         self.lower_limit = config.get("lower_limit", self.lower_limit)
         self.rsi_upper_limit = config.get("rsi_upper_limit", self.rsi_upper_limit)
@@ -129,7 +101,6 @@ class RsiStoch(BasePredictor):
 
     def set_config(self, ticker: str):
         settings = self.get_settings(ticker)
+        self._set_up(settings)
 
-        self.stop = settings["stop"]
-        self.limit = settings["limit"]
-        self.period_1 = settings["period_1"]
+

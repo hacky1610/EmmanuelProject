@@ -1,4 +1,5 @@
 from Connectors.IG import IG
+from Connectors.tiingo import TradeType
 from Predictors.trainer import Trainer
 from BL.utils import ConfigReader
 import os
@@ -11,10 +12,11 @@ dbx = dropbox.Dropbox(ConfigReader().get("dropbox"))
 ds = DropBoxService(dbx, "DEMO")
 temp_file = os.path.join(tempfile.gettempdir(), f"evaluate.xlsx")
 trainer = Trainer()
-markets = IG(conf_reader=ConfigReader()).get_markets(tradebale=False)
+markets = IG(conf_reader=ConfigReader()).get_markets(tradebale=False,trade_type=TradeType.FX)
 
 for m in markets:
     symbol = m["symbol"]
+    symbol = "btcusd"
     res = trainer.train_RSI_STOCH(symbol)
     res.to_excel(temp_file)
     t = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")

@@ -8,10 +8,12 @@ from Tracing.Tracer import Tracer
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import timedelta
+from pandas import DataFrame
 import re
 from BL.utils import *
 import tempfile
 from datetime import datetime
+from Connectors.tiingo import TradeType
 
 
 class IG:
@@ -29,15 +31,34 @@ class IG:
         self._tracer: Tracer = tracer
         self.connect()
 
-    def get_markets(self,tradebale:bool=True):
-        market_df = self.ig_service.search_markets("CURRENCIES")
+    def _get_markets_by_id(self, id):
+        res = self.ig_service.fetch_sub_nodes_by_node(id)
+        if len(res["nodes"]) > 0:
+            markets = DataFrame()
+            for i in res["nodes"].id:
+                markets = markets.append(self._get_markets_by_id(i))
+            return markets
+        else:
+            return res["markets"]
+
+    def get_markets(self,trade_type:TradeType,tradeable:bool=True) -> DataFrame:
+        if trade_type == TradeType.FX:
+            return self._get_markets(264139,tradeable)
+        elif trade_type == TradeType.CRYPTO:
+            return self._get_markets(668997, tradeable) #668997 is only Bitcoin
+
+        return DataFrame()
+
+
+    def _get_markets(self,id:int,tradebale:bool=True):
+        market_df = self._get_markets_by_id(id)
         if len(market_df) == 0:
-            return []
+            return DataFrame()
 
         markets = []
         if tradebale:
             market_df = market_df[market_df.marketStatus == "TRADEABLE"]
-        market_df = market_df[market_df["instrumentName"].str.contains("Mini")]
+        #market_df = market_df[market_df["instrumentName"].str.contains("Mini")]
         for market in market_df.iterrows():
             symbol = (market[1].instrumentName.replace("/", "").replace(" Mini", "")).strip()
             markets.append({
@@ -58,20 +79,20 @@ class IG:
             self._tracer.error(f"Error during open a IG Connection {ex}")
 
     def get_currency(self,epic:str):
-        m = re.match("[\w]+\.[\w]+\.[\w]{3}([\w]{3})", epic)
-        if len(m.groups()) == 1:
+        m = re.match("[\w]+\.[\w]+\.[\w]{3}([\w]{3})\.", epic)
+        if m != None and len(m.groups()) == 1:
             return m.groups()[0]
-        return ""
+        return "USD"
 
 
-    def buy(self, epic: str, stop: int, limit: int):
-        return self.open(epic, "BUY", stop, limit)
+    def buy(self, epic: str, stop: int, limit: int,size:float = 1.0):
+        return self.open(epic, "BUY", stop, limit,size)
 
-    def sell(self, epic: str, stop: int, limit: int):
-        return self.open(epic, "SELL", stop, limit)
+    def sell(self, epic: str, stop: int, limit: int,size:float = 1.0):
+        return self.open(epic, "SELL", stop, limit,size)
 
 
-    def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25) -> bool:
+    def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25, size:float = 1.0) -> bool:
         try:
             response = self.ig_service.create_open_position(
                 currency_code=self.get_currency(epic),
@@ -81,7 +102,7 @@ class IG:
                 force_open=True,
                 guaranteed_stop=False,
                 order_type="MARKET",
-                size=1,
+                size=size,
                 level=None,
                 limit_distance=limit,
                 limit_level=None,
