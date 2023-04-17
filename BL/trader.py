@@ -29,7 +29,7 @@ class Trader:
         return stop, limit
 
     def _get_spread(self, df: DataFrame, scaling: float) -> float:
-        return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
+        return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.1
 
     def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
               size: float = 1.0):
@@ -48,7 +48,7 @@ class Trader:
 
         reward, success, trade_freq, win_loss, avg_minutes = evaluate(self._predictor, trade_df, df_eval, False)
 
-        if win_loss < 0.75:
+        if win_loss < 0.67:
             self._tracer.write(f"Win Loss is to less {symbol} -> WL: {win_loss}")
             return False
 
