@@ -40,7 +40,7 @@ class Trader:
 
         spread_limit = self._get_spread(trade_df, scaling)
         if spread > spread_limit:
-            self._tracer.debug(f"Spread is greater that {spread_limit} for {symbol}")
+            self._tracer.debug(f"Spread {spread} is greater that {spread_limit} for {symbol}")
             return False
 
         self._predictor.set_config(symbol)
@@ -65,16 +65,16 @@ class Trader:
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            res = self._ig.buy(epic, stop, limit, size)
-            self._tracer.write(f"Buy {symbol} with settings {self._predictor.get_config()}")
-            return True
+            if self._ig.buy(epic, stop, limit, size):
+                self._tracer.write(f"Buy {symbol} with settings {self._predictor.get_config()}. Testresult: WinLoss {win_loss}")
+                return True
         elif signal == BasePredictor.SELL:
             if openedPosition is not None and openedPosition.direction == "SELL":
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            res = self._ig.sell(epic, stop, limit, size)
-            self._tracer.write(f"Sell {symbol} with settings {self._predictor.get_config()}")
-            return True
+            if self._ig.sell(epic, stop, limit, size):
+                self._tracer.write(f"Sell {symbol} with settings {self._predictor.get_config()} Testresult: WinLoss {win_loss}")
+                return True
 
         return False
