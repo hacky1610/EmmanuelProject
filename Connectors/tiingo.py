@@ -1,12 +1,19 @@
 from BL.data_processor import DataProcessor
 import requests
 from pandas import DataFrame
+import pandas as pd
 from Tracing.Tracer import Tracer
 from BL.utils import BaseReader
+from enum import Enum
 
+# class syntax
+class TradeType(Enum):
+    FX = 1
+    STOCK = 2
+    CRYPTO = 3
 
 class Tiingo:
-    _BASEURL = "https://api.tiingo.com/tiingo/fx/"
+    _BASEURL = "https://api.tiingo.com/tiingo/"
 
     def __init__(self, conf_reader: BaseReader, tracer: Tracer = Tracer()):
         self._apykey = conf_reader.get("ti_api_key")
@@ -29,22 +36,32 @@ class Tiingo:
             self._tracer.error(f"Exception during _send_request {e}")
             return ""
 
-    def _send_history_request(self, ticker: str, start: str, end: str, resolution: str) -> DataFrame:
+    def get_uri_for_trade_type(self, trade_type:TradeType,symbol:str=str):
+        if trade_type == TradeType.FX:
+            return f"fx/{symbol}/prices?"
+        elif trade_type == TradeType.CRYPTO:
+            return f"crypto/prices?tickers={symbol}&"
+        return ""
+
+    def _send_history_request(self, ticker: str, start: str, end: str, resolution: str, trade_type:TradeType=TradeType.FX) -> DataFrame:
         end_date_string = ""
         if end != None:
             end_date_string = f"&endDate={end}"
 
-        res = self._send_request(f"{ticker}/prices?resampleFreq={resolution}&startDate={start}{end_date_string}")
+        res = self._send_request(f"{self.get_uri_for_trade_type(trade_type,ticker)}resampleFreq={resolution}&startDate={start}{end_date_string}")
         if len(res) == 0:
             self._tracer.error("Could not load history")
             return DataFrame()
-        df = DataFrame(res)
-        df.drop(columns=["ticker"], inplace=True)
+        if trade_type == TradeType.CRYPTO:
+            df = DataFrame(DataFrame(res).priceData[0])
+        else:
+            df = DataFrame(res)
+            df.drop(columns=["ticker"], inplace=True)
         return df
 
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
-                          resolution: str = "1hour", add_signals: bool = True, clean_data: bool = True) -> DataFrame:
-        res = self._send_history_request(ticker, start, end, resolution)
+                          resolution: str = "1hour", add_signals: bool = True, clean_data: bool = True, trade_type:TradeType=TradeType.FX) -> DataFrame:
+        res = self._send_history_request(ticker, start, end, resolution,trade_type)
         if len(res) == 0:
             return res
         if add_signals:
