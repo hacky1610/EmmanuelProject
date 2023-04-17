@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from BL.data_processor import DataProcessor
 import requests
 from pandas import DataFrame
@@ -69,3 +71,21 @@ class Tiingo:
         if clean_data:
             data_processor.clean_data(res)
         return res
+
+    def load_live_data(self, symbol: str, dp:DataProcessor, trade_type):
+
+        start_time = (date.today() - timedelta(days=30)).strftime("%Y-%m-%d")
+        df = self.load_data_by_date(ticker=symbol,
+                                  start=start_time,
+                                  end=None,
+                                  data_processor=dp,
+                                  trade_type=trade_type,
+                                  resolution="1hour")
+        df_eval = self.load_data_by_date(ticker=symbol,
+                                       start=start_time,
+                                       end=None,
+                                       data_processor=dp,
+                                       trade_type=trade_type,
+                                       resolution="5min")
+
+        return df, df_eval

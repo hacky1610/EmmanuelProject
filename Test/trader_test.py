@@ -38,7 +38,7 @@ class TraderTest(unittest.TestCase):
 
     def test_trade_has_open_positions(self):
         tiingo = MagicMock()
-        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
+        tiingo.load_live_data = MagicMock(return_value=(self._stock_data ,self._stock_data ))
         ig = MagicMock()
         ig.has_opened_positions = MagicMock(return_value=True)
         predictor = MagicMock()
@@ -50,16 +50,15 @@ class TraderTest(unittest.TestCase):
 
     def test_trade_do_buy(self):
         tiingo = MagicMock()
-        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
+        tiingo.load_live_data = MagicMock(return_value=(self._stock_data ,self._stock_data ))
         ig = MagicMock()
         ig.buy = MagicMock(return_value=True)
-        ig.has_opened_positions = MagicMock(return_value=False)
-        ig.get_spread = MagicMock(return_value=2)
         predictor = MagicMock()
         predictor.stop = 2.5
         predictor.limit = 2.5
         predictor.predict = MagicMock(return_value="buy")
         t = Trader(ig, tiingo, self._tracer, predictor, self._dataProcessor, self.analytics)
+        t._get_spread = MagicMock(return_value=2)
         res = t.trade("myepic", "mysymbol", 1.0, 2)
         ig.buy.assert_called()
 
@@ -67,7 +66,7 @@ class TraderTest(unittest.TestCase):
 
     def test_trade_do_sell(self):
         tiingo = MagicMock()
-        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
+        tiingo.load_live_data = MagicMock(return_value=(self._stock_data ,self._stock_data ))
         ig = MagicMock()
         ig.sell = MagicMock(return_value=True)
         ig.has_opened_positions = MagicMock(return_value=False)
@@ -82,7 +81,7 @@ class TraderTest(unittest.TestCase):
 
     def test_trade_spread_to_big(self):
         tiingo = MagicMock()
-        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
+        tiingo.load_live_data = MagicMock(return_value=(self._stock_data ,self._stock_data ))
         ig = MagicMock()
         predictor = MagicMock()
         predictor.stop = 2.5
@@ -94,7 +93,7 @@ class TraderTest(unittest.TestCase):
 
     def test_trade_no_action(self):
         tiingo = MagicMock()
-        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
+        tiingo.load_live_data = MagicMock(return_value=(self._stock_data ,self._stock_data ))
         ig = MagicMock()
         ig.buy = MagicMock(return_value=True)
         predictor = MagicMock()

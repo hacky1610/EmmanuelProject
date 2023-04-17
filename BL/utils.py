@@ -43,23 +43,6 @@ def load_train_data(symbol:str,ti,dp,trade_type):
     df.to_csv(f"Data/{symbol}_1hour.csv")
     df_complete.to_csv(f"Data/{symbol}_5min.csv")
 
-def load_live_data(symbol:str,ti,dp,trade_type):
-
-    start_time = (date.today() - timedelta(days=30)).strftime("%Y-%m-%d")
-    df = ti.load_data_by_date(ticker=symbol,
-                              start=start_time,
-                              end=None,
-                              data_processor=dp,
-                              trade_type=trade_type,
-                              resolution="1hour")
-    df_eval = ti.load_data_by_date(ticker=symbol,
-                              start=start_time,
-                              end=None,
-                              data_processor=dp,
-                              trade_type=trade_type,
-                              resolution="5min")
-
-    return df, df_eval
 
 
 

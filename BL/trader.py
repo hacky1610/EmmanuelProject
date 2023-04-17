@@ -6,7 +6,6 @@ from Predictors import BasePredictor
 from Predictors.evaluate import evaluate
 from Connectors.tiingo import TradeType
 from pandas import DataFrame
-from BL.utils import load_live_data
 
 
 class Trader:
@@ -33,7 +32,7 @@ class Trader:
 
     def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
               size: float = 1.0):
-        trade_df, df_eval = load_live_data(symbol, self._tiingo, self._dataprocessor, trade_type)
+        trade_df, df_eval =  self._tiingo.load_live_data(symbol,self._dataprocessor, trade_type)
 
         if len(trade_df) == 0:
             self._tracer.error(f"Could not load train data for {symbol}")
@@ -41,7 +40,7 @@ class Trader:
 
         spread_limit = self._get_spread(trade_df, scaling)
         if spread > spread_limit:
-            self._tracer.write(f"Spread is greater that {spread_limit} for {symbol}")
+            self._tracer.debug(f"Spread is greater that {spread_limit} for {symbol}")
             return False
 
         self._predictor.set_config(symbol)
@@ -49,7 +48,7 @@ class Trader:
         reward, success, trade_freq, win_loss, avg_minutes = evaluate(self._predictor, trade_df, df_eval, False)
 
         if win_loss < 0.67:
-            self._tracer.write(f"Win Loss is to less {symbol} -> WL: {win_loss}")
+            self._tracer.debug(f"Win Loss is to less {symbol} -> WL: {win_loss}")
             return False
 
         signal = self._predictor.predict(trade_df)
