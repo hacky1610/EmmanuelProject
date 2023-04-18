@@ -50,7 +50,7 @@ class Trainer:
         p1_list = list(range(2, 6))
         stop_list = [1.8,2.0, 2.3, 2.7, 3., 3.5]
         limit_list = [1.8,2.0, 2.3, 2.7, 3., 3.5]
-        upper_limit_list = list(range(75,85,5))
+        upper_limit_list = list(range(75,81,5))
         lower_limit_list = list(range(15,25,5))
         rsi_upper_limit_list = list(range(65, 85, 3))
         rsi_lower_limit_list = list(range(17, 35, 3))
@@ -66,31 +66,39 @@ class Trainer:
         for p in p1_list:
             for rul in rsi_upper_limit_list:
                 for rll in rsi_lower_limit_list:
-                    predictor = RsiStoch({
-                        "period_1": p,
-                        "rsi_upper_limit": rul,
-                        "rsi_lower_limit": rll,
-                    })
-                    res = predictor.step(df, df_eval,self._analytics )
-                    reward = res["reward"]
-                    avg_reward = res["success"]
-                    frequ = res["trade_frequency"]
-                    w_l = res["win_loss"]
-                    minutes = res["avg_minutes"]
+                    for ul in upper_limit_list:
+                        for ll in lower_limit_list:
+                            for st in stop_list:
+                                for li in limit_list:
+                                    predictor = RsiStoch({
+                                        "period_1": p,
+                                        "rsi_upper_limit": rul,
+                                        "rsi_lower_limit": rll,
+                                        "upper_limit": ul,
+                                        "lower_limit": ll,
+                                        "stop": st,
+                                        "limit": li,
+                                    })
+                                    res = predictor.step(df, df_eval,self._analytics )
+                                    reward = res["reward"]
+                                    avg_reward = res["success"]
+                                    frequ = res["trade_frequency"]
+                                    w_l = res["win_loss"]
+                                    minutes = res["avg_minutes"]
 
-                    res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
-                                 index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
-                    res = res.append(predictor.get_config())
-                    result_df = result_df.append(res,
-                                                 ignore_index=True)
+                                    res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
+                                                 index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
+                                    res = res.append(predictor.get_config())
+                                    result_df = result_df.append(res,
+                                                                 ignore_index=True)
 
-                    if avg_reward > best and frequ > 0.008:
-                        best = avg_reward
-                        print(f"{symbol} - {predictor.get_config_as_string()} - "
-                              f"Avg Reward: {avg_reward:6.5} "
-                              f"Avg Min {int(minutes)}  "
-                              f"Freq: {frequ:4.3} "
-                              f"WL: {w_l:3.2}")
+                                    if frequ > 0.03 and w_l > 0.75:
+                                        best = avg_reward
+                                        print(f"{symbol} - {predictor.get_config_as_string()} - "
+                                              f"Avg Reward: {avg_reward:6.5} "
+                                              f"Avg Min {int(minutes)}  "
+                                              f"Freq: {frequ:4.3} "
+                                              f"WL: {w_l:3.2}")
         return result_df
 
     def train_CCI_PSAR(self, symbol: str, df, df_eval) -> DataFrame:
