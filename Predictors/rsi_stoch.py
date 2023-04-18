@@ -6,8 +6,8 @@ class RsiStoch(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
     upper_limit = 80
     lower_limit = 20
-    rsi_upper_limit = 83
-    rsi_lower_limit = 25
+    rsi_upper_limit = 80
+    rsi_lower_limit = 23
     period_1 = 3
     stoch_peeks = 2
 

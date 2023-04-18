@@ -4,11 +4,11 @@ from Predictors.cci import CCI
 
 
 class CCI_PSAR(CCI):
-    upper_limit = 60
-    lower_limit = 35
-    period_1 = 2
+    upper_limit = 75
+    lower_limit = 25
+    period_1 = 3
     period_2 = 4
-    min_psar_jump = 0.002
+    min_psar_jump = 0.003
 
     def __init__(self, config=None):
         super().__init__(config)
@@ -28,17 +28,23 @@ class CCI_PSAR(CCI):
         if len(df) > max(self.period_1, self.period_2):
             p1 = self.period_1 * -1
             p2 = self.period_2 * -1
-            rsi_under = len(df[p1:][df.RSI < self.lower_limit]) > 0
-            rsi_over = len(df[p1:][df.RSI > self.upper_limit]) > 0
             psar_jump = df.PSAR[p2:].pct_change().max() > self.min_psar_jump
 
+            sd = df.tail(1).STOCHD.values[0]
+            sk = df.tail(1).STOCHK.values[0]
 
-            if rsi_under and psar_jump:
-                return self.BUY
+            if psar_jump and sd < self.upper_limit and sk < self.upper_limit:
+                stoch_D_oversold = len(df[p1:][df.STOCHD < self.lower_limit]) >= 2
+                stoch_K_oversold = len(df[p1:][df.STOCHK < self.lower_limit]) >= 2
+                if stoch_D_oversold and stoch_K_oversold:
+                    return self.BUY
 
-            if rsi_over and psar_jump:
-                return self.SELL
-
+            # Sell
+            if psar_jump and sd > self.lower_limit and sk > self.lower_limit:
+                stoch_D_overbought = len(df[p1:][df.STOCHD > self.upper_limit]) >= 2
+                stoch_K_overbought = len(df[p1:][df.STOCHK > self.upper_limit]) >= 2
+                if stoch_D_overbought and stoch_K_overbought:
+                    return self.SELL
 
         return self.NONE
 
