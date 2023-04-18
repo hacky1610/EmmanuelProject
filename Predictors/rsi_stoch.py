@@ -1,5 +1,9 @@
+import os.path
+import json
+
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
+from BL.utils import get_project_dir
 
 
 class RsiStoch(BasePredictor):
@@ -70,8 +74,18 @@ class RsiStoch(BasePredictor):
                        self.rsi_lower_limit,
                        self.period_1,
                        self.stoch_peeks],
-                      index=["Type", "Stop", "Limit", "Upper Limit", "Lower Limit", "RSI Upper Limit",
-                             "RSI Lower Limit", "Period", "Stoch Peeks"])
+                      index=["Type", "stop", "limit", "upper_limit", "lower_limit", "rsi_upper_limit",
+                             "rsi_lower_limit", "period_1", "stoch_peeks"])
+
+    def save(self,symbol:str):
+        self.get_config().to_json(os.path.join(get_project_dir(),"Settings",f"{symbol}.json"))
+
+    def load(self,symbol:str):
+        with open(os.path.join(get_project_dir(),"Settings",f"{symbol}.json")) as json_file:
+            data = json.load(json_file)
+            self.setup(data)
+
+
 
     def predict(self, df: DataFrame) -> str:
         if len(df) == 0:
@@ -105,5 +119,6 @@ class RsiStoch(BasePredictor):
     def set_config(self, ticker: str):
         settings = self.get_settings(ticker)
         self.setup(settings)
+
 
 

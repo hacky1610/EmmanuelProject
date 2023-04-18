@@ -47,15 +47,16 @@ class Trainer:
     def train_RSI_STOCH(self, symbol: str, df, df_eval) -> DataFrame:
         print(f"#####Train {symbol}#######################")
         result_df = DataFrame()
-        p1_list = list(range(2, 6))
+        p1_list = [3] #list(range(2, 6))
         stop_list = [1.8,2.0, 2.3, 2.7, 3., 3.5]
         limit_list = [1.8,2.0, 2.3, 2.7, 3., 3.5]
-        upper_limit_list = list(range(75,81,5))
-        lower_limit_list = list(range(15,25,5))
-        rsi_upper_limit_list = list(range(65, 85, 3))
-        rsi_lower_limit_list = list(range(17, 35, 3))
+        upper_limit_list = [78] #list(range(75,81,5))
+        lower_limit_list = [20] #list(range(15,25,5))
+        rsi_upper_limit_list = list(range(65, 80, 3))
+        rsi_lower_limit_list = list(range(17, 30, 3))
         stoch_peek_list = [2, 3, 4]
         best = 0
+        best_predictor = None
 
         random.shuffle(p1_list)
         random.shuffle(stop_list)
@@ -92,13 +93,17 @@ class Trainer:
                                     result_df = result_df.append(res,
                                                                  ignore_index=True)
 
-                                    if frequ > 0.03 and w_l > 0.75:
+                                    if avg_reward > best and frequ > 0.04 and w_l > 0.75:
                                         best = avg_reward
+                                        best_predictor = predictor
                                         print(f"{symbol} - {predictor.get_config_as_string()} - "
                                               f"Avg Reward: {avg_reward:6.5} "
                                               f"Avg Min {int(minutes)}  "
                                               f"Freq: {frequ:4.3} "
                                               f"WL: {w_l:3.2}")
+
+        if best_predictor is not None:
+            best_predictor.save(symbol)
         return result_df
 
     def train_CCI_PSAR(self, symbol: str, df, df_eval) -> DataFrame:

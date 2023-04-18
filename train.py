@@ -29,7 +29,7 @@ for m in markets:
         res = trainer.train_RSI_STOCH(symbol,df,eval)
         res.to_excel(temp_file)
         t = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
-        ds.upload(temp_file, os.path.join("Training_RSI_STOCH", f"{t}_{symbol}.xlsx"))
+        ds.upload(temp_file, os.path.join("Training_RSI_STOCH_Linux", f"{t}_{symbol}.xlsx"))
     else:
         print(f"No Data in {symbol} ")
 
