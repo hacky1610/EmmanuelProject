@@ -4,7 +4,8 @@ from BL.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo,TradeType
 from BL import Trader, Analytics, ConfigReader
-from Predictors import *
+from Predictors.rsi_stoch import RsiStoch
+from Predictors.trainer import Trainer
 
 live_trade = False
 
@@ -13,6 +14,7 @@ conf_reader = ConfigReader(live_config=live_trade)
 tracer = LogglyTracer(conf_reader.get("loggly_api_key"),"DEMO")
 tiingo = Tiingo(tracer=tracer,conf_reader=conf_reader)
 ig = IG(tracer=tracer,conf_reader=conf_reader,live=live_trade)
+analytics = Analytics(tracer)
 
 trader = Trader(
     ig=ig,
@@ -20,8 +22,8 @@ trader = Trader(
     tracer=tracer,
     predictor=RsiStoch({}),
     dataprocessor=dataProcessor,
-    analytics=Analytics(tracer),
-    trainer=Trainer()
+    analytics=analytics,
+    trainer=Trainer(analytics)
     )
 
 while True:

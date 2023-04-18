@@ -3,7 +3,8 @@ from BL.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo, TradeType
 from BL import Trader, Analytics, EnvReader
-from Predictors import *
+from Predictors.rsi_stoch import RsiStoch
+from Predictors.trainer import Trainer
 from datetime import datetime
 import dropbox
 from Connectors.dropboxservice import DropBoxService
@@ -22,6 +23,7 @@ tiingo = Tiingo(tracer=tracer, conf_reader=env_reader)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
 exclude = ["EURAUD"]
 predictor = RsiStoch({})
+analytics = Analytics(tracer)
 
 trader = Trader(
     ig=ig,
@@ -29,8 +31,8 @@ trader = Trader(
     tracer=tracer,
     predictor=predictor,
     dataprocessor=dataProcessor,
-    analytics=Analytics(tracer),
-    trainer=Trainer())
+    analytics=analytics,
+    trainer=Trainer(analytics))
 
 # trade
 markets = ig.get_markets(TradeType.FX)

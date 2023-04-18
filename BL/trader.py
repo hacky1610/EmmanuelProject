@@ -3,8 +3,9 @@ from Connectors.tiingo import TradeType
 from BL.analytics import Analytics
 from BL.data_processor import DataProcessor
 from Tracing import Tracer
-from Predictors import BasePredictor, Trainer
+from Predictors.trainer import Trainer
 from pandas import DataFrame
+from Predictors.base_predictor import BasePredictor
 
 
 class Trader:

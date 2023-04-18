@@ -1,6 +1,6 @@
 from pandas import DataFrame
 
-from Predictors import CCI
+from Predictors.cci import CCI
 
 
 class CCI_EMA(CCI):

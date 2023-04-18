@@ -1,12 +1,14 @@
 import pandas as pd
 from pandas import DataFrame,Series
 import random
-from Predictors import RsiStoch,CCI_EMA,RsiStochMacd
+from Predictors.rsi_stoch import RsiStoch
+from Predictors.cci_ema import CCI_EMA
+from Predictors.cci_psar import CCI_PSAR
 
 class Trainer:
 
-    def __init__(self):
-        pass
+    def __init__(self,analytics):
+        self._analytics = analytics
 
 
     def _read_data(self,symbol:str):
@@ -32,7 +34,7 @@ class Trainer:
                     "rsi_lower_limit": rll,
                 }
                 predictor = RsiStoch(setting)
-                res = predictor.step(df, df_eval)
+                res = predictor.step(df, df_eval,self._analytics)
                 avg_reward = res["success"]
                 frequ = res["trade_frequency"]
                 w_l = res["win_loss"]
@@ -71,7 +73,7 @@ class Trainer:
                             "rsi_upper_limit": rul,
                             "rsi_lower_limit": rll,
                         })
-                        res = predictor.step(df, df_eval)
+                        res = predictor.step(df, df_eval,self._analytics )
                         reward = res["reward"]
                         avg_reward = res["success"]
                         frequ = res["trade_frequency"]
@@ -93,23 +95,16 @@ class Trainer:
                                   f"WL: {w_l:3.2}")
         return result_df
 
-    def train_RSI_STOCH_MACD(self, symbol: str) -> DataFrame:
+    def train_CCI_PSAR(self, symbol: str, df, df_eval) -> DataFrame:
         print(f"#####Train {symbol}#######################")
         result_df = DataFrame()
-
-        df, df_eval = self._read_data(symbol)
-        if len(df) == 0 or len(df_eval) == 0:
-            return result_df
-
-        p1_list = list(range(2, 6))
+        p1_list = list(range(2, 7))
+        p2_list = list(range(2, 7))
         stop_list = [2.1, 2.5, 3., 3.5]
         limit_list = [2.1, 2.5, 3., 3.5]
-        upper_limit_list = [75]  # list(range(75,85,5))
-        lower_limit_list = [25]  # list(range(15,25,5))
-        rsi_upper_limit_list = list(range(65, 85, 3))
-        rsi_lower_limit_list = list(range(17, 35, 3))
-        stoch_peek_list = [2, 3, 4]
-        factor_list = [.8 ,.9,1.,1.3,1.7,2]
+        upper_limit_list = list(range(55,65,5))
+        lower_limit_list = list(range(35,45,5))
+        factor_list = [0.0001,0.0005,0.001,0.002,0.003,0.004,0.005]
         best = 0
 
         random.shuffle(p1_list)
@@ -118,29 +113,38 @@ class Trainer:
         random.shuffle(upper_limit_list)
         random.shuffle(lower_limit_list)
 
-        for factor in factor_list:
-            predictor = RsiStochMacd({
-                "diff_factor": factor})
-            res = predictor.step(df,df_eval)
-            reward = res["reward"]
-            avg_reward = res["success"]
-            frequ = res["trade_frequency"]
-            w_l = res["win_loss"]
-            minutes = res["avg_minutes"]
+        for ul in upper_limit_list:
+            for ll in lower_limit_list:
+                for factor in factor_list:
+                    for p1 in p1_list:
+                        for p2 in p2_list:
+                            predictor = CCI_PSAR({
+                                "min_psar_jump": factor,
+                                "upper_limit": ul,
+                                "lower_limit": ll,
+                                "period_1": p1,
+                                "period_2": p2,
+                            })
+                            res = predictor.step(df,df_eval,self._analytics )
+                            reward = res["reward"]
+                            avg_reward = res["success"]
+                            frequ = res["trade_frequency"]
+                            w_l = res["win_loss"]
+                            minutes = res["avg_minutes"]
 
-            res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
-                         index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
-            res = res.append(predictor.get_config())
-            result_df = result_df.append(res,
-                                         ignore_index=True)
+                            res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
+                                         index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
+                            res = res.append(predictor.get_config())
+                            result_df = result_df.append(res,
+                                                         ignore_index=True)
 
-            if avg_reward > best and frequ > 0.008:
-                best = avg_reward
-                print(f"{symbol} - {predictor.get_config_as_string()} - "
-                      f"Avg Reward: {avg_reward:6.5} "
-                      f"Avg Min {int(minutes)}  "
-                      f"Freq: {frequ:4.3} "
-                      f"WL: {w_l:3.2}")
+                            if avg_reward > best and frequ > 0.008:
+                                best = avg_reward
+                                print(f"{symbol} - {predictor.get_config_as_string()} - "
+                                      f"Avg Reward: {avg_reward:6.5} "
+                                      f"Avg Min {int(minutes)}  "
+                                      f"Freq: {frequ:4.3} "
+                                      f"WL: {w_l:3.2}")
         return result_df
 
 
@@ -180,7 +184,7 @@ class Trainer:
                                     "limit": limit,
                                     "upper_limit": upper_limit,
                                     "lower_limit": lower_limit})
-                                res = predictor.step(df,df_eval)
+                                res = predictor.step(df,df_eval,self._analytics )
                                 reward = res["reward"]
                                 avg_reward = res["success"]
                                 frequ = res["trade_frequency"]

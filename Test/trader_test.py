@@ -33,6 +33,7 @@ class TraderTest(unittest.TestCase):
                    analytics=self.analytics,
                    trainer=self._trainer,
                    predictor=self._predictor)
+        self._trader._get_spread = MagicMock(return_value=1)
 
     @staticmethod
     def _add_data(df: DataFrame):
@@ -54,7 +55,6 @@ class TraderTest(unittest.TestCase):
         position.direction = "BUY"
         self._ig.get_opened_positions_by_epic = MagicMock(return_value=position)
         self._predictor.predict = MagicMock(return_value="buy")
-        self._trader._get_spread = MagicMock(return_value=1)
         res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
         self._ig.buy.assert_not_called()
         self._ig.get_opened_positions_by_epic.assert_called()
@@ -65,7 +65,6 @@ class TraderTest(unittest.TestCase):
         position.direction = "SELL"
         self._ig.get_opened_positions_by_epic = MagicMock(return_value=position)
         self._predictor.predict = MagicMock(return_value="sell")
-        self._trader._get_spread = MagicMock(return_value=1)
         res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
         self._ig.sell.assert_not_called()
         self._ig.get_opened_positions_by_epic.assert_called()
@@ -80,16 +79,14 @@ class TraderTest(unittest.TestCase):
         assert res == True
 
     def test_trade_do_sell(self):
-        self._predictor.predict = MagicMock(return_value="buy")
-        self._trader._get_spread = MagicMock(return_value=1)
+        self._predictor.predict = MagicMock(return_value="sell")
         res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
-        self._ig.buy.asser_called()
+        self._ig.sell.asser_called()
         self._ig.get_opened_positions_by_epic.assert_called()
         assert res == True
 
     def test_trade_spread_to_big(self):
         self._predictor.predict = MagicMock(return_value="buy")
-        self._trader._get_spread = MagicMock(return_value=1)
         res = self._trader.trade("myepic", "mysymbol", 10.0, 2)
         self._ig.buy.assert_not_called()
         self._ig.sell.assert_not_called()
@@ -97,9 +94,31 @@ class TraderTest(unittest.TestCase):
 
     def test_trade_evaluation_to_bad(self):
         self._predictor.predict = MagicMock(return_value="buy")
-        self._trader._get_spread = MagicMock(return_value=1)
         self.analytics.evaluate = MagicMock(return_value=(0, 0, 0, 0, 0))
         self._trainer.fit =  MagicMock(return_value=(0.0,{}))
+        res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
+        self._ig.buy.assert_not_called()
+        self._ig.sell.assert_not_called()
+        assert res == False
+
+    def test_trade_no_data(self):
+        self._tiingo.load_live_data = MagicMock(return_value=(DataFrame(),DataFrame()))
+        res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
+        self._ig.buy.assert_not_called()
+        self._ig.sell.assert_not_called()
+        assert res == False
+
+    def test_trade_evaluation_to_bad_fit_better(self):
+        self._predictor.predict = MagicMock(return_value="buy")
+        self.analytics.evaluate = MagicMock(return_value=(0, 0, 0, 0, 0))
+        self._trainer.fit = MagicMock(return_value=(1.0, {}))
+        res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
+        self._predictor.setup.assert_called()
+        assert res == True
+
+    def test_trade_action_none(self):
+        self._predictor.predict = MagicMock(return_value="none")
+        self._trader._get_spread = MagicMock(return_value=1)
         res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
         self._ig.buy.assert_not_called()
         self._ig.sell.assert_not_called()
