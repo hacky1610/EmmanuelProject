@@ -29,7 +29,8 @@ trader = Trader(
     tracer=tracer,
     predictor=predictor,
     dataprocessor=dataProcessor,
-    analytics=Analytics(tracer))
+    analytics=Analytics(tracer),
+    trainer=Trainer())
 
 # trade
 markets = ig.get_markets(TradeType.FX)
