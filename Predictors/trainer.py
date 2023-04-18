@@ -18,19 +18,38 @@ class Trainer:
         df_eval.drop(columns=["level_0"], inplace=True)
         return df, df_eval
 
-    def train_RSI_STOCH(self, symbol: str) -> DataFrame:
+    def fit(self,df, df_eval):
+        rsi_upper_limit_list = list(range(65, 80, 3))
+        rsi_lower_limit_list = list(range(17, 25, 3))
+        best = 0
+        w_l = 0.0
+        predictor = None
+        best_setting = None
+        for rul in rsi_upper_limit_list:
+            for rll in rsi_lower_limit_list:
+                setting = {
+                    "rsi_upper_limit": rul,
+                    "rsi_lower_limit": rll,
+                }
+                predictor = RsiStoch(setting)
+                res = predictor.step(df, df_eval)
+                avg_reward = res["success"]
+                frequ = res["trade_frequency"]
+                w_l = res["win_loss"]
+
+                if avg_reward > best and frequ > 0.008:
+                    best = avg_reward
+                    best_setting = setting
+        return w_l, best_setting
+
+    def train_RSI_STOCH(self, symbol: str, df, df_eval) -> DataFrame:
         print(f"#####Train {symbol}#######################")
         result_df = DataFrame()
-
-        df, df_eval = self._read_data(symbol)
-        if len(df) == 0 or len(df_eval) == 0:
-            return result_df
-
         p1_list = list(range(2, 6))
         stop_list = [1.8,2.0, 2.3, 2.7, 3., 3.5]
         limit_list = [1.8,2.0, 2.3, 2.7, 3., 3.5]
-        upper_limit_list = [75]  # list(range(75,85,5))
-        lower_limit_list = [25]  # list(range(15,25,5))
+        upper_limit_list = list(range(75,85,5))
+        lower_limit_list = list(range(15,25,5))
         rsi_upper_limit_list = list(range(65, 85, 3))
         rsi_lower_limit_list = list(range(17, 35, 3))
         stoch_peek_list = [2, 3, 4]

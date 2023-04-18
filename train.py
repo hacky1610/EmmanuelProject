@@ -1,7 +1,8 @@
 from Connectors.IG import IG
-from Connectors.tiingo import TradeType
+from Connectors.tiingo import TradeType,Tiingo
 from Predictors.trainer import Trainer
 from BL.utils import ConfigReader
+from BL.data_processor import DataProcessor
 import os
 import tempfile
 from datetime import datetime
@@ -12,12 +13,18 @@ dbx = dropbox.Dropbox(ConfigReader().get("dropbox"))
 ds = DropBoxService(dbx, "DEMO")
 temp_file = os.path.join(tempfile.gettempdir(), f"evaluate.xlsx")
 trainer = Trainer()
-markets = IG(conf_reader=ConfigReader()).get_markets(tradebale=False,trade_type=TradeType.FX)
+conf_reader = ConfigReader()
+tiingo = Tiingo(conf_reader=conf_reader)
+dp = DataProcessor()
+
+
+markets = IG(conf_reader=conf_reader).get_markets(tradeable=False,trade_type=TradeType.FX)
 
 for m in markets:
     symbol = m["symbol"]
-    symbol = "btcusd"
-    res = trainer.train_RSI_STOCH(symbol)
+    symbol = "USDCHF"
+    df,eval = tiingo.load_live_data(symbol,dp,TradeType.FX)
+    res = trainer.train_RSI_STOCH(symbol,df,eval)
     res.to_excel(temp_file)
     t = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
     ds.upload(temp_file, os.path.join("Training", f"{t}_{symbol}.xlsx"))

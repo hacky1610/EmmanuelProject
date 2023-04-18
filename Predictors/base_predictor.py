@@ -1,5 +1,5 @@
 from pandas import DataFrame
-from Predictors.evaluate import evaluate
+from BL.analytics import  Analytics
 
 
 class BasePredictor:
@@ -27,7 +27,7 @@ class BasePredictor:
         return mean_diff * self.stop, mean_diff * self.limit
 
     def step(self,df_train:DataFrame, df_eval:DataFrame):
-        reward, success, trade_freq, win_loss, avg_minutes = evaluate(self, df_train,df_eval)
+        reward, success, trade_freq, win_loss, avg_minutes = Analytics().evaluate(self, df_train,df_eval)
 
         return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq,
                 "win_loss": win_loss, "avg_minutes": avg_minutes}

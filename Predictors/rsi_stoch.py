@@ -36,10 +36,10 @@ class RsiStoch(BasePredictor):
 
     def __init__(self, config: dict):
         super().__init__(config)
-        self._set_up(config)
+        self.setup(config)
 
 
-    def _set_up(self, config:dict):
+    def setup(self, config:dict):
         self.upper_limit = config.get("upper_limit", self.upper_limit)
         self.lower_limit = config.get("lower_limit", self.lower_limit)
         self.rsi_upper_limit = config.get("rsi_upper_limit", self.rsi_upper_limit)
@@ -101,6 +101,6 @@ class RsiStoch(BasePredictor):
 
     def set_config(self, ticker: str):
         settings = self.get_settings(ticker)
-        self._set_up(settings)
+        self.setup(settings)
 
 

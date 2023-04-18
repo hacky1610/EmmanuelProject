@@ -20,7 +20,9 @@ trader = Trader(
     tracer=tracer,
     predictor=RsiStoch({}),
     dataprocessor=dataProcessor,
-    analytics=Analytics(tracer))
+    analytics=Analytics(tracer),
+    trainer=Trainer()
+    )
 
 while True:
     for market in ig.get_markets(TradeType.FX):
