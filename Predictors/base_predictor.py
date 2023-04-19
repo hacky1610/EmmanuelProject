@@ -13,6 +13,7 @@ class BasePredictor:
     limit = 2.0
     stop = 2.0
     METRIC = "reward"
+    _tracer = ConsoleTracer()
 
     def __init__(self, config=None):
         if config is None:
