@@ -1,4 +1,9 @@
+import os
+
 from pandas import DataFrame
+
+from BL.utils import get_project_dir
+from Tracing.ConsoleTracer import ConsoleTracer
 
 
 class BasePredictor:
@@ -17,6 +22,7 @@ class BasePredictor:
     def setup(self, config):
         self.limit = config.get("limit", self.limit)
         self.stop = config.get("stop", self.stop)
+        self._tracer = config.get("tracer", ConsoleTracer())
 
     def predict(self, df: DataFrame) -> str:
         raise NotImplementedError
@@ -31,7 +37,12 @@ class BasePredictor:
         return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq,
                 "win_loss": win_loss, "avg_minutes": avg_minutes}
 
+    def _get_save_path(self,symbol:str) -> str:
+        return os.path.join(get_project_dir(),"Settings",f"{symbol}.json")
     def set_config(self,symbol:str):
+        raise NotImplementedError
+
+    def load(self, symbol: str):
         raise NotImplementedError
 
     def get_config(self) -> dict:

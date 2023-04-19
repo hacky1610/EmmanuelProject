@@ -38,7 +38,7 @@ class RsiStoch(BasePredictor):
         }
     }
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict = {}):
         super().__init__(config)
         self.setup(config)
 
@@ -78,12 +78,18 @@ class RsiStoch(BasePredictor):
                              "rsi_lower_limit", "period_1", "stoch_peeks"])
 
     def save(self,symbol:str):
-        self.get_config().to_json(os.path.join(get_project_dir(),"Settings",f"{symbol}.json"))
+        self.get_config().to_json(self._get_save_path(symbol))
+
+    def saved(self, symbol):
+        return os.path.exists(self._get_save_path(symbol))
 
     def load(self,symbol:str):
-        with open(os.path.join(get_project_dir(),"Settings",f"{symbol}.json")) as json_file:
-            data = json.load(json_file)
-            self.setup(data)
+        if self.saved(symbol):
+            with open(self._get_save_path(symbol)) as json_file:
+                data = json.load(json_file)
+                self.setup(data)
+        else:
+            self._tracer.debug(f"No saved settings of {symbol}")
 
 
 

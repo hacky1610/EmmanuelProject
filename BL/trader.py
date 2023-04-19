@@ -42,7 +42,7 @@ class Trader:
             self._tracer.debug(f"Spread {spread} is greater that {spread_limit} for {symbol}")
             return False
 
-        self._predictor.set_config(symbol)
+        self._predictor.load(symbol)
 
         reward, success, trade_freq, win_loss, avg_minutes = self._analytics.evaluate(self._predictor, trade_df,
                                                                                       df_eval, False)

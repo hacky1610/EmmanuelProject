@@ -46,6 +46,10 @@ class Trainer:
 
     def train_RSI_STOCH(self, symbol: str, df, df_eval) -> DataFrame:
         print(f"#####Train {symbol}#######################")
+        if RsiStoch().saved(symbol):
+            print("Already trained")
+            return DataFrame()
+
         result_df = DataFrame()
         p1_list = [3] #list(range(2, 6))
         stop_list = [1.8,2.0, 2.3, 2.7, 3., 3.5]
@@ -93,7 +97,7 @@ class Trainer:
                                     result_df = result_df.append(res,
                                                                  ignore_index=True)
 
-                                    if avg_reward > best and frequ > 0.04 and w_l > 0.75:
+                                    if avg_reward > best and frequ > 0.03 and w_l > 0.75:
                                         best = avg_reward
                                         best_predictor = predictor
                                         print(f"{symbol} - {predictor.get_config_as_string()} - "
@@ -104,6 +108,8 @@ class Trainer:
 
         if best_predictor is not None:
             best_predictor.save(symbol)
+        else:
+            print("Couldnt find good result")
         return result_df
 
     def train_CCI_PSAR(self, symbol: str, df, df_eval) -> DataFrame:
