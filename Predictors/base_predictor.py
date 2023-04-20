@@ -40,12 +40,9 @@ class BasePredictor:
 
     def _get_save_path(self,symbol:str) -> str:
         return os.path.join(get_project_dir(),"Settings",f"{symbol}.json")
-    def set_config(self,symbol:str):
-        raise NotImplementedError
 
     def load(self, symbol: str):
         raise NotImplementedError
 
-    def get_config(self) -> dict:
-        raise NotImplementedError
+
 

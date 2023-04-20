@@ -15,29 +15,6 @@ class RsiStoch(BasePredictor):
     period_1 = 3
     stoch_peeks = 2
 
-    _settings = {
-        "default": {
-            "stop": 2.0,
-            "limit": 2.0,
-            "upper_limit" : 80,
-            "lower_limit": 20,
-            "rsi_upper_limit": 83,
-            "rsi_lower_limit": 25,
-            "period_1" : 3,
-            "stoch_peeks" : 2
-        },
-        "btcusd": {
-            "stop": 2.0,
-            "limit": 2.0,
-            "upper_limit": 75,
-            "lower_limit": 25,
-            "rsi_upper_limit": 74,
-            "rsi_lower_limit": 17,
-            "period_1": 3,
-            "stoch_peeks": 2
-        }
-    }
-
     def __init__(self, config=None):
         super().__init__(config)
         if config is None:
@@ -93,8 +70,6 @@ class RsiStoch(BasePredictor):
         else:
             self._tracer.debug(f"No saved settings of {symbol}")
 
-
-
     def predict(self, df: DataFrame) -> str:
         if len(df) == 0:
             return BasePredictor.NONE
@@ -120,13 +95,6 @@ class RsiStoch(BasePredictor):
                     return self.SELL
 
         return self.NONE
-
-    def get_settings(self, ticker: str):
-        return self._settings.get(ticker, self._settings["default"])
-
-    def set_config(self, ticker: str):
-        settings = self.get_settings(ticker)
-        self.setup(settings)
 
 
 
