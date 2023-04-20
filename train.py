@@ -21,7 +21,7 @@ dp = DataProcessor()
 markets = IG(conf_reader=conf_reader).get_markets(tradeable=False, trade_type=TradeType.FX)
 for m in markets:
     symbol = m["symbol"]
-    # symbol = "EURSGD"
+    #symbol = "GBPNOK"
     df, eval = tiingo.load_live_data(symbol, dp, TradeType.FX)
     if len(df) > 0:
         res = trainer.train_RSI_BB(symbol, df, eval)

@@ -37,16 +37,16 @@ trader = Trader(
 
 # trade
 markets = ig.get_markets(TradeType.FX)
-tracer.write(f"Start trading")
+tracer.debug(f"Start trading")
 for market in markets:
     symbol = market["symbol"]
     if symbol not in exclude:
-        tracer.write(f"Try to trade {symbol}")
+        tracer.debug(f"Try to trade {symbol}")
         trader.trade(market["symbol"], market["epic"], market["spread"], market["scaling"])
 
 # report
 if datetime.now().hour == 18:
-    tracer.write("Create report")
+    tracer.debug("Create report")
     dbx = dropbox.Dropbox(env_reader.get("dropbox"))
     ds = DropBoxService(dbx, type_)
     ig.create_report(tiingo, ds)

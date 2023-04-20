@@ -27,7 +27,7 @@ class Trader:
         return stop, limit
 
     def _get_spread(self, df: DataFrame, scaling: float) -> float:
-        return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.1
+        return (abs((df.close - df.close.shift(1))).median() * scaling) * 0.8
 
     def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
               size: float = 1.0):
@@ -39,7 +39,7 @@ class Trader:
 
         spread_limit = self._get_spread(trade_df, scaling)
         if spread > spread_limit:
-            self._tracer.debug(f"Spread {spread} is greater that {spread_limit} for {symbol}")
+            self._tracer.debug(f"Spread {spread} is greater than {spread_limit} for {symbol}")
             return False
 
         self._predictor.load(symbol)
@@ -48,7 +48,7 @@ class Trader:
                                                                                       df_eval, False)
 
         if win_loss < self._min_win_loss:
-            self._tracer.debug(f"Win Loss is to less {symbol} -> WL: {win_loss}. Try to fit")
+            self._tracer.debug(f"Win Loss is to less {symbol} -> WL: {win_loss}")
             return False
 
             #wl_new, settings = self._trainer.fit(trade_df, df_eval)
