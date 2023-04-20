@@ -17,12 +17,12 @@ analytics = Analytics()
 
 for m in ig.get_markets(tradeable=False, trade_type=TradeType.FX):
     symbol = m["symbol"]
-    symbol = "EURGBP"
+    #symbol = "CADCHF"
     df, df_eval = ti.load_live_data(symbol,dp, TradeType.FX)
 
     if len(df) > 0:
         predictor = RsiBB()
         predictor.load(symbol)
-        reward, success, trade_freq, win_loss, avg_minutes = analytics.evaluate(predictor, df, df_eval, True)
+        reward, success, trade_freq, win_loss, avg_minutes = analytics.evaluate(predictor, df, df_eval, False)
 
         print(f"{symbol} - Reward {reward}, success {reward}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes}")

@@ -32,12 +32,13 @@ class Analytics:
 
         return False
 
-    def evaluate(self,predictor, df_train: DataFrame, df_eval: DataFrame, print: bool = False):
+    def evaluate(self, predictor, df_train: DataFrame, df_eval: DataFrame, print_graph: bool = False):
         reward = 0
         losses = 0
         wins = 0
+        spread = (abs((df_train.close - df_train.close.shift(1))).median()) * 0.8
 
-        if print:
+        if print_graph:
             plt.figure(figsize=(15, 6))
             plt.cla()
             plt.plot(pd.to_datetime(df_eval["date"]), df_eval["close"], color='#d3d3d3', alpha=0.5,
@@ -57,52 +58,58 @@ class Analytics:
             future.reset_index(inplace=True)
 
             if action == predictor.BUY:
-                if print:
+                open_price = open_price + spread
+
+                if print_graph:
                     plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'b^', label="Buy")
                 for j in range(len(future)):
                     trading_minutes += 5
-                    close = future.close[j]
+                    high = future.high[j]
+                    low = future.low[j]
                     stop, limit = predictor.get_stop_limit(df_train[:i + 1])
-                    if close > open_price + limit:
+                    if high > open_price + limit:
                         # Won
-                        if print:
+                        if print_graph:
                             plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
                         break
-                    elif close < open_price - stop:
+                    elif low < open_price - stop:
                         # Loss
-                        if print:
+                        if print_graph:
                             plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]
                         break
             elif action == predictor.SELL:
-                if print:
+                open_price = open_price - spread
+
+                if print_graph:
                     plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'bv', label="Sell")
                 for j in range(len(future)):
                     trading_minutes += 5
-                    close = future.close[j]
+                    high = future.high[j]
+                    low = future.low[j]
                     stop, limit = predictor.get_stop_limit(df_train[:i + 1])
-                    if close < open_price - limit:
+                    if low < open_price - limit:
                         # Won
-                        if print:
+                        if print_graph:
                             plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
                         break
-                    elif close > open_price + stop:
-                        if print:
+                    elif high > open_price + stop:
+                        if print_graph:
                             plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]
                         break
 
-        if print:
+        if print_graph:
             plt.show()
 
         trades = wins + losses

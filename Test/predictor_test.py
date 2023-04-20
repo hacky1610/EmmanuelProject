@@ -94,66 +94,67 @@ class RsiBBTest(unittest.TestCase):
     def setUp(self):
         self._predictor = RsiBB()
 
-    def add_line(self, df: DataFrame, low, high, rsi, bb_lower, bb_upper):
+    def add_line(self, df: DataFrame, low, high, rsi, bb_lower, bb_middle,bb_upper):
         return df.append(
-            Series([low, high, rsi, bb_lower, bb_upper], index=["low", "high", "RSI", "BB_LOWER", "BB_UPPER"]),
+            Series([low, high, rsi, bb_lower,bb_middle, bb_upper],
+                   index=["low", "high", "RSI", "BB_LOWER","BB_MIDDLE" , "BB_UPPER"]),
             ignore_index=True)
 
     def test_df_to_small(self):
         df = DataFrame()
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
+        df = self.add_line(df, 900, 901, 50, 800, 900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800, 900, 1000)
         res = self._predictor.predict(df)
         assert res == "none"
 
     def test_df_no_peek(self):
         df = DataFrame()
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
         res = self._predictor.predict(df)
         assert res == "none"
 
     def test_buy(self):
         df = DataFrame()
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 700, 901, 20, 800, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,1050, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,1000, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,950, 1000)
+        df = self.add_line(df, 700, 901, 20, 800,900, 1000)
         res = self._predictor.predict(df)
         assert res == "buy"
 
     def test_sell(self):
         df = DataFrame()
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 1001, 81, 800, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,750, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,500, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,850, 1000)
+        df = self.add_line(df, 900, 1001, 81, 800,900, 1000)
         res = self._predictor.predict(df)
         assert res == "sell"
 
     def test_none_peek_to_far_away(self):
         df = DataFrame()
-        df = self.add_line(df, 900, 1001, 81, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 1000)
+        df = self.add_line(df, 900, 1001, 81, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
+        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
         res = self._predictor.predict(df)
         assert res == "none"

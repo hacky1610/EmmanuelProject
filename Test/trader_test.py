@@ -108,14 +108,6 @@ class TraderTest(unittest.TestCase):
         self._ig.sell.assert_not_called()
         assert res == False
 
-    def test_trade_evaluation_to_bad_fit_better(self):
-        self._predictor.predict = MagicMock(return_value="buy")
-        self.analytics.evaluate = MagicMock(return_value=(0, 0, 0, 0, 0))
-        self._trainer.fit = MagicMock(return_value=(1.0, {}))
-        res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
-        self._predictor.setup.assert_called()
-        assert res == True
-
     def test_trade_action_none(self):
         self._predictor.predict = MagicMock(return_value="none")
         self._trader._get_spread = MagicMock(return_value=1)

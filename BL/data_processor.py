@@ -32,7 +32,7 @@ class DataProcessor:
         DataProcessor.drop_column(df, "Volume")
         DataProcessor.drop_column(df, "Dividends")
         DataProcessor.drop_column(df, "Stock Splits")
-        df.dropna(0, inplace=True)
+        df.dropna( inplace=True)
         df.reset_index(inplace=True)
 
     @staticmethod
