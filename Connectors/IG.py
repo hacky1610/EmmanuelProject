@@ -110,8 +110,8 @@ class IG:
                 quote_id=None,
                 stop_distance=stop,
                 stop_level=None,
-                trailing_stop=True,
-                trailing_stop_increment=1
+                trailing_stop=False,
+                trailing_stop_increment=None
             )
             if response["dealStatus"] != "ACCEPTED":
                 self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
