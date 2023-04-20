@@ -38,8 +38,11 @@ class BasePredictor:
         return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq,
                 "win_loss": win_loss, "avg_minutes": avg_minutes}
 
-    def _get_save_path(self,symbol:str) -> str:
-        return os.path.join(get_project_dir(),"Settings",f"{symbol}.json")
+    def _get_save_path(self,predictor_name:str,symbol:str) -> str:
+        return os.path.join(get_project_dir(),"Settings",f"{predictor_name}_{symbol}.json")
+
+    def get_config(self):
+        raise NotImplementedError
 
     def load(self, symbol: str):
         raise NotImplementedError

@@ -57,14 +57,14 @@ class RsiStoch(BasePredictor):
                              "rsi_lower_limit", "period_1", "stoch_peeks"])
 
     def save(self,symbol:str):
-        self.get_config().to_json(self._get_save_path(symbol))
+        self.get_config().to_json(self._get_save_path(self.__class__.__name__,symbol))
 
     def saved(self, symbol):
-        return os.path.exists(self._get_save_path(symbol))
+        return os.path.exists(self._get_save_path(self.__class__.__name__,symbol))
 
     def load(self,symbol:str):
         if self.saved(symbol):
-            with open(self._get_save_path(symbol)) as json_file:
+            with open(self._get_save_path(self.__class__.__name__,symbol)) as json_file:
                 data = json.load(json_file)
                 self.setup(data)
         else:

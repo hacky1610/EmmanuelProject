@@ -4,6 +4,7 @@ import random
 from Predictors.rsi_stoch import RsiStoch
 from Predictors.cci_ema import CCI_EMA
 from Predictors.cci_psar import CCI_PSAR
+from Predictors.rsi_bb import RsiBB
 
 class Trainer:
 
@@ -112,6 +113,66 @@ class Trainer:
             print("Couldnt find good result")
         return result_df
 
+    def train_RSI_BB(self, symbol: str, df, df_eval) -> DataFrame:
+        print(f"#####Train {symbol}#######################")
+        if RsiBB().saved(symbol):
+            print("Already trained")
+            return DataFrame()
+
+        result_df = DataFrame()
+        p1_list = list(range(2, 5))
+        stop_list = [1.8,2.0, 2.3, 2.7, 3.]
+        limit_list = [1.8,2.0, 2.3, 2.7, 3]
+        upper_limit_list = [78] #list(range(75,81,5))
+        lower_limit_list = [20] #list(range(15,25,5))
+        rsi_upper_limit_list = list(range(65, 80, 3))
+        rsi_lower_limit_list = list(range(17, 30, 3))
+        best = 0
+        best_predictor = None
+
+        random.shuffle(p1_list)
+        random.shuffle(stop_list)
+        random.shuffle(limit_list)
+        random.shuffle(upper_limit_list)
+        random.shuffle(lower_limit_list)
+
+        for rul in rsi_upper_limit_list:
+            for rll in rsi_lower_limit_list:
+                for p in p1_list:
+
+                    predictor = RsiBB({
+                        "period_1": p,
+                        "rsi_upper_limit": rul,
+                        "rsi_lower_limit": rll,
+                    })
+                    res = predictor.step(df, df_eval,self._analytics )
+                    reward = res["reward"]
+                    avg_reward = res["success"]
+                    frequ = res["trade_frequency"]
+                    w_l = res["win_loss"]
+                    minutes = res["avg_minutes"]
+
+                    res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
+                                 index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
+                    res = res.append(predictor.get_config())
+                    result_df = result_df.append(res,
+                                                 ignore_index=True)
+
+                    if avg_reward > best and frequ > 0.02 and w_l > 0.75:
+                        best = avg_reward
+                        best_predictor = predictor
+                        print(f"{symbol} - {predictor.get_config()} - "
+                              f"Avg Reward: {avg_reward:6.5} "
+                              f"Avg Min {int(minutes)}  "
+                              f"Freq: {frequ:4.3} "
+                              f"WL: {w_l:3.2}")
+
+        if best_predictor is not None:
+            best_predictor.save(symbol)
+        else:
+            print("Couldnt find good result")
+        return result_df
+
     def train_CCI_PSAR(self, symbol: str, df, df_eval) -> DataFrame:
         print(f"#####Train {symbol}#######################")
         result_df = DataFrame()
@@ -163,7 +224,6 @@ class Trainer:
                                       f"Freq: {frequ:4.3} "
                                       f"WL: {w_l:3.2}")
         return result_df
-
 
     def train_CCI_EMA(self,symbol: str):
         print(f"#####Train {symbol}#######################")

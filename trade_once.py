@@ -2,8 +2,9 @@ from Connectors.IG import IG
 from BL.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo, TradeType
-from BL import Trader, Analytics, EnvReader
-from Predictors.rsi_stoch import RsiStoch
+from BL import Analytics, EnvReader
+from BL.trader import Trader
+from Predictors.rsi_bb import RsiBB
 from Predictors.trainer import Trainer
 from datetime import datetime
 import dropbox
@@ -21,9 +22,9 @@ dataProcessor = DataProcessor()
 tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_)
 tiingo = Tiingo(tracer=tracer, conf_reader=env_reader)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
-exclude = ["EURAUD"]
-predictor = RsiStoch({"tracer":tracer})
+predictor = RsiBB({"tracer": tracer})
 analytics = Analytics(tracer)
+exclude = []
 
 trader = Trader(
     ig=ig,
@@ -36,7 +37,7 @@ trader = Trader(
 
 # trade
 markets = ig.get_markets(TradeType.FX)
-tracer.write(f"Trade with settings {predictor.get_config_as_string()}")
+tracer.write(f"Start trading")
 for market in markets:
     symbol = market["symbol"]
     if symbol not in exclude:
