@@ -38,8 +38,10 @@ class RsiStoch(BasePredictor):
         }
     }
 
-    def __init__(self, config: dict = {}):
+    def __init__(self, config=None):
         super().__init__(config)
+        if config is None:
+            config = {}
         self.setup(config)
 
 

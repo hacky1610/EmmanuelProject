@@ -1,5 +1,4 @@
 import os.path
-
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from BL.data_processor import DataProcessor
@@ -7,7 +6,6 @@ from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import matplotlib.pyplot as plt
 import pandas as pd
-from datetime import timedelta
 from pandas import DataFrame
 import re
 from BL.utils import *
@@ -30,6 +28,9 @@ class IG:
             self.type = "DEMO"
         self._tracer: Tracer = tracer
         self.connect()
+        self._excludedMarkets = ["CHFHUF","EMFX USDTWD ($1 Contract)","EMFX USDPHP ($1 Contract)","EMFX USDKRW ($1 Contract)",
+                                 "EMFX USDINR ($1 Contract)","EMFX USDIDR ($1 Contract)","EMFX INRJPY","EMFX GBPINR (1 Contract)","NZDGBP",
+                                 "NZDEUR","NZDAUD","AUDGBP","AUDEUR","GBPEUR"]
 
     def _get_markets_by_id(self, id):
         res = self.ig_service.fetch_sub_nodes_by_node(id)
@@ -58,14 +59,14 @@ class IG:
         markets = []
         if tradebale:
             market_df = market_df[market_df.marketStatus == "TRADEABLE"]
-        #market_df = market_df[market_df["instrumentName"].str.contains("Mini")]
         for market in market_df.iterrows():
             symbol = (market[1].instrumentName.replace("/", "").replace(" Mini", "")).strip()
-            markets.append({
-                "symbol": symbol,
-                "epic": market[1].epic,
-                "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
-                "scaling": market[1].scalingFactor})
+            if symbol not in self._excludedMarkets:
+                markets.append({
+                    "symbol": symbol,
+                    "epic": market[1].epic,
+                    "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
+                    "scaling": market[1].scalingFactor})
         return markets
 
     def connect(self):
@@ -296,7 +297,7 @@ class IG:
         summary_text += f"\n\rProfit: {all_profit}€"
         summary_text += f"\n\rPerformance: {profit_percentige}%"
         summary_text += f"\n\r|Ticker| Profit| Mean |"
-        summary_text += f"\n|------| ------| ---- |"
+        summary_text += f"\n\r|------| ------| ---- |"
         for ticker in hist['name'].unique():
             temp_hist = hist[hist['name'] == ticker]
             profit = temp_hist.profitAndLoss.sum()
