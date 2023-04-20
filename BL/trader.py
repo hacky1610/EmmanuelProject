@@ -19,7 +19,7 @@ class Trader:
         self._predictor = predictor
         self._analytics = analytics
         self._trainer = trainer
-        self._min_win_loss = 0.67
+        self._min_win_loss = 0.7
 
     def get_stop_limit(self, df, scaling: int, stop_factor: float = 2.5, limit_factor: float = 2.5):
         stop = int(abs(df.close - df.close.shift(-1)).mean() * stop_factor * scaling)
@@ -49,13 +49,15 @@ class Trader:
 
         if win_loss < self._min_win_loss:
             self._tracer.debug(f"Win Loss is to less {symbol} -> WL: {win_loss}. Try to fit")
-            wl_new, settings = self._trainer.fit(trade_df, df_eval)
-            if wl_new > self._min_win_loss:
-                self._tracer.debug(f"Trained new WL: {wl_new}")
-                self._predictor.setup(settings)
-            else:
-                self._tracer.debug(f"WL of  {wl_new} is still to bad")
-                return False
+            return False
+
+            #wl_new, settings = self._trainer.fit(trade_df, df_eval)
+            #if wl_new > self._min_win_loss:
+            #    self._tracer.debug(f"Trained new WL: {wl_new}")
+            #    self._predictor.setup(settings)
+            #else:
+            #    self._tracer.debug(f"WL of  {wl_new} is still to bad")
+            #    return False
 
         signal = self._predictor.predict(trade_df)
 
