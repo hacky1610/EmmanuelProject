@@ -233,9 +233,9 @@ class IG:
                 row = shorts[i:i + 1]
                 pl = row.openLevel - row.closeLevel
 
-                stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
-                                     color="#ff0000")
-                limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
+                stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
+                                         color="#ff0000")
+                limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
                                       color="#00ff00", label="Limit")
 
             for i in range(len(longs)):
