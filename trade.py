@@ -16,12 +16,13 @@ tracer = LogglyTracer(conf_reader.get("loggly_api_key"),"DEMO")
 tiingo = Tiingo(tracer=tracer,conf_reader=conf_reader)
 ig = IG(tracer=tracer,conf_reader=conf_reader,live=live_trade)
 analytics = Analytics(tracer)
+predictor = RsiBB({})
 
 trader = Trader(
     ig=ig,
     tiingo=tiingo,
     tracer=tracer,
-    predictor=RsiBB({}),
+    predictor=predictor,
     dataprocessor=dataProcessor,
     analytics=analytics,
     trainer=Trainer(analytics)
@@ -34,7 +35,7 @@ for market in markets:
         epic=market["epic"],
         spread=market["spread"],
         scaling=market["scaling"],
-        trade_type=TradeType.CRYPTO,
+        trade_type=TradeType.FX,
         size=market["size"],
         currency=market["currency"])
 

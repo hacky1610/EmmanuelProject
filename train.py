@@ -32,9 +32,9 @@ for m in markets:
             continue
 
         res = trainer.train_RSI_BB(symbol, df, eval)
-        if len(res) > 0:
-            res.to_excel(temp_file)
-            t = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
-            ds.upload(temp_file, os.path.join("Training_RSI_STOCH_Linux", f"{t}_{symbol}.xlsx"))
+        #if len(res) > 0:
+        #    res.to_excel(temp_file)
+        #    t = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
+        #    ds.upload(temp_file, os.path.join("Training_RSI_STOCH_Linux", f"{t}_{symbol}.xlsx"))
     else:
         print(f"No Data in {symbol} ")

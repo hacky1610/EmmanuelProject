@@ -13,6 +13,7 @@ class TradeType(Enum):
     FX = 1
     STOCK = 2
     CRYPTO = 3
+    IEX = 4
 
 class Tiingo:
     _BASEURL = "https://api.tiingo.com/tiingo/"
@@ -43,6 +44,8 @@ class Tiingo:
             return f"fx/{symbol}/prices?"
         elif trade_type == TradeType.CRYPTO:
             return f"crypto/prices?tickers={symbol}&"
+        elif trade_type == TradeType.IEX:
+            return f"iex/{symbol}/prices?"
         return ""
 
     def _send_history_request(self, ticker: str, start: str, end: str, resolution: str, trade_type:TradeType=TradeType.FX) -> DataFrame:
