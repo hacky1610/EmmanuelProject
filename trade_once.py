@@ -42,7 +42,14 @@ for market in markets:
     symbol = market["symbol"]
     if symbol not in exclude:
         tracer.debug(f"Try to trade {symbol}")
-        trader.trade(market["symbol"], market["epic"], market["spread"], market["scaling"])
+        trader.trade(
+            symbol=market["symbol"],
+            epic=market["epic"],
+            spread=market["spread"],
+            scaling=market["scaling"],
+            trade_type=TradeType.FX,
+            size=market["size"],
+            currency=market["currency"])
 
 # report
 if datetime.now().hour == 18:

@@ -1,11 +1,12 @@
-import time
 from Connectors.IG import IG
 from BL.data_processor import DataProcessor
 from Tracing.LogglyTracer import LogglyTracer
-from Connectors.tiingo import Tiingo,TradeType
-from BL import Trader, Analytics, ConfigReader
-from Predictors.rsi_stoch import RsiStoch
+from Connectors.tiingo import Tiingo, TradeType
+from BL import Analytics, ConfigReader
+from BL.trader import Trader
+from Predictors.rsi_bb import RsiBB
 from Predictors.trainer import Trainer
+
 
 live_trade = False
 
@@ -20,22 +21,22 @@ trader = Trader(
     ig=ig,
     tiingo=tiingo,
     tracer=tracer,
-    predictor=RsiStoch({}),
+    predictor=RsiBB({}),
     dataprocessor=dataProcessor,
     analytics=analytics,
     trainer=Trainer(analytics)
     )
 
-while True:
-    for market in ig.get_markets(TradeType.FX):
-        trader.trade(market["symbol"], market["epic"], market["spread"], market["scaling"])
+markets = ig.get_markets(TradeType.CRYPTO)
+for market in markets:
+    trader.trade(
+        symbol=market["symbol"],
+        epic=market["epic"],
+        spread=market["spread"],
+        scaling=market["scaling"],
+        trade_type=TradeType.CRYPTO,
+        size=market["size"],
+        currency=market["currency"])
 
-    #for market in ig.get_markets(TradeType.CRYPTO):
-    #    if market["epic"] == "CS.D.BITCOIN.CFD.IP":
-    #        trader.trade("btcusd", market["epic"], market["spread"], market["scaling"],100,TradeType.CRYPTO,0.01)
 
 
-
-
-
-    time.sleep(60 * 60)

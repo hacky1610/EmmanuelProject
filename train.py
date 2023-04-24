@@ -17,12 +17,12 @@ trainer = Trainer(Analytics())
 conf_reader = ConfigReader()
 tiingo = Tiingo(conf_reader=conf_reader)
 dp = DataProcessor()
+trade_type = TradeType.CRYPTO
 
-markets = IG(conf_reader=conf_reader).get_markets(tradeable=False, trade_type=TradeType.FX)
+markets = IG(conf_reader=conf_reader).get_markets(tradeable=False, trade_type=trade_type)
 for m in markets:
     symbol = m["symbol"]
-    #symbol = "GBPNOK"
-    df, eval = tiingo.load_live_data(symbol, dp, TradeType.FX)
+    df, eval = tiingo.load_live_data(symbol, dp, trade_type=trade_type)
     if len(df) > 0:
         res = trainer.train_RSI_BB(symbol, df, eval)
         if len(res) > 0:

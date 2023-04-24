@@ -30,7 +30,7 @@ class Trader:
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
 
     def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
-              size: float = 1.0):
+              size: float = 1.0, currency:str="USD"):
         trade_df, df_eval = self._tiingo.load_live_data(symbol, self._dataprocessor, trade_type)
 
         if len(trade_df) == 0:
@@ -73,7 +73,7 @@ class Trader:
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            if self._ig.buy(epic, stop, limit, size):
+            if self._ig.buy(epic, stop, limit, size,currency):
                 self._tracer.write(
                     f"Buy {symbol} with settings {self._predictor.get_config()}. Testresult: WinLoss {win_loss}")
                 return True
@@ -82,7 +82,7 @@ class Trader:
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            if self._ig.sell(epic, stop, limit, size):
+            if self._ig.sell(epic, stop, limit, size,currency):
                 self._tracer.write(
                     f"Sell {symbol} with settings {self._predictor.get_config()} Testresult: WinLoss {win_loss}")
                 return True

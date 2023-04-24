@@ -8,7 +8,7 @@ class RsiBB(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
     rsi_upper_limit = 80
     rsi_lower_limit = 23
-    period_1 = 5
+    period_1 = 2
     rsi_trend = 0.05
 
     def __init__(self, config=None):
@@ -68,13 +68,11 @@ class RsiBB(BasePredictor):
             # buy
             if rsi < self.rsi_lower_limit and \
                     down_breaks and \
-                    bb_trend < 0 and \
                     rsi_trend < self.rsi_trend * -1:
                 return BasePredictor.BUY
 
             if rsi > self.rsi_upper_limit \
-                    and up_breaks and \
-                    bb_trend > 0 \
+                    and up_breaks \
                     and rsi_trend > self.rsi_trend:
                 return BasePredictor.SELL
 

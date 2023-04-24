@@ -28,9 +28,26 @@ class IG:
             self.type = "DEMO"
         self._tracer: Tracer = tracer
         self.connect()
-        self._excludedMarkets = ["CHFHUF","EMFX USDTWD ($1 Contract)","EMFX USDPHP ($1 Contract)","EMFX USDKRW ($1 Contract)",
-                                 "EMFX USDINR ($1 Contract)","EMFX USDIDR ($1 Contract)","EMFX INRJPY","EMFX GBPINR (1 Contract)","NZDGBP",
-                                 "NZDEUR","NZDAUD","AUDGBP","AUDEUR","GBPEUR"]
+        self._excludedMarkets = ["CHFHUF", "EMFX USDTWD ($1 Contract)", "EMFX USDPHP ($1 Contract)",
+                                 "EMFX USDKRW ($1 Contract)",
+                                 "EMFX USDINR ($1 Contract)", "EMFX USDIDR ($1 Contract)", "EMFX INRJPY",
+                                 "EMFX GBPINR (1 Contract)", "NZDGBP",
+                                 "NZDEUR", "NZDAUD", "AUDGBP", "AUDEUR", "GBPEUR"]
+
+        self._symbol_reference = {
+            "CS.D.BCHUSD.CFD.IP":
+                {
+                    "symbol": "BCHUSD",
+                    "size": 1,
+                    "currency": "USD"
+                },
+            "CS.D.BCHUSD.CFE.IP":
+                {
+                    "symbol": "BCHEUR",
+                    "size": 1,
+                    "currency": "EUR"
+                },
+        }
 
     def _get_markets_by_id(self, id):
         res = self.ig_service.fetch_sub_nodes_by_node(id)
@@ -42,16 +59,26 @@ class IG:
         else:
             return res["markets"]
 
-    def get_markets(self,trade_type:TradeType,tradeable:bool=True) -> DataFrame:
+    def _set_symbol(self, markets):
+        for m in markets:
+            epic = m["epic"]
+            if epic in self._symbol_reference:
+                m["symbol"] = self._symbol_reference[epic]["symbol"]
+                m["size"] = self._symbol_reference[epic]["size"]
+                m["currency"] = self._symbol_reference[epic]["currency"]
+
+        return markets
+
+    def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> DataFrame:
         if trade_type == TradeType.FX:
-            return self._get_markets(264139,tradeable)
+            return self._get_markets(264139, tradeable)
         elif trade_type == TradeType.CRYPTO:
-            return self._get_markets(668997, tradeable) #668997 is only Bitcoin
+            markets = self._get_markets(1002200, tradeable)  # 668997 is only Bitcoin Cash
+            return self._set_symbol(markets)
 
         return DataFrame()
 
-
-    def _get_markets(self,id:int,tradebale:bool=True):
+    def _get_markets(self, id: int, tradebale: bool = True):
         market_df = self._get_markets_by_id(id)
         if len(market_df) == 0:
             return DataFrame()
@@ -66,7 +93,11 @@ class IG:
                     "symbol": symbol,
                     "epic": market[1].epic,
                     "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
-                    "scaling": market[1].scalingFactor})
+                    "scaling": market[1].scalingFactor,
+                    "size": 1.0,
+                    "currency": self.get_currency(market[1].epic)
+                })
+
         return markets
 
     def connect(self):
@@ -79,24 +110,22 @@ class IG:
         except Exception as ex:
             self._tracer.error(f"Error during open a IG Connection {ex}")
 
-    def get_currency(self,epic:str):
+    def get_currency(self, epic: str):
         m = re.match("[\w]+\.[\w]+\.[\w]{3}([\w]{3})\.", epic)
         if m != None and len(m.groups()) == 1:
             return m.groups()[0]
         return "USD"
 
+    def buy(self, epic: str, stop: int, limit: int, size: float = 1.0,currency:str = "USD"):
+        return self.open(epic, "BUY", stop, limit, size,currency)
 
-    def buy(self, epic: str, stop: int, limit: int,size:float = 1.0):
-        return self.open(epic, "BUY", stop, limit,size)
+    def sell(self, epic: str, stop: int, limit: int, size: float = 1.0,currency:str = "USD"):
+        return self.open(epic, "SELL", stop, limit, size,currency)
 
-    def sell(self, epic: str, stop: int, limit: int,size:float = 1.0):
-        return self.open(epic, "SELL", stop, limit,size)
-
-
-    def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25, size:float = 1.0) -> bool:
+    def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25, size: float = 1.0, currency:str = "USD") -> bool:
         try:
             response = self.ig_service.create_open_position(
-                currency_code=self.get_currency(epic),
+                currency_code=currency,
                 direction=direction,
                 epic=epic,
                 expiry="-",
@@ -133,7 +162,7 @@ class IG:
     def get_opened_positions(self):
         return self.ig_service.fetch_open_positions()
 
-    def get_opened_positions_by_epic(self,epic:str):
+    def get_opened_positions_by_epic(self, epic: str):
         positions = self.get_opened_positions()
         epics = positions[positions.epic == epic]
         if len(epics) == 1:
@@ -169,7 +198,7 @@ class IG:
 
         return hours
 
-    def fix_hist(self,hist):
+    def fix_hist(self, hist):
         new_column = []
         for values in hist.instrumentName:
             new_column.append(re.search(r'\w{3}\/\w{3}', values).group().replace("/", ""))
@@ -180,8 +209,7 @@ class IG:
 
         return hist
 
-
-    def report_last_day(self,ti,dp_service):
+    def report_last_day(self, ti, dp_service):
         start_time = (datetime.now() - timedelta(hours=24))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -193,7 +221,7 @@ class IG:
         hist.sort_index(inplace=True)
         hist.reset_index(inplace=True)
 
-        #hist['profitAndLoss'] = hist['profitAndLoss'].str.replace('E', '', regex=True).astype('float64')
+        # hist['profitAndLoss'] = hist['profitAndLoss'].str.replace('E', '', regex=True).astype('float64')
         hist["openDateUtc"] = pd.to_datetime(hist["openDateUtc"])
         hist["dateUtc"] = pd.to_datetime(hist["dateUtc"])
         hist["openLevel"] = hist["openLevel"].astype("float")
@@ -234,7 +262,7 @@ class IG:
                 pl = row.openLevel - row.closeLevel
 
                 stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
-                                         color="#ff0000")
+                                     color="#ff0000")
                 limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
                                       color="#00ff00", label="Limit")
 
@@ -278,7 +306,7 @@ class IG:
                                   datetime.now().strftime("%Y_%m_%d"),
                                   f"{ticker}.png"))
 
-    def report_summary(self, ti, dp_service,delta:timedelta=timedelta(hours=24),name:str="lastday"):
+    def report_summary(self, ti, dp_service, delta: timedelta = timedelta(hours=24), name: str = "lastday"):
         start_time = (datetime.now() - delta)
 
         hist = self.get_transaction_history(start_time)
@@ -316,8 +344,7 @@ class IG:
 
         return
 
-    def create_report(self, ti,dp_service):
-        self.report_summary(ti,dp_service,timedelta(hours=24),"lastday")
+    def create_report(self, ti, dp_service):
+        self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
         self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
-        self.report_last_day(ti,dp_service)
-
+        self.report_last_day(ti, dp_service)
