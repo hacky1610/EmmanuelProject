@@ -118,11 +118,11 @@ class Trainer:
 
         result_df = DataFrame()
         p1_list = list(range(2, 5))
-        rsi_trend_list = [.01,.03,.05,.07,.09]
+        rsi_trend_list = [.005,.01,.03,.05]
         stop_list = [1.8,2.0, 2.3, 2.7, 3.]
         limit_list = [1.8,2.0, 2.3, 2.7, 3]
-        rsi_upper_limit_list = list(range(60, 70, 3))
-        rsi_lower_limit_list = list(range(30, 40, 3))
+        rsi_upper_limit_list = list(range(65, 80, 3))
+        rsi_lower_limit_list = list(range(20, 35, 3))
         best = 0
         best_predictor = None
 
@@ -155,7 +155,7 @@ class Trainer:
                         result_df = result_df.append(res,
                                                      ignore_index=True)
 
-                        if avg_reward > best and frequ > 0.03 and w_l > 0.75:
+                        if avg_reward > best and frequ > 0.04 and w_l > 0.7:
                             best = avg_reward
                             best_predictor = predictor
                             print(f"{symbol} - {predictor.get_config()} - "

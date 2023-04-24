@@ -1,3 +1,4 @@
+from BL.trader import Trader
 from Connectors.IG import IG
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.trainer import Trainer
@@ -17,13 +18,19 @@ trainer = Trainer(Analytics())
 conf_reader = ConfigReader()
 tiingo = Tiingo(conf_reader=conf_reader)
 dp = DataProcessor()
-trade_type = TradeType.CRYPTO
+trade_type = TradeType.FX
+ig = IG(conf_reader=conf_reader)
 
-markets = IG(conf_reader=conf_reader).get_markets(tradeable=False, trade_type=trade_type)
+markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 for m in markets:
     symbol = m["symbol"]
     df, eval = tiingo.load_live_data(symbol, dp, trade_type=trade_type)
     if len(df) > 0:
+        spread_limit = Trader._get_spread(df,  m["scaling"])
+        if m["spread"] > spread_limit:
+            print("Spread to big")
+            continue
+
         res = trainer.train_RSI_BB(symbol, df, eval)
         if len(res) > 0:
             res.to_excel(temp_file)

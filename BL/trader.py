@@ -26,7 +26,8 @@ class Trader:
         limit = int(abs(df.close - df.close.shift(-1)).mean() * limit_factor * scaling)
         return stop, limit
 
-    def _get_spread(self, df: DataFrame, scaling: float) -> float:
+    @staticmethod
+    def _get_spread(df: DataFrame, scaling: float) -> float:
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
 
     def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,

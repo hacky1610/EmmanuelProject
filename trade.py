@@ -27,7 +27,7 @@ trader = Trader(
     trainer=Trainer(analytics)
     )
 
-markets = ig.get_markets(TradeType.CRYPTO)
+markets = ig.get_markets(TradeType.FX)
 for market in markets:
     trader.trade(
         symbol=market["symbol"],
