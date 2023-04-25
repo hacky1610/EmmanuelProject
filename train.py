@@ -24,6 +24,7 @@ ig = IG(conf_reader=conf_reader)
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 for m in markets:
     symbol = m["symbol"]
+    symbol = "xauusd"
     df, eval = tiingo.load_live_data(symbol, dp, trade_type=trade_type)
     if len(df) > 0:
         spread_limit = Trader._get_spread(df,  m["scaling"])
@@ -32,6 +33,7 @@ for m in markets:
             continue
 
         res = trainer.train_RSI_BB(symbol, df, eval)
+        print("")
         #if len(res) > 0:
         #    res.to_excel(temp_file)
         #    t = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
