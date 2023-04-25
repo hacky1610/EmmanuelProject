@@ -18,13 +18,12 @@ trainer = Trainer(Analytics())
 conf_reader = ConfigReader()
 tiingo = Tiingo(conf_reader=conf_reader)
 dp = DataProcessor()
-trade_type = TradeType.FX
+trade_type = TradeType.METAL
 ig = IG(conf_reader=conf_reader)
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 for m in markets:
     symbol = m["symbol"]
-    symbol = "xauusd"
     df, eval = tiingo.load_live_data(symbol, dp, trade_type=trade_type)
     if len(df) > 0:
         spread_limit = Trader._get_spread(df,  m["scaling"])

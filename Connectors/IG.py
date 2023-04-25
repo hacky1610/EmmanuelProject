@@ -47,6 +47,20 @@ class IG:
                     "size": 1,
                     "currency": "EUR"
                 },
+            #Gold
+            "CS.D.CFDGOLD.CFDGC.IP":
+                {
+                    "symbol": "XAUUSD",
+                    "size": 1,
+                    "currency": "USD"
+                },
+            #Silber
+            "CS.D.CFDSILVER.CFM.IP":
+                {
+                    "symbol": "XAGUSD",
+                    "size": 0.5,
+                    "currency": "USD"
+                }
         }
 
     def _get_markets_by_id(self, id):
@@ -75,6 +89,10 @@ class IG:
         elif trade_type == TradeType.CRYPTO:
             markets = self._get_markets(1002200, tradeable)  # 668997 is only Bitcoin Cash
             return self._set_symbol(markets)
+        elif trade_type == TradeType.METAL:
+            gold = self._get_markets(104139, tradeable) #Gold
+            silver = self._get_markets(264211, tradeable)
+            return self._set_symbol(gold + silver)
 
         return DataFrame()
 

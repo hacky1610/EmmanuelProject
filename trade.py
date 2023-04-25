@@ -28,16 +28,7 @@ trader = Trader(
     trainer=Trainer(analytics)
     )
 
-markets = ig.get_markets(TradeType.FX)
-for market in markets:
-    trader.trade(
-        symbol=market["symbol"],
-        epic=market["epic"],
-        spread=market["spread"],
-        scaling=market["scaling"],
-        trade_type=TradeType.FX,
-        size=market["size"],
-        currency=market["currency"])
-
+#trader.trade_markets(TradeType.FX)
+trader.trade_markets(TradeType.METAL)
 
 

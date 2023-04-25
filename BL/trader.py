@@ -30,10 +30,24 @@ class Trader:
     def _get_spread(df: DataFrame, scaling: float) -> float:
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
 
-    def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
-              size: float = 1.0, currency:str="USD"):
+    def trade_markets(self, trade_type: TradeType):
+        currency_markets = self._ig.get_markets(trade_type)
+        for market in currency_markets:
+            symbol = market["symbol"]
+            self._tracer.debug(f"Try to trade {symbol}")
+            self.trade(
+                symbol=market["symbol"],
+                epic=market["epic"],
+                spread=market["spread"],
+                scaling=market["scaling"],
+                trade_type=trade_type,
+                size=market["size"],
+                currency=market["currency"])
 
-        precheck_df = self._tiingo.load_live_data_last_days(symbol,self._dataprocessor, trade_type)
+    def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
+              size: float = 1.0, currency: str = "USD"):
+
+        precheck_df = self._tiingo.load_live_data_last_days(symbol, self._dataprocessor, trade_type)
 
         if len(precheck_df) == 0:
             self._tracer.error(f"Could not load train data for {symbol}")
@@ -54,14 +68,6 @@ class Trader:
             self._tracer.debug(f"Win Loss is to less {symbol} -> WL: {win_loss}")
             return False
 
-            #wl_new, settings = self._trainer.fit(trade_df, df_eval)
-            #if wl_new > self._min_win_loss:
-            #    self._tracer.debug(f"Trained new WL: {wl_new}")
-            #    self._predictor.setup(settings)
-            #else:
-            #    self._tracer.debug(f"WL of  {wl_new} is still to bad")
-            #    return False
-
         signal = self._predictor.predict(trade_df)
 
         if signal == BasePredictor.NONE:
@@ -76,7 +82,7 @@ class Trader:
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            if self._ig.buy(epic, stop, limit, size,currency):
+            if self._ig.buy(epic, stop, limit, size, currency):
                 self._tracer.write(
                     f"Buy {symbol} with settings {self._predictor.get_config()}. Testresult: WinLoss {win_loss}")
                 return True
@@ -85,7 +91,7 @@ class Trader:
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            if self._ig.sell(epic, stop, limit, size,currency):
+            if self._ig.sell(epic, stop, limit, size, currency):
                 self._tracer.write(
                     f"Sell {symbol} with settings {self._predictor.get_config()} Testresult: WinLoss {win_loss}")
                 return True

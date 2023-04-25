@@ -17,7 +17,7 @@ analytics = Analytics()
 
 for m in ig.get_markets(tradeable=False, trade_type=TradeType.FX):
     symbol = m["symbol"]
-    symbol = "GBPUSD"
+    symbol = "AUDUSD"
     df, df_eval = ti.load_live_data(symbol,dp, TradeType.FX)
 
     if len(df) > 0:

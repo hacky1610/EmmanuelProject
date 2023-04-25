@@ -24,7 +24,6 @@ tiingo = Tiingo(tracer=tracer, conf_reader=env_reader)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
 predictor = RsiBB({"tracer": tracer})
 analytics = Analytics(tracer)
-exclude = []
 
 trader = Trader(
     ig=ig,
@@ -35,21 +34,9 @@ trader = Trader(
     analytics=analytics,
     trainer=Trainer(analytics))
 
-# trade
-markets = ig.get_markets(TradeType.FX)
 tracer.debug(f"Start trading")
-for market in markets:
-    symbol = market["symbol"]
-    if symbol not in exclude:
-        tracer.debug(f"Try to trade {symbol}")
-        trader.trade(
-            symbol=market["symbol"],
-            epic=market["epic"],
-            spread=market["spread"],
-            scaling=market["scaling"],
-            trade_type=TradeType.FX,
-            size=market["size"],
-            currency=market["currency"])
+trader.trade_markets(TradeType.FX)
+trader.trade_markets(TradeType.METAL)
 
 # report
 if datetime.now().hour == 18:

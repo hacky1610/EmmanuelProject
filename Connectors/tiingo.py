@@ -14,6 +14,7 @@ class TradeType(Enum):
     STOCK = 2
     CRYPTO = 3
     IEX = 4
+    METAL = 5
 
 class Tiingo:
     _BASEURL = "https://api.tiingo.com/tiingo/"
@@ -40,7 +41,7 @@ class Tiingo:
             return ""
 
     def get_uri_for_trade_type(self, trade_type:TradeType,symbol:str=str):
-        if trade_type == TradeType.FX:
+        if trade_type == TradeType.FX or trade_type == TradeType.METAL:
             return f"fx/{symbol}/prices?"
         elif trade_type == TradeType.CRYPTO:
             return f"crypto/prices?tickers={symbol}&"
