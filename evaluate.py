@@ -1,9 +1,6 @@
 from BL.data_processor import DataProcessor
 from Connectors.tiingo import Tiingo, TradeType
-from Predictors import *
-from Predictors.rsi_stoch import RsiStoch
 from Predictors.rsi_bb import RsiBB
-
 from BL.utils import ConfigReader
 from Connectors.IG import IG
 from BL import Analytics
@@ -14,11 +11,12 @@ dp = DataProcessor()
 ig = IG(conf_reader)
 ti = Tiingo(conf_reader=conf_reader)
 analytics = Analytics()
+trade_type = TradeType.METAL
 
-for m in ig.get_markets(tradeable=False, trade_type=TradeType.FX):
+for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
-    symbol = "AUDUSD"
-    df, df_eval = ti.load_live_data(symbol,dp, TradeType.FX)
+    symbol = "XAGUSD"
+    df, df_eval = ti.load_live_data(symbol,dp, trade_type)
 
     if len(df) > 0:
         predictor = RsiBB()

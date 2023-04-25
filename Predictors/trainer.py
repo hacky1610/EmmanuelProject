@@ -130,17 +130,13 @@ class Trainer:
         random.shuffle(stop_list)
         random.shuffle(limit_list)
 
-        for rsi_trend in rsi_trend_list:
-            for ul in rsi_upper_limit_list:
-                for ll in rsi_lower_limit_list:
-                    for p in p1_list:
+        for stop in stop_list:
+            for limit in limit_list:
                         predictor = RsiBB()
                         predictor.load(symbol)
                         predictor.setup({
-                            "rsi_trend": rsi_trend,
-                            "rsi_upper_limit":ul,
-                            "rsi_lower_limit":ll,
-                            "period_1":p
+                            "stop": stop,
+                            "limit":limit
                         })
                         res = predictor.step(df, df_eval,self._analytics )
                         reward = res["reward"]
