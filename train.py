@@ -18,7 +18,7 @@ trainer = Trainer(Analytics())
 conf_reader = ConfigReader()
 tiingo = Tiingo(conf_reader=conf_reader)
 dp = DataProcessor()
-trade_type = TradeType.METAL
+trade_type = TradeType.FX
 ig = IG(conf_reader=conf_reader)
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)

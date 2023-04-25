@@ -118,6 +118,8 @@ class Trainer:
 
         result_df = DataFrame()
         p1_list = list(range(2, 5))
+        p2_list = list(range(2, 5))
+        peak_count_list = list(range(0, 4))
         rsi_trend_list = [.005,.01,.03,.05]
         stop_list = [1.8,2.0, 2.3, 2.7, 3.]
         limit_list = [1.8,2.0, 2.3, 2.7, 3]
@@ -130,13 +132,15 @@ class Trainer:
         random.shuffle(stop_list)
         random.shuffle(limit_list)
 
-        for stop in stop_list:
-            for limit in limit_list:
+        for p1 in p1_list:
+            for p2 in p2_list:
+                for peaks in peak_count_list:
                         predictor = RsiBB()
                         predictor.load(symbol)
                         predictor.setup({
-                            "stop": stop,
-                            "limit":limit
+                            "period_1": p1,
+                            "period_2": p2,
+                            "peak_count": peaks
                         })
                         res = predictor.step(df, df_eval,self._analytics )
                         reward = res["reward"]
@@ -151,7 +155,7 @@ class Trainer:
                         result_df = result_df.append(res,
                                                      ignore_index=True)
 
-                        if avg_reward > best and frequ > 0.04 and w_l > 0.7:
+                        if avg_reward > best and frequ > 0.01 and w_l > 0.7:
                             best = avg_reward
                             best_predictor = predictor
                             print(f"{symbol} - {predictor.get_config()} - "
