@@ -75,6 +75,17 @@ class Tiingo:
             data_processor.clean_data(res)
         return res
 
+    def load_live_data_last_days(self, symbol: str, dp: DataProcessor, trade_type):
+
+        start_time = (date.today() - timedelta(days=6)).strftime("%Y-%m-%d")
+        return self.load_data_by_date(ticker=symbol,
+                                    start=start_time,
+                                    end=None,
+                                    data_processor=dp,
+                                    trade_type=trade_type,
+                                    resolution="1hour")
+
+
     def load_live_data(self, symbol: str, dp:DataProcessor, trade_type):
 
         start_time = (date.today() - timedelta(days=30)).strftime("%Y-%m-%d")

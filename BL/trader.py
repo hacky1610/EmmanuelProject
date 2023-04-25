@@ -32,19 +32,21 @@ class Trader:
 
     def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
               size: float = 1.0, currency:str="USD"):
-        trade_df, df_eval = self._tiingo.load_live_data(symbol, self._dataprocessor, trade_type)
 
-        if len(trade_df) == 0:
+        precheck_df = self._tiingo.load_live_data_last_days(symbol,self._dataprocessor, trade_type)
+
+        if len(precheck_df) == 0:
             self._tracer.error(f"Could not load train data for {symbol}")
             return False
 
-        spread_limit = self._get_spread(trade_df, scaling)
+        spread_limit = self._get_spread(precheck_df, scaling)
         if spread > spread_limit:
             self._tracer.debug(f"Spread {spread} is greater than {spread_limit} for {symbol}")
             return False
 
         self._predictor.load(symbol)
 
+        trade_df, df_eval = self._tiingo.load_live_data(symbol, self._dataprocessor, trade_type)
         reward, success, trade_freq, win_loss, avg_minutes = self._analytics.evaluate(self._predictor, trade_df,
                                                                                       df_eval, False)
 
