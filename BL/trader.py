@@ -36,7 +36,7 @@ class Trader:
             symbol = market["symbol"]
             self._tracer.debug(f"Try to trade {symbol}")
             self.trade(
-                symbol=market["symbol"],
+                symbol=symbol,
                 epic=market["epic"],
                 spread=market["spread"],
                 scaling=market["scaling"],
