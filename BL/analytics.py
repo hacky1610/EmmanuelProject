@@ -36,15 +36,20 @@ class Analytics:
         losses = 0
         wins = 0
         spread = (abs((df_train.close - df_train.close.shift(1))).median()) * 0.8
+        old_tracer = predictor._tracer
+        predictor._tracer = Tracer()
 
         if print_graph:
             fig = go.Figure(data=[
-                go.Line(x=df_eval['date'],y=df_eval["close"],
-                        line = dict(shape = 'linear', color = 'Gray')),
                 go.Line(x=df_train['date'], y=df_train["BB_LOWER"],
                         line=dict(shape='linear', color='Orange')),
                 go.Line(x=df_train['date'], y=df_train["BB_UPPER"],
                         line=dict(shape='linear', color='Orange')),
+                go.Candlestick(x=df_eval['date'],
+                               open=df_eval['open'],
+                               high=df_eval['high'],
+                               low=df_eval['low'],
+                               close=df_eval['close']),
                 go.Candlestick(x=df_train['date'],
                                                  open=df_train['open'],
                                                  high=df_train['high'],
@@ -168,6 +173,7 @@ class Analytics:
             fig.show()
 
         trades = wins + losses
+        predictor._tracer = old_tracer
         if trades == 0:
             return 0, 0, 0, 0, 0
         return reward, reward / trades, trades / len(df_train), wins / trades, trading_minutes / trades

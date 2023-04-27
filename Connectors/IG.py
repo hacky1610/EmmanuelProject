@@ -232,7 +232,7 @@ class IG:
 
     def report_last_day(self, ti, dp_service):
         start_time = (datetime.now() - timedelta(hours=60))
-        start_time_hours = (datetime.now() - timedelta(hours=90))
+        start_time_hours = (datetime.now() - timedelta(hours=200))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
 
         hist = self.get_transaction_history(start_time)
@@ -433,6 +433,6 @@ class IG:
         return
 
     def create_report(self, ti, dp_service):
-        self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
-        self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
+        #self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
+        #self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
         self.report_last_day(ti, dp_service)

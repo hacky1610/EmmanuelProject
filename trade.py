@@ -28,7 +28,7 @@ trader = Trader(
     trainer=Trainer(analytics)
     )
 
-#trader.trade_markets(TradeType.FX)
-trader.trade_markets(TradeType.METAL)
+trader.trade_markets(TradeType.FX)
+#trader.trade_markets(TradeType.METAL)
 
 
