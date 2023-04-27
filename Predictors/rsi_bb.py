@@ -100,4 +100,9 @@ class RsiBB(BasePredictor):
 
                 return BasePredictor.SELL
 
+            self._tracer.write(f"No Action - Time: {df.tail(1).date.values[0]} \n\r"
+                               f"RSI: {rsi} RSI UL: {self.rsi_upper_limit} RSI UL: {self.rsi_lower_limit} \n\r"
+                               f"P2: {no_break_period.filter(['date', 'low', 'BB_LOWER', 'high', 'BB_UPPER'])} \n\r"
+                               f"P1: {break_period.filter(['date', 'low', 'BB_LOWER', 'high', 'BB_UPPER'])} \n\r")
+
         return self.NONE
