@@ -21,6 +21,6 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     if len(df) > 0:
         predictor = RsiBB()
         predictor.load(symbol)
-        reward, success, trade_freq, win_loss, avg_minutes = analytics.evaluate(predictor, df, df_eval, True)
+        reward, success, trade_freq, win_loss, avg_minutes = analytics.evaluate(predictor, df, df_eval, False)
         max_spread = success * m["scaling"] * 0.2
         print(f"{symbol} - Reward {reward}, success {success}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes} spread {max_spread}")

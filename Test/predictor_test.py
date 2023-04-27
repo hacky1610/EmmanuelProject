@@ -96,8 +96,8 @@ class RsiBBTest(unittest.TestCase):
 
     def add_line(self, df: DataFrame, low, high, rsi, bb_lower, bb_middle,bb_upper):
         return df.append(
-            Series([low, high, rsi, bb_lower,bb_middle, bb_upper],
-                   index=["low", "high", "RSI", "BB_LOWER","BB_MIDDLE" , "BB_UPPER"]),
+            Series([low, high, rsi, bb_lower,bb_middle, bb_upper,"date"],
+                   index=["low", "high", "RSI", "BB_LOWER","BB_MIDDLE" , "BB_UPPER", "date"]),
             ignore_index=True)
 
     def test_df_to_small(self):

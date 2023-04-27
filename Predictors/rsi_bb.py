@@ -2,6 +2,8 @@ import os.path
 import json
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
+from Tracing.Tracer import Tracer
+from Tracing.ConsoleTracer import ConsoleTracer
 
 
 class RsiBB(BasePredictor):
@@ -13,8 +15,8 @@ class RsiBB(BasePredictor):
     peak_count = 0
     rsi_trend = 0.05
 
-    def __init__(self, config=None):
-        super().__init__(config)
+    def __init__(self, config=None, tracer: Tracer = ConsoleTracer()):
+        super().__init__(config, tracer)
         if config is None:
             config = {}
         self.setup(config)
@@ -41,7 +43,7 @@ class RsiBB(BasePredictor):
                        self.rsi_trend
                        ],
                       index=["Type", "stop", "limit", "rsi_upper_limit",
-                             "rsi_lower_limit", "period_1","period_2","peak_count","rsi_trend"])
+                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend"])
 
     def save(self, symbol: str):
         self.get_config().to_json(self._get_save_path(self.__class__.__name__, symbol))
@@ -80,12 +82,22 @@ class RsiBB(BasePredictor):
                     down_breaks and \
                     no_down_breaks and \
                     rsi_trend < self.rsi_trend * -1:
+                self._tracer.write(f"Buy - Time: {df.tail(1).date.values[0]} \n\r"
+                                   f"RSI: {rsi} RSI LL: {self.rsi_lower_limit} \n\r"
+                                   f"P2: {no_break_period.filter(['date', 'low', 'BB_LOWER'])} \n\r"
+                                   f"P1: {break_period.filter(['date', 'low', 'BB_LOWER'])} \n\r"
+                                   )
                 return BasePredictor.BUY
 
             if rsi > self.rsi_upper_limit \
                     and up_breaks \
                     and no_up_breaks \
                     and rsi_trend > self.rsi_trend:
+                self._tracer.write(f"Sell - Time: {df.tail(1).date.values[0]} \n\r"
+                                   f"RSI: {rsi} RSI UL: {self.rsi_upper_limit} \n\r"
+                                   f"P2: {no_break_period.filter(['date', 'high', 'BB_UPPER'])} \n\r"
+                                   f"P1: {break_period.filter(['date', 'high', 'BB_UPPER'])} \n\r")
+
                 return BasePredictor.SELL
 
         return self.NONE
