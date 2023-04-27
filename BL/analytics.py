@@ -1,9 +1,8 @@
-from pandas import DataFrame
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer  import ConsoleTracer
 from pandas import DataFrame
-import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.graph_objects as go
 
 
 class Analytics:
@@ -39,10 +38,20 @@ class Analytics:
         spread = (abs((df_train.close - df_train.close.shift(1))).median()) * 0.8
 
         if print_graph:
-            plt.figure(figsize=(15, 6))
-            plt.cla()
-            plt.plot(pd.to_datetime(df_eval["date"]), df_eval["close"], color='#d3d3d3', alpha=0.5,
-                     label="Chart")
+            fig = go.Figure(data=[
+                go.Line(x=df_eval['date'],y=df_eval["close"],
+                        line = dict(shape = 'linear', color = 'Gray')),
+                go.Line(x=df_train['date'], y=df_train["BB_LOWER"],
+                        line=dict(shape='linear', color='Orange')),
+                go.Line(x=df_train['date'], y=df_train["BB_UPPER"],
+                        line=dict(shape='linear', color='Orange')),
+                go.Candlestick(x=df_train['date'],
+                                                 open=df_train['open'],
+                                                 high=df_train['high'],
+                                                 low=df_train['low'],
+                                                 close=df_train['close']),
+            ])
+
 
         trading_minutes = 0
         last_exit = df_train.date[0]
@@ -61,7 +70,18 @@ class Analytics:
                 open_price = open_price + spread
 
                 if print_graph:
-                    plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'b^', label="Buy")
+                    fig.add_scatter(x=[pd.to_datetime(df_train.date[i])],
+                                    y=[df_train.close[i]],
+                                    marker=dict(
+                                        color='Blue',
+                                        size=10,
+                                        line=dict(
+                                            color='Black',
+                                            width=2
+                                        ),
+                                        symbol="triangle-up"
+                                    ),
+                                    )
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
@@ -70,7 +90,13 @@ class Analytics:
                     if high > open_price + limit:
                         # Won
                         if print_graph:
-                            plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
+                            fig.add_scatter(x=[pd.to_datetime(future.date[j])],
+                                            y=[future.close[j]],
+                                            marker=dict(
+                                                color='Green',
+                                                size=10
+                                            ),
+                                            )
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
@@ -78,7 +104,13 @@ class Analytics:
                     elif low < open_price - stop:
                         # Loss
                         if print_graph:
-                            plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
+                            fig.add_scatter(x=[pd.to_datetime(future.date[j])],
+                                            y=[future.close[j]],
+                                            marker=dict(
+                                                color='Red',
+                                                size=10
+                                            ),
+                                            )
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]
@@ -87,7 +119,18 @@ class Analytics:
                 open_price = open_price - spread
 
                 if print_graph:
-                    plt.plot(pd.to_datetime(df_train.date[i]), df_train.close[i], 'bv', label="Sell")
+                    fig.add_scatter(x=[pd.to_datetime(df_train.date[i])],
+                                    y=[df_train.close[i]],
+                                    marker=dict(
+                                        color='Blue',
+                                        size=10,
+                                        line=dict(
+                                            color='Black',
+                                            width=2
+                                        ),
+                                        symbol="triangle-down"
+                                    ),
+                                    )
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
@@ -96,21 +139,33 @@ class Analytics:
                     if low < open_price - limit:
                         # Won
                         if print_graph:
-                            plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'go')
+                            fig.add_scatter(x=[pd.to_datetime(future.date[j])],
+                                            y=[future.close[j]],
+                                            marker=dict(
+                                                color='Green',
+                                                size=10
+                                            ),
+                                            )
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
                         break
                     elif high > open_price + stop:
                         if print_graph:
-                            plt.plot(pd.to_datetime(future.date[j]), future.close[j], 'ro')
+                            fig.add_scatter(x=[pd.to_datetime(future.date[j])],
+                                            y=[future.close[j]],
+                                            marker=dict(
+                                                color='Red',
+                                                size=10
+                                            ),
+                                            )
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]
                         break
 
         if print_graph:
-            plt.show()
+            fig.show()
 
         trades = wins + losses
         if trades == 0:
