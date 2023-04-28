@@ -299,7 +299,8 @@ class IG:
 
         if load_live:
             hist = self.get_transaction_history(100, "ALL")
-            hist['profit_float'] = hist['profitAndLoss'].str.replace('E', '').astype(float)
+            temp = hist['profitAndLoss'].str.replace('E', '')
+            hist['profit_float'] = temp.str.replace(',', '').astype(float)
         else:
             hist = pandas.read_csv("./trades.csv")
 
