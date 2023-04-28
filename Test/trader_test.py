@@ -24,9 +24,7 @@ class TraderTest(unittest.TestCase):
         for i in range(20):
             self._stock_data = self._add_data(self._stock_data)
 
-        self._tiingo.load_live_data = MagicMock(return_value=(self._stock_data, self._stock_data))
         self._tiingo.load_live_data_last_days = MagicMock(return_value=self._stock_data)
-        self.analytics.evaluate = MagicMock(return_value=(1,1,1,1,1))
         self._trader = Trader(ig=self._ig,
                    tiingo=self._tiingo,
                    tracer=self._tracer,
@@ -35,6 +33,8 @@ class TraderTest(unittest.TestCase):
                    trainer=self._trainer,
                    predictor=self._predictor)
         self._trader._get_spread = MagicMock(return_value=1)
+        Trader._get_good_markets = MagicMock(return_value=["myepic"])
+
 
     @staticmethod
     def _add_data(df: DataFrame):
@@ -93,17 +93,14 @@ class TraderTest(unittest.TestCase):
         self._ig.sell.assert_not_called()
         assert res == False
 
-    def test_trade_evaluation_to_bad(self):
-        self._predictor.predict = MagicMock(return_value="buy")
-        self.analytics.evaluate = MagicMock(return_value=(0, 0, 0, 0, 0))
-        self._trainer.fit =  MagicMock(return_value=(0.0,{}))
-        res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
+    def test_symbol_not_good(self):
+        res = self._trader.trade("myepic2", "mysymbol", 1.0, 2)
         self._ig.buy.assert_not_called()
         self._ig.sell.assert_not_called()
         assert res == False
 
     def test_trade_no_data(self):
-        self._tiingo.load_live_data_last_days = MagicMock(return_value=(DataFrame(),DataFrame()))
+        self._tiingo.load_live_data_last_days = MagicMock(return_value=DataFrame())
         res = self._trader.trade("myepic", "mysymbol", 1.0, 2)
         self._ig.buy.assert_not_called()
         self._ig.sell.assert_not_called()

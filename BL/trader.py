@@ -97,7 +97,7 @@ class Trader:
                 return False
             if self._ig.buy(epic, stop, limit, size, currency):
                 self._tracer.write(
-                    f"Buy {symbol} with settings {self._predictor.get_config()}. Testresult: WinLoss {win_loss}")
+                    f"Buy {symbol} with settings {self._predictor.get_config()}.")
                 return True
         elif signal == BasePredictor.SELL:
             if openedPosition is not None and openedPosition.direction == "SELL":
@@ -106,7 +106,7 @@ class Trader:
                 return False
             if self._ig.sell(epic, stop, limit, size, currency):
                 self._tracer.write(
-                    f"Sell {symbol} with settings {self._predictor.get_config()} Testresult: WinLoss {win_loss}")
+                    f"Sell {symbol} with settings {self._predictor.get_config()} ")
                 return True
 
         return False
