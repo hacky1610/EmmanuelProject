@@ -3,6 +3,7 @@ from Tracing.ConsoleTracer  import ConsoleTracer
 from pandas import DataFrame
 import pandas as pd
 import plotly.graph_objects as go
+from datetime import timedelta
 
 
 class Analytics:
@@ -68,7 +69,7 @@ class Analytics:
                 continue
 
             open_price = df_train.close[i]
-            future = df_eval[df_eval["date"] > df_train.date[i]]
+            future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
 
             if action == predictor.BUY:

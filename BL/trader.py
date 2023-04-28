@@ -1,3 +1,8 @@
+import json
+import os
+import pandas as pd
+
+from BL import get_project_dir
 from Connectors import IG
 from Connectors.tiingo import TradeType
 from BL.analytics import Analytics
@@ -30,6 +35,18 @@ class Trader:
     def _get_spread(df: DataFrame, scaling: float) -> float:
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
 
+    @staticmethod
+    def _get_evaluation():
+        path = os.path.join(get_project_dir(),"Settings", "evaluation.json")
+        if os.path.exists(path):
+            return pd.read_json(path)
+        return DataFrame()
+
+    @staticmethod
+    def _get_good_markets():
+        results = Trader._get_evaluation()
+        return results[results.win_loss > 0.7].symbol.values
+
     def trade_markets(self, trade_type: TradeType):
         currency_markets = self._ig.get_markets(trade_type)
         for market in currency_markets:
@@ -47,26 +64,22 @@ class Trader:
     def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
               size: float = 1.0, currency: str = "USD"):
 
-        precheck_df = self._tiingo.load_live_data_last_days(symbol, self._dataprocessor, trade_type)
+        if symbol not in Trader._get_good_markets():
+            self._tracer.error(f"{symbol} is not listed as good market")
+            return False
 
-        if len(precheck_df) == 0:
+        trade_df = self._tiingo.load_live_data_last_days(symbol, self._dataprocessor, trade_type)
+
+        if len(trade_df) == 0:
             self._tracer.error(f"Could not load train data for {symbol}")
             return False
 
-        spread_limit = self._get_spread(precheck_df, scaling)
+        spread_limit = self._get_spread(trade_df, scaling)
         if spread > spread_limit:
             self._tracer.debug(f"Spread {spread} is greater than {spread_limit} for {symbol}")
             return False
 
         self._predictor.load(symbol)
-
-        trade_df, df_eval = self._tiingo.load_live_data(symbol, self._dataprocessor, trade_type)
-        reward, success, trade_freq, win_loss, avg_minutes = self._analytics.evaluate(self._predictor, trade_df,
-                                                                                      df_eval, False)
-
-        if win_loss < self._min_win_loss:
-            self._tracer.debug(f"Win Loss is to less {symbol} -> WL: {win_loss}")
-            return False
 
         signal = self._predictor.predict(trade_df)
 
@@ -97,3 +110,6 @@ class Trader:
                 return True
 
         return False
+
+
+

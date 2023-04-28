@@ -121,8 +121,8 @@ class Trainer:
         p2_list = list(range(2, 5))
         peak_count_list = list(range(0, 4))
         rsi_trend_list = [.005,.01,.03,.05]
-        stop_list = [1.8,2.0, 2.3, 2.7, 3.]
-        limit_list = [1.8,2.0, 2.3, 2.7, 3]
+        stop_list = [2] #[1.8,2.0, 2.3, 2.7, 3.]
+        limit_list =  [2] #[1.8,2.0, 2.3, 2.7, 3]
         rsi_upper_limit_list = list(range(65, 80, 3))
         rsi_lower_limit_list = list(range(20, 35, 3))
         best = 0
@@ -135,34 +135,36 @@ class Trainer:
         for ul in rsi_upper_limit_list:
             for ll in rsi_lower_limit_list:
                 for trend in rsi_trend_list:
-                        predictor = RsiBB()
-                        predictor.load(symbol)
-                        predictor.setup({
-                            "rsi_upper_limit": ul,
-                            "rsi_lower_limit": ll,
-                            "rsi_trend": trend
-                        })
-                        res = predictor.step(df, df_eval,self._analytics )
-                        reward = res["reward"]
-                        avg_reward = res["success"]
-                        frequ = res["trade_frequency"]
-                        w_l = res["win_loss"]
-                        minutes = res["avg_minutes"]
+                            predictor = RsiBB()
+                            predictor.load(symbol)
+                            predictor.setup({
+                                "rsi_upper_limit": ul,
+                                "rsi_lower_limit": ll,
+                                "rsi_trend": trend,
+                                "stop": 2,
+                                "limit": 2
+                            })
+                            res = predictor.step(df, df_eval,self._analytics )
+                            reward = res["reward"]
+                            avg_reward = res["success"]
+                            frequ = res["trade_frequency"]
+                            w_l = res["win_loss"]
+                            minutes = res["avg_minutes"]
 
-                        res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
-                                     index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
-                        res = res.append(predictor.get_config())
-                        result_df = result_df.append(res,
-                                                     ignore_index=True)
+                            res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
+                                         index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
+                            res = res.append(predictor.get_config())
+                            result_df = result_df.append(res,
+                                                         ignore_index=True)
 
-                        if avg_reward > best and frequ > 0.025 and w_l > 0.7:
-                            best = avg_reward
-                            best_predictor = predictor
-                            print(f"{symbol} - {predictor.get_config()} - "
-                                  f"Avg Reward: {avg_reward:6.5} "
-                                  f"Avg Min {int(minutes)}  "
-                                  f"Freq: {frequ:4.3} "
-                                  f"WL: {w_l:3.2}")
+                            if avg_reward > best and frequ > 0.005 and w_l > 0.6:
+                                best = avg_reward
+                                best_predictor = predictor
+                                print(f"{symbol} - {predictor.get_config()} - "
+                                      f"Avg Reward: {avg_reward:6.5} "
+                                      f"Avg Min {int(minutes)}  "
+                                      f"Freq: {frequ:4.3} "
+                                      f"WL: {w_l:3.2}")
 
         if best_predictor is not None:
             best_predictor.save(symbol)
