@@ -66,10 +66,14 @@ class Tiingo:
         return df
 
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
-                          resolution: str = "1hour", add_signals: bool = True, clean_data: bool = True, trade_type:TradeType=TradeType.FX) -> DataFrame:
+                          resolution: str = "1hour", add_signals: bool = True,
+                          clean_data: bool = True, trade_type:TradeType=TradeType.FX,
+                          trim:bool=False) -> DataFrame:
         res = self._send_history_request(ticker, start, end, resolution,trade_type)
         if len(res) == 0:
             return res
+        if trim:
+            res = res[:-1]
         if add_signals:
             data_processor.addSignals(res)
         if clean_data:
@@ -84,7 +88,8 @@ class Tiingo:
                                     end=None,
                                     data_processor=dp,
                                     trade_type=trade_type,
-                                    resolution="1hour")
+                                    resolution="1hour",
+                                    trim=True)
 
 
     def load_live_data(self, symbol: str, dp:DataProcessor, trade_type):
@@ -95,7 +100,8 @@ class Tiingo:
                                   end=None,
                                   data_processor=dp,
                                   trade_type=trade_type,
-                                  resolution="1hour")
+                                  resolution="1hour",
+                                  trim=True)
         df_eval = self.load_data_by_date(ticker=symbol,
                                        start=start_time,
                                        end=None,
