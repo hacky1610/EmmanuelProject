@@ -84,8 +84,10 @@ class RsiBB(BasePredictor):
                     rsi_trend < self.rsi_trend * -1:
                 self._tracer.write(f"Buy - Time: {df.tail(1).date.values[0]} \n\r"
                                    f"RSI: {rsi} RSI LL: {self.rsi_lower_limit} \n\r"
-                                   f"P2: {no_break_period.filter(['date', 'low', 'BB_LOWER'])} \n\r"
-                                   f"P1: {break_period.filter(['date', 'low', 'BB_LOWER'])} \n\r"
+                                   f"P2: {no_break_period.filter(['date', 'low', 'BB_LOWER', 'RSI'])} \n\r"
+                                   f"P1: {break_period.filter(['date', 'low', 'BB_LOWER', 'RSI'])} \n\r"
+                                   f"len {len(df)}\n\r"
+                                   f"RSI trend {rsi_trend} - Max trend {self.rsi_trend * -1} \n\r"
                                    )
                 return BasePredictor.BUY
 
@@ -95,14 +97,20 @@ class RsiBB(BasePredictor):
                     and rsi_trend > self.rsi_trend:
                 self._tracer.write(f"Sell - Time: {df.tail(1).date.values[0]} \n\r"
                                    f"RSI: {rsi} RSI UL: {self.rsi_upper_limit} \n\r"
-                                   f"P2: {no_break_period.filter(['date', 'high', 'BB_UPPER'])} \n\r"
-                                   f"P1: {break_period.filter(['date', 'high', 'BB_UPPER'])} \n\r")
+                                   f"P2: {no_break_period.filter(['date', 'high', 'BB_UPPER', 'RSI'])} \n\r"
+                                   f"P1: {break_period.filter(['date', 'high', 'BB_UPPER', 'RSI'])} \n\r"
+                                   f"len {len(df)}\n\r"
+                                   f"RSI trend {rsi_trend} - Min trend {self.rsi_trend} \n\r"
+                                   )
 
                 return BasePredictor.SELL
 
             self._tracer.write(f"No Action - Time: {df.tail(1).date.values[0]} \n\r"
                                f"RSI: {rsi} RSI UL: {self.rsi_upper_limit} RSI UL: {self.rsi_lower_limit} \n\r"
-                               f"P2: {no_break_period.filter(['date', 'low', 'BB_LOWER', 'high', 'BB_UPPER'])} \n\r"
-                               f"P1: {break_period.filter(['date', 'low', 'BB_LOWER', 'high', 'BB_UPPER'])} \n\r")
+                               f"P2: {no_break_period.filter(['date', 'low', 'BB_LOWER', 'high', 'BB_UPPER', 'RSI'])} \n\r"
+                               f"P1: {break_period.filter(['date', 'low', 'BB_LOWER', 'high', 'BB_UPPER', 'RSI'])} \n\r"
+                               f"len {len(df)}\n\r"
+                               f"RSI trend {rsi_trend} - Defined trend {self.rsi_trend} \n\r"
+                               )
 
         return self.NONE
