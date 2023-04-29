@@ -13,7 +13,7 @@ class BasePredictor:
     stop = 2.0
     METRIC = "reward"
     version = "V1.0"
-    best_result = None
+    best_result = 0.0
     _tracer = ConsoleTracer()
 
     def __init__(self, config=None, tracer: Tracer = ConsoleTracer()):
