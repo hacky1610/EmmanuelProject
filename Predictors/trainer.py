@@ -2,8 +2,6 @@ import pandas as pd
 from pandas import DataFrame,Series
 import random
 from Predictors.rsi_stoch import RsiStoch
-from Predictors.cci_ema import CCI_EMA
-from Predictors.cci_psar import CCI_PSAR
 from Predictors.rsi_bb import RsiBB
 
 class Trainer:
@@ -130,6 +128,7 @@ class Trainer:
                             frequ = res["trade_frequency"]
                             w_l = res["win_loss"]
                             minutes = res["avg_minutes"]
+                            best_predictor.setup({"best_result":res})
 
                             res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
                                          index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
@@ -140,6 +139,7 @@ class Trainer:
                             if avg_reward > best and frequ > 0.005 and w_l > 0.6:
                                 best = avg_reward
                                 best_predictor = predictor
+
                                 print(f"{symbol} - {predictor.get_config()} - "
                                       f"Avg Reward: {avg_reward:6.5} "
                                       f"Avg Min {int(minutes)}  "
