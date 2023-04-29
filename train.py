@@ -1,6 +1,5 @@
 from multiprocessing import Process
-
-from BL.trader import Trader
+import random
 from Connectors.IG import IG
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.trainer import Trainer
@@ -25,20 +24,14 @@ ig = IG(conf_reader=conf_reader)
 train_version = "V1.1"
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-for m in markets:
+for m in random.choices(markets,k=20):
     symbol = m["symbol"]
     df, eval = tiingo.load_live_data(symbol, dp, trade_type=trade_type)
     if len(df) > 0:
-        spread_limit = Trader._get_spread(df,  m["scaling"])
-        if m["spread"] > spread_limit:
-            print("Spread to big")
-            continue
-
         if os.name == "nt":
             trainer.train_RSI_BB(symbol, df, eval, train_version)
         else:
             p = Process(target=trainer.train_RSI_BB,args=(symbol,df, eval, train_version))
             p.start()
-
     else:
         print(f"No Data in {symbol} ")

@@ -140,20 +140,24 @@ class Trainer:
                             result_df = result_df.append(res,
                                                          ignore_index=True)
 
-                            if avg_reward > best and frequ > 0.005 and w_l > 0.6:
+                            if avg_reward > best and frequ > 0.005 and w_l > 0.66:
                                 best = avg_reward
                                 best_predictor = predictor
-
                                 print(f"{symbol} - {predictor.get_config()} - "
-                                      f"Avg Reward: {avg_reward:6.5} "
-                                      f"Avg Min {int(minutes)}  "
-                                      f"Freq: {frequ:4.3} "
-                                      f"WL: {w_l:3.2}")
+                                  f"Avg Reward: {avg_reward:6.5} "
+                                  f"Avg Min {int(minutes)}  "
+                                  f"Freq: {frequ:4.3} "
+                                  f"WL: {w_l:3.2}")
 
         if best_predictor is not None:
-            best_predictor.save(symbol)
+            last_res = RsiBB().load(symbol).best_result
+            if best_predictor.best_result > last_res:
+                print(f"{symbol} Overwrite result.")
+                best_predictor.save(symbol)
+            else:
+                print(f"{symbol} Saved result is better")
         else:
-            print("Couldnt find good result")
+            print("{symbol} Couldnt find good result")
         return result_df
 
 
