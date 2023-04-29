@@ -33,11 +33,12 @@ for m in markets:
         if m["spread"] > spread_limit:
             print("Spread to big")
             continue
-        p = Process(target=trainer.train_RSI_BB,args=(symbol,df, eval, train_version))
-        p.start()
-        #if len(res) > 0:
-        #    res.to_excel(temp_file)
-        #    t = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")
-        #    ds.upload(temp_file, os.path.join("Training_RSI_STOCH_Linux", f"{t}_{symbol}.xlsx"))
+
+        if os.name == "nt":
+            trainer.train_RSI_BB(symbol, df, eval, train_version)
+        else:
+            p = Process(target=trainer.train_RSI_BB,args=(symbol,df, eval, train_version))
+            p.start()
+
     else:
         print(f"No Data in {symbol} ")
