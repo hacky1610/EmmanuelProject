@@ -1,3 +1,5 @@
+from multiprocessing import Process
+
 from BL.trader import Trader
 from Connectors.IG import IG
 from Connectors.tiingo import TradeType, Tiingo
@@ -20,6 +22,7 @@ tiingo = Tiingo(conf_reader=conf_reader)
 dp = DataProcessor()
 trade_type = TradeType.FX
 ig = IG(conf_reader=conf_reader)
+train_version = "V1.1"
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 for m in markets:
@@ -30,9 +33,8 @@ for m in markets:
         if m["spread"] > spread_limit:
             print("Spread to big")
             continue
-
-        res = trainer.train_RSI_BB(symbol, df, eval)
-        print("")
+        p = Process(target=trainer.train_RSI_BB,args=(symbol,df, eval, train_version))
+        p.start()
         #if len(res) > 0:
         #    res.to_excel(temp_file)
         #    t = datetime.now().strftime("%Y_%m_%d_%H:%M:%S")

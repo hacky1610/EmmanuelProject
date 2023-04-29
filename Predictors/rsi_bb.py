@@ -7,6 +7,7 @@ from Tracing.ConsoleTracer import ConsoleTracer
 
 
 class RsiBB(BasePredictor):
+
     # https://www.youtube.com/watch?v=6c5exPYoz3U
     rsi_upper_limit = 80
     rsi_lower_limit = 23
@@ -27,9 +28,8 @@ class RsiBB(BasePredictor):
         self.period_1 = config.get("period_1", self.period_1)
         self.period_2 = config.get("period_2", self.period_2)
         self.peak_count = config.get("peak_count", self.peak_count)
-        self.limit = config.get("limit", self.limit)
-        self.stop = config.get("stop", self.stop)
         self.rsi_trend = config.get("rsi_trend", self.rsi_trend)
+        super().setup(config)
 
     def get_config(self) -> Series:
         return Series(["RSI_BB",
@@ -40,10 +40,12 @@ class RsiBB(BasePredictor):
                        self.period_1,
                        self.period_2,
                        self.peak_count,
-                       self.rsi_trend
+                       self.rsi_trend,
+                       self.version,
+                       self.best_result,
                        ],
                       index=["Type", "stop", "limit", "rsi_upper_limit",
-                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend"])
+                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend","version","best_result"])
 
     def save(self, symbol: str):
         self.get_config().to_json(self._get_save_path(self.__class__.__name__, symbol))
@@ -58,6 +60,7 @@ class RsiBB(BasePredictor):
                 self.setup(data)
         else:
             self._tracer.debug(f"No saved settings of {symbol}")
+        return self
 
     def predict(self, df: DataFrame) -> str:
         if len(df) == 0:
