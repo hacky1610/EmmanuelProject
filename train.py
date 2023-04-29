@@ -20,6 +20,7 @@ tiingo = Tiingo(conf_reader=conf_reader)
 dp = DataProcessor()
 trade_type = TradeType.FX
 ig = IG(conf_reader=conf_reader)
+train_version = "V1.1"
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 for m in markets:
@@ -31,7 +32,7 @@ for m in markets:
             print("Spread to big")
             continue
 
-        res = trainer.train_RSI_BB(symbol, df, eval)
+        res = trainer.train_RSI_BB(symbol, df, eval, train_version)
         print("")
         #if len(res) > 0:
         #    res.to_excel(temp_file)

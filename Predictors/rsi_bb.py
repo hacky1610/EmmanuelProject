@@ -40,10 +40,11 @@ class RsiBB(BasePredictor):
                        self.period_1,
                        self.period_2,
                        self.peak_count,
-                       self.rsi_trend
+                       self.rsi_trend,
+                       self.version
                        ],
                       index=["Type", "stop", "limit", "rsi_upper_limit",
-                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend"])
+                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend","version"])
 
     def save(self, symbol: str):
         self.get_config().to_json(self._get_save_path(self.__class__.__name__, symbol))
@@ -58,6 +59,7 @@ class RsiBB(BasePredictor):
                 self.setup(data)
         else:
             self._tracer.debug(f"No saved settings of {symbol}")
+        return self
 
     def predict(self, df: DataFrame) -> str:
         if len(df) == 0:
