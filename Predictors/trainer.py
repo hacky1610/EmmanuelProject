@@ -121,8 +121,8 @@ class Trainer:
         p2_list = list(range(2, 5))
         peak_count_list = list(range(0, 4))
         rsi_trend_list = [.005,.01,.03,.05]
-        stop_list = [2] #[1.8,2.0, 2.3, 2.7, 3.]
-        limit_list =  [2] #[1.8,2.0, 2.3, 2.7, 3]
+        stop_list = [1.8,2.0, 2.3, 2.7, 3.]
+        limit_list = [1.8,2.0, 2.3, 2.7, 3]
         rsi_upper_limit_list = list(range(65, 80, 3))
         rsi_lower_limit_list = list(range(20, 35, 3))
         best = 0
@@ -135,12 +135,16 @@ class Trainer:
         for ul in rsi_upper_limit_list:
             for ll in rsi_lower_limit_list:
                 for trend in rsi_trend_list:
+                    for p1 in p1_list:
                             predictor = RsiBB()
                             predictor.load(symbol)
                             predictor.setup({
                                 "rsi_upper_limit": ul,
                                 "rsi_lower_limit": ll,
                                 "rsi_trend": trend,
+                                "period_1": p1,
+                                "period_2": 2,
+                                "peak_count":0,
                                 "stop": 2,
                                 "limit": 2
                             })
