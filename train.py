@@ -29,9 +29,9 @@ for m in random.choices(markets,k=100):
     df, eval = tiingo.load_live_data(symbol, dp, trade_type=trade_type)
     if len(df) > 0:
         if os.name == "nt":
-            trainer.train_RSI_BB(symbol, df, eval, train_version)
+            trainer.train(symbol, df, eval, train_version)
         else:
-            p = Process(target=trainer.train_RSI_BB,args=(symbol,df, eval, train_version))
+            p = Process(target=trainer.train,args=(symbol,df, eval, train_version))
             p.start()
     else:
         print(f"No Data in {symbol} ")
