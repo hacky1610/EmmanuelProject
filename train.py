@@ -24,7 +24,7 @@ ig = IG(conf_reader=conf_reader)
 train_version = "V1.1"
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-for m in random.choices(markets,k=20):
+for m in random.choices(markets,k=100):
     symbol = m["symbol"]
     df, eval = tiingo.load_live_data(symbol, dp, trade_type=trade_type)
     if len(df) > 0:
