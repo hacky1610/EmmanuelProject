@@ -64,8 +64,10 @@ class Trader:
     def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
               size: float = 1.0, currency: str = "USD"):
 
-        if symbol not in Trader._get_good_markets():
-            self._tracer.error(f"{symbol} is not listed as good market")
+        self._predictor.load(symbol)
+
+        if self._predictor.best_result < 0.67:
+            self._tracer.error(f"{symbol} Best result not good {self._predictor.best_result}")
             return False
 
         trade_df = self._tiingo.load_live_data_last_days(symbol, self._dataprocessor, trade_type)
@@ -78,8 +80,6 @@ class Trader:
         if spread > spread_limit:
             self._tracer.debug(f"Spread {spread} is greater than {spread_limit} for {symbol}")
             return False
-
-        self._predictor.load(symbol)
 
         signal = self._predictor.predict(trade_df)
 
