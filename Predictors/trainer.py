@@ -57,9 +57,10 @@ class Trainer:
         result_df = DataFrame()
 
         if version == RsiBB().load(symbol).version:
+            print(f"{symbol} Already trained with version {version}.")
             return result_df
 
-        for training_set in self._rsi_trainer():
+        for training_set in self._rsi_trainer(version):
             predictor = RsiBB()
             predictor.load(symbol)
             predictor.setup(training_set)
@@ -95,7 +96,7 @@ class Trainer:
             else:
                 print(f"{symbol} Saved result is better")
         else:
-            print("{symbol} Couldnt find good result")
+            print(f"{symbol} Couldnt find good result")
         return result_df
 
 

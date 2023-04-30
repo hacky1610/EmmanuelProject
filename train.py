@@ -21,7 +21,7 @@ tiingo = Tiingo(conf_reader=conf_reader)
 dp = DataProcessor()
 trade_type = TradeType.FX
 ig = IG(conf_reader=conf_reader)
-train_version = "V1.1"
+train_version = "V1.2"
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 for m in random.choices(markets,k=100):
