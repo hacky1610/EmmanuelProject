@@ -15,6 +15,7 @@ class RsiBB(BasePredictor):
     period_2 = 3
     peak_count = 0
     rsi_trend = 0.05
+    bb_change = 0.1
 
     def __init__(self, config=None, tracer: Tracer = ConsoleTracer()):
         super().__init__(config, tracer)
@@ -29,6 +30,7 @@ class RsiBB(BasePredictor):
         self.period_2 = config.get("period_2", self.period_2)
         self.peak_count = config.get("peak_count", self.peak_count)
         self.rsi_trend = config.get("rsi_trend", self.rsi_trend)
+        self.bb_change = config.get("bb_change", self.bb_change)
         super().setup(config)
 
     def get_config(self) -> Series:
@@ -41,11 +43,12 @@ class RsiBB(BasePredictor):
                        self.period_2,
                        self.peak_count,
                        self.rsi_trend,
+                       self.bb_change,
                        self.version,
                        self.best_result,
                        ],
                       index=["Type", "stop", "limit", "rsi_upper_limit",
-                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend","version","best_result"])
+                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend","bb_change", "version","best_result"])
 
     def save(self, symbol: str):
         self.get_config().to_json(self._get_save_path(self.__class__.__name__, symbol))
@@ -67,6 +70,13 @@ class RsiBB(BasePredictor):
             return BasePredictor.NONE
 
         if len(df) > (self.period_1 + self.period_2):
+            bb_diff = df.BB_UPPER - df.BB_LOWER
+            last_diff = bb_diff.pct_change(1)[-1:].values[0]
+
+            if last_diff > self.bb_change:
+                return BasePredictor.NONE
+
+
             rsi = df.tail(1).RSI.values[0]
             p1 = self.period_1 * -1
             p2 = (self.period_1 + self.period_2) * -1
