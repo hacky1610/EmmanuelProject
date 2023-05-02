@@ -18,9 +18,8 @@ ti = Tiingo(conf_reader=conf_reader)
 analytics = Analytics()
 trade_type = TradeType.FX
 viewer = BaseViewer()
-#viewer = PlotlyViewer()
+viewer = PlotlyViewer()
 
-evaluate_results = DataFrame()
 
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
@@ -30,9 +29,7 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     if len(df) > 0:
         predictor = RsiBB()
         predictor.load(symbol)
-        reward, avg_reward, trade_freq, win_loss, avg_minutes = analytics.evaluate(predictor, df, df_eval, viewer)
-        evaluate_results = evaluate_results.append(Series([symbol,reward,avg_reward,trade_freq,win_loss,avg_minutes], index=["symbol","reward","avg_reward","trade_freq","win_loss","avg_minutes"]),ignore_index=True)
+        reward, avg_reward, trade_freq, win_loss, avg_minutes = analytics.evaluate(predictor=predictor, df_train=df,df_eval= df_eval, viewer=viewer, symbol=symbol)
         print(f"{symbol} - Reward {reward}, success {avg_reward}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes}")
 
-evaluate_results.to_json(os.path.join(get_project_dir(),"Settings", "evaluation.json"))
 

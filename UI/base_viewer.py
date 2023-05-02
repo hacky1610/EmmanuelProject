@@ -5,7 +5,7 @@ class BaseViewer:
     def __init__(self):
         pass
 
-    def init(self,df,df_eval):
+    def init(self,title, df,df_eval):
         pass
 
     def show(self):

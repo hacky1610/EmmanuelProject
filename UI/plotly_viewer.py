@@ -12,10 +12,13 @@ class PlotlyViewer(BaseViewer):
         self.fig = None
         self.df = None
         self.df_eval = None
+        self.title = ""
 
-    def init(self, df, df_eval):
+    def init(self, title, df, df_eval):
         self.df = df
         self.df_eval = df_eval
+        self.title = title
+
 
     def print_graph(self):
         self.fig = go.Figure(data=[
@@ -34,6 +37,10 @@ class PlotlyViewer(BaseViewer):
                            low=self.df['low'],
                            close=self.df['close']),
         ])
+        self.fig.update_layout(
+            title=self.title,
+            legend_title="Legend Title",
+        )
 
     def print_buy(self, x, y):
         self.fig.add_scatter(x=[pd.to_datetime(x)],

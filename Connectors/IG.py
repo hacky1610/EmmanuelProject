@@ -334,7 +334,7 @@ class IG:
                             marker=dict(
                                 color='Blue',
                                 size=10,
-                                symbol="triangle-up"
+                                symbol="triangle-down"
                             ),
                             )
             fig.add_scatter(x=short_looser["openDateUtc"],
@@ -342,7 +342,7 @@ class IG:
                             marker=dict(
                                 color='Blue',
                                 size=10,
-                                symbol="triangle-up"
+                                symbol="triangle-down"
                             ),
                             )
 
