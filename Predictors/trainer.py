@@ -55,7 +55,7 @@ class Trainer:
     def _BB_change_trainer(self, version: str):
 
         json_objs = []
-        for change in [0.05, 0.1, 0.3, .5]:
+        for change in [0.0,0.01,0.05, 0.1, 0.3, .5]:
             json_objs.append({
                 "bb_change": change,
                 "version": version
