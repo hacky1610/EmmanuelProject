@@ -15,7 +15,7 @@ class RsiBB(BasePredictor):
     period_2 = 3
     peak_count = 0
     rsi_trend = 0.05
-    bb_change = 0.1
+    bb_change = None
 
     def __init__(self, config=None, tracer: Tracer = ConsoleTracer()):
         super().__init__(config, tracer)
@@ -70,11 +70,13 @@ class RsiBB(BasePredictor):
             return BasePredictor.NONE
 
         if len(df) > (self.period_1 + self.period_2):
-            bb_diff = df.BB_UPPER - df.BB_LOWER
-            last_diff = bb_diff.pct_change(1)[-1:].values[0]
 
-            if last_diff > self.bb_change:
-                return BasePredictor.NONE
+            if self.bb_change is not None:
+                bb_diff = df.BB_UPPER - df.BB_LOWER
+                last_diff = bb_diff.pct_change(1)[-1:].values[0]
+
+                if last_diff > self.bb_change:
+                    return BasePredictor.NONE
 
 
             rsi = df.tail(1).RSI.values[0]

@@ -50,7 +50,6 @@ class Trader:
         currency_markets = self._ig.get_markets(trade_type)
         for market in currency_markets:
             symbol = market["symbol"]
-            symbol = "USDCHF"
             self._tracer.debug(f"Try to trade {symbol}")
             predictor = self._predictorClass(tracer=self._tracer)
             predictor.load(symbol)
