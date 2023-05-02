@@ -101,12 +101,8 @@ class Trainer:
                       f"WL: {w_l:3.2}")
 
         if best_predictor is not None:
-            last_res = RsiBB().load(symbol).best_result
-            if best_predictor.best_result > last_res:
-                print(f"{symbol} Overwrite result.")
-                best_predictor.save(symbol)
-            else:
-                print(f"{symbol} Saved result is better")
+            print(f"{symbol} Overwrite result.")
+            best_predictor.save(symbol)
         else:
             print(f"{symbol} Couldnt find good result")
         return result_df
