@@ -1,1 +1,1 @@
-{"Type":"RSI_BB","stop":2.0,"limit":2.0,"rsi_upper_limit":65,"rsi_lower_limit":26,"period_1":4,"period_2":3,"peak_count":2,"rsi_trend":0.03}
+{"Type":"RSI_BB","stop":2.0,"limit":2.0,"rsi_upper_limit":65,"rsi_lower_limit":26,"period_1":4,"period_2":3,"peak_count":2,"rsi_trend":0.03,"version":"V1.0","best_result":0.3333333333}
