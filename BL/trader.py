@@ -1,4 +1,3 @@
-import json
 import os
 import pandas as pd
 
@@ -21,7 +20,7 @@ class Trader:
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
         self._tracer = tracer
-        self._predictor = predictor
+        self._predictorClass = predictor
         self._analytics = analytics
         self._trainer = trainer
         self._min_win_loss = 0.7
@@ -37,7 +36,7 @@ class Trader:
 
     @staticmethod
     def _get_evaluation():
-        path = os.path.join(get_project_dir(),"Settings", "evaluation.json")
+        path = os.path.join(get_project_dir(), "Settings", "evaluation.json")
         if os.path.exists(path):
             return pd.read_json(path)
         return DataFrame()
@@ -51,8 +50,12 @@ class Trader:
         currency_markets = self._ig.get_markets(trade_type)
         for market in currency_markets:
             symbol = market["symbol"]
+            symbol = "USDCHF"
             self._tracer.debug(f"Try to trade {symbol}")
+            predictor = self._predictorClass(tracer=self._tracer)
+            predictor.load(symbol)
             self.trade(
+                predictor=predictor,
                 symbol=symbol,
                 epic=market["epic"],
                 spread=market["spread"],
@@ -61,13 +64,12 @@ class Trader:
                 size=market["size"],
                 currency=market["currency"])
 
-    def trade(self, symbol: str, epic: str, spread: float, scaling: int, trade_type: TradeType = TradeType.FX,
+    def trade(self, predictor: BasePredictor, symbol: str, epic: str, spread: float, scaling: int,
+              trade_type: TradeType = TradeType.FX,
               size: float = 1.0, currency: str = "USD"):
 
-        self._predictor.load(symbol)
-
-        if self._predictor.best_result < 0.67:
-            self._tracer.error(f"{symbol} Best result not good {self._predictor.best_result}")
+        if predictor.best_result < 0.67:
+            self._tracer.error(f"{symbol} Best result not good {predictor.best_result}")
             return False
 
         trade_df = self._tiingo.load_live_data_last_days(symbol, self._dataprocessor, trade_type)
@@ -81,12 +83,12 @@ class Trader:
             self._tracer.debug(f"Spread {spread} is greater than {spread_limit} for {symbol}")
             return False
 
-        signal = self._predictor.predict(trade_df)
+        signal = predictor.predict(trade_df)
 
         if signal == BasePredictor.NONE:
             return False
 
-        stop, limit = self.get_stop_limit(trade_df, scaling, self._predictor.stop, self._predictor.limit)
+        stop, limit = self.get_stop_limit(trade_df, scaling, predictor.stop, predictor.limit)
 
         openedPosition = self._ig.get_opened_positions_by_epic(epic)
 
@@ -97,7 +99,7 @@ class Trader:
                 return False
             if self._ig.buy(epic, stop, limit, size, currency):
                 self._tracer.write(
-                    f"Buy {symbol} with settings {self._predictor.get_config()}.")
+                    f"Buy {symbol} with settings {predictor.get_config()}.")
                 return True
         elif signal == BasePredictor.SELL:
             if openedPosition is not None and openedPosition.direction == "SELL":
@@ -106,10 +108,7 @@ class Trader:
                 return False
             if self._ig.sell(epic, stop, limit, size, currency):
                 self._tracer.write(
-                    f"Sell {symbol} with settings {self._predictor.get_config()} ")
+                    f"Sell {symbol} with settings {predictor.get_config()} ")
                 return True
 
         return False
-
-
-
