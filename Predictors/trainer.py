@@ -14,8 +14,8 @@ class Trainer:
     def _rsi_trainer(self, version: str):
 
         json_objs = []
-        for rsi_upper, rsi_lower, trend in itertools.product(list(range(65, 80, 3)), list(range(20, 35, 3)),
-                                                             [.005, .01, .03, .05]):
+        for rsi_upper, rsi_lower, trend in itertools.product(list(range(55, 80, 3)), list(range(20, 45, 3)),
+                                                             [None, .005, .01, .03, .05]):
             json_objs.append({
                 "rsi_upper_limit": rsi_upper,
                 "rsi_lowe_limit": rsi_lower,
@@ -55,7 +55,7 @@ class Trainer:
     def _BB_change_trainer(self, version: str):
 
         json_objs = []
-        for change in [None, 0.01, 0.05, 0.1, 0.3, .5, .7, 1.0]:
+        for change in [None, 0.1, 0.3, .5, .7, 1.0]:
             json_objs.append({
                 "bb_change": change,
                 "version": version
@@ -72,7 +72,7 @@ class Trainer:
             print(f"{symbol} Already trained with version {version}.")
             return result_df
 
-        for training_set in self._BB_change_trainer(version):
+        for training_set in self._rsi_trainer(version):
             predictor = RsiBB()
             predictor.load(symbol)
             predictor.setup(training_set)
@@ -91,7 +91,7 @@ class Trainer:
             result_df = result_df.append(res,
                                          ignore_index=True)
 
-            if avg_reward > best and frequ > 0.005 and w_l > 0.66:
+            if reward > best and frequ > 0.005 and w_l > 0.66:
                 best = avg_reward
                 best_predictor = predictor
                 print(f"{symbol} - {predictor.get_config()} - "

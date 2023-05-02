@@ -92,24 +92,30 @@ class RsiBB(BasePredictor):
 
             rsi_trend = df.RSI.pct_change(1).tail(1).values[0]
 
+            rsi_buy = True
+            rsi_sell = True
+            if self.rsi_trend is not None:
+                rsi_buy = rsi_trend < self.rsi_trend * -1
+                rsi_sell = rsi_trend > self.rsi_trend
+
             # buy
             if rsi < self.rsi_lower_limit and \
                     down_breaks and \
                     no_down_breaks and \
-                    rsi_trend < self.rsi_trend * -1:
+                    rsi_buy:
                 self._tracer.write(f"Buy - Time: {df.tail(1).date.values[0]} \n\r"
                                    f"RSI: {rsi} RSI LL: {self.rsi_lower_limit} \n\r"
                                    f"P2: {no_break_period.filter(['date', 'low', 'BB_LOWER', 'RSI'])} \n\r"
                                    f"P1: {break_period.filter(['date', 'low', 'BB_LOWER', 'RSI'])} \n\r"
                                    f"len {len(df)}\n\r"
-                                   f"RSI trend {rsi_trend} - Max trend {self.rsi_trend * -1} \n\r"
+                                   f"RSI trend {rsi_trend} - Max trend {self.rsi_trend} \n\r"
                                    )
                 return BasePredictor.BUY
 
             if rsi > self.rsi_upper_limit \
                     and up_breaks \
                     and no_up_breaks \
-                    and rsi_trend > self.rsi_trend:
+                    and rsi_sell:
                 self._tracer.write(f"Sell - Time: {df.tail(1).date.values[0]} \n\r"
                                    f"RSI: {rsi} RSI UL: {self.rsi_upper_limit} \n\r"
                                    f"P2: {no_break_period.filter(['date', 'high', 'BB_UPPER', 'RSI'])} \n\r"
