@@ -24,7 +24,7 @@ class Analytics:
 
         trading_minutes = 0
         last_exit = df_train.date[0]
-        for i in range(len(df_train)):
+        for i in range(len(df_train) - 1):
             if df_train.date[i] < last_exit:
                 continue
             action = predictor.predict(df_train[:i + 1])

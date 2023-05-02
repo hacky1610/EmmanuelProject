@@ -3,6 +3,7 @@ import os
 from BL.data_processor import DataProcessor
 from Connectors.tiingo import Tiingo, TradeType
 from Predictors.rsi_bb import RsiBB
+from Predictors.rsi_stoch import RsiStoch
 from BL.utils import ConfigReader, get_project_dir
 from Connectors.IG import IG
 from BL import Analytics
@@ -23,7 +24,7 @@ viewer = PlotlyViewer()
 
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
-    symbol = "AUDUSD"
+    symbol = "EURCAD"
     df, df_eval = ti.load_live_data(symbol,dp, trade_type)
 
     if len(df) > 0:
