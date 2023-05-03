@@ -83,7 +83,9 @@ class Trainer:
             frequ = res["trade_frequency"]
             w_l = res["win_loss"]
             minutes = res["avg_minutes"]
-            predictor.setup({"best_result": w_l})
+            predictor.setup({"best_result": w_l,
+                             "best_reward": reward,
+                             "frequence": frequ})
 
             res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
                          index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
