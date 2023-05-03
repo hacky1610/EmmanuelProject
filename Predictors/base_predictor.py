@@ -14,6 +14,7 @@ class BasePredictor:
     METRIC = "reward"
     version = "V1.0"
     best_result = 0.0
+    best_reward = 0.0
     _tracer = ConsoleTracer()
 
     def __init__(self, config=None, tracer: Tracer = ConsoleTracer()):
@@ -27,6 +28,7 @@ class BasePredictor:
         self.stop = config.get("stop", self.stop)
         self.version = config.get("version", self.version)
         self.best_result = config.get("best_result", self.best_result)
+        self.best_reward = config.get("best_reward", self.best_reward)
 
     def predict(self, df: DataFrame) -> str:
         raise NotImplementedError

@@ -46,9 +46,10 @@ class RsiBB(BasePredictor):
                        self.bb_change,
                        self.version,
                        self.best_result,
+                       self.best_reward,
                        ],
                       index=["Type", "stop", "limit", "rsi_upper_limit",
-                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend","bb_change", "version","best_result"])
+                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend","bb_change", "version","best_result","best_reward"])
 
     def save(self, symbol: str):
         self.get_config().to_json(self._get_save_path(self.__class__.__name__, symbol))
