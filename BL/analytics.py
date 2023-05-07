@@ -51,6 +51,7 @@ class Analytics:
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
+                        print(f"WON {predictor.lastState}")
                         break
                     elif low < open_price - stop:
                         # Loss
@@ -58,6 +59,7 @@ class Analytics:
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]
+                        print(f"LOST {predictor.lastState}")
                         break
             elif action == predictor.SELL:
                 open_price = open_price - spread
@@ -76,12 +78,14 @@ class Analytics:
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
+                        print(f"WON {predictor.lastState}")
                         break
                     elif high > open_price + stop:
                         viewer.print_lost(future.date[j], future.close[j])
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]
+                        print(f"LOST {predictor.lastState}")
                         break
 
         viewer.show()

@@ -10,17 +10,18 @@ class DataProcessor:
         df['EMA'] = TA.EMA(df)
         df['EMA_10'] = TA.EMA(df,10)
         df['EMA_14'] = TA.EMA(df, 14)
-        df['EMA_20'] = TA.EMA(df,20)
-        df['EMA_30'] = TA.EMA(df, 30)
-        df['EMA_40'] = TA.EMA(df, 40)
+        df['EMA_25'] = TA.EMA(df,25)
         df['EMA_50'] = TA.EMA(df, 50)
-        df['EMA_100'] = TA.EMA(df, 100)
-        df['EMA_150'] = TA.EMA(df, 150)
 
         bb= TA.BBANDS(df)
         df['BB_UPPER'] = bb['BB_UPPER']
         df['BB_MIDDLE'] = bb['BB_MIDDLE']
         df['BB_LOWER'] = bb['BB_LOWER']
+        bb1 = TA.BBANDS(df,std_multiplier=1)
+        df['BB1_UPPER'] = bb1['BB_UPPER']
+        df['BB1_MIDDLE'] = bb1['BB_MIDDLE']
+        df['BB1_LOWER'] = bb1['BB_LOWER']
+
         df['RSI'] = TA.RSI(df, period=14)
         df['RSI_7'] = TA.RSI(df, period=7)
         df['RSI_21'] = TA.RSI(df, period=21)
@@ -35,10 +36,8 @@ class DataProcessor:
         df["STOCHK"] = TA.STOCH(df)
         df["STOCHD"] = TA.STOCHD(df)
         df["STOCHRSI"] = TA.STOCHRSI(df)
-        psar = TA.PSAR(df, maxaf= 0.05)
-        df["PSAR"] = psar["psar"]
         df["ADX"] = TA.ADX(df)
-        df["AO"] = TA.AO(df)
+        df["BBWIDTH"] = TA.BBWIDTH(df)
 
     def clean_data(self, df: DataFrame):
         DataProcessor.drop_column(df, "Volume")

@@ -6,7 +6,8 @@ from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 
 
-class RsiBB2(BasePredictor):
+class EmaMacd(BasePredictor):
+
     # https://www.youtube.com/watch?v=6c5exPYoz3U
     rsi_upper_limit = 80
     rsi_lower_limit = 23
@@ -49,8 +50,7 @@ class RsiBB2(BasePredictor):
                        self.frequence
                        ],
                       index=["Type", "stop", "limit", "rsi_upper_limit",
-                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend", "bb_change",
-                             "version", "best_result", "best_reward", "frequence"])
+                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend","bb_change", "version","best_result","best_reward","frequence"])
 
     def save(self, symbol: str):
         self.get_config().to_json(self._get_save_path(self.__class__.__name__, symbol))
@@ -68,29 +68,38 @@ class RsiBB2(BasePredictor):
         return self
 
     def predict(self, df: DataFrame) -> str:
+
+
         if len(df) < 10:
             return BasePredictor.NONE
 
-        trend_periode = df[-10:]
-        rsi = df.tail(1).RSI.values[0]
-        ema_100 = df.tail(1).EMA_100.values[0]
-        ema_150 = df.tail(1).EMA_150.values[0]
+        adx = df[-1:].ADX.item()
+        bbWith = df[-1:].BBWIDTH.item()
+        rsi = df[-1:].RSI.item()
 
-        bullish = len(trend_periode[trend_periode.EMA_100 > trend_periode.EMA_150]) == len(trend_periode)
-        bearish = len(trend_periode[trend_periode.EMA_100 < trend_periode.EMA_150]) == len(trend_periode)
+        self.save_last_state(f"ADX {adx} BB {bbWith}")
 
-        break_period = df[-2:]
-        down_breaks = len(break_period[break_period.low < break_period.BB_LOWER]) > 0
-        up_breaks = len(break_period[break_period.high > break_period.BB_UPPER]) > 0
+        #if df[-1:].ADX.item() > 25:
+        #    return BasePredictor.NONE
+
+        #if df[-1:].BBWIDTH.item() > 0.5:
+        #    return BasePredictor.NONE
+
+        res_ema = self.predict_ema_3(df,5)
+        res_macd = self.predict_macd(df)
+        res_bb = self.predict_bb_1(df)
+
+        if res_ema == BasePredictor.BUY and \
+                res_macd == BasePredictor.BUY and \
+                res_bb == BasePredictor.BUY and \
+                rsi < 75:
+            return BasePredictor.BUY
+
+        if res_ema == BasePredictor.SELL and \
+                res_macd == BasePredictor.SELL and \
+                res_bb == BasePredictor.SELL and \
+                rsi > 25:
+            return BasePredictor.SELL
 
 
-        # buy
-        if down_breaks and \
-                self.check_rsi_divergence(df,3) == 1:
-            return self.BUY
-
-        if up_breaks and \
-                self.check_rsi_divergence(df,3) == -1:
-            return self.SELL
-
-        return self.NONE
+        return BasePredictor.NONE
