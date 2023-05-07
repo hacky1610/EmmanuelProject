@@ -1,13 +1,12 @@
-import os
-
 from BL.data_processor import DataProcessor
 from Connectors.tiingo import Tiingo, TradeType
-from Predictors.rsi_bb import RsiBB
-from Predictors.rsi_stoch import RsiStoch
-from BL.utils import ConfigReader, get_project_dir
+from Predictors.macd import MACD
+from BL.utils import ConfigReader
 from Connectors.IG import IG
 from BL import Analytics
-from pandas import DataFrame,Series
+from Predictors.psar_bb import PsarBb
+from Predictors.psar_macd_stoch import PsarMacdStoch
+from Predictors.rsi_bb import RsiBB
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
 
@@ -19,12 +18,12 @@ ti = Tiingo(conf_reader=conf_reader)
 analytics = Analytics()
 trade_type = TradeType.FX
 viewer = BaseViewer()
-#viewer = PlotlyViewer()
+viewer = PlotlyViewer()
 
 
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
-    #symbol = "AUDCHF"
+    #symbol = "EURUSD"
     df, df_eval = ti.load_live_data(symbol,dp, trade_type)
 
     if len(df) > 0:

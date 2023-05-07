@@ -3,6 +3,7 @@ from pandas import DataFrame
 from BL.utils import get_project_dir
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
+import numpy as np
 
 
 class BasePredictor:
@@ -10,7 +11,7 @@ class BasePredictor:
     BUY = "buy"
     NONE = "none"
     limit = 2.0
-    stop = 2.0
+    stop = 3.0
     METRIC = "reward"
     version = "V1.0"
     best_result = 0.0
@@ -53,3 +54,79 @@ class BasePredictor:
 
     def load(self, symbol: str):
         raise NotImplementedError
+
+    def is_crossing(self, a, b):
+        print((a - b).max() > 0 and (a - b).min() < 0)
+
+    def get_trend(self,column,step=1):
+        diff = column.diff(step)
+        mean = (abs(diff)).mean()
+        if diff[-1:].item() > mean:
+            return 1
+        elif diff[-1:].item() > mean * -1:
+            return -1
+
+        return 0
+
+    def interpret_candle(self,candle):
+        open = candle.open.item()
+        close = candle.close.item()
+        high = candle.high.item()
+        low = candle.low.item()
+        percentage = 0.4
+        if close > open:
+            #if (high - low) * percentage < close - open:
+                return BasePredictor.BUY
+        elif close < open:
+            #if (high - low) * percentage < open - close:
+                return BasePredictor.SELL
+
+        return BasePredictor.NONE
+
+
+
+
+    def check_macd_divergence(self, df):
+        # Berechne den MACD-Indikator und das Signal
+        # Extrahiere die MACD-Linie und das Signal
+
+
+
+        macd_line = df.MACD.values
+        signal_line = df.SIGNAL.values
+
+        # Überprüfe, ob in den letzten 10 Zeiteinheiten eine Divergenz aufgetreten ist
+        last_macd_line = macd_line[-10:]
+        last_signal_line = signal_line[-10:]
+        last_price = df['close'][-10:].values
+        last_lowest_macd_line = np.argmin(last_macd_line)
+        last_highest_macd_line = np.argmax(last_macd_line)
+        last_lowest_price = np.argmin(last_price)
+        last_highest_price = np.argmax(last_price)
+        if last_lowest_macd_line < last_lowest_price:
+            return 1
+        elif last_highest_macd_line > last_highest_price:
+            return -1
+        else:
+            return 0
+
+    def check_rsi_divergence(self, df):
+        # Berechne den MACD-Indikator und das Signal
+        # Extrahiere die MACD-Linie und das Signal
+
+        rsi_line = df.RSI.values
+
+        # Überprüfe, ob in den letzten 10 Zeiteinheiten eine Divergenz aufgetreten ist
+        last_macd_line = rsi_line[-5:]
+        last_price = df['close'][-5:].values
+        last_lowest_macd_line = np.argmin(last_macd_line)
+        last_highest_macd_line = np.argmax(last_macd_line)
+        last_lowest_price = np.argmin(last_price)
+        last_highest_price = np.argmax(last_price)
+        if last_lowest_macd_line < last_lowest_price:
+            return 1
+        elif last_highest_macd_line > last_highest_price:
+            return -1
+        else:
+            return 0
+
