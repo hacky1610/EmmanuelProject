@@ -1,3 +1,4 @@
+from BL.candle import Candle, MultiCandle
 from BL.data_processor import DataProcessor
 from Connectors.tiingo import Tiingo, TradeType
 from Predictors.ema_macd import EmaMacd
@@ -25,8 +26,13 @@ viewer = PlotlyViewer()
 
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
-    symbol = "AUDUSD"
+    symbol = "EURUSD"
     df, df_eval = ti.load_live_data(symbol,dp, trade_type)
+
+    for d in range(3,len(df)):
+        c = MultiCandle(df[:d])
+        print(f"{c.get_type()} {df[:d].tail(1).date.item()} ")
+
 
     if len(df) > 0:
         predictor = EmaMacd()
