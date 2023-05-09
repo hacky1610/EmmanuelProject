@@ -148,15 +148,32 @@ class BasePredictor:
 
         return BasePredictor.NONE
 
-    def predict_macd(self, df, period: int = 2):
+    def predict_macd(self, df, period: int = 2, consider_gradient:bool = False):
         current_macd_periode = df[period * -1:]
-        macd_over_signal = len(current_macd_periode[current_macd_periode.MACD > current_macd_periode.SIGNAL]) == 2
-        macd_under_signal = len(current_macd_periode[current_macd_periode.MACD < current_macd_periode.SIGNAL]) == 2
+        macd_over_signal = len(current_macd_periode[current_macd_periode.MACD > current_macd_periode.SIGNAL]) == len(current_macd_periode)
+        macd_under_signal = len(current_macd_periode[current_macd_periode.MACD < current_macd_periode.SIGNAL]) == len(current_macd_periode)
+
+        cur_macd = df[-1:].MACD.item()
+        cur_sig = df[-1:].SIGNAL.item()
+        pre_macd = df[-2:-1].MACD.item()
+        pre_sig = df[-2:-1].SIGNAL.item()
 
         if macd_over_signal:
+            if consider_gradient:
+                if cur_macd - cur_sig > pre_macd - pre_sig:
+                    return BasePredictor.BUY
+                else:
+                    return BasePredictor.NONE
+
             return BasePredictor.BUY
 
         if macd_under_signal:
+            if consider_gradient:
+                if cur_sig - cur_macd  > pre_sig - pre_macd:
+                    return BasePredictor.SELL
+                else:
+                    return BasePredictor.NONE
+
             return BasePredictor.SELL
 
 

@@ -13,9 +13,7 @@ class EmaMacd(BasePredictor):
     rsi_lower_limit = 23
     period_1 = 2
     period_2 = 3
-    peak_count = 0
-    rsi_trend = 0.05
-    bb_change = None
+    min_macd_diff = 0.0005
 
     def __init__(self, config=None, tracer: Tracer = ConsoleTracer()):
         super().__init__(config, tracer)
@@ -28,9 +26,7 @@ class EmaMacd(BasePredictor):
         self.rsi_lower_limit = config.get("rsi_lower_limit", self.rsi_lower_limit)
         self.period_1 = config.get("period_1", self.period_1)
         self.period_2 = config.get("period_2", self.period_2)
-        self.peak_count = config.get("peak_count", self.peak_count)
-        self.rsi_trend = config.get("rsi_trend", self.rsi_trend)
-        self.bb_change = config.get("bb_change", self.bb_change)
+        self.min_macd_diff = config.get("min_macd_diff", self.min_macd_diff)
         super().setup(config)
 
     def get_config(self) -> Series:
@@ -41,16 +37,14 @@ class EmaMacd(BasePredictor):
                        self.rsi_lower_limit,
                        self.period_1,
                        self.period_2,
-                       self.peak_count,
-                       self.rsi_trend,
-                       self.bb_change,
+                       self.min_macd_diff,
                        self.version,
                        self.best_result,
                        self.best_reward,
                        self.frequence
                        ],
                       index=["Type", "stop", "limit", "rsi_upper_limit",
-                             "rsi_lower_limit", "period_1", "period_2", "peak_count", "rsi_trend","bb_change", "version","best_result","best_reward","frequence"])
+                             "rsi_lower_limit", "period_1", "period_2", "min_macd_diff", "version","best_result","best_reward","frequence"])
 
     def save(self, symbol: str):
         self.get_config().to_json(self._get_save_path(self.__class__.__name__, symbol))
@@ -68,14 +62,17 @@ class EmaMacd(BasePredictor):
         return self
 
     def predict(self, df: DataFrame) -> str:
-
-
         if len(df) < 10:
             return BasePredictor.NONE
 
         adx = df[-1:].ADX.item()
         bbWith = df[-1:].BBWIDTH.item()
         rsi = df[-1:].RSI.item()
+        macd = df[-1:].MACD.item()
+        signal = df[-1:].SIGNAL.item()
+
+        if abs(macd - signal) < self.min_macd_diff:
+            return BasePredictor.NONE
 
         self.save_last_state(f"ADX {adx} BB {bbWith}")
 
@@ -85,8 +82,8 @@ class EmaMacd(BasePredictor):
         #if df[-1:].BBWIDTH.item() > 0.5:
         #    return BasePredictor.NONE
 
-        res_ema = self.predict_ema_3(df,5)
-        res_macd = self.predict_macd(df)
+        res_ema = self.predict_ema_3(df,3)
+        res_macd = self.predict_macd(df,True)
         res_bb = self.predict_bb_1(df)
 
         if res_ema == BasePredictor.BUY and \
