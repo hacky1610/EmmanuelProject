@@ -13,20 +13,26 @@ for market in currency_markets:
     symbol = market["symbol"]
     predictor = RsiBB()
     predictor.load(symbol)
-    df = df.append(Series([predictor.rsi_trend,
+    df = df.append(Series([symbol,
+                           predictor.rsi_trend,
                            predictor.bb_change,
                            predictor.rsi_upper_limit,
                            predictor.rsi_lower_limit,
                            predictor.period_1,
                            predictor.period_2,
-                           predictor.peak_count],
-                          index=["RSI_Trend",
+                           predictor.peak_count,
+                           predictor.best_result,
+                           predictor.frequence],
+                          index=["symbol",
+                                 "RSI_Trend",
                                  "BB_Change",
                                  "rsi_upper_limit",
                                  "rsi_lower_limit",
                                  "period_1",
                                  "period_2",
-                                 "peak_count"]),ignore_index=True)
+                                 "peak_count",
+                                 "best_result",
+                                 "frequence"]),ignore_index=True)
 
 df.fillna(0,inplace=True)
 fig = px.pie(df, values='BB_Change', names='BB_Change', title='BB CHange')
@@ -43,7 +49,10 @@ fig = px.pie(df, values='period_2', names='period_2', title='period_2')
 fig.show()
 fig = px.pie(df, values='peak_count', names='peak_count', title='peak_count')
 fig.show()
-
+fig = px.bar(df, x='symbol', y='frequence')
+fig.show()
+fig = px.bar(df, x='symbol', y='best_result')
+fig.show()
 
 
 

@@ -22,15 +22,12 @@ class PlotlyViewer(BaseViewer):
 
     def print_graph(self):
         self.fig = go.Figure(data=[
-            go.Line(x=self.df['date'], y=self.df["BB_LOWER"],
+            go.Line(x=self.df['date'], y=self.df["EMA_14"],
+                    line=dict(shape='linear', color='Red')),
+            go.Line(x=self.df['date'], y=self.df["EMA_25"],
                     line=dict(shape='linear', color='Orange')),
-            go.Line(x=self.df['date'], y=self.df["BB_UPPER"],
-                    line=dict(shape='linear', color='Orange')),
-            go.Candlestick(x=self.df_eval['date'],
-                           open=self.df_eval['open'],
-                           high=self.df_eval['high'],
-                           low=self.df_eval['low'],
-                           close=self.df_eval['close']),
+            go.Line(x=self.df['date'], y=self.df["EMA_50"],
+                    line=dict(shape='linear', color='Brown')),
             go.Candlestick(x=self.df['date'],
                            open=self.df['open'],
                            high=self.df['high'],

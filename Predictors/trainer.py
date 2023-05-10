@@ -14,8 +14,8 @@ class Trainer:
     def _rsi_trainer(self, version: str):
 
         json_objs = []
-        for rsi_upper, rsi_lower, trend in itertools.product(list(range(55, 75, 4)), list(range(23, 45, 4)),
-                                                             [None, .03, .05, .07]):
+        for rsi_upper, rsi_lower, trend in itertools.product(list(range(55, 80, 3)), list(range(20, 45, 3)),
+                                                             [None, .005, .01, .03, .05]):
             json_objs.append({
                 "rsi_upper_limit": rsi_upper,
                 "rsi_lowe_limit": rsi_lower,
@@ -87,7 +87,8 @@ class Trainer:
             w_l = res["win_loss"]
             minutes = res["avg_minutes"]
             predictor.setup({"best_result": w_l,
-                             "best_reward": reward})
+                             "best_reward": reward,
+                             "frequence": frequ})
 
             res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
                          index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
@@ -103,9 +104,6 @@ class Trainer:
                       f"Avg Min {int(minutes)}  "
                       f"Freq: {frequ:4.3} "
                       f"WL: {w_l:3.2}")
-                if best_predictor.best_result > saved_predictor.best_result:
-                    print(f"{symbol} Found better reward {best_predictor.best_reward} as saved {saved_predictor.best_reward} ")
-                    break
 
         if best_predictor is not None:
             print(f"{symbol} Overwrite result.")
