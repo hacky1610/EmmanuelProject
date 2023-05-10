@@ -26,4 +26,7 @@ class BaseViewer:
     def print_lost(self, x, y):
         pass
 
+    def print_text(self, x, y, text):
+        pass
+
 

@@ -28,6 +28,10 @@ class PlotlyViewer(BaseViewer):
                     line=dict(shape='linear', color='Orange')),
             go.Line(x=self.df['date'], y=self.df["EMA_50"],
                     line=dict(shape='linear', color='Brown')),
+            go.Line(x=self.df['date'], y=self.df["BB_UPPER"],
+                    line=dict(shape='linear', color='Orange')),
+            go.Line(x=self.df['date'], y=self.df["BB_LOWER"],
+                    line=dict(shape='linear', color='Orange')),
             go.Candlestick(x=self.df['date'],
                            open=self.df['open'],
                            high=self.df['high'],
@@ -84,6 +88,16 @@ class PlotlyViewer(BaseViewer):
                                  size=10
                              ),
                              )
+
+    def print_text(self, x, y,text):
+        self.fig.add_trace(go.Scatter(
+            x=[pd.to_datetime(x)],
+            y=[y],
+            mode="lines+markers+text",
+            name="Lines, Markers and Text",
+            text=[text],
+            textposition="top center"
+        ))
 
     def show(self):
         self.fig.show()

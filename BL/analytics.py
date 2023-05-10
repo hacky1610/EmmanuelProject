@@ -1,3 +1,4 @@
+from BL.candle import MultiCandle, MultiCandleType
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame
@@ -25,20 +26,30 @@ class Analytics:
         trading_minutes = 0
         last_exit = df_train.date[0]
         for i in range(len(df_train) - 1):
+            open_price = df_train.open[i + 1]
+
+            #if i > 3:
+            #    c = MultiCandle(df_train[:i])
+            #    t = c.get_type()
+            #   if t != MultiCandleType.Unknown:
+            #        viewer.print_text(df_train.date[i - 1], open_price, t)
+
             if df_train.date[i] < last_exit:
                 continue
             action = predictor.predict(df_train[:i + 1])
             if action == predictor.NONE:
                 continue
 
-            open_price = df_train.open[i + 1]
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
+
+
 
             if action == predictor.BUY:
                 open_price = open_price + spread
 
                 viewer.print_buy(df_train.date[i + 1], open_price)
+
 
                 for j in range(len(future)):
                     trading_minutes += 5

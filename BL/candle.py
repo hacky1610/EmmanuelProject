@@ -140,14 +140,14 @@ class MultiCandle:
 
         return self._is_black_crow(self.start) and \
                 self._is_black_crow(self.middle) and \
-                self._is_black_crow(self.middle)
+                self._is_black_crow(self.end)
 
     def _is_three_white_soldiers(self):
         # https://forexbee.co/three-black-crows/
 
         return self._is_white_soldier(self.start) and \
             self._is_white_soldier(self.middle) and \
-            self._is_white_soldier(self.middle)
+            self._is_white_soldier(self.end)
 
     def _is_bullish_engulfing(self):
         # https://forexbee.co/three-black-crows/

@@ -148,6 +148,23 @@ class BasePredictor:
 
         return BasePredictor.NONE
 
+    def calc_steigung(self,df,period:int = 2):
+        period = df[period * -1:]
+
+        ema_14_over_25 = len(period[period.EMA_14 > period.EMA_25]) == len(period)
+        ema_25_over_50 = len(period[period.EMA_25 > period.EMA_50]) == len(period)
+
+        ema_14_under_25 = len(period[period.EMA_14 < period.EMA_25]) == len(period)
+        ema_25_under_50 = len(period[period.EMA_25 < period.EMA_50]) == len(period)
+
+        if ema_14_over_25 and ema_25_over_50:
+            return 1
+
+        if ema_14_under_25 and ema_25_under_50:
+            return -1
+
+        return 0
+
     def predict_macd(self, df, period: int = 2, consider_gradient:bool = False):
         current_macd_periode = df[period * -1:]
         macd_over_signal = len(current_macd_periode[current_macd_periode.MACD > current_macd_periode.SIGNAL]) == len(current_macd_periode)
