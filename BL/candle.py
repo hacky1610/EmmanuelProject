@@ -1,12 +1,14 @@
 from enum import Enum
 from pandas import DataFrame
 
-#https://www.myespresso.com/bootcamp/module/technical-analysis-basics/single-candlestick-patterns
+
+# https://www.myespresso.com/bootcamp/module/technical-analysis-basics/single-candlestick-patterns
 
 # class syntax
 class Direction(Enum):
     Bearish = 1
     Bullish = 2
+
 
 class CandleType(Enum):
     Unknown = 0
@@ -21,6 +23,7 @@ class CandleType(Enum):
     DragonflyDoji = 9
     GraveStoneDoji = 10
 
+
 class MultiCandleType(Enum):
     Unknown = 0
     EveningStar = 1
@@ -30,9 +33,10 @@ class MultiCandleType(Enum):
     BullishEngulfing = 5
     BearishEngulfing = 6
 
+
 class Candle:
 
-    def __init__(self,ohlc):
+    def __init__(self, ohlc):
 
         self.open = ohlc.open.item()
         self.close = ohlc.close.item()
@@ -64,11 +68,11 @@ class Candle:
             upper_shadow = self.high - self.open
             lower_shadow = self.close - self.low
 
-        body_percentage = self._calc_percentage(length,body_length)
+        body_percentage = self._calc_percentage(length, body_length)
         upper_shadow_percentage = self._calc_percentage(length, upper_shadow)
         lower_shadow_percentage = self._calc_percentage(length, lower_shadow)
 
-        #Doji
+        # Doji
         if body_percentage < 5:
             if abs(upper_shadow_percentage - lower_shadow_percentage) < 15:
                 return CandleType.Doji
@@ -81,13 +85,13 @@ class Candle:
             # Spinning top
             if abs(upper_shadow_percentage - lower_shadow_percentage) < 10:
                 return CandleType.SpinningTop
-            if lower_shadow_percentage  > 2 * body_percentage:
-                #Hammer
+            if (upper_shadow_percentage + body_percentage) < 38:
+                # Hammer
                 if self.direction() == Direction.Bullish:
                     return CandleType.Hammer
                 else:
                     return CandleType.HangingMan
-            elif upper_shadow_percentage  > 2 * body_percentage:
+            elif (lower_shadow_percentage + body_percentage) < 38:
                 if self.direction() == Direction.Bullish:
                     return CandleType.ImvertedHammer
                 else:
@@ -101,17 +105,20 @@ class Candle:
 
         return CandleType.Unknown
 
+
 class MultiCandle:
 
-    def __init__(self,df:DataFrame):
+    def __init__(self, df: DataFrame):
         assert len(df) >= 3
 
         self.start = Candle(df[-3:-2])
         self.middle = Candle(df[-2:-1])
         self.end = Candle(df[-1:])
 
+    # Trend Reversal
+
     def _is_evening_star(self):
-        #https://smartmoney.angelone.in/chapter/5-most-important-multiple-candlestick-patterns-part-2/
+        # https://smartmoney.angelone.in/chapter/5-most-important-multiple-candlestick-patterns-part-2/
         if self.start.direction() == Direction.Bullish and self.start.get_body_percentage() > 60:
             middle_type = self.middle.candle_type()
             if middle_type == CandleType.Doji or middle_type == CandleType.SpinningTop:
@@ -120,7 +127,7 @@ class MultiCandle:
         return False
 
     def _is_morning_star(self):
-        #https://smartmoney.angelone.in/chapter/5-most-important-multiple-candlestick-patterns-part-2/
+        # https://smartmoney.angelone.in/chapter/5-most-important-multiple-candlestick-patterns-part-2/
         if self.start.direction() == Direction.Bearish and self.start.get_body_percentage() > 60:
             middle_type = self.middle.candle_type()
             if middle_type == CandleType.Doji or middle_type == CandleType.SpinningTop:
@@ -128,19 +135,18 @@ class MultiCandle:
                     return True
         return False
 
-    def _is_black_crow(self,candle:Candle):
+    def _is_black_crow(self, candle: Candle):
         return candle.direction() == Direction.Bearish and candle.get_body_percentage() > 60
 
-    def _is_white_soldier(self,candle:Candle):
+    def _is_white_soldier(self, candle: Candle):
         return candle.direction() == Direction.Bullish and candle.get_body_percentage() > 60
 
-
     def _is_three_black_crows(self):
-        #https://forexbee.co/three-black-crows/
+        # https://forexbee.co/three-black-crows/
 
         return self._is_black_crow(self.start) and \
-                self._is_black_crow(self.middle) and \
-                self._is_black_crow(self.end)
+            self._is_black_crow(self.middle) and \
+            self._is_black_crow(self.end)
 
     def _is_three_white_soldiers(self):
         # https://forexbee.co/three-black-crows/
@@ -153,10 +159,8 @@ class MultiCandle:
         # https://forexbee.co/three-black-crows/
 
         if self.middle.direction() == Direction.Bearish and self.end.direction() == Direction.Bullish:
-            if self.end.close > self.middle.open and \
-                    self.end.high > self.middle.high and \
-                        self.end.low < self.middle.low:
-                            return True
+            if self.end.close > self.middle.open:
+                return True
 
         return False
 
@@ -164,17 +168,17 @@ class MultiCandle:
         # https://forexbee.co/three-black-crows/
 
         if self.middle.direction() == Direction.Bullish and self.end.direction() == Direction.Bearish:
-            if self.end.close < self.middle.open and \
-                    self.end.high > self.middle.high and \
-                    self.end.low < self.middle.low:
+            if self.end.close < self.middle.open:
                 return True
 
         return False
 
+    #Continue
+
 
 
     def get_type(self) -> MultiCandleType:
-        #https://forexbee.co/reversal-candlestick-patterns/
+        # https://forexbee.co/reversal-candlestick-patterns/
         if self._is_evening_star():
             return MultiCandleType.EveningStar
         if self._is_morning_star():
@@ -189,17 +193,4 @@ class MultiCandle:
             return MultiCandleType.BearishEngulfing
 
         return MultiCandleType.Unknown
-
-
-
-
-
-
-
-
-
-
-
-
-
 

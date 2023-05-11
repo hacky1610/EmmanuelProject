@@ -10,6 +10,7 @@ class DataProcessor:
         df['EMA'] = TA.EMA(df)
         df['EMA_10'] = TA.EMA(df,10)
         df['EMA_14'] = TA.EMA(df, 14)
+        df['EMA_20'] = TA.EMA(df, 20)
         df['EMA_25'] = TA.EMA(df,25)
         df['EMA_50'] = TA.EMA(df, 50)
 

@@ -148,7 +148,7 @@ class BasePredictor:
 
         return BasePredictor.NONE
 
-    def calc_steigung(self,df,period:int = 2):
+    def calc_trend(self, df, period:int = 2):
         period = df[period * -1:]
 
         ema_14_over_25 = len(period[period.EMA_14 > period.EMA_25]) == len(period)

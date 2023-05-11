@@ -4,10 +4,10 @@ from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
-from BL.candle import MultiCandle, MultiCandleType
+from BL.candle import MultiCandle, MultiCandleType, Candle, CandleType
 
 
-class Reversal(BasePredictor):
+class RsiCandle(BasePredictor):
 
     # https://www.youtube.com/watch?v=6c5exPYoz3U
     rsi_upper_limit = 75
@@ -74,28 +74,21 @@ class Reversal(BasePredictor):
 
 
         rsi = df.tail(1).RSI.values[0]
-        p1 = self.period_1 * -1
-        break_period = df[p1:]
-        down_breaks = len(break_period[break_period.low < break_period.BB_LOWER]) > self.peak_count
-        up_breaks = len(break_period[break_period.high > break_period.BB_UPPER]) > self.peak_count
-
-        down_breaks = up_breaks = True
+        ema_50 = df.tail(1).EMA_50.values[0]
+        low = df.tail(1).low.values[0]
+        high = df.tail(1).low.values[0]
 
         mc  = MultiCandle(df)
         candle_pattern = mc.get_type()
 
-        steigung = self.calc_trend(df, 4)
 
         # buy
-        #if rsi < self.rsi_lower_limit and \
-        if down_breaks and steigung == -1:
-            if candle_pattern in [MultiCandleType.MorningStart,MultiCandleType.BullishEngulfing,MultiCandleType.ThreeWhiteSoldiers]:
+        if rsi < 30:
+            if candle_pattern in [MultiCandleType.BullishEngulfing,MultiCandleType.MorningStart]:
                 return BasePredictor.BUY
 
-        #if rsi > self.rsi_upper_limit \
-        if up_breaks and steigung == 1:
-            if candle_pattern in [MultiCandleType.EveningStar, MultiCandleType.BearishEngulfing,
-                                  MultiCandleType.ThreeBlackCrows]:
+        if rsi > 70:
+            if candle_pattern in [MultiCandleType.BearishEngulfing,MultiCandleType.EveningStar]:
                 return BasePredictor.SELL
 
 
