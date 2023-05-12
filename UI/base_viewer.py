@@ -29,4 +29,7 @@ class BaseViewer:
     def print_text(self, x, y, text):
         pass
 
+    def plot_levels(self,levels, zigzag_percent, only_good, path):
+        pass
+
 

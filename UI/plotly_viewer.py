@@ -1,6 +1,8 @@
 from UI.base_viewer import BaseViewer
 import plotly.graph_objects as go
 import pandas as pd
+import numpy as np
+from zigzag import peak_valley_pivots
 
 
 class PlotlyViewer(BaseViewer):
@@ -98,6 +100,38 @@ class PlotlyViewer(BaseViewer):
             text=[text],
             textposition="top center"
         ))
+
+    def _plot_levels(self,where, levels, only_good=False):
+        for l in levels:
+
+            if isinstance(l, float):
+                where.axhline(y=l, color='black', linestyle='-')
+            elif isinstance(l, dict):
+                if 'score' in l.keys():
+                    if only_good and l['score'] < 0:
+                        continue
+                    color = 'red' if l['score'] < 0 else 'blue'
+                    where.axhline(y=l['price'], color=color, linestyle='-', linewidth=0.2 * abs(l['score']))
+                else:
+                    where.axhline(y=l['price'], color='black', linestyle='-')
+
+    def plot_levels(self,X, levels, zigzag_percent=1, only_good=False, path=None):
+        import matplotlib.pyplot as plt
+        pivots = peak_valley_pivots(X, zigzag_percent / 100, -zigzag_percent / 100)
+        plt.xlim(0, len(X))
+        plt.ylim(X.min() * 0.995, X.max() * 1.005)
+        plt.plot(np.arange(len(X)), X, 'k-', alpha=0.9)
+        plt.plot(np.arange(len(X))[pivots != 0], X[pivots != 0], 'k:', alpha=0.5)
+
+        plt.scatter(np.arange(len(X))[pivots == 1], X[pivots == 1], color='g')
+        plt.scatter(np.arange(len(X))[pivots == -1], X[pivots == -1], color='r')
+
+        self._plot_levels(plt, levels, only_good)
+        if path:
+            plt.savefig(path)
+        else:
+            plt.show()
+        plt.close()
 
     def show(self):
         self.fig.show()

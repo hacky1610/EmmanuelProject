@@ -1,5 +1,6 @@
 from BL.candle import Candle, MultiCandle
 from BL.data_processor import DataProcessor
+from BL.pricelevels import ZigZagClusterLevels
 from Connectors.tiingo import Tiingo, TradeType
 from Predictors.ema_macd import EmaMacd
 from Predictors.ema_stoch_candle import EmaStochCandle
@@ -31,6 +32,15 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
     symbol = "GBPUSD"
     df, df_eval = ti.load_live_data(symbol,dp, trade_type)
+
+    zig_zag_percent = 0.2
+
+    zl = ZigZagClusterLevels(peak_percent_delta=zig_zag_percent, merge_distance=None,
+                             merge_percent=0.1, min_bars_between_peaks=20, peaks='Low')
+
+    zl.fit(df)
+
+    viewer.plot_levels(df['close'].values, zl.levels, zig_zag_percent)  # in case you want to display chart
 
     if len(df) > 0:
         predictor = EmaStochCandle()
