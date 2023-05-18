@@ -15,6 +15,7 @@ class PlotlyViewer(BaseViewer):
         self.df = None
         self.df_eval = None
         self.title = ""
+        self._level_list = []
 
     def init(self, title, df, df_eval):
         self.df = df
@@ -24,16 +25,9 @@ class PlotlyViewer(BaseViewer):
 
     def print_graph(self):
         self.fig = go.Figure(data=[
-            go.Line(x=self.df['date'], y=self.df["EMA_14"],
-                    line=dict(shape='linear', color='Red')),
-            go.Line(x=self.df['date'], y=self.df["EMA_25"],
-                    line=dict(shape='linear', color='Orange')),
-            go.Line(x=self.df['date'], y=self.df["EMA_50"],
-                    line=dict(shape='linear', color='Brown')),
-            go.Line(x=self.df['date'], y=self.df["BB_UPPER"],
-                    line=dict(shape='linear', color='Orange')),
-            go.Line(x=self.df['date'], y=self.df["BB_LOWER"],
-                    line=dict(shape='linear', color='Orange')),
+            #go.Line(x=self.df['date'], y=self.df["EMA_14"],
+            #        line=dict(shape='linear', color='Red')),
+
             go.Candlestick(x=self.df['date'],
                            open=self.df['open'],
                            high=self.df['high'],
@@ -100,6 +94,17 @@ class PlotlyViewer(BaseViewer):
             text=[text],
             textposition="top center"
         ))
+
+    def print_level(self,start,end,y):
+
+        self.fig.add_shape(type='line',
+                      x0=start,
+                      y0=y,
+                      x1=end,
+                      y1=y,
+                      line=dict(color='Black', ),
+                      xref='x',
+                      yref='y')
 
     def _plot_levels(self,where, levels, only_good=False):
         for l in levels:

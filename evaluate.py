@@ -14,6 +14,7 @@ from Predictors.reversal import Reversal
 from Predictors.rsi_bb import RsiBB
 from Predictors.rsi_bb2 import RsiBB2
 from Predictors.rsi_candle import RsiCandle
+from Predictors.sup_res_candle import SupResCandle
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
 
@@ -30,20 +31,11 @@ viewer = PlotlyViewer()
 
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
-    symbol = "GBPUSD"
+    #symbol = "EURUSD"
     df, df_eval = ti.load_live_data(symbol,dp, trade_type)
 
-    zig_zag_percent = 0.2
-
-    zl = ZigZagClusterLevels(peak_percent_delta=zig_zag_percent, merge_distance=None,
-                             merge_percent=0.1, min_bars_between_peaks=20, peaks='Low')
-
-    zl.fit(df)
-
-    viewer.plot_levels(df['close'].values, zl.levels, zig_zag_percent)  # in case you want to display chart
-
     if len(df) > 0:
-        predictor = EmaStochCandle()
+        predictor = SupResCandle(viewer=viewer)
         predictor.load(symbol)
         reward, avg_reward, trade_freq, win_loss, avg_minutes = analytics.evaluate(predictor=predictor, df_train=df,df_eval= df_eval, viewer=viewer, symbol=symbol)
         predictor.best_result = win_loss
