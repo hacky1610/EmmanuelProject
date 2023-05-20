@@ -29,7 +29,7 @@ class BaseViewer:
     def print_text(self, x, y, text):
         pass
 
-    def print_level(self,start,end,y,color):
+    def print_level(self,start,end,y,color="Black"):
         pass
 
     def plot_levels(self,X, levels, zigzag_percent=1, only_good=False, path=None):

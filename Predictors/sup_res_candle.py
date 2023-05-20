@@ -78,9 +78,10 @@ class SupResCandle(BasePredictor):
         zl.fit(df)
 
         levels = []
-        for l in zl.levels:
-            levels.append(l["price"])
-        levels.sort()
+        if zl.levels != None:
+            for l in zl.levels:
+                levels.append(l["price"])
+            levels.sort()
         return levels
 
     def predict(self, df: DataFrame) -> str:
@@ -121,17 +122,10 @@ class SupResCandle(BasePredictor):
 
             #Close to current lebel
             if diff_to_curent_level > diff_to_next_level * 0.25:
-                print(f"{df[-1:].date.item()} Price should be close to current level")
                 continue
-
-
-
-
-
 
             p1 = df[-2:-1]
             p2 = df[-10:-2]
-
 
             # buy
             if current_close > l:
@@ -162,8 +156,5 @@ class SupResCandle(BasePredictor):
                     if len(p1[abs(p1.low - l) < current_mean_range]) > 0:
                             self._viewer.print_level(df[-4:-3].date.values[0], df[-1:].date.values[0], l, "Red")
                             return self.SELL
-
-
-
 
         return self.NONE
