@@ -39,6 +39,7 @@ class DataProcessor:
         df["STOCHRSI"] = TA.STOCHRSI(df)
         df["ADX"] = TA.ADX(df)
         df["BBWIDTH"] = TA.BBWIDTH(df)
+        df["ATR"] = TA.ATR(df)
 
     def clean_data(self, df: DataFrame):
         DataProcessor.drop_column(df, "Volume")

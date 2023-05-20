@@ -95,14 +95,14 @@ class PlotlyViewer(BaseViewer):
             textposition="top center"
         ))
 
-    def print_level(self,start,end,y):
+    def print_level(self,start,end,y,color="Black"):
 
         self.fig.add_shape(type='line',
                       x0=start,
                       y0=y,
                       x1=end,
                       y1=y,
-                      line=dict(color='Black', ),
+                      line=dict(color=color, ),
                       xref='x',
                       yref='y')
 

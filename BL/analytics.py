@@ -26,7 +26,11 @@ class Analytics:
         trading_minutes = 0
         last_exit = df_train.date[0]
         for i in range(len(df_train) - 1):
+            #df_train.date[i] == '2023-05-04T02:00:00.000Z'
             open_price = df_train.open[i + 1]
+
+            #if i % 10 != 0:
+            #    continue
 
             #if i > 3:
             #    c = MultiCandle(df_train[:i])

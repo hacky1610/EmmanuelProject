@@ -41,6 +41,9 @@ class BasePredictor:
         mean_diff = abs(df[-96:].close - df[-96:].close.shift(-1)).mean()
         return mean_diff * self.stop, mean_diff * self.limit
 
+    def get_mean_range(self,df):
+        return abs(df.close - df.close.shift(-1)).mean()
+
     def step(self, df_train: DataFrame, df_eval: DataFrame, analytics):
         reward, success, trade_freq, win_loss, avg_minutes = analytics.evaluate(self, df_train, df_eval)
 
