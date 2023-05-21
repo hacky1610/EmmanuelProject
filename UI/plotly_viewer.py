@@ -95,16 +95,30 @@ class PlotlyViewer(BaseViewer):
             textposition="top center"
         ))
 
-    def print_level(self,start,end,y,color="Black"):
+    def print_level(self,start,end,top,bottom,color="Black"):
+
+        #self.fig.add_trace(go.Scatter(x=[start,end,end,start,start], y=[bottom,bottom,top,top,start], fill="toself"))
 
         self.fig.add_shape(type='line',
-                      x0=start,
-                      y0=y,
-                      x1=end,
-                      y1=y,
-                      line=dict(color=color, ),
-                      xref='x',
-                      yref='y')
+                           x0=start,
+                           y0=top,
+                           x1=end,
+                           y1=top,
+                           line=dict(color=color, ),
+                           xref='x',
+                           yref='y')
+
+        self.fig.add_shape(type='line',
+                           x0=start,
+                           y0=bottom,
+                           x1=end,
+                           y1=bottom,
+                           line=dict(color="Red", ),
+                           xref='x',
+                           yref='y')
+
+
+
 
     def _plot_levels(self,where, levels, only_good=False):
         for l in levels:
