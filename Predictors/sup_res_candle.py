@@ -126,21 +126,21 @@ class SupResCandle(BasePredictor):
             if diff_to_curent_level > diff_to_next_level * 0.25:
                 continue
 
-            p1 = df[-3:-1]
+            p1 = df[-2:-1]
             p2 = df[-10:-2]
 
             # buy
-            if current_close > l.middle:
+            if current_close > l.upper:
                 was_under = len(p1[p1.low < l.upper]) > 0
-                was_over = len(p2[p2.close > l.upper]) > 5
+                was_over = len(p2[p2.close > l.middle]) > 5
 
                 if was_over and was_under:
                     self._viewer.print_level(df[-4:-3].date.values[0], df[-1:].date.values[0], l.upper, l.lower, "Red")
                     return self.BUY
 
-            if current_close < l.middle:
+            if current_close < l.lower:
                 was_over = len(p1[p1.high > l.lower]) > 5
-                was_under = len(p2[p2.close < l.lower]) > 0
+                was_under = len(p2[p2.close < l.middle]) > 0
 
                 if was_over and was_under:
                     self._viewer.print_level(df[-4:-3].date.values[0], df[-1:].date.values[0], l.upper, l.lower, "Red")
