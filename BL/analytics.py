@@ -104,6 +104,11 @@ class Analytics:
         trades = wins + losses
         predictor._tracer = old_tracer
         if trades == 0:
-            return 0, 0, 0, 0, 0
-        return reward, reward / trades, trades / len(df_train), wins / trades, trading_minutes / trades
+            return 0, 0, 0, 0, 0, 0
+        return reward, \
+            reward / trades, \
+            trades / len(df_train), \
+            wins / trades, \
+            trading_minutes / trades, \
+            trades
 

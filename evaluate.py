@@ -37,9 +37,10 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     if len(df) > 0:
         predictor = SupResCandle(viewer=viewer)
         predictor.load(symbol)
-        reward, avg_reward, trade_freq, win_loss, avg_minutes = analytics.evaluate(predictor=predictor, df_train=df,df_eval= df_eval, viewer=viewer, symbol=symbol)
+        reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(predictor=predictor, df_train=df,df_eval= df_eval, viewer=viewer, symbol=symbol)
         predictor.best_result = win_loss
         predictor.best_reward = reward
+        predictor.trades = trades
         predictor.frequence = trade_freq
         predictor.save(symbol)
         print(f"{symbol} - Reward {reward}, success {avg_reward}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes}")

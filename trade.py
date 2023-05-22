@@ -1,5 +1,6 @@
 from Connectors.IG import IG
 from BL.data_processor import DataProcessor
+from Predictors.sup_res_candle import SupResCandle
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo, TradeType
 from BL import Analytics, ConfigReader
@@ -16,7 +17,7 @@ tracer = LogglyTracer(conf_reader.get("loggly_api_key"),"DEMO")
 tiingo = Tiingo(tracer=tracer,conf_reader=conf_reader)
 ig = IG(tracer=tracer,conf_reader=conf_reader,live=live_trade)
 analytics = Analytics(tracer)
-predictor = RsiBB
+predictor = SupResCandle
 
 trader = Trader(
     ig=ig,

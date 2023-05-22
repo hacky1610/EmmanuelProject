@@ -17,6 +17,7 @@ class BasePredictor:
     best_result = 0.0
     best_reward = 0.0
     frequence = 0.0
+    trades = 0
     _tracer = ConsoleTracer()
 
     def __init__(self, config=None, tracer: Tracer = ConsoleTracer()):
@@ -32,6 +33,7 @@ class BasePredictor:
         self.version = config.get("version", self.version)
         self.best_result = config.get("best_result", self.best_result)
         self.best_reward = config.get("best_reward", self.best_reward)
+        self.trades = config.get("trades", self.trades)
         self.frequence = config.get("frequence", self.frequence)
 
     def predict(self, df: DataFrame) -> str:
@@ -45,10 +47,10 @@ class BasePredictor:
         return abs(df.close - df.close.shift(-1)).mean()
 
     def step(self, df_train: DataFrame, df_eval: DataFrame, analytics):
-        reward, success, trade_freq, win_loss, avg_minutes = analytics.evaluate(self, df_train, df_eval)
+        reward, success, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(self, df_train, df_eval)
 
         return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq,
-                "win_loss": win_loss, "avg_minutes": avg_minutes}
+                "win_loss": win_loss, "avg_minutes": avg_minutes, "trades":trades}
 
     def _get_save_path(self, predictor_name: str, symbol: str) -> str:
         return os.path.join(get_project_dir(), "Settings", f"{predictor_name}_{symbol}.json")

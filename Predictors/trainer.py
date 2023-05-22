@@ -2,8 +2,10 @@ import pandas as pd
 from pandas import DataFrame, Series
 import random
 from Predictors.rsi_stoch import RsiStoch
-from Predictors.rsi_bb import RsiBB
+
 import itertools
+
+from Predictors.sup_res_candle import SupResCandle
 
 
 class Trainer:
@@ -21,6 +23,28 @@ class Trainer:
                 "rsi_lowe_limit": rsi_lower,
                 "rsi_trend": trend,
                 "version": version
+            })
+        return json_objs
+
+    def _sr_trainer(self, version: str):
+
+        json_objs = []
+        for zig_zag_percent, merge_percent, min_bars_between_peaks in itertools.product([0.05, 0.1, 0.3, .7, .9], [0.05, 0.1, .03], [13,17,23]):
+            json_objs.append({
+                "zig_zag_percent": zig_zag_percent,
+                "merge_percent": merge_percent,
+                "min_bars_between_peaks": min_bars_between_peaks,
+                "version": version
+            })
+        return json_objs
+
+    def _sr_trainer2(self, version: str):
+
+        json_objs = []
+        for look_back_days, level_section_size in itertools.product([13,17,21],[0.7,1.0,1.3,1.7]):
+            json_objs.append({
+                "look_back_days": look_back_days,
+                "level_section_size": level_section_size,
             })
         return json_objs
 
@@ -67,16 +91,16 @@ class Trainer:
         best = 0
         best_predictor = None
         result_df = DataFrame()
-        saved_predictor = RsiBB().load(symbol)
+        saved_predictor = SupResCandle().load(symbol)
 
         if version == saved_predictor.version:
             print(f"{symbol} Already trained with version {version}.")
             return result_df
 
-        sets = self._rsi_trainer(version)
+        sets = self._sr_trainer(version)
         random.shuffle(sets)
         for training_set in sets:
-            predictor = RsiBB()
+            predictor = SupResCandle()
             predictor.load(symbol)
             predictor.setup(training_set)
             res = predictor.step(df, df_eval, self._analytics)
@@ -88,7 +112,8 @@ class Trainer:
             minutes = res["avg_minutes"]
             predictor.setup({"best_result": w_l,
                              "best_reward": reward,
-                             "frequence": frequ})
+                             "frequence": frequ,
+                             "trades": res["trades"]})
 
             res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
                          index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
@@ -96,7 +121,7 @@ class Trainer:
             result_df = result_df.append(res,
                                          ignore_index=True)
 
-            if reward > best and frequ > 0.005 and w_l > 0.66:
+            if reward > best and w_l > 0.66:
                 best = avg_reward
                 best_predictor = predictor
                 print(f"{symbol} - {predictor.get_config()} - "

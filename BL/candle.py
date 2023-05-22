@@ -54,7 +54,8 @@ class Candle:
 
     @staticmethod
     def _calc_percentage(max, elemnt):
-
+        if max == 0:
+            return 0
         return 100 * elemnt / max
 
     def candle_type(self) -> CandleType:

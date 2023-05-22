@@ -21,11 +21,13 @@ class LevelSection:
 
 class SupResCandle(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
-    rsi_upper_limit = 75
-    rsi_lower_limit = 25
     period_1 = 2
     period_2 = 3
     zig_zag_percent = 0.5
+    merge_percent = 0.1
+    min_bars_between_peaks = 20
+    look_back_days = 20
+    level_section_size = 1.0
 
     def __init__(self, config=None, tracer: Tracer = ConsoleTracer(), viewer: BaseViewer = BaseViewer()):
         super().__init__(config, tracer)
@@ -35,27 +37,46 @@ class SupResCandle(BasePredictor):
         self._viewer = viewer
 
     def setup(self, config: dict):
-        self.rsi_upper_limit = config.get("rsi_upper_limit", self.rsi_upper_limit)
-        self.rsi_lower_limit = config.get("rsi_lower_limit", self.rsi_lower_limit)
         self.period_1 = config.get("period_1", self.period_1)
         self.period_2 = config.get("period_2", self.period_2)
+        self.zig_zag_percent = config.get("zig_zag_percent", self.zig_zag_percent)
+        self.merge_percent = config.get("merge_percent", self.merge_percent)
+        self.min_bars_between_peaks = config.get("min_bars_between_peaks", self.min_bars_between_peaks)
+        self.look_back_days = config.get("look_back_days", self.look_back_days)
+        self.level_section_size = config.get("level_section_size", self.level_section_size)
         super().setup(config)
 
     def get_config(self) -> Series:
         return Series(["RSI_BB",
                        self.stop,
                        self.limit,
-                       self.rsi_upper_limit,
-                       self.rsi_lower_limit,
                        self.period_1,
                        self.period_2,
+                       self.zig_zag_percent,
+                       self.merge_percent,
+                       self.min_bars_between_peaks,
+                       self.look_back_days,
+                       self.level_section_size,
                        self.version,
                        self.best_result,
                        self.best_reward,
+                       self.trades,
                        self.frequence
                        ],
-                      index=["Type", "stop", "limit", "rsi_upper_limit",
-                             "rsi_lower_limit", "period_1", "period_2", "version", "best_result", "best_reward",
+                      index=["Type",
+                             "stop",
+                             "limit",
+                             "period_1",
+                             "period_2",
+                             "zig_zag_percent",
+                             "merge_percent",
+                             "min_bars_between_peaks",
+                             "look_back_days",
+                             "level_section_size",
+                             "version",
+                             "best_result",
+                             "best_reward",
+                             "trades",
                              "frequence"])
 
     def save(self, symbol: str):
@@ -75,7 +96,7 @@ class SupResCandle(BasePredictor):
 
     def _get_levels(self, df):
         zl = ZigZagClusterLevels(peak_percent_delta=self.zig_zag_percent, merge_distance=None,
-                                 merge_percent=0.1, min_bars_between_peaks=20, peaks='Low')
+                                 merge_percent=self.merge_percent, min_bars_between_peaks=self.min_bars_between_peaks, peaks='Low')
         zl.fit(df)
 
         levels = []
@@ -88,7 +109,7 @@ class SupResCandle(BasePredictor):
         current_mean_range = self.get_mean_range(df)
 
         for l in levels:
-            level_sections.append(LevelSection(l, current_mean_range))
+            level_sections.append(LevelSection(l, current_mean_range * self.level_section_size))
 
         return level_sections
 
@@ -96,7 +117,7 @@ class SupResCandle(BasePredictor):
         if len(df) < 150:
             return BasePredictor.NONE
 
-        levels = self._get_levels(df)
+        levels = self._get_levels(df[self.look_back_days * 24 * -1:])
 
         if len(levels) == 0:
             return BasePredictor.NONE

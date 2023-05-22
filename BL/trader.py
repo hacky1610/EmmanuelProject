@@ -24,6 +24,7 @@ class Trader:
         self._analytics = analytics
         self._trainer = trainer
         self._min_win_loss = 0.7
+        self._min_trades = 3
 
     def get_stop_limit(self, df, scaling: int, stop_factor: float = 2.5, limit_factor: float = 2.5):
         stop = int(abs(df.close - df.close.shift(-1)).mean() * stop_factor * scaling)
@@ -67,8 +68,8 @@ class Trader:
               trade_type: TradeType = TradeType.FX,
               size: float = 1.0, currency: str = "USD"):
 
-        if predictor.best_result < 0.67:
-            self._tracer.error(f"{symbol} Best result not good {predictor.best_result}")
+        if predictor.best_result < self._min_win_loss and predictor.trades >= self._min_trades:
+            self._tracer.error(f"{symbol} Best result not good {predictor.best_result} or  trades {predictor.trades} less than  {self._min_trades}")
             return False
 
         trade_df = self._tiingo.load_live_data_last_days(symbol, self._dataprocessor, trade_type)
