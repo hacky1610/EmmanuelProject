@@ -64,9 +64,14 @@ class Trader:
                 size=market["size"],
                 currency=market["currency"])
 
-    def trade(self, predictor: BasePredictor, symbol: str, epic: str, spread: float, scaling: int,
+    def trade(self, predictor: BasePredictor,
+              symbol: str,
+              epic: str,
+              spread: float,
+              scaling: int,
               trade_type: TradeType = TradeType.FX,
-              size: float = 1.0, currency: str = "USD"):
+              size: float = 1.0,
+              currency: str = "USD"):
 
         if predictor.best_result < self._min_win_loss and predictor.trades >= self._min_trades:
             self._tracer.error(f"{symbol} Best result not good {predictor.best_result} or  trades {predictor.trades} less than  {self._min_trades}")

@@ -123,7 +123,7 @@ class Trainer:
                                          ignore_index=True)
 
             if reward > best and w_l > 0.66 and trades >= 5:
-                best = avg_reward
+                best = reward
                 best_predictor = predictor
                 print(f"{symbol} - {predictor.get_config()} - "
                       f"Avg Reward: {avg_reward:6.5} "

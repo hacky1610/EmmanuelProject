@@ -1,5 +1,4 @@
-from datetime import date, timedelta, timezone, datetime
-
+from datetime import date, timedelta, datetime
 from BL.data_processor import DataProcessor
 import requests
 from pandas import DataFrame
