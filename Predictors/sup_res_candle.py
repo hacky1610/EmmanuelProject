@@ -106,11 +106,16 @@ class SupResCandle(BasePredictor):
         candle_dir = c.direction()
         candle_size = c.get_body_percentage()
         current_close = df.tail(1).close.values[0]
+        current_open = df.tail(1).open.values[0]
+        mean_range = self.get_mean_range(df)
+
+        if mean_range * 3 < abs(current_open - current_close):
+            return self.NONE
 
         for i in range(len(levels)):
             l = levels[i]
             if df.index[-1] % 10 == 0:
-                self._viewer.print_level(df[-4:-3].date.values[0], df[-1:].date.values[0], l.upper, l.lower)
+                self._viewer.print_level(df[-7:-6].date.values[0], df[-1:].date.values[0], l.upper, l.lower)
 
             diff_to_next_level = 1000
             if current_close < l.middle:  # Price under level
@@ -135,15 +140,15 @@ class SupResCandle(BasePredictor):
                 was_over = len(p2[p2.close > l.middle]) > 5
 
                 if was_over and was_under:
-                    self._viewer.print_level(df[-4:-3].date.values[0], df[-1:].date.values[0], l.upper, l.lower, "Red")
+                    self._viewer.print_level(df[-7:-6].date.values[0], df[-1:].date.values[0], l.upper, l.lower, "Red")
                     return self.BUY
 
             if current_close < l.lower:
-                was_over = len(p1[p1.high > l.lower]) > 5
-                was_under = len(p2[p2.close < l.middle]) > 0
+                was_over = len(p1[p1.high > l.lower]) > 0
+                was_under = len(p2[p2.close < l.middle]) > 5
 
                 if was_over and was_under:
-                    self._viewer.print_level(df[-4:-3].date.values[0], df[-1:].date.values[0], l.upper, l.lower, "Red")
+                    self._viewer.print_level(df[-7:-6].date.values[0], df[-1:].date.values[0], l.upper, l.lower, "Red")
                     return self.SELL
 
         return self.NONE
