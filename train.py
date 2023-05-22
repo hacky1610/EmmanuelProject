@@ -1,6 +1,6 @@
 from multiprocessing import Process
-import random
 from Connectors.IG import IG
+from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.trainer import Trainer
 from BL.utils import ConfigReader
@@ -8,16 +8,15 @@ from BL.data_processor import DataProcessor
 from BL.analytics import Analytics
 import os
 import tempfile
-from datetime import datetime
 from Connectors.dropboxservice import DropBoxService
 import dropbox
 
-dbx = dropbox.Dropbox(ConfigReader().get("dropbox"))
-ds = DropBoxService(dbx, "DEMO")
-temp_file = os.path.join(tempfile.gettempdir(), f"evaluate.xlsx")
-trainer = Trainer(Analytics())
 conf_reader = ConfigReader()
-tiingo = Tiingo(conf_reader=conf_reader)
+dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
+ds = DropBoxService(dbx, "DEMO")
+trainer = Trainer(Analytics())
+cache = DropBoxCache(ds)
+tiingo = Tiingo(conf_reader=conf_reader,cache=cache)
 dp = DataProcessor()
 trade_type = TradeType.FX
 ig = IG(conf_reader=conf_reader)

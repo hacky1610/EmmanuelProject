@@ -110,10 +110,11 @@ class Trainer:
             frequ = res["trade_frequency"]
             w_l = res["win_loss"]
             minutes = res["avg_minutes"]
+            trades = res["trades"]
             predictor.setup({"best_result": w_l,
                              "best_reward": reward,
                              "frequence": frequ,
-                             "trades": res["trades"]})
+                             "trades": trades })
 
             res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
                          index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
@@ -121,7 +122,7 @@ class Trainer:
             result_df = result_df.append(res,
                                          ignore_index=True)
 
-            if reward > best and w_l > 0.66:
+            if reward > best and w_l > 0.66 and trades >= 5:
                 best = avg_reward
                 best_predictor = predictor
                 print(f"{symbol} - {predictor.get_config()} - "

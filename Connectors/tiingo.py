@@ -9,6 +9,7 @@ from BL.utils import BaseReader
 from enum import Enum
 from Connectors.dropbox_cache import DropBoxCache
 
+
 # class syntax
 class TradeType(Enum):
     FX = 1
@@ -17,10 +18,11 @@ class TradeType(Enum):
     IEX = 4
     METAL = 5
 
+
 class Tiingo:
     _BASEURL = "https://api.tiingo.com/tiingo/"
 
-    def __init__(self, conf_reader: BaseReader,cache:DropBoxCache, tracer: Tracer = Tracer() ):
+    def __init__(self, conf_reader: BaseReader, cache: DropBoxCache, tracer: Tracer = Tracer()):
         self._apykey = conf_reader.get("ti_api_key")
         self._tracer = tracer
         self._cache = cache
@@ -42,7 +44,8 @@ class Tiingo:
             self._tracer.error(f"Exception during _send_request {e}")
             return ""
 
-    def get_uri_for_trade_type(self, trade_type:TradeType,symbol:str=str):
+    @staticmethod
+    def get_uri_for_trade_type(trade_type: TradeType, symbol: str = str):
         if trade_type == TradeType.FX or trade_type == TradeType.METAL:
             return f"fx/{symbol}/prices?"
         elif trade_type == TradeType.CRYPTO:
@@ -51,12 +54,14 @@ class Tiingo:
             return f"iex/{symbol}/prices?"
         return ""
 
-    def _send_history_request(self, ticker: str, start: str, end: str, resolution: str, trade_type:TradeType=TradeType.FX) -> DataFrame:
+    def _send_history_request(self, ticker: str, start: str, end: str, resolution: str,
+                              trade_type: TradeType = TradeType.FX) -> DataFrame:
         end_date_string = ""
-        if end != None:
+        if end is not None:
             end_date_string = f"&endDate={end}"
 
-        res = self._send_request(f"{self.get_uri_for_trade_type(trade_type,ticker)}resampleFreq={resolution}&startDate={start}{end_date_string}")
+        res = self._send_request(
+            f"{self.get_uri_for_trade_type(trade_type, ticker)}resampleFreq={resolution}&startDate={start}{end_date_string}")
         if len(res) == 0:
             self._tracer.error("Could not load history")
             return DataFrame()
@@ -71,8 +76,8 @@ class Tiingo:
 
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
-                          clean_data: bool = True, trade_type:TradeType=TradeType.FX,
-                          trim:bool=False) -> DataFrame:
+                          clean_data: bool = True, trade_type: TradeType = TradeType.FX,
+                          trim: bool = False) -> DataFrame:
         res = DataFrame()
         name = f"{ticker}_{resolution}.csv"
         cached = self._cache.load(name)
@@ -80,19 +85,19 @@ class Tiingo:
         if len(cached) > 0:
             lastchached = pd.to_datetime(cached[-1:].date.item())
             now = datetime.utcnow().replace(tzinfo=lastchached.tzinfo)
-            toCompare = datetime(now.year,now.month,now.day,now.hour,tzinfo=lastchached.tzinfo) - timedelta(hours=1)
+            toCompare = datetime(now.year, now.month, now.day, now.hour, tzinfo=lastchached.tzinfo) - timedelta(hours=1)
             if lastchached.to_pydatetime() == toCompare:
                 res = cached
             else:
                 res = self._send_history_request(ticker, lastchached.strftime("%Y-%m-%d"), end, resolution, trade_type)
                 res = cached.append(res[res.date > cached[-1:].date.item()])
         else:
-            res = self._send_history_request(ticker, start, end, resolution,trade_type)
+            res = self._send_history_request(ticker, start, end, resolution, trade_type)
 
         if len(res) == 0:
             return res
 
-        self._cache.save(res,name)
+        self._cache.save(res, name)
 
         if add_signals:
             data_processor.addSignals(res)
@@ -104,28 +109,27 @@ class Tiingo:
 
         start_time = (date.today() - timedelta(days=6)).strftime("%Y-%m-%d")
         return self.load_data_by_date(ticker=symbol,
+                                      start=start_time,
+                                      end=None,
+                                      data_processor=dp,
+                                      trade_type=trade_type,
+                                      resolution="1hour",
+                                      trim=True)
+
+    def load_live_data(self, symbol: str, dp: DataProcessor, trade_type):
+
+        start_time = (date.today() - timedelta(days=30)).strftime("%Y-%m-%d")
+        df = self.load_data_by_date(ticker=symbol,
                                     start=start_time,
                                     end=None,
                                     data_processor=dp,
                                     trade_type=trade_type,
                                     resolution="1hour",
                                     trim=True)
-
-
-    def load_live_data(self, symbol: str, dp:DataProcessor, trade_type):
-
-        start_time = (date.today() - timedelta(days=30)).strftime("%Y-%m-%d")
-        df = self.load_data_by_date(ticker=symbol,
-                                  start=start_time,
-                                  end=None,
-                                  data_processor=dp,
-                                  trade_type=trade_type,
-                                  resolution="1hour",
-                                  trim=True)
         df_eval = self.load_data_by_date(ticker=symbol,
-                                       start=start_time,
-                                       end=None,
-                                       data_processor=dp,
-                                       trade_type=trade_type,
-                                       resolution="5min")
+                                         start=start_time,
+                                         end=None,
+                                         data_processor=dp,
+                                         trade_type=trade_type,
+                                         resolution="5min")
         return df, df_eval
