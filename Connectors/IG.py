@@ -425,10 +425,9 @@ class IG:
         with open(temp_file, "w") as f:
             f.write(summary_text)
 
-        dp_service.upload(temp_file,
-                          os.path.join(
-                              datetime.now().strftime("%Y_%m_%d"),
-                              f"summary_{name}.md"))
+        dp_service.upload_file(temp_file, os.path.join(
+            datetime.now().strftime("%Y_%m_%d"),
+            f"summary_{name}.md"))
 
         return
 

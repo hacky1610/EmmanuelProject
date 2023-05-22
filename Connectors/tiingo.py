@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, timezone, datetime
 
 from BL.data_processor import DataProcessor
 import requests
@@ -7,6 +7,7 @@ import pandas as pd
 from Tracing.Tracer import Tracer
 from BL.utils import BaseReader
 from enum import Enum
+from Connectors.dropbox_cache import DropBoxCache
 
 # class syntax
 class TradeType(Enum):
@@ -19,9 +20,10 @@ class TradeType(Enum):
 class Tiingo:
     _BASEURL = "https://api.tiingo.com/tiingo/"
 
-    def __init__(self, conf_reader: BaseReader, tracer: Tracer = Tracer()):
+    def __init__(self, conf_reader: BaseReader,cache:DropBoxCache, tracer: Tracer = Tracer() ):
         self._apykey = conf_reader.get("ti_api_key")
         self._tracer = tracer
+        self._cache = cache
 
     def _send_request(self, suffix: str):
         try:
@@ -63,17 +65,35 @@ class Tiingo:
         else:
             df = DataFrame(res)
             df.drop(columns=["ticker"], inplace=True)
+            df = df[:-1]
+
         return df
 
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
                           clean_data: bool = True, trade_type:TradeType=TradeType.FX,
                           trim:bool=False) -> DataFrame:
-        res = self._send_history_request(ticker, start, end, resolution,trade_type)
+        res = DataFrame()
+        name = f"{ticker}_{resolution}.csv"
+        cached = self._cache.load(name)
+
+        if len(cached) > 0:
+            lastchached = pd.to_datetime(cached[-1:].date.item())
+            now = datetime.utcnow().replace(tzinfo=lastchached.tzinfo)
+            toCompare = datetime(now.year,now.month,now.day,now.hour,tzinfo=lastchached.tzinfo) - timedelta(hours=1)
+            if lastchached.to_pydatetime() == toCompare:
+                res = cached
+            else:
+                res = self._send_history_request(ticker, lastchached.strftime("%Y-%m-%d"), end, resolution, trade_type)
+                res = cached.append(res[res.date > cached[-1:].date.item()])
+        else:
+            res = self._send_history_request(ticker, start, end, resolution,trade_type)
+
         if len(res) == 0:
             return res
-        if trim:
-            res = res[:-1]
+
+        self._cache.save(res,name)
+
         if add_signals:
             data_processor.addSignals(res)
         if clean_data:
@@ -108,5 +128,4 @@ class Tiingo:
                                        data_processor=dp,
                                        trade_type=trade_type,
                                        resolution="5min")
-
         return df, df_eval
