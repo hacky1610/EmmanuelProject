@@ -24,7 +24,7 @@ viewer = PlotlyViewer()
 
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
-    symbol = "CADNOK"
+    symbol = "CHFJPY"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
     if len(df) > 0:
