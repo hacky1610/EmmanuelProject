@@ -1,11 +1,9 @@
 from BL import DataProcessor, Analytics, ConfigReader
-from Connectors.tiingo import Tiingo, TradeType
-from Connectors.IG import IG
+from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService
 from Predictors.sup_res_candle import SupResCandle
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
-from Connectors.dropbox_cache import DropBoxCache
-from Connectors.dropboxservice import DropBoxService
+
 import dropbox
 
 # Prep

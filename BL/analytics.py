@@ -1,4 +1,3 @@
-from BL.candle import MultiCandle, MultiCandleType
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame

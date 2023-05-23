@@ -1,14 +1,10 @@
-from Connectors.IG import IG
-from Connectors.dropbox_cache import DropBoxCache
 from Predictors.sup_res_candle import SupResCandle
 from Tracing.LogglyTracer import LogglyTracer
-from Connectors.tiingo import Tiingo, TradeType
-from BL import Analytics, EnvReader, DataProcessor
-from BL.trader import Trader
+from Connectors import Tiingo, TradeType,DropBoxCache,IG, DropBoxService
+from BL import Analytics, EnvReader, DataProcessor, Trader
 from Predictors.trainer import Trainer
 from datetime import datetime
 import dropbox
-from Connectors.dropboxservice import DropBoxService
 
 env_reader = EnvReader()
 type_ = env_reader.get("Type")

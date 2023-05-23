@@ -1,10 +1,9 @@
 from datetime import date, timedelta, datetime
-from BL.data_processor import DataProcessor
+from BL import DataProcessor, BaseReader
 import requests
 from pandas import DataFrame
 import pandas as pd
 from Tracing.Tracer import Tracer
-from BL.utils import BaseReader
 from enum import Enum
 from Connectors.dropbox_cache import DropBoxCache
 

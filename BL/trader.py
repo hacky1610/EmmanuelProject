@@ -1,12 +1,10 @@
 import os
 import pandas as pd
 
-from BL import get_project_dir
+from BL import get_project_dir, Analytics, DataProcessor
 from Connectors import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import TradeType
-from BL.analytics import Analytics
-from BL.data_processor import DataProcessor
 from Tracing import Tracer
 from Predictors.trainer import Trainer
 from pandas import DataFrame

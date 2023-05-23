@@ -1,10 +1,7 @@
 import dropbox
-from Connectors.IG import IG
-from Connectors.dropbox_cache import DropBoxCache
-from Connectors.dropboxservice import DropBoxService
+from Connectors import IG, Tiingo, TradeType, DropBoxService, DropBoxCache
 from Predictors.sup_res_candle import SupResCandle
 from Tracing.LogglyTracer import LogglyTracer
-from Connectors.tiingo import Tiingo, TradeType
 from BL import Analytics, ConfigReader, DataProcessor
 from BL.trader import Trader
 from Predictors.trainer import Trainer

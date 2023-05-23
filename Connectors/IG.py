@@ -1,14 +1,13 @@
 import os.path
 from trading_ig import IGService
 from trading_ig.rest import IGException
-from BL.data_processor import DataProcessor
+from BL import DataProcessor, timedelta, BaseReader
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
 import pandas as pd
 from pandas import DataFrame
 import re
-from BL.utils import *
 import tempfile
 from datetime import datetime
 from Connectors.tiingo import TradeType
