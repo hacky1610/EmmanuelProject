@@ -20,3 +20,6 @@ class DropBoxCache:
 
     def save(self,data:DataFrame, name:str):
         self.dropbox_servie.upload_data(data.to_csv(),f"Cache/{name}")
+
+    def save_report(self,data:DataFrame, name:str):
+        self.dropbox_servie.upload_data(data.to_csv(),f"Report/{name}")

@@ -20,13 +20,16 @@ tiingo = Tiingo(conf_reader=conf_reader,cache=cache)
 dp = DataProcessor()
 trade_type = TradeType.FX
 ig = IG(conf_reader=conf_reader)
-train_version = "V1.92"
+train_version = "V1.95"
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 #for m in random.choices(markets,k=30):
 for m in markets:
     symbol = m["symbol"]
-    df, eval = tiingo.load_live_data(symbol, dp, trade_type=trade_type)
+    if trainer.is_trained(symbol,train_version):
+        print(f"{symbol} Already trained with version {train_version}.")
+        continue
+    df, eval = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
     if len(df) > 0:
         if os.name != "nt":
             trainer.train(symbol, df, eval, train_version)

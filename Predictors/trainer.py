@@ -1,10 +1,6 @@
-import pandas as pd
 from pandas import DataFrame, Series
 import random
-from Predictors.rsi_stoch import RsiStoch
-
 import itertools
-
 from Predictors.sup_res_candle import SupResCandle
 
 
@@ -29,7 +25,7 @@ class Trainer:
     def _sr_trainer(self, version: str):
 
         json_objs = []
-        for zig_zag_percent, merge_percent, min_bars_between_peaks in itertools.product([0.05, 0.1, 0.3, .7, .9], [0.05, 0.1, .03], [13,17,23]):
+        for zig_zag_percent, merge_percent, min_bars_between_peaks in itertools.product([.3,.4,.5, .7, .9], [0.05, 0.1, .2, .3], [17,23,27]):
             json_objs.append({
                 "zig_zag_percent": zig_zag_percent,
                 "merge_percent": merge_percent,
@@ -41,7 +37,7 @@ class Trainer:
     def _sr_trainer2(self, version: str):
 
         json_objs = []
-        for look_back_days, level_section_size in itertools.product([13,17,21],[0.7,1.0,1.3,1.7]):
+        for look_back_days, level_section_size in itertools.product([13,17,21,24],[0.7,1.0,1.3,1.7]):
             json_objs.append({
                 "look_back_days": look_back_days,
                 "level_section_size": level_section_size,
@@ -86,16 +82,15 @@ class Trainer:
             })
         return json_objs
 
+    def is_trained(self,symbol:str,version:str):
+        saved_predictor = SupResCandle().load(symbol)
+        return  version == saved_predictor.version
+
     def train(self, symbol: str, df, df_eval, version: str) -> DataFrame:
         print(f"#####Train {symbol}#######################")
         best = 0
         best_predictor = None
         result_df = DataFrame()
-        saved_predictor = SupResCandle().load(symbol)
-
-        if version == saved_predictor.version:
-            print(f"{symbol} Already trained with version {version}.")
-            return result_df
 
         sets = self._sr_trainer(version)
         random.shuffle(sets)

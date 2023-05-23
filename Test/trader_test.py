@@ -27,14 +27,15 @@ class TraderTest(unittest.TestCase):
         for i in range(20):
             self._stock_data = self._add_data(self._stock_data)
 
-        self._tiingo.load_live_data_last_days = MagicMock(return_value=self._stock_data)
+        self._tiingo.load_trade_data = MagicMock(return_value=self._stock_data)
         self._trader = Trader(ig=self._ig,
                    tiingo=self._tiingo,
                    tracer=self._tracer,
                    dataprocessor=self._dataProcessor,
                    analytics=self.analytics,
                    trainer=self._trainer,
-                   predictor=self._predictor)
+                   predictor=self._predictor,
+                              cache=MagicMock())
         self._trader._get_spread = MagicMock(return_value=1)
         Trader._get_good_markets = MagicMock(return_value=["myepic"])
 
@@ -131,7 +132,7 @@ class TraderTest(unittest.TestCase):
         assert res == False
 
     def test_trade_no_data(self):
-        self._tiingo.load_live_data_last_days = MagicMock(return_value=DataFrame())
+        self._tiingo.load_trade_data = MagicMock(return_value=DataFrame())
         res = self._trader.trade(predictor=self._predictor,
                                  epic="myepic",
                                  symbol="mysymbol",

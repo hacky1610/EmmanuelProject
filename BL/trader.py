@@ -3,6 +3,7 @@ import pandas as pd
 
 from BL import get_project_dir
 from Connectors import IG
+from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import TradeType
 from BL.analytics import Analytics
 from BL.data_processor import DataProcessor
@@ -15,7 +16,7 @@ from Predictors.base_predictor import BasePredictor
 class Trader:
 
     def __init__(self, ig: IG, tiingo, tracer: Tracer, predictor: BasePredictor, dataprocessor: DataProcessor,
-                 analytics: Analytics, trainer: Trainer):
+                 analytics: Analytics, trainer: Trainer, cache:DropBoxCache):
         self._ig = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
@@ -25,6 +26,7 @@ class Trader:
         self._trainer = trainer
         self._min_win_loss = 0.7
         self._min_trades = 3
+        self._cache = cache
 
     def get_stop_limit(self, df, scaling: int, stop_factor: float = 2.5, limit_factor: float = 2.5):
         stop = int(abs(df.close - df.close.shift(-1)).mean() * stop_factor * scaling)
@@ -64,6 +66,9 @@ class Trader:
                 size=market["size"],
                 currency=market["currency"])
 
+    def _report(self,df:DataFrame, symbol:str, reference:str ):
+        pass
+
     def trade(self, predictor: BasePredictor,
               symbol: str,
               epic: str,
@@ -77,7 +82,7 @@ class Trader:
             self._tracer.error(f"{symbol} Best result not good {predictor.best_result} or  trades {predictor.trades} less than  {self._min_trades}")
             return False
 
-        trade_df = self._tiingo.load_live_data_last_days(symbol, self._dataprocessor, trade_type)
+        trade_df = self._tiingo.load_trade_data(symbol, self._dataprocessor, trade_type)
 
         if len(trade_df) == 0:
             self._tracer.error(f"Could not load train data for {symbol}")
@@ -102,18 +107,22 @@ class Trader:
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            if self._ig.buy(epic, stop, limit, size, currency):
+            result, ref = self._ig.buy(epic, stop, limit, size, currency)
+            if result:
                 self._tracer.write(
                     f"Buy {symbol} with settings {predictor.get_config()}.")
+                self._cache.save_report(trade_df,f"{symbol}_{ref}.csv")
                 return True
         elif signal == BasePredictor.SELL:
             if openedPosition is not None and openedPosition.direction == "SELL":
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            if self._ig.sell(epic, stop, limit, size, currency):
+            result, ref =  self._ig.sell(epic, stop, limit, size, currency)
+            if result:
                 self._tracer.write(
                     f"Sell {symbol} with settings {predictor.get_config()} ")
+                self._cache.save_report(trade_df, f"{symbol}_{ref}.csv")
                 return True
 
         return False

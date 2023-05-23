@@ -47,14 +47,14 @@ class IG:
                     "size": 1,
                     "currency": "EUR"
                 },
-            #Gold
+            # Gold
             "CS.D.CFDGOLD.CFDGC.IP":
                 {
                     "symbol": "XAUUSD",
                     "size": 1,
                     "currency": "USD"
                 },
-            #Silber
+            # Silber
             "CS.D.CFDSILVER.CFM.IP":
                 {
                     "symbol": "XAGUSD",
@@ -90,7 +90,7 @@ class IG:
             markets = self._get_markets(1002200, tradeable)  # 668997 is only Bitcoin Cash
             return self._set_symbol(markets)
         elif trade_type == TradeType.METAL:
-            gold = self._get_markets(104139, tradeable) #Gold
+            gold = self._get_markets(104139, tradeable)  # Gold
             silver = self._get_markets(264211, tradeable)
             return self._set_symbol(gold + silver)
 
@@ -134,13 +134,16 @@ class IG:
             return m.groups()[0]
         return "USD"
 
-    def buy(self, epic: str, stop: int, limit: int, size: float = 1.0,currency:str = "USD"):
-        return self.open(epic, "BUY", stop, limit, size,currency)
+    def buy(self, epic: str, stop: int, limit: int, size: float = 1.0, currency: str = "USD"):
+        return self.open(epic, "BUY", stop, limit, size, currency)
 
-    def sell(self, epic: str, stop: int, limit: int, size: float = 1.0,currency:str = "USD"):
-        return self.open(epic, "SELL", stop, limit, size,currency)
+    def sell(self, epic: str, stop: int, limit: int, size: float = 1.0, currency: str = "USD"):
+        return self.open(epic, "SELL", stop, limit, size, currency)
 
-    def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25, size: float = 1.0, currency:str = "USD") -> bool:
+    def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25, size: float = 1.0,
+             currency: str = "USD") -> bool:
+        deal_reference = None
+        result = False
         try:
             response = self.ig_service.create_open_position(
                 currency_code=currency,
@@ -162,12 +165,14 @@ class IG:
             )
             if response["dealStatus"] != "ACCEPTED":
                 self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
-                return False
-            self._tracer.write(f"{direction} {epic} with limit {limit} and stop {stop}")
-            return True
+            else:
+                self._tracer.write(f"{direction} {epic} with limit {limit} and stop {stop}")
+                deal_reference = response["dealReference"]
+                result = True
         except IGException as ex:
             self._tracer.error(f"Error during open a position. {ex} for {epic}")
-            return False
+
+        return result, deal_reference
 
     def has_opened_positions(self):
         positions = self.ig_service.fetch_open_positions()
@@ -254,9 +259,9 @@ class IG:
         for ticker in hist['name'].unique():
 
             df_min = ti.load_data_by_date(ticker, start_time.strftime("%Y-%m-%d"),
-                                      None, DataProcessor(), "1min", False, False)
+                                          None, DataProcessor(), "1min", False, False)
             df_hour = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
-                                          None, DataProcessor())
+                                           None, DataProcessor())
             if len(df_min) == 0:
                 continue
 
@@ -279,7 +284,6 @@ class IG:
             shorts = short_winner.append(short_looser)
             longs = long_winner.append(long_looser)
 
-
             fig = go.Figure(data=[
                 go.Line(x=df_min['date'], y=df_min["close"],
                         line=dict(shape='linear', color='Gray')),
@@ -297,17 +301,17 @@ class IG:
                 row = shorts[i:i + 1]
                 pl = row.openLevel - row.closeLevel
 
-                #stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
+                # stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
                 #                     color="#ff0000")
-                #limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
+                # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
                 #                      color="#00ff00", label="Limit")
 
             for i in range(len(longs)):
                 row = longs[i:i + 1]
                 pl = row.closeLevel - row.openLevel
 
-                #plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl], color="#ff0000")
-                #plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl], color="#00ff00")
+                # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl], color="#ff0000")
+                # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl], color="#00ff00")
 
             # long open
             fig.add_scatter(x=long_winner["openDateUtc"],
@@ -326,7 +330,6 @@ class IG:
                                 symbol="triangle-up"
                             ),
                             )
-
 
             # short open
             fig.add_scatter(x=short_winner["openDateUtc"],
@@ -386,13 +389,12 @@ class IG:
 
             hours = self._get_hours(temp_hist[0:1])
 
+        # tempng = os.path.join(tempfile.gettempdir(), f"{ticker}.png")
 
-           # tempng = os.path.join(tempfile.gettempdir(), f"{ticker}.png")
-
-            #dp_service.upload(tempng,
-            #                  os.path.join(
-            #                      datetime.now().strftime("%Y_%m_%d"),
-            #                      f"{ticker}.png"))
+        # dp_service.upload(tempng,
+        #                  os.path.join(
+        #                      datetime.now().strftime("%Y_%m_%d"),
+        #                      f"{ticker}.png"))
 
     def report_summary(self, ti, dp_service, delta: timedelta = timedelta(hours=24), name: str = "lastday"):
         start_time = (datetime.now() - delta)
@@ -432,6 +434,6 @@ class IG:
         return
 
     def create_report(self, ti, dp_service):
-        #self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
-        #self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
+        # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
+        # self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
         self.report_last_day(ti, dp_service)
