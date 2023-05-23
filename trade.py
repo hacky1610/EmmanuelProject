@@ -1,30 +1,34 @@
-import time
-from Connectors.IG import IG
-from Data.data_processor import DataProcessor
+import dropbox
+from Connectors import IG, Tiingo, TradeType, DropBoxService, DropBoxCache
+from Predictors.sup_res_candle import SupResCandle
 from Tracing.LogglyTracer import LogglyTracer
-from Connectors.tiingo import Tiingo
-from BL import Trader, Analytics, ConfigReader
-from Predictors import *
+from BL import Analytics, ConfigReader, DataProcessor
+from BL.trader import Trader
+from Predictors.trainer import Trainer
 
 live_trade = False
 
 dataProcessor = DataProcessor()
 conf_reader = ConfigReader(live_config=live_trade)
-tracer = LogglyTracer(conf_reader.get("loggly_api_key"),"DEMO")
-tiingo = Tiingo(tracer=tracer,conf_reader=conf_reader)
-ig = IG(tracer=tracer,conf_reader=conf_reader,live=live_trade)
+tracer = LogglyTracer(conf_reader.get("loggly_api_key"), "DEMO")
+dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
+ds = DropBoxService(dbx, "DEMO")
+cache = DropBoxCache(ds)
+tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
+ig = IG(tracer=tracer, conf_reader=conf_reader, live=live_trade)
+analytics = Analytics(tracer)
+predictor = SupResCandle
 
 trader = Trader(
     ig=ig,
     tiingo=tiingo,
     tracer=tracer,
-    predictor=CCI_EMA({}),
+    predictor=predictor,
     dataprocessor=dataProcessor,
-    analytics=Analytics(tracer))
+    analytics=analytics,
+    trainer=Trainer(analytics),
+    cache=cache
+)
 
-while True:
-    markets = ig.get_markets()
-    for market in markets:
-        trader.trade(market["symbol"], market["epic"], market["spread"], market["scaling"])
-
-    time.sleep(60 * 60)
+trader.trade_markets(TradeType.FX)
+# trader.trade_markets(TradeType.METAL)

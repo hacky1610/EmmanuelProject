@@ -4,7 +4,7 @@ from BL.trader import Trader
 from BL import Analytics
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame, Series
-from Data.data_processor import DataProcessor
+from BL.data_processor import DataProcessor
 
 
 class TraderTest(unittest.TestCase):
@@ -12,11 +12,35 @@ class TraderTest(unittest.TestCase):
     def setUp(self):
         self._tracer = ConsoleTracer()
         self._dataProcessor = DataProcessor()
-        self._stock_data = DataFrame()
         self.analytics = Analytics(ConsoleTracer())
+        self._tiingo = MagicMock()
+        self._ig = MagicMock()
+        self._ig.buy = MagicMock(return_value=(True,"1"))
+        self._ig.sell = MagicMock(return_value=(True, "1"))
+        self._trainer = MagicMock()
+        self._predictor = MagicMock()
+        self._predictor.stop = 2
+        self._predictor.limit = 2
+        self._predictor.best_result = 1.0
+        self._predictor.trades = 100
+
+
+        self._stock_data = DataFrame()
         for i in range(20):
             self._stock_data = self._add_data(self._stock_data)
-        pass
+
+        self._tiingo.load_trade_data = MagicMock(return_value=self._stock_data)
+        self._trader = Trader(ig=self._ig,
+                   tiingo=self._tiingo,
+                   tracer=self._tracer,
+                   dataprocessor=self._dataProcessor,
+                   analytics=self.analytics,
+                   trainer=self._trainer,
+                   predictor=self._predictor,
+                              cache=MagicMock())
+        self._trader._get_spread = MagicMock(return_value=1)
+        Trader._get_good_markets = MagicMock(return_value=["myepic"])
+
 
     @staticmethod
     def _add_data(df: DataFrame):
@@ -27,44 +51,108 @@ class TraderTest(unittest.TestCase):
         ), ignore_index=True)
 
     def test_trade_no_datafrom_tiingo(self):
-        res = DataFrame()
-        tiingo = MagicMock()
-        tiingo.load_data_by_date = MagicMock(return_value=res)
-        ig = MagicMock()
-        trainer = MagicMock()
-        t = Trader(ig, tiingo, self._tracer, trainer, self._dataProcessor, self.analytics)
-        res = t.trade("myepic", "mysymbol", 1.0, 2)
+        self._tiingo.load_data_by_date = MagicMock(return_value=DataFrame())
+
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
         assert res == False
 
-    def test_trade_has_open_positions(self):
-        tiingo = MagicMock()
-        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
-        ig = MagicMock()
-        ig.has_opened_positions = MagicMock(return_value=True)
-        trainer = MagicMock()
-        t = Trader(ig, tiingo, self._tracer, trainer, self._dataProcessor, self.analytics)
-        res = t.trade("myepic", "mysymbol", 1.0, 2)
-        ig.buy.assert_not_called()
+    def test_trade_has_open_buy_positions(self):
+
+        position = MagicMock()
+        position.direction = "BUY"
+        self._ig.get_opened_positions_by_epic = MagicMock(return_value=position)
+        self._predictor.predict = MagicMock(return_value="buy")
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
+        self._ig.buy.assert_not_called()
+        self._ig.get_opened_positions_by_epic.assert_called()
+        assert res == False
+
+    def test_trade_has_open_sell_positions(self):
+        position = MagicMock()
+        position.direction = "SELL"
+        self._ig.get_opened_positions_by_epic = MagicMock(return_value=position)
+        self._predictor.predict = MagicMock(return_value="sell")
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
+        self._ig.sell.assert_not_called()
+        self._ig.get_opened_positions_by_epic.assert_called()
+        assert res == False
 
     def test_trade_do_buy(self):
-        tiingo = MagicMock()
-        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
-        ig = MagicMock()
-        ig.buy = MagicMock(return_value=True)
-        ig.has_opened_positions = MagicMock(return_value=False)
-        ig.get_spread = MagicMock(return_value=2)
-        predictor = MagicMock()
-        predictor.predict = MagicMock(return_value="buy")
-        t = Trader(ig, tiingo, self._tracer, predictor, self._dataProcessor, self.analytics)
-        res = t.trade("myepic", "mysymbol", 1.0, 2)
-        ig.buy.assert_called()
+        self._predictor.predict = MagicMock(return_value="buy")
+        self._trader._get_spread = MagicMock(return_value=1)
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
+        self._ig.buy.asser_called()
+        self._ig.get_opened_positions_by_epic.assert_called()
+        assert res == True
+
+    def test_trade_do_sell(self):
+        self._predictor.predict = MagicMock(return_value="sell")
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
+        self._ig.sell.asser_called()
+        self._ig.get_opened_positions_by_epic.assert_called()
+        assert res == True
 
     def test_trade_spread_to_big(self):
-        tiingo = MagicMock()
-        tiingo.load_data_by_date = MagicMock(return_value=self._stock_data)
-        ig = MagicMock()
-        predictor = MagicMock()
-        predictor.predict = MagicMock(return_value="buy")
-        t = Trader(ig, tiingo, self._tracer, predictor, self._dataProcessor, self.analytics)
-        res = t.trade("myepic", "mysymbol", 10.0, 2)
-        predictor.predict.assert_not_called()
+        self._predictor.predict = MagicMock(return_value="buy")
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=100.0,
+                                 scaling=10)
+        self._ig.buy.assert_not_called()
+        self._ig.sell.assert_not_called()
+        assert res == False
+
+    def test_symbol_not_good(self):
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
+        self._ig.buy.assert_not_called()
+        self._ig.sell.assert_not_called()
+        assert res == False
+
+    def test_trade_no_data(self):
+        self._tiingo.load_trade_data = MagicMock(return_value=DataFrame())
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
+        self._ig.buy.assert_not_called()
+        self._ig.sell.assert_not_called()
+        assert res == False
+
+    def test_trade_action_none(self):
+        self._predictor.predict = MagicMock(return_value="none")
+        self._trader._get_spread = MagicMock(return_value=1)
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
+        self._ig.buy.assert_not_called()
+        self._ig.sell.assert_not_called()
+        assert res == False
+

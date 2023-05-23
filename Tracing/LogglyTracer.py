@@ -7,10 +7,13 @@ class LogglyTracer(Tracer):
         self._log = LogglyConnection(token)
         self.type = type
     def write(self, message):
-        self._log.create_input(f"{self.type}: {message}")
+        self._log.create_input(f"[{self.type}] - INFO: : {message}")
+
+    def debug(self, message):
+        self._log.create_input(f"[{self.type}] - DEBUG: : {message}")
 
     def error(self, message):
-        self._log.create_input(f"{self.type}: Error: {message}")
+        self._log.create_input(f"[{self.type}] - ERROR: {message}")
 
     def result(self, message):
         print("Result: {}:".format(message))
