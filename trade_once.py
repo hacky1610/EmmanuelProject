@@ -1,11 +1,10 @@
 from Connectors.IG import IG
-from BL.data_processor import DataProcessor
 from Connectors.dropbox_cache import DropBoxCache
+from Predictors.sup_res_candle import SupResCandle
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.tiingo import Tiingo, TradeType
-from BL import Analytics, EnvReader
+from BL import Analytics, EnvReader, DataProcessor
 from BL.trader import Trader
-from Predictors.rsi_bb import RsiBB
 from Predictors.trainer import Trainer
 from datetime import datetime
 import dropbox
@@ -26,7 +25,7 @@ cache = DropBoxCache(ds)
 tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_)
 tiingo = Tiingo(tracer=tracer, conf_reader=env_reader, cache=cache)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
-predictor = RsiBB
+predictor = SupResCandle
 analytics = Analytics(tracer)
 
 trader = Trader(

@@ -92,7 +92,7 @@ class Trainer:
         best_predictor = None
         result_df = DataFrame()
 
-        sets = self._sr_trainer(version)
+        sets = self._stop_limt_trainer(version)
         random.shuffle(sets)
         for training_set in sets:
             predictor = SupResCandle()
