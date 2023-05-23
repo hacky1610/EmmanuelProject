@@ -15,6 +15,8 @@ class TraderTest(unittest.TestCase):
         self.analytics = Analytics(ConsoleTracer())
         self._tiingo = MagicMock()
         self._ig = MagicMock()
+        self._ig.buy = MagicMock(return_value=(True,"1"))
+        self._ig.sell = MagicMock(return_value=(True, "1"))
         self._trainer = MagicMock()
         self._predictor = MagicMock()
         self._predictor.stop = 2
