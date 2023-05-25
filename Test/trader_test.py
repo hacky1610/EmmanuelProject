@@ -156,3 +156,25 @@ class TraderTest(unittest.TestCase):
         self._ig.sell.assert_not_called()
         assert res == False
 
+    def test_trade_bad_result(self):
+        self._predictor.best_result = 0.1
+        self._predictor.trades = 100
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
+        self._ig.buy.assert_not_called()
+        self._tiingo.load_trade_data.assert_not_called()
+
+        self._predictor.best_result = 1.0
+        self._predictor.trades = 2
+        res = self._trader.trade(predictor=self._predictor,
+                                 epic="myepic",
+                                 symbol="mysymbol",
+                                 spread=1.0,
+                                 scaling=10)
+        self._ig.buy.assert_not_called()
+        self._tiingo.load_trade_data.assert_not_called()
+        assert res == False
+
