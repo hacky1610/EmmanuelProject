@@ -5,7 +5,7 @@ class DropBoxService:
 
     def __init__(self,dropbox_:dropbox,type:str,basepath:str="/Privat/EmmanuelProject"):
         self._dropbox = dropbox_
-        self._basepath = os.path.join(basepath,type)
+        self._basepath = f"{basepath}/{type}"
 
     def upload_file(self, source:str, destination):
         with open(source, "rb") as f:

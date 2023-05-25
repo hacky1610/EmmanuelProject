@@ -1,3 +1,4 @@
+from Connectors import DropBoxCache
 from Connectors.IG import IG
 from Connectors.tiingo import Tiingo
 from BL.utils import ConfigReader
@@ -8,7 +9,8 @@ from Connectors.dropboxservice import DropBoxService
 conf_reader = ConfigReader()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
-tiingo = Tiingo(conf_reader=conf_reader)
+cache = DropBoxCache(ds)
+tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
 
 ig.create_report(tiingo,ds)

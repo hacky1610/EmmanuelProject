@@ -3,6 +3,17 @@ import pandas as pd
 import io
 from pandas import DataFrame
 
+class BaseCache:
+
+    def load(self,name:str) -> DataFrame:
+        return DataFrame()
+
+    def save(self,data:DataFrame, name:str):
+        pass
+
+    def save_report(self,data:DataFrame, name:str):
+        pass
+
 class DropBoxCache:
 
     def __init__(self,dropbox_servie:DropBoxService):
