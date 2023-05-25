@@ -94,10 +94,11 @@ class SupResCandle(BasePredictor):
             self._tracer.debug(f"No saved settings of {symbol}")
         return self
 
-    def _get_levels(self, df):
+    def get_levels(self, df):
+        look_back = df[self.look_back_days * 24 * -1:]
         zl = ZigZagClusterLevels(peak_percent_delta=self.zig_zag_percent, merge_distance=None,
                                  merge_percent=self.merge_percent, min_bars_between_peaks=self.min_bars_between_peaks, peaks='Low')
-        zl.fit(df)
+        zl.fit(look_back)
 
         levels = []
         if zl.levels != None:
@@ -117,7 +118,7 @@ class SupResCandle(BasePredictor):
         if len(df) < 150:
             return BasePredictor.NONE
 
-        levels = self._get_levels(df[self.look_back_days * 24 * -1:])
+        levels = self.get_levels(df)
 
         if len(levels) == 0:
             return BasePredictor.NONE

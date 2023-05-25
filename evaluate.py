@@ -20,16 +20,22 @@ trade_type = TradeType.FX
 
 viewer = BaseViewer()
 viewer = PlotlyViewer()
+only_one_position = False
 
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
-    symbol = "AUDSGD"
+    symbol = "EURSGD"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
     if len(df) > 0:
         predictor = SupResCandle(viewer=viewer)
         predictor.load(symbol)
-        reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(predictor=predictor, df_train=df,df_eval= df_eval, viewer=viewer, symbol=symbol)
+        reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(predictor=predictor,
+                                                                                           df_train=df,
+                                                                                           df_eval=df_eval,
+                                                                                           viewer=viewer,
+                                                                                           symbol=symbol,
+                                                                                           only_one_position=only_one_position)
         predictor.best_result = win_loss
         predictor.best_reward = reward
         predictor.trades = trades

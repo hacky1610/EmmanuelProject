@@ -11,7 +11,12 @@ class Analytics:
     def __init__(self, tracer: Tracer = ConsoleTracer()):
         self._tracer = tracer
 
-    def evaluate(self, predictor, df_train: DataFrame, df_eval: DataFrame, symbol:str = "", viewer: BaseViewer = BaseViewer()):
+    def evaluate(self, predictor,
+                 df_train: DataFrame,
+                 df_eval: DataFrame,
+                 symbol:str = "",
+                 viewer: BaseViewer = BaseViewer(),
+                 only_one_position:bool = True):
         reward = 0
         losses = 0
         wins = 0
@@ -28,17 +33,9 @@ class Analytics:
             #df_train.date[i] == '2023-05-04T02:00:00.000Z'
             open_price = df_train.open[i + 1]
 
-            #if i % 10 != 0:
-            #    continue
-
-            #if i > 3:
-            #    c = MultiCandle(df_train[:i])
-            #    t = c.get_type()
-            #   if t != MultiCandleType.Unknown:
-            #        viewer.print_text(df_train.date[i - 1], open_price, t)
-
-            if df_train.date[i] < last_exit:
+            if only_one_position and df_train.date[i] < last_exit:
                 continue
+
             action = predictor.predict(df_train[:i + 1])
             if action == predictor.NONE:
                 continue
@@ -46,13 +43,10 @@ class Analytics:
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
 
-
-
             if action == predictor.BUY:
                 open_price = open_price + spread
 
                 viewer.print_buy(df_train.date[i + 1], open_price)
-
 
                 for j in range(len(future)):
                     trading_minutes += 5

@@ -2,6 +2,7 @@ import os.path
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from BL import DataProcessor, timedelta, BaseReader
+from Predictors.sup_res_candle import SupResCandle
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
@@ -234,9 +235,155 @@ class IG:
 
         return hist
 
+    def report_symbol(self,ti,ticker,start_time_hours,start_time_str,hist ):
+        predictor = SupResCandle()
+        predictor.load(ticker)
+
+        df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
+                                       None, DataProcessor())
+
+        df_hour = df_history[df_history["date"] > start_time_str]
+
+        temp_hist = hist[hist['name'] == ticker]
+
+        winner = temp_hist[temp_hist["profitAndLoss"] >= 0]
+        looser = temp_hist[temp_hist["profitAndLoss"] < 0]
+
+        long_winner = winner[winner["closeLevel"] >= winner["openLevel"]]
+        short_winner = winner[winner["closeLevel"] <= winner["openLevel"]]
+
+        long_looser = looser[looser["closeLevel"] < looser["openLevel"]]
+        short_looser = looser[looser["closeLevel"] > looser["openLevel"]]
+
+        shorts = short_winner.append(short_looser)
+        longs = long_winner.append(long_looser)
+
+        fig = go.Figure(data=[
+            go.Candlestick(x=df_hour['date'],
+                           open=df_hour['open'],
+                           high=df_hour['high'],
+                           low=df_hour['low'],
+                           close=df_hour['close']),
+        ])
+        for i in range(len(shorts)):
+            row = shorts[i:i + 1]
+            pl = row.openLevel - row.closeLevel
+
+            # stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
+            #                     color="#ff0000")
+            # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
+            #                      color="#00ff00", label="Limit")
+
+        for i in range(len(longs)):
+            row = longs[i:i + 1]
+            pl = row.closeLevel - row.openLevel
+
+            # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl], color="#ff0000")
+            # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl], color="#00ff00")
+
+        # long open
+        fig.add_scatter(x=long_winner["openDateUtc"],
+                        y=long_winner["openLevel"],
+                        marker=dict(
+                            color='Blue',
+                            size=10,
+                            symbol="triangle-up"
+                        ),
+                        )
+        fig.add_scatter(x=long_looser["openDateUtc"],
+                        y=long_looser["openLevel"],
+                        marker=dict(
+                            color='Blue',
+                            size=10,
+                            symbol="triangle-up"
+                        ),
+                        )
+
+        for r in long_winner.iterrows():
+            df_temp = df_history[df_history.date < pd.to_datetime(r[1].openDateUtc).strftime("%Y-%m-%dT%H:%M:%S")]
+            level_sections = predictor.get_levels(df_temp)
+            for area in level_sections:
+                fig.add_scatter(x=[df_temp[-7:-6].date.values[0], df_temp[-1:].date.values[0], df_temp[-1:].date.values[0], df_temp[-7:-6].date.values[0]],
+                                     y=[area.lower, area.lower, area.upper, area.upper],
+                                     fill="toself",
+                                     fillcolor="Black",
+                                     mode='text',
+                                     opacity=0.3,
+                                     showlegend=False)
+        for r in long_looser.iterrows():
+            df_temp = df_history[df_history.date < pd.to_datetime(r[1].openDateUtc).strftime("%Y-%m-%dT%H:%M:%S")]
+            level_sections = predictor.get_levels(df_temp)
+            for area in level_sections:
+                fig.add_scatter(
+                    x=[df_temp[-7:-6].date.values[0], df_temp[-1:].date.values[0], df_temp[-1:].date.values[0],
+                       df_temp[-7:-6].date.values[0]],
+                    y=[area.lower, area.lower, area.upper, area.upper],
+                    fill="toself",
+                    fillcolor="Black",
+                    mode='text',
+                    opacity=0.3,
+                    showlegend=False)
+
+
+        # short open
+        fig.add_scatter(x=short_winner["openDateUtc"],
+                        y=short_winner["openLevel"],
+                        marker=dict(
+                            color='Blue',
+                            size=10,
+                            symbol="triangle-down"
+                        ),
+                        )
+        fig.add_scatter(x=short_looser["openDateUtc"],
+                        y=short_looser["openLevel"],
+                        marker=dict(
+                            color='Blue',
+                            size=10,
+                            symbol="triangle-down"
+                        ),
+                        )
+
+        # long close
+        fig.add_scatter(x=long_winner["dateUtc"],
+                        y=long_winner["closeLevel"],
+                        marker=dict(
+                            color='Green',
+                            size=10
+                        ),
+                        )
+        fig.add_scatter(x=long_looser["dateUtc"],
+                        y=long_looser["closeLevel"],
+                        marker=dict(
+                            color='Red',
+                            size=10
+                        ),
+                        )
+
+        # short close
+        fig.add_scatter(x=short_winner["dateUtc"],
+                        y=short_winner["closeLevel"],
+                        marker=dict(
+                            color='Green',
+                            size=10
+                        ),
+                        )
+        fig.add_scatter(x=short_looser["dateUtc"],
+                        y=short_looser["closeLevel"],
+                        marker=dict(
+                            color='Red',
+                            size=10
+                        ),
+                        )
+
+        fig.update_layout(
+            title=ticker,
+            legend_title="Legend Title",
+        )
+        fig.show()
+
     def report_last_day(self, ti, dp_service):
         start_time = (datetime.now() - timedelta(hours=60))
-        start_time_hours = (datetime.now() - timedelta(hours=200))
+        start_time_hours = (datetime.now() - timedelta(days=30))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
 
         hist = self.get_transaction_history(start_time)
@@ -247,7 +394,6 @@ class IG:
         hist.sort_index(inplace=True)
         hist.reset_index(inplace=True)
 
-        # hist['profitAndLoss'] = hist['profitAndLoss'].str.replace('E', '', regex=True).astype('float64')
         hist["openDateUtc"] = pd.to_datetime(hist["openDateUtc"])
         hist["dateUtc"] = pd.to_datetime(hist["dateUtc"])
         hist["openLevel"] = hist["openLevel"].astype("float")
@@ -256,144 +402,15 @@ class IG:
         hist = self.fix_hist(hist)
 
         for ticker in hist['name'].unique():
+            self.report_symbol(ti=ti,
+                               ticker=ticker,
+                               start_time_hours=start_time_hours,
+                               start_time_str=start_time_str,
+                               hist=hist)
 
-            df_min = ti.load_data_by_date(ticker, start_time.strftime("%Y-%m-%d"),
-                                          None, DataProcessor(), "1min", False, False)
-            df_hour = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
-                                           None, DataProcessor())
-            if len(df_min) == 0:
-                continue
 
-            df_min = df_min[df_min["date"] > start_time_str]
-            df_hour = df_hour[df_hour["date"] > start_time_str]
 
-            temp_hist = hist[hist['name'] == ticker]
 
-            df_min = df_min.filter(["close", "date"])
-
-            winner = temp_hist[temp_hist["profitAndLoss"] >= 0]
-            looser = temp_hist[temp_hist["profitAndLoss"] < 0]
-
-            long_winner = winner[winner["closeLevel"] >= winner["openLevel"]]
-            short_winner = winner[winner["closeLevel"] <= winner["openLevel"]]
-
-            long_looser = looser[looser["closeLevel"] < looser["openLevel"]]
-            short_looser = looser[looser["closeLevel"] > looser["openLevel"]]
-
-            shorts = short_winner.append(short_looser)
-            longs = long_winner.append(long_looser)
-
-            fig = go.Figure(data=[
-                go.Line(x=df_min['date'], y=df_min["close"],
-                        line=dict(shape='linear', color='Gray')),
-                go.Line(x=df_hour['date'], y=df_hour["BB_LOWER"],
-                        line=dict(shape='linear', color='Orange')),
-                go.Line(x=df_hour['date'], y=df_hour["BB_UPPER"],
-                        line=dict(shape='linear', color='Orange')),
-                go.Candlestick(x=df_hour['date'],
-                               open=df_hour['open'],
-                               high=df_hour['high'],
-                               low=df_hour['low'],
-                               close=df_hour['close']),
-            ])
-            for i in range(len(shorts)):
-                row = shorts[i:i + 1]
-                pl = row.openLevel - row.closeLevel
-
-                # stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
-                #                     color="#ff0000")
-                # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
-                #                      color="#00ff00", label="Limit")
-
-            for i in range(len(longs)):
-                row = longs[i:i + 1]
-                pl = row.closeLevel - row.openLevel
-
-                # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl], color="#ff0000")
-                # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl], color="#00ff00")
-
-            # long open
-            fig.add_scatter(x=long_winner["openDateUtc"],
-                            y=long_winner["openLevel"],
-                            marker=dict(
-                                color='Blue',
-                                size=10,
-                                symbol="triangle-up"
-                            ),
-                            )
-            fig.add_scatter(x=long_looser["openDateUtc"],
-                            y=long_looser["openLevel"],
-                            marker=dict(
-                                color='Blue',
-                                size=10,
-                                symbol="triangle-up"
-                            ),
-                            )
-
-            # short open
-            fig.add_scatter(x=short_winner["openDateUtc"],
-                            y=short_winner["openLevel"],
-                            marker=dict(
-                                color='Blue',
-                                size=10,
-                                symbol="triangle-down"
-                            ),
-                            )
-            fig.add_scatter(x=short_looser["openDateUtc"],
-                            y=short_looser["openLevel"],
-                            marker=dict(
-                                color='Blue',
-                                size=10,
-                                symbol="triangle-down"
-                            ),
-                            )
-
-            # long close
-            fig.add_scatter(x=long_winner["dateUtc"],
-                            y=long_winner["closeLevel"],
-                            marker=dict(
-                                color='Green',
-                                size=10
-                            ),
-                            )
-            fig.add_scatter(x=long_looser["dateUtc"],
-                            y=long_looser["closeLevel"],
-                            marker=dict(
-                                color='Red',
-                                size=10
-                            ),
-                            )
-
-            # short close
-            fig.add_scatter(x=short_winner["dateUtc"],
-                            y=short_winner["closeLevel"],
-                            marker=dict(
-                                color='Green',
-                                size=10
-                            ),
-                            )
-            fig.add_scatter(x=short_looser["dateUtc"],
-                            y=short_looser["closeLevel"],
-                            marker=dict(
-                                color='Red',
-                                size=10
-                            ),
-                            )
-
-            fig.update_layout(
-                title=ticker,
-                legend_title="Legend Title",
-            )
-            fig.show()
-
-            hours = self._get_hours(temp_hist[0:1])
-
-        # tempng = os.path.join(tempfile.gettempdir(), f"{ticker}.png")
-
-        # dp_service.upload(tempng,
-        #                  os.path.join(
-        #                      datetime.now().strftime("%Y_%m_%d"),
-        #                      f"{ticker}.png"))
 
     def report_summary(self, ti, dp_service, delta: timedelta = timedelta(hours=24), name: str = "lastday"):
         start_time = (datetime.now() - delta)
