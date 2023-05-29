@@ -1,3 +1,4 @@
 FROM python:3.7.16
 COPY ./requirements.txt /emmanuel/requirements.txt
+RUN pip install Cython
 RUN pip install -r /emmanuel/requirements.txt
