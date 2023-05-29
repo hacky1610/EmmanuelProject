@@ -35,7 +35,6 @@ class TraderTest(unittest.TestCase):
                    tracer=self._tracer,
                    dataprocessor=self._dataProcessor,
                    analytics=self.analytics,
-                   trainer=self._trainer,
                    predictor=self._predictor,
                               cache=MagicMock())
         self._trader._get_spread = MagicMock(return_value=1)

@@ -2,7 +2,6 @@ from Predictors.sup_res_candle import SupResCandle
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors import Tiingo, TradeType,DropBoxCache,IG, DropBoxService
 from BL import Analytics, EnvReader, DataProcessor, Trader
-from Predictors.trainer import Trainer
 from datetime import datetime
 import dropbox
 
@@ -31,7 +30,6 @@ trader = Trader(
     predictor=predictor,
     dataprocessor=dataProcessor,
     analytics=analytics,
-    trainer=Trainer(analytics),
     cache=cache)
 
 tracer.debug(f"Start trading")
@@ -42,4 +40,4 @@ if datetime.now().hour == 18:
     tracer.debug("Create report")
     dbx = dropbox.Dropbox(env_reader.get("dropbox"))
     ds = DropBoxService(dbx, type_)
-    ig.create_report(tiingo, ds)
+    ig.create_report(tiingo, ds,predictor=predictor())

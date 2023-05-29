@@ -4,7 +4,6 @@ from Predictors.sup_res_candle import SupResCandle
 from Tracing.LogglyTracer import LogglyTracer
 from BL import Analytics, ConfigReader, DataProcessor
 from BL.trader import Trader
-from Predictors.trainer import Trainer
 
 live_trade = False
 
@@ -26,7 +25,6 @@ trader = Trader(
     predictor=predictor,
     dataprocessor=dataProcessor,
     analytics=analytics,
-    trainer=Trainer(analytics),
     cache=cache
 )
 

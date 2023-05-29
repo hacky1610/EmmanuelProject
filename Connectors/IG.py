@@ -2,7 +2,6 @@ import os.path
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from BL import DataProcessor, timedelta, BaseReader
-from Predictors.sup_res_candle import SupResCandle
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
@@ -235,8 +234,7 @@ class IG:
 
         return hist
 
-    def report_symbol(self,ti,ticker,start_time_hours,start_time_str,hist ):
-        predictor = SupResCandle()
+    def report_symbol(self,ti,ticker,start_time_hours,start_time_str,hist, predictor):
         predictor.load(ticker)
 
         df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
@@ -381,7 +379,7 @@ class IG:
         )
         fig.show()
 
-    def report_last_day(self, ti, dp_service):
+    def report_last_day(self, ti, predictor):
         start_time = (datetime.now() - timedelta(hours=60))
         start_time_hours = (datetime.now() - timedelta(days=30))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -406,7 +404,8 @@ class IG:
                                ticker=ticker,
                                start_time_hours=start_time_hours,
                                start_time_str=start_time_str,
-                               hist=hist)
+                               hist=hist,
+                               predictor=predictor)
 
 
 
@@ -449,7 +448,7 @@ class IG:
 
         return
 
-    def create_report(self, ti, dp_service):
+    def create_report(self, ti, dp_service,predictor):
         # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
         # self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
-        self.report_last_day(ti, dp_service)
+        self.report_last_day(ti, predictor)

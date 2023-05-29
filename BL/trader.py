@@ -6,7 +6,6 @@ from Connectors import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import TradeType
 from Tracing import Tracer
-from Predictors.trainer import Trainer
 from pandas import DataFrame
 from Predictors.base_predictor import BasePredictor
 
@@ -14,14 +13,13 @@ from Predictors.base_predictor import BasePredictor
 class Trader:
 
     def __init__(self, ig: IG, tiingo, tracer: Tracer, predictor: BasePredictor, dataprocessor: DataProcessor,
-                 analytics: Analytics, trainer: Trainer, cache:DropBoxCache):
+                 analytics: Analytics, cache:DropBoxCache):
         self._ig = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
         self._tracer = tracer
         self._predictorClass = predictor
         self._analytics = analytics
-        self._trainer = trainer
         self._min_win_loss = 0.7
         self._min_trades = 3
         self._cache = cache
