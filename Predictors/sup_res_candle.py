@@ -1,3 +1,4 @@
+import itertools
 import os.path
 import json
 
@@ -174,3 +175,40 @@ class SupResCandle(BasePredictor):
                     return self.SELL
 
         return self.NONE
+
+    @staticmethod
+    def _sr_trainer(version: str):
+
+        json_objs = []
+        for zig_zag_percent, merge_percent, min_bars_between_peaks in itertools.product([.3, .4, .5, .7, .9],
+                                                                                        [0.05, 0.1, .2, .3],
+                                                                                        [17, 23, 27]):
+            json_objs.append({
+                "zig_zag_percent": zig_zag_percent,
+                "merge_percent": merge_percent,
+                "min_bars_between_peaks": min_bars_between_peaks,
+                "version": version
+            })
+        return json_objs
+
+    @staticmethod
+    def _sr_trainer2(version: str):
+
+        json_objs = []
+        for look_back_days, level_section_size in itertools.product([13, 17, 21, 24], [0.7, 1.0, 1.3, 1.7]):
+            json_objs.append({
+                "look_back_days": look_back_days,
+                "level_section_size": level_section_size,
+                "version": version
+            })
+        return json_objs
+
+    @staticmethod
+    def get_training_sets(version:str):
+
+        sr1 = SupResCandle._sr_trainer(version)
+        sr2 = SupResCandle._sr_trainer2(version)
+        sl = BasePredictor._stop_limit_trainer(version)
+
+        return sr1 + sr2 + sl
+

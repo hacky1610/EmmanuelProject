@@ -1,3 +1,4 @@
+import itertools
 import os
 from pandas import DataFrame
 from BL.utils import get_project_dir
@@ -216,5 +217,23 @@ class BasePredictor:
 
     def save_last_state(self,text):
         self.lastState = text
+
+    @staticmethod
+    def _stop_limit_trainer(version: str):
+
+        json_objs = []
+        for stop, limit in itertools.product(
+                [1.8, 2.0, 2.3, 2.7, 3.],
+                [1.8, 2.0, 2.3, 2.7, 3.]):
+            json_objs.append({
+                "stop": stop,
+                "limit": limit,
+                "version": version
+            })
+        return json_objs
+
+    @staticmethod
+    def get_training_sets(version:str):
+        return []
 
 

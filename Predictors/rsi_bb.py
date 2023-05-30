@@ -1,3 +1,4 @@
+import itertools
 import os.path
 import json
 from Predictors.base_predictor import BasePredictor
@@ -137,3 +138,50 @@ class RsiBB(BasePredictor):
                                )
 
         return self.NONE
+
+    def _rsi_trainer(self, version: str):
+
+        json_objs = []
+        for rsi_upper, rsi_lower, trend in itertools.product(list(range(55, 80, 3)), list(range(20, 45, 3)),
+                                                             [None, .005, .01, .03, .05]):
+            json_objs.append({
+                "rsi_upper_limit": rsi_upper,
+                "rsi_lowe_limit": rsi_lower,
+                "rsi_trend": trend,
+                "version": version
+            })
+        return json_objs
+
+    def _BB_trainer(self, version: str):
+
+        json_objs = []
+        for p1, p2, peaks in itertools.product(
+                list(range(1, 5)),
+                list(range(1, 5)),
+                list(range(0, 4))):
+            json_objs.append({
+                "period_1": p1,
+                "period_2": p2,
+                "peak_count": peaks,
+                "version": version
+            })
+        return json_objs
+
+    def _BB_change_trainer(self, version: str):
+
+        json_objs = []
+        for change in [None, 0.1, 0.3, .5, .7, 1.0]:
+            json_objs.append({
+                "bb_change": change,
+                "version": version
+            })
+        return json_objs
+
+    def get_training_sets(self, version: str):
+
+        bb1 = self._BB_trainer(version)
+        bb2 = self._BB_change_trainer(version)
+        sl = self._stop_limit_trainer(version)
+
+        return bb1 + bb2 + sl
+
