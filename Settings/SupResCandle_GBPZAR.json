@@ -1,1 +1,1 @@
-{"Type":"RSI_BB","stop":3.0,"limit":2.3,"period_1":2,"period_2":3,"zig_zag_percent":0.4,"merge_percent":0.3,"min_bars_between_peaks":27,"look_back_days":13,"level_section_size":0.7,"version":"V1.97","best_result":0.8,"best_reward":0.4167560684,"trades":10,"frequence":0.0204498978}
+{"Type":"RSI_BB","stop":3.0,"limit":2.3,"period_1":2,"period_2":3,"zig_zag_percent":0.4,"merge_percent":0.3,"min_bars_between_peaks":27,"look_back_days":13,"level_section_size":0.7,"version":"V1.97","best_result":0.9,"best_reward":0.5932570579,"trades":10,"frequence":0.0201612903}

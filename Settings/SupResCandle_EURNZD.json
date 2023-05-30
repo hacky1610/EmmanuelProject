@@ -1,0 +1,1 @@
+{"Type":"RSI_BB","stop":3.0,"limit":2.0,"period_1":2,"period_2":3,"zig_zag_percent":0.5,"merge_percent":0.1,"min_bars_between_peaks":20,"look_back_days":20,"level_section_size":1.0,"version":"V1.0","best_result":0.5,"best_reward":-0.0024197895,"trades":4,"frequence":0.0080645161}

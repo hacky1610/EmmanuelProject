@@ -20,8 +20,8 @@ class Trader:
         self._tracer = tracer
         self._predictorClass = predictor
         self._analytics = analytics
-        self._min_win_loss = 0.7
-        self._min_trades = 3
+        self._min_win_loss = 0.65
+        self._min_trades = 4
         self._cache = cache
 
     def get_stop_limit(self, df, scaling: int, stop_factor: float = 2.5, limit_factor: float = 2.5):

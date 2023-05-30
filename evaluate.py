@@ -19,12 +19,11 @@ analytics = Analytics()
 trade_type = TradeType.FX
 
 viewer = BaseViewer()
-viewer = PlotlyViewer()
+#viewer = PlotlyViewer()
 only_one_position = True
 
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
-    symbol = "EURAUD"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
     if len(df) > 0:
