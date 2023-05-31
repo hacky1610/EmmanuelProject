@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-
+from datetime import datetime
 from BL import get_project_dir, Analytics, DataProcessor
 from Connectors import IG
 from Connectors.dropbox_cache import DropBoxCache
@@ -13,7 +13,7 @@ from Predictors.base_predictor import BasePredictor
 class Trader:
 
     def __init__(self, ig: IG, tiingo, tracer: Tracer, predictor: BasePredictor, dataprocessor: DataProcessor,
-                 analytics: Analytics, cache:DropBoxCache):
+                 analytics: Analytics, cache: DropBoxCache):
         self._ig = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
@@ -62,8 +62,18 @@ class Trader:
                 size=market["size"],
                 currency=market["currency"])
 
-    def _report(self,df:DataFrame, symbol:str, reference:str ):
+    def _report(self, df: DataFrame, symbol: str, reference: str):
         pass
+
+    def _is_good(self, win_loss: float, trades: float, symbol: str):
+        if win_loss < self._min_win_loss or trades <= self._min_trades:
+            self._tracer.error(
+                f"{symbol} Best result not good {win_loss} or  trades {trades} less than  {self._min_trades}")
+            return False
+        return True
+
+    def _evalutaion_up_to_date(self,last_scan_time):
+        return (datetime.utcnow() - last_scan_time).days < 3
 
     def trade(self, predictor: BasePredictor,
               symbol: str,
@@ -74,11 +84,19 @@ class Trader:
               size: float = 1.0,
               currency: str = "USD"):
 
-        if predictor.best_result < self._min_win_loss or predictor.trades <= self._min_trades:
-            self._tracer.error(f"{symbol} Best result not good {predictor.best_result} or  trades {predictor.trades} less than  {self._min_trades}")
-            return False
-
-        trade_df = self._tiingo.load_trade_data(symbol, self._dataprocessor, trade_type)
+        if self._evalutaion_up_to_date(predictor.get_last_scan_time()):
+            if not self._is_good(predictor.best_result, predictor.trades, symbol):
+                return False
+            trade_df = self._tiingo.load_trade_data(symbol, self._dataprocessor, trade_type)
+        else:
+            self._tracer.error(
+                f"{symbol} Last evaluation to old")
+            trade_df, df_eval = self._tiingo.load_train_data(symbol, self._dataprocessor, trade_type)
+            _, _, _, win_loss, _, trades = self._analytics.evaluate(predictor,
+                                                                    trade_df, df_eval,
+                                                                    symbol)
+            if not self._is_good(win_loss, trades, symbol):
+                return False
 
         if len(trade_df) == 0:
             self._tracer.error(f"Could not load train data for {symbol}")
@@ -107,14 +125,14 @@ class Trader:
             if result:
                 self._tracer.write(
                     f"Buy {symbol} with settings {predictor.get_config()}.")
-                self._cache.save_report(trade_df,f"{symbol}_{ref}.csv")
+                self._cache.save_report(trade_df, f"{symbol}_{ref}.csv")
                 return True
         elif signal == BasePredictor.SELL:
             if openedPosition is not None and openedPosition.direction == "SELL":
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            result, ref =  self._ig.sell(epic, stop, limit, size, currency)
+            result, ref = self._ig.sell(epic, stop, limit, size, currency)
             if result:
                 self._tracer.write(
                     f"Sell {symbol} with settings {predictor.get_config()} ")

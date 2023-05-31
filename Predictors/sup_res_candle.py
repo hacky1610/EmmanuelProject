@@ -1,4 +1,3 @@
-import itertools
 import os.path
 import json
 
@@ -10,6 +9,7 @@ from Tracing.ConsoleTracer import ConsoleTracer
 from BL.candle import MultiCandle, MultiCandleType, Candle, CandleType, Direction
 from UI.base_viewer import BaseViewer
 import numpy as np
+from datetime import  datetime
 
 
 class LevelSection:
@@ -48,7 +48,7 @@ class SupResCandle(BasePredictor):
         super().setup(config)
 
     def get_config(self) -> Series:
-        return Series(["RSI_BB",
+        return Series(["SupResCandle",
                        self.stop,
                        self.limit,
                        self.period_1,
@@ -62,7 +62,8 @@ class SupResCandle(BasePredictor):
                        self.best_result,
                        self.best_reward,
                        self.trades,
-                       self.frequence
+                       self.frequence,
+                       self.last_scan
                        ],
                       index=["Type",
                              "stop",
@@ -78,9 +79,11 @@ class SupResCandle(BasePredictor):
                              "best_result",
                              "best_reward",
                              "trades",
-                             "frequence"])
+                             "frequence",
+                             "last_scan"])
 
     def save(self, symbol: str):
+        self.last_scan = datetime.utcnow().isoformat()
         self.get_config().to_json(self._get_save_path(self.__class__.__name__, symbol))
 
     def saved(self, symbol):

@@ -3,6 +3,7 @@ from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, Base
 from Predictors.sup_res_candle import SupResCandle
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
+from datetime import datetime
 
 import dropbox
 
@@ -19,7 +20,7 @@ analytics = Analytics()
 trade_type = TradeType.FX
 
 viewer = BaseViewer()
-viewer = PlotlyViewer()
+#viewer = PlotlyViewer()
 only_one_position = True
 
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):

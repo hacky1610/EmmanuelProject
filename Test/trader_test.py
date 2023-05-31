@@ -38,6 +38,7 @@ class TraderTest(unittest.TestCase):
                    predictor=self._predictor,
                               cache=MagicMock())
         self._trader._get_spread = MagicMock(return_value=1)
+        self._trader._evalutaion_up_to_date = MagicMock(return_value=True)
         Trader._get_good_markets = MagicMock(return_value=["myepic"])
 
 
