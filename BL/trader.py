@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import pandas as pd
 
@@ -76,11 +77,20 @@ class Trader:
               size: float = 1.0,
               currency: str = "USD"):
 
-        if predictor.best_result < self._min_win_loss and predictor.trades >= self._min_trades:
-            self._tracer.error(f"{symbol} Best result not good {predictor.best_result} or  trades {predictor.trades} less than  {self._min_trades}")
-            return False
-
-        trade_df = self._tiingo.load_trade_data(symbol, self._dataprocessor, trade_type)
+        if (datetime.utcnow() - predictor.get_last_scan_time()).days >= 3:
+            self._tracer.error(
+                f"{symbol} Last evaluation to old")
+            trade_df, df_eval = self._tiingo.load_train_data(symbol, self._dataprocessor, trade_type)
+            reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = self._analytics.evaluate(predictor,trade_df,df_eval,symbol)
+            if win_loss < self._min_win_loss and trades >= self._min_trades:
+                self._tracer.error(
+                    f"{symbol} Best result not good {predictor.best_result} or  trades {predictor.trades} less than  {self._min_trades}")
+                return False
+        else:
+            if predictor.best_result < self._min_win_loss and predictor.trades >= self._min_trades:
+                self._tracer.error(f"{symbol} Best result not good {predictor.best_result} or  trades {predictor.trades} less than  {self._min_trades}")
+                return False
+            trade_df = self._tiingo.load_trade_data(symbol, self._dataprocessor, trade_type)
 
         if len(trade_df) == 0:
             self._tracer.error(f"Could not load train data for {symbol}")

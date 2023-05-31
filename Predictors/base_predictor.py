@@ -4,6 +4,7 @@ from BL.utils import get_project_dir
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import numpy as np
+from datetime import datetime
 
 
 class BasePredictor:
@@ -14,6 +15,7 @@ class BasePredictor:
     stop = 3.0
     METRIC = "reward"
     version = "V1.0"
+    last_scan = datetime(1970,1,1).isoformat()
     best_result = 0.0
     best_reward = 0.0
     frequence = 0.0
@@ -35,9 +37,13 @@ class BasePredictor:
         self.best_reward = config.get("best_reward", self.best_reward)
         self.trades = config.get("trades", self.trades)
         self.frequence = config.get("frequence", self.frequence)
+        self.last_scan = config.get("last_scan", self.last_scan)
 
     def predict(self, df: DataFrame) -> str:
         raise NotImplementedError
+
+    def get_last_scan_time(self):
+        return datetime.fromisoformat(self.last_scan)
 
     def get_stop_limit(self, df):
         mean_diff = abs(df[-96:].close - df[-96:].close.shift(-1)).mean()
