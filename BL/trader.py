@@ -48,19 +48,23 @@ class Trader:
     def trade_markets(self, trade_type: TradeType):
         currency_markets = self._ig.get_markets(trade_type)
         for market in currency_markets:
-            symbol = market["symbol"]
-            self._tracer.debug(f"Try to trade {symbol}")
-            predictor = self._predictorClass(tracer=self._tracer)
-            predictor.load(symbol)
-            self.trade(
-                predictor=predictor,
-                symbol=symbol,
-                epic=market["epic"],
-                spread=market["spread"],
-                scaling=market["scaling"],
-                trade_type=trade_type,
-                size=market["size"],
-                currency=market["currency"])
+            try:
+                symbol = market["symbol"]
+                self._tracer.debug(f"Try to trade {symbol}")
+                predictor = self._predictorClass(tracer=self._tracer)
+                predictor.load(symbol)
+                self.trade(
+                    predictor=predictor,
+                    symbol=symbol,
+                    epic=market["epic"],
+                    spread=market["spread"],
+                    scaling=market["scaling"],
+                    trade_type=trade_type,
+                    size=market["size"],
+                    currency=market["currency"])
+            except Exception as EX:
+                self._tracer.error(f"Error while trading {symbol} {EX}")
+
 
     def _report(self, df: DataFrame, symbol: str, reference: str):
         pass
@@ -84,7 +88,7 @@ class Trader:
               size: float = 1.0,
               currency: str = "USD"):
 
-        if self._evalutaion_up_to_date(predictor.get_last_scan_time()):
+        if not self._evalutaion_up_to_date(predictor.get_last_scan_time()):
             if not self._is_good(predictor.best_result, predictor.trades, symbol):
                 return False
             trade_df = self._tiingo.load_trade_data(symbol, self._dataprocessor, trade_type)
@@ -92,6 +96,10 @@ class Trader:
             self._tracer.error(
                 f"{symbol} Last evaluation to old")
             trade_df, df_eval = self._tiingo.load_train_data(symbol, self._dataprocessor, trade_type)
+            if len(trade_df) == 0:
+                self._tracer.error(f"Could not load train data for {symbol}")
+                return False
+
             _, _, _, win_loss, _, trades = self._analytics.evaluate(predictor,
                                                                     trade_df, df_eval,
                                                                     symbol)
