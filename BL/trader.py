@@ -88,7 +88,7 @@ class Trader:
               size: float = 1.0,
               currency: str = "USD"):
 
-        if not self._evalutaion_up_to_date(predictor.get_last_scan_time()):
+        if self._evalutaion_up_to_date(predictor.get_last_scan_time()):
             if not self._is_good(predictor.best_result, predictor.trades, symbol):
                 return False
             trade_df = self._tiingo.load_trade_data(symbol, self._dataprocessor, trade_type)
