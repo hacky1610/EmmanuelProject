@@ -1,3 +1,4 @@
+import itertools
 import os.path
 import json
 

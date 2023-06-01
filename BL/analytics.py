@@ -14,9 +14,13 @@ class Analytics:
     def evaluate(self, predictor,
                  df_train: DataFrame,
                  df_eval: DataFrame,
-                 symbol:str = "",
+                 symbol: str = "",
                  viewer: BaseViewer = BaseViewer(),
-                 only_one_position:bool = True):
+                 only_one_position: bool = True):
+
+        assert len(df_train) > 0
+        assert len(df_eval) > 0
+
         reward = 0
         losses = 0
         wins = 0
@@ -24,13 +28,13 @@ class Analytics:
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
 
-        viewer.init(f"Evaluation of {symbol}",df_train,df_eval)
+        viewer.init(f"Evaluation of {symbol}", df_train, df_eval)
         viewer.print_graph()
 
         trading_minutes = 0
         last_exit = df_train.date[0]
         for i in range(len(df_train) - 1):
-            #df_train.date[i] == '2023-05-04T02:00:00.000Z'
+            # df_train.date[i] == '2023-05-04T02:00:00.000Z'
             open_price = df_train.open[i + 1]
 
             if only_one_position and df_train.date[i] < last_exit:
@@ -104,4 +108,3 @@ class Analytics:
             wins / trades, \
             trading_minutes / trades, \
             trades
-
