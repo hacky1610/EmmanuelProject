@@ -3,6 +3,7 @@ import os.path
 import json
 
 from BL.pricelevels import ZigZagClusterLevels
+from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
 from Tracing.Tracer import Tracer
@@ -31,8 +32,11 @@ class SupResCandle(BasePredictor):
     look_back_days = 20
     level_section_size = 1.0
 
-    def __init__(self, config=None, tracer: Tracer = ConsoleTracer(), viewer: BaseViewer = BaseViewer()):
-        super().__init__(config, tracer)
+    def __init__(self, config=None,
+                 tracer: Tracer = ConsoleTracer(),
+                 viewer: BaseViewer = BaseViewer(),
+                 cache: BaseCache = BaseCache()):
+        super().__init__(config, tracer=tracer, cache=cache)
         if config is None:
             config = {}
         self.setup(config)
@@ -83,21 +87,9 @@ class SupResCandle(BasePredictor):
                              "frequence",
                              "last_scan"])
 
-    def save(self, symbol: str):
-        self.last_scan = datetime.utcnow().isoformat()
-        self.get_config().to_json(self._get_save_path(self.__class__.__name__, symbol))
 
-    def saved(self, symbol):
-        return os.path.exists(self._get_save_path(self.__class__.__name__, symbol))
 
-    def load(self, symbol: str):
-        if self.saved(symbol):
-            with open(self._get_save_path(self.__class__.__name__, symbol)) as json_file:
-                data = json.load(json_file)
-                self.setup(data)
-        else:
-            self._tracer.debug(f"No saved settings of {symbol}")
-        return self
+
 
     def get_levels(self, df):
         look_back = df[self.look_back_days * 24 * -1:]

@@ -8,8 +8,6 @@ from Connectors.tiingo import TradeType
 from Tracing import Tracer
 from pandas import DataFrame
 from Predictors.base_predictor import BasePredictor
-
-
 class Trader:
 
     def __init__(self, ig: IG, tiingo, tracer: Tracer, predictor: BasePredictor, dataprocessor: DataProcessor,
@@ -51,7 +49,7 @@ class Trader:
             try:
                 symbol = market["symbol"]
                 self._tracer.debug(f"Try to trade {symbol}")
-                predictor = self._predictorClass(tracer=self._tracer)
+                predictor = self._predictorClass(tracer=self._tracer, cache=self._cache)
                 predictor.load(symbol)
                 self.trade(
                     predictor=predictor,

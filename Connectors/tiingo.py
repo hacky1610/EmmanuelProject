@@ -78,7 +78,7 @@ class Tiingo:
                           trim: bool = False) -> DataFrame:
         res = DataFrame()
         name = f"{ticker}_{resolution}.csv"
-        cached = self._cache.load(name)
+        cached = self._cache.load_cache(name)
 
         if len(cached) > 0:
             lastchached = pd.to_datetime(cached[-1:].date.item())
@@ -95,7 +95,7 @@ class Tiingo:
         if len(res) == 0:
             return res
 
-        self._cache.save(res, name)
+        self._cache.save_cache(res, name)
 
         if add_signals:
             data_processor.addSignals(res)

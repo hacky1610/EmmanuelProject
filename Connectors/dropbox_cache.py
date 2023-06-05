@@ -1,3 +1,5 @@
+import json
+
 from Connectors.dropboxservice import DropBoxService
 import pandas as pd
 import io
@@ -5,13 +7,22 @@ from pandas import DataFrame
 
 class BaseCache:
 
-    def load(self,name:str) -> DataFrame:
+    def load_cache(self, name:str) -> DataFrame:
         return DataFrame()
 
-    def save(self,data:DataFrame, name:str):
+    def save_cache(self,data:DataFrame, name:str):
+        pass
+
+    def load_settings(self, name: str) -> DataFrame:
+        return DataFrame()
+
+    def save_settings(self, data: DataFrame, name: str):
         pass
 
     def save_report(self,data:DataFrame, name:str):
+        pass
+
+    def save_report_image(self,source:str, destination:str):
         pass
 
 class DropBoxCache:
@@ -20,7 +31,7 @@ class DropBoxCache:
         self.dropbox_servie = dropbox_servie
 
 
-    def load(self,name:str) -> DataFrame:
+    def load_cache(self, name:str) -> DataFrame:
         res = self.dropbox_servie.load( f"Cache/{name}")
         if res == None:
             return DataFrame()
@@ -29,8 +40,21 @@ class DropBoxCache:
         return df
 
 
-    def save(self,data:DataFrame, name:str):
+    def save_cache(self, data:DataFrame, name:str):
         self.dropbox_servie.upload_data(data.to_csv(),f"Cache/{name}")
+
+    def load_settings(self, name:str):
+        res = self.dropbox_servie.load( f"Settings/{name}")
+        if res is not None:
+           return json.loads(res)
+        return None
+
+
+    def save_settings(self, data:str, name:str):
+        self.dropbox_servie.upload_data(data,f"Settings/{name}")
 
     def save_report(self,data:DataFrame, name:str):
         self.dropbox_servie.upload_data(data.to_csv(),f"Report/{name}")
+
+    def save_report_image(self, source:str, destination: str):
+        self.dropbox_servie.upload_file(source,destination)

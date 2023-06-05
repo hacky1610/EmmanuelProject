@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from Connectors import BaseCache
 from UI.base_viewer import BaseViewer
 import plotly.graph_objects as go
 import pandas as pd
@@ -9,13 +12,14 @@ class PlotlyViewer(BaseViewer):
 
 
 
-    def __init__(self):
+    def __init__(self,cache:BaseCache):
         super().__init__()
         self.fig = None
         self.df = None
         self.df_eval = None
         self.title = ""
         self._level_list = []
+        self._cache = cache
 
     def init(self, title, df, df_eval):
         self.df = df
@@ -103,6 +107,13 @@ class PlotlyViewer(BaseViewer):
                              mode='text',
                              opacity=0.3,
                              showlegend=False)
+
+    def save(self, symbol):
+        import tempfile
+        filename = tempfile.NamedTemporaryFile().name
+        self.fig.write_html(filename)
+        time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self._cache.save_report_image(filename,f"Report/{symbol}_{time_str}.html")
 
 
 

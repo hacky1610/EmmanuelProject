@@ -1,7 +1,9 @@
 import itertools
+import json
 import os
 from pandas import DataFrame
 from BL.utils import get_project_dir
+from Connectors.dropbox_cache import BaseCache
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import numpy as np
@@ -23,12 +25,13 @@ class BasePredictor:
     trades = 0
     _tracer = ConsoleTracer()
 
-    def __init__(self, config=None, tracer: Tracer = ConsoleTracer()):
+    def __init__(self, config=None,cache:BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
         if config is None:
             config = {}
         self.setup(config)
         self._tracer = tracer
         self.lastState = ""
+        self._cache = cache
 
     def setup(self, config):
         self.limit = config.get("limit", self.limit)
@@ -241,5 +244,19 @@ class BasePredictor:
     @staticmethod
     def get_training_sets(version:str):
         return []
+
+    def save(self, symbol: str):
+        self.last_scan = datetime.utcnow().isoformat()
+        json = self.get_config().to_json()
+        self._cache.save_settings(json,f"{self.__class__.__name__}_{symbol}.json")
+
+
+
+    def load(self, symbol: str):
+        json = self._cache.load_settings(f"{self.__class__.__name__}_{symbol}.json")
+        if json is not None:
+            self.setup(json)
+
+        return self
 
 

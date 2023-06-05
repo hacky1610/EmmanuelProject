@@ -11,6 +11,9 @@ class BaseViewer:
     def show(self):
         pass
 
+    def save(self,file):
+        pass
+
     def print_graph(self):
         pass
 
