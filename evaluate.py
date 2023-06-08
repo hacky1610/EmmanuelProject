@@ -1,5 +1,6 @@
 from BL import DataProcessor, Analytics, ConfigReader
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
+from Predictors.sr_break import SRBreak
 from Predictors.sup_res_candle import SupResCandle
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
@@ -20,12 +21,15 @@ viewer = BaseViewer()
 viewer = PlotlyViewer(cache=df_cache)
 only_one_position = True
 
+
+
 for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
+    symbol = "AUDUSD"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
     if len(df) > 0:
-        predictor = SupResCandle(viewer=viewer,cache=df_cache)
+        predictor = SRBreak(viewer=viewer,cache=df_cache)
         predictor.load(symbol)
         reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(predictor=predictor,
                                                                                            df_train=df,

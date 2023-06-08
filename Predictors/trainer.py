@@ -1,18 +1,18 @@
 from pandas import DataFrame, Series
 import random
-import itertools
-from Predictors.sup_res_candle import SupResCandle
+from Predictors.sr_break import SRBreak
 
 
 class Trainer:
 
-    def __init__(self, analytics):
+    def __init__(self, analytics, cache):
         self._analytics = analytics
+        self._cache = cache
 
 
 
     def is_trained(self,symbol:str,version:str):
-        saved_predictor = SupResCandle().load(symbol)
+        saved_predictor = SRBreak(cache=self._cache).load(symbol)
         return  version == saved_predictor.version
 
     def train(self, symbol: str, df, df_eval, version: str) -> DataFrame:
@@ -21,10 +21,10 @@ class Trainer:
         best_predictor = None
         result_df = DataFrame()
 
-        sets = SupResCandle.get_training_sets(version)
+        sets = SRBreak.get_training_sets(version)
         random.shuffle(sets)
         for training_set in sets:
-            predictor = SupResCandle()
+            predictor = SRBreak(cache=self._cache)
             predictor.load(symbol)
             predictor.setup(training_set)
             res = predictor.step(df, df_eval, self._analytics)
@@ -49,6 +49,7 @@ class Trainer:
             if reward > best and w_l > 0.66 and trades >= 5:
                 best = reward
                 best_predictor = predictor
+                best_predictor.save(symbol)
                 print(f"{symbol} - {predictor.get_config()} - "
                       f"Avg Reward: {avg_reward:6.5} "
                       f"Avg Min {int(minutes)}  "
