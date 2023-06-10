@@ -2,6 +2,7 @@ from BL import DataProcessor, Analytics, ConfigReader
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
 from Predictors.combo import Combo
 from Predictors.sr_break import SRBreak
+from Predictors.sr_candle_rsi import SRCandleRsi
 from Predictors.sup_res_candle import SupResCandle
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
@@ -30,7 +31,7 @@ symbol = "AUDUSD"
 df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
 if len(df) > 0:
-    predictor = Combo(cache=df_cache)
+    predictor = SRCandleRsi(cache=df_cache)
     predictor.load(symbol)
     reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(predictor=predictor,
                                                                                        df_train=df,
