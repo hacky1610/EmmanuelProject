@@ -4,6 +4,8 @@ from finta import TA
 class DataProcessor:
 
     def addSignals(self, df: DataFrame):
+        psar = TA.PSAR(df)
+        df["PSAR"] = psar["psar"]
         df['SMA_10'] = TA.SMA(df, 10)
         df['SMA_10_LOW'] = TA.SMA(df, 10,column="low")
         df['SMA_10_HIGH'] = TA.SMA(df, 10, column="high")
@@ -35,10 +37,10 @@ class DataProcessor:
         df["CCI_7"] = TA.CCI(df,7)
 
         df["STOCHK"] = TA.STOCH(df)
-        df["STOCHD"] = TA.STOCHD(df)
+        df["STOCHD"] = TA.STOCHD(df,stoch_period=5)
         df["STOCHRSI"] = TA.STOCHRSI(df)
         df["ADX"] = TA.ADX(df)
-        df["BBWIDTH"] = TA.BBWIDTH(df)
+
         df["ATR"] = TA.ATR(df)
 
     def clean_data(self, df: DataFrame):

@@ -133,5 +133,6 @@ class Tiingo:
                                          end=None,
                                          data_processor=dp,
                                          trade_type=trade_type,
-                                         resolution="5min")
+                                         resolution="5min",
+                                         add_signals=False)
         return df, df_eval

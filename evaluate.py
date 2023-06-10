@@ -1,5 +1,6 @@
 from BL import DataProcessor, Analytics, ConfigReader
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
+from Predictors.combo import Combo
 from Predictors.sr_break import SRBreak
 from Predictors.sup_res_candle import SupResCandle
 from UI.plotly_viewer import PlotlyViewer
@@ -23,26 +24,26 @@ only_one_position = True
 
 
 
-for m in ig.get_markets(tradeable=False, trade_type=trade_type):
-    symbol = m["symbol"]
-    symbol = "AUDUSD"
-    df, df_eval = ti.load_train_data(symbol, dp, trade_type)
+#for m in ig.get_markets(tradeable=False, trade_type=trade_type):
+    #symbol = m["symbol"]
+symbol = "AUDUSD"
+df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
-    if len(df) > 0:
-        predictor = SRBreak(viewer=viewer,cache=df_cache)
-        predictor.load(symbol)
-        reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(predictor=predictor,
-                                                                                           df_train=df,
-                                                                                           df_eval=df_eval,
-                                                                                           viewer=viewer,
-                                                                                           symbol=symbol,
-                                                                                           only_one_position=only_one_position)
-        predictor.best_result = win_loss
-        predictor.best_reward = reward
-        predictor.trades = trades
-        predictor.frequence = trade_freq
-        predictor.save(symbol)
-        viewer.save(symbol)
-        print(f"{symbol} - Reward {reward}, success {avg_reward}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes}")
+if len(df) > 0:
+    predictor = Combo(cache=df_cache)
+    predictor.load(symbol)
+    reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(predictor=predictor,
+                                                                                       df_train=df,
+                                                                                       df_eval=df_eval,
+                                                                                       viewer=viewer,
+                                                                                       symbol=symbol,
+                                                                                       only_one_position=only_one_position)
+    predictor.best_result = win_loss
+    predictor.best_reward = reward
+    predictor.trades = trades
+    predictor.frequence = trade_freq
+    predictor.save(symbol)
+    viewer.save(symbol)
+    print(f"{symbol} - Reward {reward}, success {avg_reward}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes}")
 
 
