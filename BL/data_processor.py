@@ -4,8 +4,6 @@ from finta import TA
 class DataProcessor:
 
     def addSignals(self, df: DataFrame):
-        psar = TA.PSAR(df)
-        df["PSAR"] = psar["psar"]
         df['SMA_10'] = TA.SMA(df, 10)
         df['SMA_10_LOW'] = TA.SMA(df, 10,column="low")
         df['SMA_10_HIGH'] = TA.SMA(df, 10, column="high")
