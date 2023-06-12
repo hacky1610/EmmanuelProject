@@ -31,8 +31,8 @@ class SRCandleRsi(BasePredictor):
     min_bars_between_peaks = 20
     look_back_days = 20
     level_section_size = 1.0
-    rsi_buy_limit = 60
-    rsi_sell_limit = 40
+    rsi_buy_limit = 35
+    rsi_sell_limit = 65
     rsi_type = "RSI"
 
     def __init__(self, config=None,
@@ -218,7 +218,7 @@ class SRCandleRsi(BasePredictor):
     def _rsi_trainer(version: str):
 
         json_objs = []
-        for buy, sell,type in itertools.product(range(30,50,7),range(50,70,7),["RSI","RSI_9"]):
+        for buy, sell,type in itertools.product([30,37,44,50],[50,57,64,70],["RSI","RSI_9"]):
             json_objs.append({
                 "rsi_buy_limit": buy,
                 "rsi_sell_limit": sell,
@@ -235,6 +235,6 @@ class SRCandleRsi(BasePredictor):
         sl = BasePredictor._stop_limit_trainer(version)
         rsi = SRCandleRsi._rsi_trainer(version)
 
-        return rsi
+        #return rsi
         return sr1 + sr2 + rsi + sl
 

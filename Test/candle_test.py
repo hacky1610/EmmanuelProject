@@ -17,6 +17,7 @@ class CandleTest(unittest.TestCase):
         c = Candle(self._create_ohlc(90,100,80,101))
         assert c.direction() == Direction.Bullish
 
+
     def test_dragonfly(self):
         c = Candle(self._create_ohlc(90, 91, 50, 91))
         assert c.candle_type() == CandleType.DragonflyDoji
