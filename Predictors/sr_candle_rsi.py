@@ -31,8 +31,9 @@ class SRCandleRsi(BasePredictor):
     min_bars_between_peaks = 20
     look_back_days = 20
     level_section_size = 1.0
-    rsi_upper = 60
-    rsi_lower = 40
+    rsi_buy_limit = 60
+    rsi_sell_limit = 40
+    rsi_type = "RSI"
 
     def __init__(self, config=None,
                  tracer: Tracer = ConsoleTracer(),
@@ -52,6 +53,10 @@ class SRCandleRsi(BasePredictor):
         self.min_bars_between_peaks = config.get("min_bars_between_peaks", self.min_bars_between_peaks)
         self.look_back_days = config.get("look_back_days", self.look_back_days)
         self.level_section_size = config.get("level_section_size", self.level_section_size)
+        self.rsi_buy_limit = config.get("rsi_buy_limit", self.rsi_buy_limit)
+        self.rsi_sell_limit = config.get("rsi_sell_limit", self.rsi_sell_limit)
+        self.rsi_type = config.get("rsi_type", self.rsi_type)
+
         super().setup(config)
 
     def get_config(self) -> Series:
@@ -70,7 +75,10 @@ class SRCandleRsi(BasePredictor):
                        self.best_reward,
                        self.trades,
                        self.frequence,
-                       self.last_scan
+                       self.last_scan,
+                       self.rsi_buy_limit,
+                       self.rsi_sell_limit,
+                       self.rsi_type
                        ],
                       index=["Type",
                              "stop",
@@ -87,7 +95,10 @@ class SRCandleRsi(BasePredictor):
                              "best_reward",
                              "trades",
                              "frequence",
-                             "last_scan"])
+                             "last_scan",
+                             "rsi_buy_limit",
+                             "rsi_sell_limit",
+                             "rsi_type"])
 
 
 
@@ -155,14 +166,13 @@ class SRCandleRsi(BasePredictor):
 
 
         mc = MultiCandle(df)
-        current_rsi = df.tail(1).RSI.values[0]
-        mean_range = self.get_mean_range(df)
+        current_rsi = df.tail(1)[self.rsi_type].values[0]
 
         type =  mc.get_type()
         if type == MultiCandleType.MorningStart or \
             type == MultiCandleType.BullishEngulfing:
                 if self._level_check(df) == self.BUY:
-                    if current_rsi < self.rsi_upper:
+                    if current_rsi < self.rsi_buy_limit:
                         return self.BUY
 
 
@@ -170,7 +180,7 @@ class SRCandleRsi(BasePredictor):
         if type == MultiCandleType.EveningStar or \
             type == MultiCandleType.BearishEngulfing:
                 if self._level_check(df) == self.SELL:
-                    if current_rsi > self.rsi_lower:
+                    if current_rsi > self.rsi_sell_limit:
                         return self.SELL
 
 
@@ -208,10 +218,11 @@ class SRCandleRsi(BasePredictor):
     def _rsi_trainer(version: str):
 
         json_objs = []
-        for upper, lower in itertools.product([50,55,60,65], [35,40,45]):
+        for buy, sell,type in itertools.product(range(30,50,7),range(50,70,7),["RSI","RSI_9"]):
             json_objs.append({
-                "rsi_upper": upper,
-                "rsi_lower": lower,
+                "rsi_buy_limit": buy,
+                "rsi_sell_limit": sell,
+                "rsi_type":type,
                 "version": version
             })
         return json_objs
@@ -224,5 +235,6 @@ class SRCandleRsi(BasePredictor):
         sl = BasePredictor._stop_limit_trainer(version)
         rsi = SRCandleRsi._rsi_trainer(version)
 
+        return rsi
         return sr1 + sr2 + rsi + sl
 

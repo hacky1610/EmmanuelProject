@@ -22,6 +22,7 @@ trade_type = TradeType.FX
 viewer = BaseViewer()
 #viewer = PlotlyViewer(cache=df_cache)
 only_one_position = True
+only_test = False
 
 
 
@@ -37,12 +38,19 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
                                                                                            df_eval=df_eval,
                                                                                            viewer=viewer,
                                                                                            symbol=symbol,
-                                                                                           only_one_position=only_one_position)
+                                                                                         only_one_position=only_one_position)
+        if win_loss > predictor.best_result:
+            print("Better")
+        elif win_loss == predictor.best_result:
+            print("Same")
+        else:
+            print("Worse")
         predictor.best_result = win_loss
         predictor.best_reward = reward
         predictor.trades = trades
         predictor.frequence = trade_freq
-        predictor.save(symbol)
+        if not only_test:
+            predictor.save(symbol)
         viewer.save(symbol)
         print(f"{symbol} - Reward {reward}, success {avg_reward}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes}")
 

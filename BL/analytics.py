@@ -103,8 +103,8 @@ class Analytics:
         if trades == 0:
             return 0, 0, 0, 0, 0, 0
         return reward, \
-            reward / trades, \
-            trades / len(df_train), \
-            wins / trades, \
-            trading_minutes / trades, \
+            round(reward / trades,7), \
+            round(trades / len(df_train),7), \
+            round(wins / trades,7), \
+            round(trading_minutes / trades,7), \
             trades

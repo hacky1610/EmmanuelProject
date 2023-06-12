@@ -20,6 +20,7 @@ class Trainer:
         print(f"#####Train {symbol}#######################")
         best = 0
         best_predictor = None
+        predictor = None
         result_df = DataFrame()
 
         sets = SRCandleRsi.get_training_sets(version)
@@ -62,4 +63,5 @@ class Trainer:
             best_predictor.save(symbol)
         else:
             print(f"{symbol} Couldnt find good result")
+            predictor.save(symbol)
         return result_df
