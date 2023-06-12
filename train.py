@@ -24,15 +24,15 @@ ig = IG(conf_reader=conf_reader)
 train_version = "V2.00"
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-#for m in random.choices(markets,k=30):
-for m in markets:
+for m in random.choices(markets,k=30):
+#for m in markets:
     symbol = m["symbol"]
     if trainer.is_trained(symbol, train_version):
         print(f"{symbol} Already trained with version {train_version}.")
         continue
     df, eval = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
     if len(df) > 0:
-        if os.name != "nt":
+        if os.name == "nt":
             trainer.train(symbol, df, eval, train_version)
         else:
             p = Process(target=trainer.train,args=(symbol,df, eval, train_version))
