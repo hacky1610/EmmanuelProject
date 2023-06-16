@@ -36,7 +36,7 @@ class DataProcessor:
 
         df["STOCHK"] = TA.STOCH(df)
         df["STOCHD"] = TA.STOCHD(df,stoch_period=5)
-        df["STOCHRSI"] = TA.STOCHRSI(df)
+        df["STOCHD_21"] = TA.STOCH(df,period=21)
         df["ADX"] = TA.ADX(df)
 
         df["ATR"] = TA.ATR(df)
