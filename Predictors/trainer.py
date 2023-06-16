@@ -1,6 +1,5 @@
 from pandas import DataFrame, Series
 import random
-from Predictors.sr_break import SRBreak
 from Predictors.sr_candle_rsi import SRCandleRsi
 
 

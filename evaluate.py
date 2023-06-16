@@ -1,9 +1,7 @@
 from BL import DataProcessor, Analytics, ConfigReader
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
 from Predictors.combo import Combo
-from Predictors.sr_break import SRBreak
 from Predictors.sr_candle_rsi import SRCandleRsi
-from Predictors.sup_res_candle import SupResCandle
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
 import dropbox
@@ -20,7 +18,7 @@ analytics = Analytics()
 trade_type = TradeType.FX
 
 viewer = BaseViewer()
-#viewer = PlotlyViewer(cache=df_cache)
+viewer = PlotlyViewer(cache=df_cache)
 only_one_position = True
 only_test = False
 
