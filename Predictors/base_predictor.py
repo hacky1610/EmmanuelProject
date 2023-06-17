@@ -15,7 +15,7 @@ class BasePredictor:
     BUY = "buy"
     NONE = "none"
     limit = 2.0
-    stop = 3.0
+    stop = 2.0
     METRIC = "reward"
     version = "V1.0"
     last_scan = datetime(1970,1,1).isoformat()

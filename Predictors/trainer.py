@@ -1,5 +1,7 @@
 from pandas import DataFrame, Series
 import random
+
+from Predictors.adx_stoch import ADXSTOCH
 from Predictors.sr_candle_rsi import SRCandleRsi
 
 
@@ -12,7 +14,7 @@ class Trainer:
 
 
     def is_trained(self,symbol:str,version:str):
-        saved_predictor = SRCandleRsi(cache=self._cache).load(symbol)
+        saved_predictor = ADXSTOCH(cache=self._cache).load(symbol)
         return  version == saved_predictor.version
 
     def train(self, symbol: str, df, df_eval, version: str) -> DataFrame:
@@ -22,10 +24,10 @@ class Trainer:
         predictor = None
         result_df = DataFrame()
 
-        sets = SRCandleRsi.get_training_sets(version)
+        sets = ADXSTOCH.get_training_sets(version)
         random.shuffle(sets)
         for training_set in sets:
-            predictor = SRCandleRsi(cache=self._cache)
+            predictor = ADXSTOCH(cache=self._cache)
             predictor.load(symbol)
             predictor.setup(training_set)
             res = predictor.step(df, df_eval, self._analytics)
