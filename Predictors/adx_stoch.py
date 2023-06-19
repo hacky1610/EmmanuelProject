@@ -98,8 +98,8 @@ class ADXSTOCH(BasePredictor):
         if current_adx - pret_adx <= self.adx_diff_min:
             return self.NONE
 
-        if current_adx < self.adx_min or current_adx > self.adx_max:
-            return self.NONE
+        #if current_adx < self.adx_min or current_adx > self.adx_max:
+        #    return self.NONE
 
         if current_stochd < self.sell_stoch_max and current_stochd > self.sell_stoch_min and pret_stochd > current_stochd:
             if current_close < current_ema:
@@ -172,6 +172,7 @@ class ADXSTOCH(BasePredictor):
     def get_training_sets(version: str):
         return ADXSTOCH._stoch_buy_trainer(version) + \
             ADXSTOCH._stoch_sell_trainer(version) + \
-            ADXSTOCH._adx_min_trainer(version) + \
-            ADXSTOCH._adx_max_trainer(version) + \
             ADXSTOCH._adx_diff_trainer(version)
+            #ADXSTOCH._adx_min_trainer(version) + \
+            #ADXSTOCH._adx_max_trainer(version) + \
+
