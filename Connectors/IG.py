@@ -374,7 +374,7 @@ class IG:
                         )
 
         fig.update_layout(
-            title=ticker,
+            title=f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a>",
             legend_title="Legend Title",
         )
         fig.show()

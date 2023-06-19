@@ -28,7 +28,7 @@ class Analytics:
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
 
-        viewer.init(f"Evaluation of {symbol}", df_train, df_eval)
+        viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>", df_train, df_eval)
         viewer.print_graph()
 
         trading_minutes = 0

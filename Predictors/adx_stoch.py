@@ -11,8 +11,7 @@ from Tracing.ConsoleTracer import ConsoleTracer
 from BL.candle import MultiCandle, MultiCandleType, Candle, CandleType, Direction
 from UI.base_viewer import BaseViewer
 import numpy as np
-from datetime import  datetime
-
+from datetime import datetime
 
 
 class ADXSTOCH(BasePredictor):
@@ -21,6 +20,9 @@ class ADXSTOCH(BasePredictor):
     buy_stoch_min = 50
     sell_stoch_max = 50
     sell_stoch_min = 35
+    adx_max = 50
+    adx_min = 10
+    adx_diff_min = 2
 
     def __init__(self, config=None,
                  tracer: Tracer = ConsoleTracer(),
@@ -37,7 +39,9 @@ class ADXSTOCH(BasePredictor):
         self.buy_stoch_min = config.get("buy_stoch_min", self.buy_stoch_min)
         self.sell_stoch_max = config.get("sell_stoch_max", self.sell_stoch_max)
         self.sell_stoch_min = config.get("sell_stoch_min", self.sell_stoch_min)
-
+        self.adx_min = config.get("adx_min", self.adx_min)
+        self.adx_max = config.get("adx_max", self.adx_max)
+        self.adx_max = config.get("adx_diff_min", self.adx_diff_min)
 
         super().setup(config)
 
@@ -49,6 +53,9 @@ class ADXSTOCH(BasePredictor):
                        self.sell_stoch_max,
                        self.buy_stoch_min,
                        self.buy_stoch_max,
+                       self.adx_min,
+                       self.adx_max,
+                       self.adx_diff_min,
                        self.version,
                        self.best_result,
                        self.best_reward,
@@ -63,6 +70,9 @@ class ADXSTOCH(BasePredictor):
                              "sell_stoch_max",
                              "buy_stoch_min",
                              "buy_stoch_max",
+                             "adx_min",
+                             "adx_max",
+                             "adx_diff_min",
                              "version",
                              "best_result",
                              "best_reward",
@@ -71,11 +81,9 @@ class ADXSTOCH(BasePredictor):
                              "last_scan",
                              ])
 
-
     def predict(self, df: DataFrame) -> str:
         if len(df) < 15:
             return BasePredictor.NONE
-
 
         current_stochd = df["STOCHD_21"][-1:].item()
         pret_stochd = df["STOCHD_21"][-2:-1].item()
@@ -87,6 +95,12 @@ class ADXSTOCH(BasePredictor):
         if current_adx < pret_adx:
             return self.NONE
 
+        if current_adx - pret_adx <= self.adx_diff_min:
+            return self.NONE
+
+        if current_adx < self.adx_min or current_adx > self.adx_max:
+            return self.NONE
+
         if current_stochd < self.sell_stoch_max and current_stochd > self.sell_stoch_min and pret_stochd > current_stochd:
             if current_close < current_ema:
                 return self.SELL
@@ -95,35 +109,69 @@ class ADXSTOCH(BasePredictor):
             if current_close > current_ema:
                 return self.BUY
 
-
-
     @staticmethod
-    def _stoch_trainer(version: str):
+    def _stoch_buy_trainer(version: str):
 
         json_objs = []
-        for buy_max, buy_min, sell_min, sell_max in itertools.product(
-                range(50,70,5),
-                range(45,55,5),
-                range(45,55,5),
-                range(30,50,5)):
+        for buy_max, buy_min in itertools.product(
+                range(50, 70, 5),
+                range(45, 55, 5),
+        ):
             json_objs.append({
                 "buy_stoch_max": buy_max,
                 "buy_stoch_min": buy_min,
+                "version": version
+            })
+        return json_objs
+
+    @staticmethod
+    def _stoch_sell_trainer(version: str):
+
+        json_objs = []
+        for sell_min, sell_max in itertools.product(
+                range(45, 55, 5),
+                range(30, 50, 5)):
+            json_objs.append({
                 "sell_stoch_max": sell_max,
                 "sell_stoch_min": sell_min,
                 "version": version
             })
         return json_objs
 
+    def _adx_max_trainer(version: str):
 
+        json_objs = []
+        for adx in range(20, 50, 3):
+            json_objs.append({
+                "adx_max": adx,
+                "version": version
+            })
+        return json_objs
 
+    def _adx_min_trainer(version: str):
 
+        json_objs = []
+        for adx in range(10, 25, 3):
+            json_objs.append({
+                "adx_min": adx,
+                "version": version
+            })
+        return json_objs
+
+    def _adx_diff_trainer(version: str):
+
+        json_objs = []
+        for diff in [1.5, 2.0, 2.5, 4]:
+            json_objs.append({
+                "adx_diff_min": diff,
+                "version": version
+            })
+        return json_objs
 
     @staticmethod
-    def get_training_sets(version:str):
-
-        stoch = ADXSTOCH._stoch_trainer(version)
-
-        return stoch
-
-
+    def get_training_sets(version: str):
+        return ADXSTOCH._stoch_buy_trainer(version) + \
+            ADXSTOCH._stoch_sell_trainer(version) + \
+            ADXSTOCH._adx_min_trainer(version) + \
+            ADXSTOCH._adx_max_trainer(version) + \
+            ADXSTOCH._adx_diff_trainer(version)
