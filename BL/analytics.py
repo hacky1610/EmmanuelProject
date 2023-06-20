@@ -40,7 +40,7 @@ class Analytics:
             if only_one_position and df_train.date[i] < last_exit:
                 continue
 
-            action = predictor.predict(df_train[:i + 1])
+            action, limit, stop = predictor.predict(df_train[:i + 1])
             if action == predictor.NONE:
                 continue
 
@@ -56,7 +56,6 @@ class Analytics:
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
-                    stop, limit = predictor.get_stop_limit(df_train[:i + 1])
                     if high > open_price + limit:
                         # Won
                         viewer.print_won(future.date[j], future.close[j])
@@ -80,7 +79,6 @@ class Analytics:
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
-                    stop, limit = predictor.get_stop_limit(df_train[:i + 1])
                     if low < open_price - limit:
                         # Won
                         viewer.print_won(future.date[j], future.close[j])

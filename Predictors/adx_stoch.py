@@ -81,33 +81,43 @@ class ADXSTOCH(BasePredictor):
                              "last_scan",
                              ])
 
-    def predict(self, df: DataFrame) -> str:
+    def predict(self, df: DataFrame):
         if len(df) < 15:
-            return BasePredictor.NONE
+            return BasePredictor.NONE, 0,0
 
-        current_stochd = df["STOCHD_21"][-1:].item()
-        pret_stochd = df["STOCHD_21"][-2:-1].item()
-        current_adx = df["ADX"][-1:].item()
-        current_ema = df["EMA_20"][-1:].item()
+
+        period = df[-3:]
+
+
+        current_ema50 = df["EMA_50"][-1:].item()
+        current_rsi_14 = df["RSI"][-1:].item()
+        current_rsi_7 = df["RSI"][-1:].item()
         current_close = df["close"][-1:].item()
-        pret_adx = df["ADX"][-2:-1].item()
+        current_adx = df["ADX"][-1:].item()
+        pre_adx = df["ADX"][-2:-1].item()
 
-        if current_adx < pret_adx:
-            return self.NONE
+        if pre_adx > current_adx:
+            return self.NONE, 0,0
 
-        if current_adx - pret_adx <= self.adx_diff_min:
-            return self.NONE
 
-        #if current_adx < self.adx_min or current_adx > self.adx_max:
-        #    return self.NONE
+        was_under_ema = len(period[period.close < period.EMA_50]) > 0
+        was_over_ema = len(period[period.close > period.EMA_50]) > 0
 
-        if current_stochd < self.sell_stoch_max and current_stochd > self.sell_stoch_min and pret_stochd > current_stochd:
-            if current_close < current_ema:
-                return self.SELL
 
-        if current_stochd > self.buy_stoch_min and current_stochd < self.buy_stoch_max and pret_stochd < current_stochd:
-            if current_close > current_ema:
-                return self.BUY
+
+
+        if current_close > current_ema50 and was_under_ema: # and current_rsi_7 > current_rsi_14:
+            last_peak = period.low.min()
+            stop_limit = abs(last_peak - current_close)
+            return self.BUY, stop_limit, stop_limit
+
+        if current_close < current_ema50 and was_over_ema: # and current_rsi_7 < current_rsi_14:
+            last_peak = period.high.max()
+            stop_limit = abs(last_peak - current_close)
+            return self.SELL, stop_limit, stop_limit
+
+        return self.NONE, 0, 0
+
 
     @staticmethod
     def _stoch_buy_trainer(version: str):
