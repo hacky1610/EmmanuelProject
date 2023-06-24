@@ -24,7 +24,7 @@ class DataProcessor:
         df['BB1_LOWER'] = bb1['BB_LOWER']
 
         df['RSI'] = TA.RSI(df, period=14)
-        df['RSI_9'] = TA.RSI(df, period=9)
+        df['RSI_7'] = TA.RSI(df, period=7)
         df['RSI_21'] = TA.RSI(df, period=21)
         df['ROC'] = TA.ROC(df, period=10)
         df['%R'] = TA.WILLIAMS(df, period=14)
@@ -37,7 +37,8 @@ class DataProcessor:
         df["STOCHK"] = TA.STOCH(df)
         df["STOCHD"] = TA.STOCHD(df,stoch_period=5)
         df["STOCHD_21"] = TA.STOCH(df,period=21)
-        df["ADX"] = TA.ADX(df)
+        df["STOCHD_30"] = TA.STOCH(df, period=21)
+        df["ADX"] = TA.ADX(df, period=9)
 
         df["ATR"] = TA.ATR(df)
 
