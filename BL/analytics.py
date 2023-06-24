@@ -1,3 +1,4 @@
+from BL.chart_pattern import ChartPattern
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame
@@ -28,12 +29,22 @@ class Analytics:
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
 
-        viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>", df_train, df_eval)
+        cp = ChartPattern()
+        viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
+                    df_train, df_eval)
         viewer.print_graph()
+
 
         trading_minutes = 0
         last_exit = df_train.date[0]
         for i in range(len(df_train) - 1):
+
+            if i % 15 == 0:
+                res = cp.get_max_min(df_train[:i + 1])
+                if (len(res)) > 0:
+                    viewer.print_points(res.date, res.close)
+
+
             # df_train.date[i] == '2023-05-04T02:00:00.000Z'
             open_price = df_train.open[i + 1]
 

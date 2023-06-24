@@ -153,5 +153,16 @@ class PlotlyViewer(BaseViewer):
             plt.show()
         plt.close()
 
+    def print_points(self, x_list, y_list):
+        self.fig.add_trace(
+        go.Scatter(
+            x=pd.to_datetime(x_list),
+            y=y_list,
+            marker=dict(color="black", size=10),
+            mode="markers",
+        )
+        )
+
+
     def show(self):
         self.fig.show()

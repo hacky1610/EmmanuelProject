@@ -1,6 +1,7 @@
 from BL import DataProcessor, Analytics, ConfigReader
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
 from Predictors.adx_stoch import ADXSTOCH
+from Predictors.chart_pattern import ChartPatternPredictor
 from Predictors.combo import Combo
 from Predictors.sr_candle_rsi import SRCandleRsi
 from UI.plotly_viewer import PlotlyViewer
@@ -30,7 +31,7 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
     if len(df) > 0:
-        predictor = ADXSTOCH(cache=df_cache,viewer=viewer)
+        predictor = ChartPatternPredictor(cache=df_cache,viewer=viewer)
         predictor.load(symbol)
         reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(predictor=predictor,
                                                                                            df_train=df,
