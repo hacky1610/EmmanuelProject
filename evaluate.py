@@ -1,4 +1,5 @@
 from BL import DataProcessor, Analytics, ConfigReader
+from BL.high_low_scanner import HighLowScanner
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
 from Predictors.adx_stoch import ADXSTOCH
 from Predictors.chart_pattern import ChartPatternPredictor
@@ -30,6 +31,8 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     symbol = m["symbol"]
     #symbol = "EURUSD"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
+
+
 
     if len(df) > 0:
         predictor = ChartPatternPredictor(cache=df_cache,viewer=viewer)

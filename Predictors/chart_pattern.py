@@ -83,8 +83,8 @@ class ChartPatternPredictor(BasePredictor):
                              ])
 
     def predict(self, df: DataFrame):
-        if len(df) < 15:
-            return BasePredictor.NONE
+        #if len(df) < 15:
+        return BasePredictor.NONE,0,0
 
         cp = ChartPattern()
         res = cp.get_pattern(df)
@@ -92,7 +92,7 @@ class ChartPatternPredictor(BasePredictor):
         if res == PatternType.DoubleTop:
             return self.SELL, 0, 0
 
-        return self.NONE
+        return self.NONE,0,0
 
     @staticmethod
     def _stoch_buy_trainer(version: str):

@@ -1,4 +1,5 @@
 from BL.chart_pattern import ChartPattern
+from BL.high_low_scanner import HighLowScanner
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame
@@ -30,20 +31,17 @@ class Analytics:
         predictor._tracer = Tracer()
 
         cp = ChartPattern()
+        s = HighLowScanner()
+        df_train = s.scan(df_train)
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
                     df_train, df_eval)
         viewer.print_graph()
-
+        points = df_train[df_train[HighLowScanner.COLUMN_NAME] != HighLowScanner.NONE]
+        viewer.print_points(points.date, points.close)
 
         trading_minutes = 0
         last_exit = df_train.date[0]
         for i in range(len(df_train) - 1):
-
-            if i % 15 == 0:
-                res = cp.get_max_min(df_train[:i + 1])
-                if (len(res)) > 0:
-                    viewer.print_points(res.date, res.close)
-
 
             # df_train.date[i] == '2023-05-04T02:00:00.000Z'
             open_price = df_train.open[i + 1]

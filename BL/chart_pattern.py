@@ -2,7 +2,6 @@ from enum import Enum
 
 import numpy as np
 import pandas as pd
-from peakutils import indexes
 from scipy.signal import argrelextrema, find_peaks
 
 
@@ -20,9 +19,9 @@ class ChartPattern:
 
     def get_max_min(self, prices):
         prices = prices[self._look_back * -1:]
-        smooth_prices = prices['close'].rolling(window=self._smoothing).mean().dropna()
-        local_max = argrelextrema(smooth_prices.values, np.greater)[0]
-        local_min = argrelextrema(smooth_prices.values, np.less)[0]
+        #smooth_prices = prices['close'].rolling(window=self._smoothing).mean().dropna()
+        local_max = argrelextrema(prices.values, np.greater, order=10)[0]
+        local_min = argrelextrema(prices.values, np.less, order=10)[0]
         price_local_max_dt = []
         for i in local_max:
             if (i > self._window_range) and (i < len(prices) - self._window_range):
@@ -57,7 +56,7 @@ class ChartPattern:
     def _is_double_top(self, min_max):
         if len(min_max) >= 2:
             period = min_max[-2:]
-            return len(period[period.type == "peak"]) == 2
+            return len(period[period.type == self.MAX]) == 2
 
         return False
 
