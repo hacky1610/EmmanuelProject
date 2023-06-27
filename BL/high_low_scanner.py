@@ -16,6 +16,15 @@ class HighLowScanner:
 
         return self._df[self._df[self.COLUMN_NAME] != self.NONE]
 
+    def get_high(self):
+
+        return self._df[self._df[self.COLUMN_NAME] == self.MAX]
+
+    def get_low(self):
+
+        return self._df[self._df[self.COLUMN_NAME] == self.MIN]
+
+
     def scan(self,df,max_count:int = -1):
         self._df = df
 

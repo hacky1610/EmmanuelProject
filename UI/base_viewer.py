@@ -38,7 +38,13 @@ class BaseViewer:
     def plot_levels(self,X, levels, zigzag_percent=1, only_good=False, path=None):
         pass
 
-    def print_points(self,xs,ys):
+    def print_points(self,xs,ys,color):
+        pass
+
+    def print_highs(self,xs,ys,color):
+        pass
+
+    def print_lows(self, xs, ys, color):
         pass
 
 

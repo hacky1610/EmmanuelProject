@@ -153,14 +153,47 @@ class PlotlyViewer(BaseViewer):
             plt.show()
         plt.close()
 
-    def print_points(self, x_list, y_list):
+    def print_points(self, x_list, y_list,color="black"):
+        #self.fig.add_trace(
+        #go.Scatter(
+        #    x=pd.to_datetime(x_list),
+        #    y=y_list,
+        #    marker=dict(color=color, size=10),
+        #    mode="markers",
+        #)
+        #)
+
+        self.fig.add_scatter(x=pd.to_datetime(x_list),
+                             y=y_list,
+                             marker=dict(
+                                 color='Green',
+                                 size=10,
+                                 line=dict(
+                                     color='Black',
+                                     width=0
+                                 ),
+                                 symbol="triangle-up"
+                             ),
+                             )
+
+    def print_highs(self, x_list, y_list,color="black"):
         self.fig.add_trace(
-        go.Scatter(
-            x=pd.to_datetime(x_list),
-            y=y_list,
-            marker=dict(color="black", size=10),
-            mode="markers",
+            go.Scatter(
+                x=pd.to_datetime(x_list),
+                y=y_list,
+                marker=dict(color=color, size=10),
+                mode="markers"
+            )
         )
+
+    def print_lows(self, x_list, y_list,color="black"):
+        self.fig.add_trace(
+            go.Scatter(
+                x=pd.to_datetime(x_list),
+                y=y_list,
+                marker=dict(color=color, size=10),
+                mode="markers",
+            )
         )
 
 

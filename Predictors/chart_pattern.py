@@ -84,16 +84,21 @@ class ChartPatternPredictor(BasePredictor):
                              ])
 
     def predict(self, df: DataFrame):
-        if len(df) < 15:
-            return BasePredictor.NONE,0,0
 
-        cp = ChartPattern(HighLowScanner())
-        res = cp.get_pattern(df)
+        if len(df) < 15:
+            return BasePredictor.NONE, 0, 0
+
+        stop = limit = df.ATR.mean() * 3
+
+        hls = HighLowScanner()
+        cp = ChartPattern(hls,df)
+        res = cp.get_pattern()
 
         if res == PatternType.DoubleTop:
-            return self.SELL, 0, 0
+            self._viewer.print_points(hls.get_high_low()[-3:].date, hls.get_high_low()[-3:].close,"red")
+            return self.SELL,  stop, limit
 
-        return self.NONE,0,0
+        return self.NONE, 0, 0
 
     @staticmethod
     def _stoch_buy_trainer(version: str):
@@ -156,9 +161,5 @@ class ChartPatternPredictor(BasePredictor):
 
     @staticmethod
     def get_training_sets(version: str):
-        return ADXSTOCH._stoch_buy_trainer(version) + \
-            ADXSTOCH._stoch_sell_trainer(version) + \
-            ADXSTOCH._adx_diff_trainer(version)
-            #ADXSTOCH._adx_min_trainer(version) + \
-            #ADXSTOCH._adx_max_trainer(version) + \
+        return None
 
