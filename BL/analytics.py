@@ -29,8 +29,6 @@ class Analytics:
         spread = (abs((df_train.close - df_train.close.shift(1))).median()) * 0.8
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
-
-        cp = ChartPattern()
         s = HighLowScanner()
         df_train = s.scan(df_train)
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",

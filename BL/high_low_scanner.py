@@ -1,8 +1,4 @@
-from enum import Enum
-
-import numpy as np
-import pandas as pd
-from scipy.signal import argrelextrema, find_peaks
+from pandas import DataFrame
 
 
 
@@ -14,49 +10,14 @@ class HighLowScanner:
     NONE = "none"
     COLUMN_NAME = "HLTYPE"
     window = 5
+    _df = DataFrame()
 
-    def is_done(self,df):
-        if self.COLUMN_NAME not in df.columns:
-            return False
+    def get_high_low(self):
 
-        highs_lows =  df[df[self.COLUMN_NAME] != self.NONE]
-        if len(highs_lows) == 0:
-            return False
+        return self._df[self._df[self.COLUMN_NAME] != self.NONE]
 
-        pairs = highs_lows[highs_lows[self.COLUMN_NAME] == highs_lows[self.COLUMN_NAME].shift(-1)]
-
-        if len(pairs) > 0:
-            return False
-
-        return True
-
-
-
-
-    def scan2(self, df):
-        df[self.COLUMN_NAME]  = self.NONE
-
-        for i in range(self.window, len(df),self.window):
-            if i == self.window:
-                period = df[i * -1:]
-            else:
-                period = df[i * -1:(i - self.window) * -1]
-
-            max = period.high.idxmax()
-            min = period.low.idxmin()
-
-            if min != max:
-                df.loc[max,self.COLUMN_NAME] = self.MAX
-                df.loc[min, self.COLUMN_NAME] = self.MIN
-
-
-        #while not self.is_done(df):
-        #    highs_lows = df[df[self.COLUMN_NAME] != self.NONE]
-        #    pairs = highs_lows[highs_lows[self.COLUMN_NAME] == highs_lows[self.COLUMN_NAME].shift(-1)]
-
-        return df
-
-    def scan(self,df):
+    def scan(self,df,max_count:int = -1):
+        self._df = df
 
         df[self.COLUMN_NAME] = self.NONE
 
@@ -110,8 +71,9 @@ class HighLowScanner:
                             last_high_index = i
                             last_type = self.MAX
 
-
-
+                if max_count > -1:
+                    if len(self.get_high_low()) >= max_count:
+                        return df
 
         return df
 

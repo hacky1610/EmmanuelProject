@@ -3,6 +3,7 @@ import os.path
 import json
 
 from BL.chart_pattern import ChartPattern, PatternType
+from BL.high_low_scanner import HighLowScanner
 from BL.pricelevels import ZigZagClusterLevels
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
@@ -83,10 +84,10 @@ class ChartPatternPredictor(BasePredictor):
                              ])
 
     def predict(self, df: DataFrame):
-        #if len(df) < 15:
-        return BasePredictor.NONE,0,0
+        if len(df) < 15:
+            return BasePredictor.NONE,0,0
 
-        cp = ChartPattern()
+        cp = ChartPattern(HighLowScanner())
         res = cp.get_pattern(df)
 
         if res == PatternType.DoubleTop:
