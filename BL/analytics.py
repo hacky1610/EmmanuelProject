@@ -35,7 +35,7 @@ class Analytics:
                     df_train, df_eval)
         viewer.print_graph()
         points = df_train[df_train[HighLowScanner.COLUMN_NAME] != HighLowScanner.NONE]
-        viewer.print_points(points.date, points.close)
+        #viewer.print_points(points.date, points.close)
 
         trading_minutes = 0
         last_exit = df_train.date[0]

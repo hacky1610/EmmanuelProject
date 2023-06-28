@@ -1,19 +1,12 @@
 import itertools
-import os.path
-import json
-
 from BL.chart_pattern import ChartPattern, PatternType
 from BL.high_low_scanner import HighLowScanner
-from BL.pricelevels import ZigZagClusterLevels
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
-from BL.candle import MultiCandle, MultiCandleType, Candle, CandleType, Direction
 from UI.base_viewer import BaseViewer
-import numpy as np
-from datetime import datetime
 
 
 class ChartPatternPredictor(BasePredictor):
@@ -95,7 +88,8 @@ class ChartPatternPredictor(BasePredictor):
         res = cp.get_pattern()
 
         if res == PatternType.DoubleTop:
-            self._viewer.print_points(hls.get_high_low()[-3:].date, hls.get_high_low()[-3:].close,"red")
+            self._viewer.print_highs(hls.get_high()[-2:].date, hls.get_high()[-2:].close)
+            self._viewer.print_lows(hls.get_low()[-2:].date, hls.get_low()[-2:].close)
             return self.SELL,  stop, limit
 
         return self.NONE, 0, 0

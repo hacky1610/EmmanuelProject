@@ -1,10 +1,6 @@
 from BL import DataProcessor, Analytics, ConfigReader
-from BL.high_low_scanner import HighLowScanner
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
-from Predictors.adx_stoch import ADXSTOCH
 from Predictors.chart_pattern import ChartPatternPredictor
-from Predictors.combo import Combo
-from Predictors.sr_candle_rsi import SRCandleRsi
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
 import dropbox
