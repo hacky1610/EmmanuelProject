@@ -41,10 +41,10 @@ class BaseViewer:
     def print_points(self,xs,ys,color):
         pass
 
-    def print_highs(self,xs,ys,color):
+    def print_highs(self,xs,ys):
         pass
 
-    def print_lows(self, xs, ys, color):
+    def print_lows(self, xs, ys):
         pass
 
 

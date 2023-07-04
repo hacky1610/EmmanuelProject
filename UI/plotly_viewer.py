@@ -168,7 +168,7 @@ class PlotlyViewer(BaseViewer):
 
 
 
-    def print_highs(self, x_list, y_list,color="black"):
+    def print_highs(self, x_list, y_list):
         self.fig.add_trace(go.Scatter(
             x=pd.to_datetime(x_list),
             y=y_list,
@@ -180,7 +180,7 @@ class PlotlyViewer(BaseViewer):
             )
         ))
 
-    def print_lows(self, x_list, y_list,color="black"):
+    def print_lows(self, x_list, y_list):
         self.fig.add_trace(go.Scatter(
             x=pd.to_datetime(x_list),
             y=y_list,

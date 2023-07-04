@@ -29,13 +29,14 @@ class Analytics:
         spread = (abs((df_train.close - df_train.close.shift(1))).median()) * 0.8
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
-        s = HighLowScanner()
-        df_train = s.scan(df_train)
+        s = HighLowScanner(3)
+        df_print = s.scan(df_train)
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
-                    df_train, df_eval)
+                    df_print, df_eval)
         viewer.print_graph()
-        points = df_train[df_train[HighLowScanner.COLUMN_NAME] != HighLowScanner.NONE]
-        #viewer.print_points(points.date, points.close)
+        viewer.print_highs(s.get_high().date, s.get_high().high)
+        viewer.print_lows(s.get_low().date, s.get_low().low)
+
 
         trading_minutes = 0
         last_exit = df_train.date[0]

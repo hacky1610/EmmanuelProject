@@ -1,7 +1,6 @@
 from pandas import DataFrame
-
-
-
+import pandas as pd
+pd.options.mode.chained_assignment = None
 
 
 class HighLowScanner:
@@ -9,8 +8,11 @@ class HighLowScanner:
     MIN = "min"
     NONE = "none"
     COLUMN_NAME = "HLTYPE"
-    window = 5
+    _min_diff_factor = 3
     _df = DataFrame()
+
+    def __init__(self, min_diff_factor):
+        self._min_diff_factor = min_diff_factor
 
     def get_high_low(self):
 
@@ -24,18 +26,17 @@ class HighLowScanner:
 
         return self._df[self._df[self.COLUMN_NAME] == self.MIN]
 
-
-    def scan(self,df,max_count:int = -1):
+    def scan(self, df, max_count: int = -1):
         self._df = df
 
-        df[self.COLUMN_NAME] = self.NONE
+        df.loc[:, self.COLUMN_NAME] = self.NONE
 
         last_high_index = -1
         last_low_index = -1
         last_type = self.NONE
-        min_diff = df[-1:].ATR.item() * 3
+        min_diff = df[-1:].ATR.item() * self._min_diff_factor
 
-        for i in range(len(df) - 2,0,-1):
+        for i in range(len(df) - 2, 0, -1):
 
             current_low_val = df.loc[i, "low"]
             current_high_val = df.loc[i, "high"]
@@ -66,9 +67,9 @@ class HighLowScanner:
                         df.loc[i, self.COLUMN_NAME] = self.MAX
                         last_high_index = i
                     elif current_low_val < last_high_val and abs(current_low_val - last_high_val) > min_diff:
-                            df.loc[i, self.COLUMN_NAME] = self.MIN
-                            last_low_index = i
-                            last_type = self.MIN
+                        df.loc[i, self.COLUMN_NAME] = self.MIN
+                        last_low_index = i
+                        last_type = self.MIN
                 elif last_type == self.MIN:
                     if current_low_val < last_low_val:
                         df.loc[last_low_index, self.COLUMN_NAME] = self.NONE
@@ -85,10 +86,3 @@ class HighLowScanner:
                         return df
 
         return df
-
-
-
-
-
-
-

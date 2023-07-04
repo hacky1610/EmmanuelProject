@@ -1,4 +1,6 @@
 import itertools
+
+from BL.candle import Candle, Direction
 from BL.chart_pattern import ChartPattern, PatternType
 from BL.high_low_scanner import HighLowScanner
 from Connectors import BaseCache
@@ -11,13 +13,8 @@ from UI.base_viewer import BaseViewer
 
 class ChartPatternPredictor(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
-    buy_stoch_max = 65
-    buy_stoch_min = 50
-    sell_stoch_max = 50
-    sell_stoch_min = 35
-    adx_max = 50
-    adx_min = 10
-    adx_diff_min = 2
+    _min_diff_factor = 3
+    _limit_factor = 3
 
     def __init__(self, config=None,
                  tracer: Tracer = ConsoleTracer(),
@@ -30,13 +27,9 @@ class ChartPatternPredictor(BasePredictor):
         self._viewer = viewer
 
     def setup(self, config: dict):
-        self.buy_stoch_max = config.get("buy_stoch_max", self.buy_stoch_max)
-        self.buy_stoch_min = config.get("buy_stoch_min", self.buy_stoch_min)
-        self.sell_stoch_max = config.get("sell_stoch_max", self.sell_stoch_max)
-        self.sell_stoch_min = config.get("sell_stoch_min", self.sell_stoch_min)
-        self.adx_min = config.get("adx_min", self.adx_min)
-        self.adx_max = config.get("adx_max", self.adx_max)
-        self.adx_max = config.get("adx_diff_min", self.adx_diff_min)
+        self._min_diff_factor = config.get("_min_diff_factor", self._min_diff_factor)
+        self._limit_factor = config.get("_limit_factor", self._limit_factor)
+
 
         super().setup(config)
 
@@ -44,13 +37,8 @@ class ChartPatternPredictor(BasePredictor):
         return Series(["SupResCandle",
                        self.stop,
                        self.limit,
-                       self.sell_stoch_min,
-                       self.sell_stoch_max,
-                       self.buy_stoch_min,
-                       self.buy_stoch_max,
-                       self.adx_min,
-                       self.adx_max,
-                       self.adx_diff_min,
+                       self._min_diff_factor,
+                       self._limit_factor,
                        self.version,
                        self.best_result,
                        self.best_reward,
@@ -61,13 +49,8 @@ class ChartPatternPredictor(BasePredictor):
                       index=["Type",
                              "stop",
                              "limit",
-                             "sell_stoch_min",
-                             "sell_stoch_max",
-                             "buy_stoch_min",
-                             "buy_stoch_max",
-                             "adx_min",
-                             "adx_max",
-                             "adx_diff_min",
+                             "_min_diff_factor",
+                             "_limit_factor",
                              "version",
                              "best_result",
                              "best_reward",
@@ -81,79 +64,39 @@ class ChartPatternPredictor(BasePredictor):
         if len(df) < 15:
             return BasePredictor.NONE, 0, 0
 
-        stop = limit = df.ATR.mean() * 3
+        stop = limit = df.ATR.mean() * self._limit_factor
 
-        hls = HighLowScanner()
+        hls = HighLowScanner(self._min_diff_factor)
         cp = ChartPattern(hls,df)
         res = cp.get_pattern()
 
-        if res == PatternType.DoubleTop:
-            self._viewer.print_highs(hls.get_high()[-2:].date, hls.get_high()[-2:].close)
-            self._viewer.print_lows(hls.get_low()[-2:].date, hls.get_low()[-2:].close)
+
+
+        if res == PatternType.Triangle:
+            self._viewer.print_highs(hls.get_high()[-2:].date, hls.get_high()[-2:].high)
+            self._viewer.print_lows(hls.get_low()[-2:].date, hls.get_low()[-2:].low)
             return self.SELL,  stop, limit
 
         return self.NONE, 0, 0
 
     @staticmethod
-    def _stoch_buy_trainer(version: str):
+    def _limit_diff(version: str):
 
         json_objs = []
-        for buy_max, buy_min in itertools.product(
-                range(50, 70, 5),
-                range(45, 55, 5),
+        for diff, limit in itertools.product(
+                [.3,.7,1.,1.5,2.7],
+                [.3,.7,1.,1.5,2.7],
         ):
             json_objs.append({
-                "buy_stoch_max": buy_max,
-                "buy_stoch_min": buy_min,
+                "_min_diff_factor": diff,
+                "_limit_factor": limit,
                 "version": version
             })
         return json_objs
 
-    @staticmethod
-    def _stoch_sell_trainer(version: str):
 
-        json_objs = []
-        for sell_min, sell_max in itertools.product(
-                range(45, 55, 5),
-                range(30, 50, 5)):
-            json_objs.append({
-                "sell_stoch_max": sell_max,
-                "sell_stoch_min": sell_min,
-                "version": version
-            })
-        return json_objs
-
-    def _adx_max_trainer(version: str):
-
-        json_objs = []
-        for adx in range(20, 50, 3):
-            json_objs.append({
-                "adx_max": adx,
-                "version": version
-            })
-        return json_objs
-
-    def _adx_min_trainer(version: str):
-
-        json_objs = []
-        for adx in range(10, 25, 3):
-            json_objs.append({
-                "adx_min": adx,
-                "version": version
-            })
-        return json_objs
-
-    def _adx_diff_trainer(version: str):
-
-        json_objs = []
-        for diff in [1.5, 2.0, 2.5, 4]:
-            json_objs.append({
-                "adx_diff_min": diff,
-                "version": version
-            })
-        return json_objs
 
     @staticmethod
     def get_training_sets(version: str):
-        return None
+        return ChartPatternPredictor._limit_diff(version)
 

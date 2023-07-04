@@ -1,8 +1,6 @@
 from pandas import DataFrame, Series
 import random
-
-from Predictors.adx_stoch import ADXSTOCH
-from Predictors.sr_candle_rsi import SRCandleRsi
+from Predictors.chart_pattern import ChartPatternPredictor
 
 
 class Trainer:
@@ -14,7 +12,7 @@ class Trainer:
 
 
     def is_trained(self,symbol:str,version:str):
-        saved_predictor = ADXSTOCH(cache=self._cache).load(symbol)
+        saved_predictor = ChartPatternPredictor(cache=self._cache).load(symbol)
         return  version == saved_predictor.version
 
     def train(self, symbol: str, df, df_eval, version: str) -> DataFrame:
@@ -24,10 +22,10 @@ class Trainer:
         predictor = None
         result_df = DataFrame()
 
-        sets = ADXSTOCH.get_training_sets(version)
+        sets = ChartPatternPredictor.get_training_sets(version)
         random.shuffle(sets)
         for training_set in sets:
-            predictor = ADXSTOCH(cache=self._cache)
+            predictor = ChartPatternPredictor(cache=self._cache)
             predictor.load(symbol)
             predictor.setup(training_set)
             res = predictor.step(df, df_eval, self._analytics)
@@ -49,7 +47,7 @@ class Trainer:
             result_df = result_df.append(res,
                                          ignore_index=True)
 
-            if reward > best and w_l > 0.66 and trades >= 5:
+            if reward > best and w_l > 0.6 and trades >= 2:
                 best = reward
                 best_predictor = predictor
                 best_predictor.save(symbol)
