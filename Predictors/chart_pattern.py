@@ -64,18 +64,16 @@ class ChartPatternPredictor(BasePredictor):
         if len(df) < 15:
             return BasePredictor.NONE, 0, 0
 
-        stop = limit = df.ATR.mean() * self._limit_factor
-
         hls = HighLowScanner(self._min_diff_factor)
         cp = ChartPattern(hls,df)
-        res = cp.get_pattern()
+        action = cp.get_pattern()
 
 
-
-        if res == PatternType.Triangle:
+        if action != BasePredictor.NONE:
+            stop = limit = df.ATR.mean() * self._limit_factor
             self._viewer.print_highs(hls.get_high()[-2:].date, hls.get_high()[-2:].high)
             self._viewer.print_lows(hls.get_low()[-2:].date, hls.get_low()[-2:].low)
-            return self.SELL,  stop, limit
+            return action,  stop, limit
 
         return self.NONE, 0, 0
 

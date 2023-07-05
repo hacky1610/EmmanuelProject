@@ -48,6 +48,8 @@ class DataProcessor:
         DataProcessor.drop_column(df, "Stock Splits")
         df.dropna( inplace=True)
         df.reset_index(inplace=True)
+        df.drop(columns=["index"], inplace=True)
+        df.reset_index(inplace=True)
 
     @staticmethod
     def drop_column(df: DataFrame, name: str):

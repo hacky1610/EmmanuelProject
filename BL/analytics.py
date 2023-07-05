@@ -1,4 +1,3 @@
-from BL.chart_pattern import ChartPattern
 from BL.high_low_scanner import HighLowScanner
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -34,8 +33,8 @@ class Analytics:
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
                     df_print, df_eval)
         viewer.print_graph()
-        viewer.print_highs(s.get_high().date, s.get_high().high)
-        viewer.print_lows(s.get_low().date, s.get_low().low)
+        #viewer.print_highs(s.get_high().date, s.get_high().high)
+        #viewer.print_lows(s.get_low().date, s.get_low().low)
 
 
         trading_minutes = 0

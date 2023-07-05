@@ -1,6 +1,23 @@
+from enum import Enum
+
 from pandas import DataFrame
 import pandas as pd
+
 pd.options.mode.chained_assignment = None
+
+
+class HlType(Enum):
+    HIGH = 1
+    LOW = 2
+
+
+class Item:
+
+    def __init__(self, type: HlType, value: float, date,id):
+        self.type = type
+        self.value = value
+        self.date = date
+        self.id = id
 
 
 class HighLowScanner:
@@ -15,8 +32,19 @@ class HighLowScanner:
         self._min_diff_factor = min_diff_factor
 
     def get_high_low(self):
-
         return self._df[self._df[self.COLUMN_NAME] != self.NONE]
+
+    def get_high_low_items(self):
+        hl_list = []
+        l = self.get_high_low()
+        for i in l.iterrows():
+            item = i[1]
+            if item[self.COLUMN_NAME] == self.MAX:
+                hl_list.append(Item(HlType.HIGH, item.high, item.date,item["index"]))
+            else:
+                hl_list.append(Item(HlType.LOW, item.low, item.date,item["index"]))
+
+        return hl_list
 
     def get_high(self):
 
