@@ -13,8 +13,8 @@ from UI.base_viewer import BaseViewer
 
 class ChartPatternPredictor(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
-    _min_diff_factor = 3
-    _limit_factor = 3
+    _min_diff_factor = 1.5
+    _limit_factor = 2
 
     def __init__(self, config=None,
                  tracer: Tracer = ConsoleTracer(),
@@ -63,9 +63,9 @@ class ChartPatternPredictor(BasePredictor):
 
         if len(df) < 15:
             return BasePredictor.NONE, 0, 0
-
+        self._min_diff_factor = 1.5
         hls = HighLowScanner(self._min_diff_factor)
-        cp = ChartPattern(hls,df)
+        cp = ChartPattern(hls,df,self._viewer)
         action = cp.get_pattern()
 
 

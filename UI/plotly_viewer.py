@@ -192,6 +192,11 @@ class PlotlyViewer(BaseViewer):
             )
         ))
 
+    def print_line(self,x1,y1,x2,y2,color="Black"):
+        self.fig.add_shape(type="line",
+                      x0=pd.to_datetime(x1), y0=y1, x1=pd.to_datetime(x2), y1=y2,
+                      line=dict(color=color, width=2)
+                      )
 
     def show(self):
         self.fig.show()
