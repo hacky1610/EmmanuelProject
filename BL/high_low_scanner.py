@@ -1,8 +1,9 @@
 from enum import Enum
-
+import plotly.graph_objects as go
 from pandas import DataFrame
 import pandas as pd
-
+import numpy as np
+from scipy.stats import linregress
 pd.options.mode.chained_assignment = None
 
 
@@ -18,6 +19,118 @@ class Item:
         self.value = value
         self.date = date
         self.id = id
+
+class PivotScanner:
+    #https://www.youtube.com/watch?v=WVNB_6JRbl0
+    def pivotid(self,df1, l, n1, n2):  # n1 n2 before and after candle l
+        if l - n1 < 0 or l + n2 >= len(df1):
+            return 0
+
+        pividlow = 1
+        pividhigh = 1
+        for i in range(l - n1, l + n2 + 1):
+            if (df1.low[l] > df1.low[i]):
+                pividlow = 0
+            if (df1.high[l] < df1.high[i]):
+                pividhigh = 0
+        if pividlow and pividhigh:
+            return 3
+        elif pividlow:
+            return 1
+        elif pividhigh:
+            return 2
+        else:
+            return 0
+
+    def pointpos(self,x):
+        if x['pivot'] == 1:
+            return x['low'] - 1e-3
+        elif x['pivot'] == 2:
+            return x['high'] + 1e-3
+        else:
+            return np.nan
+
+    def scan_points(self, df):
+
+        fig = go.Figure(data=[go.Candlestick(x=df.index,
+                                             open=df['open'],
+                                             high=df['high'],
+                                             low=df['low'],
+                                             close=df['close'])])
+
+        for i in range(50,len(df)-22,5):
+            temp_df = df[0:i+1].copy()
+            temp_df['pivot'] = temp_df.apply(lambda x: self.pivotid(temp_df, x.name, 3, 3), axis=1)
+            temp_df['pointpos'] = temp_df.apply(lambda row: self.pointpos(row), axis=1)
+            self.find_triangle(temp_df,fig,i)
+
+        fig.show()
+
+
+
+    def find_triangle(self,df,fig,candleid):
+
+
+        backcandles = 20
+
+        maxim = np.array([])
+        minim = np.array([])
+        xxmin = np.array([])
+        xxmax = np.array([])
+
+        for i in range(candleid - backcandles, candleid + 1):
+            if df.iloc[i].pivot == 1:
+                minim = np.append(minim, df.iloc[i].low)
+                xxmin = np.append(xxmin, i)  # could be i instead df.iloc[i].name
+            if df.iloc[i].pivot == 2:
+                maxim = np.append(maxim, df.iloc[i].high)
+                xxmax = np.append(xxmax, i)  # df.iloc[i].name
+
+        # slmin, intercmin = np.polyfit(xxmin, minim,1) #numpy
+        # slmax, intercmax = np.polyfit(xxmax, maxim,1)
+        if (xxmax.size < 3 and xxmin.size < 3) or xxmax.size == 0 or xxmin.size == 0:
+            return
+
+        slmin, intercmin, rmin, pmin, semin = linregress(xxmin, minim)
+        slmax, intercmax, rmax, pmax, semax = linregress(xxmax, maxim)
+
+        if abs(rmax) <= 0.7 or abs(rmin) <= 0.7:
+            return
+
+        #sloap >= 0.0 -> steigend
+        #sloap <= 0.0 -> fallend
+        # slmin > 0.0 and slmax < 0.0 -> any dreieck
+
+        #if slmin > 0.0 and slmax < 0.0 :
+
+        dfpl = df[candleid - backcandles - 10:candleid + backcandles + 10]
+
+
+        fig.add_scatter(x=dfpl.index, y=dfpl['pointpos'], mode="markers",
+                        marker=dict(size=4, color="MediumPurple"),
+                        name="pivot")
+
+        # -------------------------------------------------------------------------
+        # Fitting intercepts to meet highest or lowest candle point in time slice
+        # adjintercmin = df.low.loc[candleid-backcandles:candleid].min() - slmin*df.low.iloc[candleid-backcandles:candleid].idxmin()
+        # adjintercmax = df.high.loc[candleid-backcandles:candleid].max() - slmax*df.high.iloc[candleid-backcandles:candleid].idxmax()
+
+        xxmin = np.append(xxmin, xxmin[-1] + 15)
+        xxmax = np.append(xxmax, xxmax[-1] + 15)
+        # fig.add_trace(go.Scatter(x=xxmin, y=slmin*xxmin + adjintercmin, mode='lines', name='min slope'))
+        # fig.add_trace(go.Scatter(x=xxmax, y=slmax*xxmax + adjintercmax, mode='lines', name='max slope'))
+
+        fig.add_trace(go.Scatter(x=xxmin, y=slmin * xxmin + intercmin, mode='lines', name=f"min slope {rmin} - {slmin}"))
+        fig.add_trace(go.Scatter(x=xxmax, y=slmax * xxmax + intercmax, mode='lines', name=f'max slope {rmax} - {slmax}'))
+        fig.add_scatter(x=[df[-1:].index.item()],
+                             y=[df[-1:].close.item()],
+                             marker=dict(
+                                 color='Green',
+                                 size=10
+                             ),
+                             )
+        fig.update_layout(xaxis_rangeslider_visible=False)
+
 
 
 class HighLowScanner:

@@ -1,4 +1,5 @@
 from BL import DataProcessor, Analytics, ConfigReader
+from BL.high_low_scanner import PivotScanner
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
 from Predictors.chart_pattern import ChartPatternPredictor
 from UI.plotly_viewer import PlotlyViewer
@@ -28,6 +29,8 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     #symbol = "EURUSD"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
+    s = PivotScanner()
+    s.scan_points(df)
 
 
     if len(df) > 0:
