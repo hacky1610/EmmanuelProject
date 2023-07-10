@@ -41,7 +41,7 @@ class PlotlyViewer(BaseViewer):
         )
 
     def print_buy(self, x, y):
-        self.fig.add_scatter(x=[pd.to_datetime(x)],
+        self.fig.add_scatter(x=[x],
                              y=[y],
                              marker=dict(
                                  color='Blue',
@@ -55,7 +55,7 @@ class PlotlyViewer(BaseViewer):
                              )
 
     def print_sell(self, x, y):
-        self.fig.add_scatter(x=[pd.to_datetime(x)],
+        self.fig.add_scatter(x=[x],
                              y=[y],
                              marker=dict(
                                  color='Blue',
@@ -69,7 +69,7 @@ class PlotlyViewer(BaseViewer):
                              )
 
     def print_won(self, x, y):
-        self.fig.add_scatter(x=[pd.to_datetime(x)],
+        self.fig.add_scatter(x=[x],
                         y=[y],
                         marker=dict(
                             color='Green',
@@ -78,7 +78,7 @@ class PlotlyViewer(BaseViewer):
                         )
 
     def print_lost(self, x, y):
-        self.fig.add_scatter(x=[pd.to_datetime(x)],
+        self.fig.add_scatter(x=[x],
                              y=[y],
                              marker=dict(
                                  color='Red',

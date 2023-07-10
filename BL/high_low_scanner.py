@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import linregress
 
+from Predictors.base_predictor import BasePredictor
 from UI.base_viewer import BaseViewer
 
 pd.options.mode.chained_assignment = None
@@ -81,7 +82,7 @@ class PivotScanner:
         for i in range(self._lookback,len(df)):
             temp_df = df[0:i+1].copy()
             self.scan(df)
-            self.find_triangle(temp_df,i)
+            self.get_action(temp_df, i)
 
         fig.show()
 
@@ -114,17 +115,17 @@ class PivotScanner:
             go.Scatter(x=xxmin, y=slmin * xxmin + intercmin, mode='lines', name=f"min slope"))
         fig.add_trace(
             go.Scatter(x=xxmax, y=slmax * xxmax + intercmax, mode='lines', name=f'max slope'))
-        fig.add_scatter(x=[df[-1:].index.item()],
-                        y=[df[-1:].close.item()],
-                        marker=dict(
-                            color='Green',
-                            size=10
-                        ),
-                        )
+        # fig.add_scatter(x=[df[-1:].index.item()],
+        #                 y=[df[-1:].close.item()],
+        #                 marker=dict(
+        #                     color='Green',
+        #                     size=10
+        #                 ),
+        #                 )
         fig.update_layout(xaxis_rangeslider_visible=False)
 
 
-    def find_triangle(self,df,candleid):
+    def get_action(self, df, candleid):
 
         maxim = np.array([])
         minim = np.array([])
@@ -154,10 +155,19 @@ class PivotScanner:
         #sloap <= 0.0 -> fallend
 
         if self._is_sync_triangle(slmin,slmax) :
-            self._viewer.custom_print(self._print,df,candleid,xxmin,xxmax,slmin,slmax,intercmin,intercmax)
-            return True
+            crossing_max = slmax * candleid + intercmax
+            crossing_min = slmin * candleid + intercmin
+            current_close = df[-1:].close.item()
 
-        return False
+            self._viewer.custom_print(self._print,df,candleid,xxmin,xxmax,slmin,slmax,intercmin,intercmax)
+            if current_close > crossing_max:
+                return BasePredictor.BUY
+            if current_close < crossing_min:
+                return BasePredictor.SELL
+            return BasePredictor.NONE
+
+
+        return BasePredictor.NONE
 
 
 

@@ -1,4 +1,3 @@
-from BL.high_low_scanner import HighLowScanner, PivotScanner
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame
@@ -28,10 +27,8 @@ class Analytics:
         spread = (abs((df_train.close - df_train.close.shift(1))).median()) * 0.8
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
-        s = HighLowScanner(3)
-        df_print = s.scan(df_train)
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
-                    df_print, df_eval)
+                    df_train, df_eval)
         viewer.print_graph()
         #s = PivotScanner(viewer=viewer)
         #s.scan_points(df_train)
@@ -57,22 +54,24 @@ class Analytics:
             if action == predictor.BUY:
                 open_price = open_price + spread
 
-                viewer.print_buy(df_train.date[i + 1], open_price)
+                viewer.print_buy(df_train[i+1:i+2].index.item(), open_price)
 
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
+                    train_index = df_train[df_train.date <= future.date[j]][-1:].index.item()
+
                     if high > open_price + limit:
                         # Won
-                        viewer.print_won(future.date[j], future.close[j])
+                        viewer.print_won(train_index, future.close[j])
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
                         break
                     elif low < open_price - stop:
                         # Loss
-                        viewer.print_lost(future.date[j], future.close[j])
+                        viewer.print_lost(train_index, future.close[j])
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]
@@ -80,22 +79,23 @@ class Analytics:
             elif action == predictor.SELL:
                 open_price = open_price - spread
 
-                viewer.print_sell(df_train.date[i + 1], open_price)
+                viewer.print_sell(df_train[i+1:i+2].index.item(), open_price)
 
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
+                    train_index = df_train[df_train.date <= future.date[j]][-1:].index.item()
+
                     if low < open_price - limit:
                         # Won
-                        viewer.print_won(future.date[j], future.close[j])
-
+                        viewer.print_won(train_index, future.close[j])
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
                         break
                     elif high > open_price + stop:
-                        viewer.print_lost(future.date[j], future.close[j])
+                        viewer.print_lost(train_index, future.close[j])
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]

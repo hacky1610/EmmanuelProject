@@ -69,12 +69,12 @@ class ChartPatternPredictor(BasePredictor):
             return BasePredictor.NONE, 0, 0
         ps = PivotScanner(viewer=self._viewer)
         ps.scan(df)
-        res = ps.find_triangle(df,df[-1:].index.item())
+        action = ps.get_action(df, df[-1:].index.item())
 
 
-        if res:
+        if action != BasePredictor.NONE:
             stop = limit = df.ATR.mean() * self._limit_factor
-            return BasePredictor.BUY,  stop, limit
+            return action,  stop, limit
 
         return self.NONE, 0, 0
 
