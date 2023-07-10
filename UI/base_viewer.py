@@ -50,4 +50,7 @@ class BaseViewer:
     def print_line(self,x1,y1,x2,y2,color="Black"):
         pass
 
+    def custom_print(self, func, *kwargs):
+        pass
+
 

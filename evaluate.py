@@ -19,7 +19,7 @@ trade_type = TradeType.FX
 
 viewer = BaseViewer()
 viewer = PlotlyViewer(cache=df_cache)
-only_one_position = True
+only_one_position = False
 only_test = False
 
 
@@ -29,8 +29,7 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
     #symbol = "EURUSD"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
-    s = PivotScanner()
-    s.scan_points(df)
+
 
 
     if len(df) > 0:

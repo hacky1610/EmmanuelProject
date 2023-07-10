@@ -2,7 +2,7 @@ import itertools
 
 from BL.candle import Candle, Direction
 from BL.chart_pattern import ChartPattern, PatternType
-from BL.high_low_scanner import HighLowScanner
+from BL.high_low_scanner import HighLowScanner, PivotScanner
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
@@ -15,6 +15,7 @@ class ChartPatternPredictor(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
     _min_diff_factor = 1.5
     _limit_factor = 2
+    _look_back = 20
 
     def __init__(self, config=None,
                  tracer: Tracer = ConsoleTracer(),
@@ -29,6 +30,7 @@ class ChartPatternPredictor(BasePredictor):
     def setup(self, config: dict):
         self._min_diff_factor = config.get("_min_diff_factor", self._min_diff_factor)
         self._limit_factor = config.get("_limit_factor", self._limit_factor)
+        self._look_back = config.get("_look_back", self._look_back)
 
 
         super().setup(config)
@@ -39,6 +41,7 @@ class ChartPatternPredictor(BasePredictor):
                        self.limit,
                        self._min_diff_factor,
                        self._limit_factor,
+                       self._look_back,
                        self.version,
                        self.best_result,
                        self.best_reward,
@@ -51,6 +54,7 @@ class ChartPatternPredictor(BasePredictor):
                              "limit",
                              "_min_diff_factor",
                              "_limit_factor",
+                             "_look_back",
                              "version",
                              "best_result",
                              "best_reward",
@@ -61,19 +65,16 @@ class ChartPatternPredictor(BasePredictor):
 
     def predict(self, df: DataFrame):
 
-        if len(df) < 15:
+        if len(df) <= self._look_back:
             return BasePredictor.NONE, 0, 0
-        self._min_diff_factor = 1.5
-        hls = HighLowScanner(self._min_diff_factor)
-        cp = ChartPattern(hls,df,self._viewer)
-        action = cp.get_pattern()
+        ps = PivotScanner(viewer=self._viewer)
+        ps.scan(df)
+        res = ps.find_triangle(df,df[-1:].index.item())
 
 
-        if action != BasePredictor.NONE:
+        if res:
             stop = limit = df.ATR.mean() * self._limit_factor
-            self._viewer.print_highs(hls.get_high()[-2:].date, hls.get_high()[-2:].high)
-            self._viewer.print_lows(hls.get_low()[-2:].date, hls.get_low()[-2:].low)
-            return action,  stop, limit
+            return BasePredictor.BUY,  stop, limit
 
         return self.NONE, 0, 0
 
