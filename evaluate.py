@@ -28,7 +28,7 @@ markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 for m in random.choices(markets,k=30):
 #for m in markets:
     symbol = m["symbol"]
-    symbol = "USDNOK"
+    #symbol = "USDNOK"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
 

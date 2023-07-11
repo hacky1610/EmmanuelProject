@@ -51,10 +51,12 @@ class Analytics:
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
 
+            additonal_text = f"{df_train.RSI[i+1]}"
+
             if action == predictor.BUY:
                 open_price = open_price + spread
 
-                viewer.print_buy(df_train[i+1:i+2].index.item(), open_price)
+                viewer.print_buy(df_train[i+1:i+2].index.item(), open_price,additonal_text )
 
                 for j in range(len(future)):
                     trading_minutes += 5
@@ -79,7 +81,7 @@ class Analytics:
             elif action == predictor.SELL:
                 open_price = open_price - spread
 
-                viewer.print_sell(df_train[i+1:i+2].index.item(), open_price)
+                viewer.print_sell(df_train[i+1:i+2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
                     trading_minutes += 5
