@@ -1,7 +1,6 @@
 import dropbox
 from Connectors import IG, Tiingo, TradeType, DropBoxService, DropBoxCache
-from Predictors.sr_candle_rsi import SRCandleRsi
-from Predictors.sup_res_candle import SupResCandle
+from Predictors.chart_pattern import ChartPatternPredictor
 from Tracing.LogglyTracer import LogglyTracer
 from BL import Analytics, ConfigReader, DataProcessor
 from BL.trader import Trader
@@ -17,7 +16,7 @@ cache = DropBoxCache(ds)
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
 ig = IG(tracer=tracer, conf_reader=conf_reader, live=live_trade)
 analytics = Analytics(tracer)
-predictor = SRCandleRsi
+predictor = ChartPatternPredictor
 
 trader = Trader(
     ig=ig,
