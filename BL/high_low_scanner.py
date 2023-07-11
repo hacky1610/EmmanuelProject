@@ -27,9 +27,10 @@ class Item:
 class PivotScanner:
     #https://www.youtube.com/watch?v=WVNB_6JRbl0
 
-    def __init__(self,lookback=20,viewer: BaseViewer = BaseViewer()):
+    def __init__(self,lookback=20, be4after=3,viewer: BaseViewer = BaseViewer()):
         self._lookback = lookback
         self._viewer = viewer
+        self._be4after = be4after
 
     @staticmethod
     def get_pivotid(df, line, before, after):  # n1 n2 before and after candle l
@@ -62,7 +63,7 @@ class PivotScanner:
             return np.nan
 
     def get_pivot_ids(self,df):
-        return df[self._lookback * -1:].apply(lambda x: self.get_pivotid(df, x.name, 3, 3), axis=1)
+        return df[self._lookback * -1:].apply(lambda x: self.get_pivotid(df, x.name, self._be4after , self._be4after ), axis=1)
 
     def detect(self,df):
         temp_df = df.copy()
@@ -90,10 +91,22 @@ class PivotScanner:
         df['pivot'] = self.get_pivot_ids(df)
         df['pointpos'] = df.apply(lambda row: self.pointpos(row), axis=1)
 
-    def _is_sync_triangle(self,slmin,slmax):
-        return slmin > 0.0 and slmax < 0.0
+    def _is_ascending_triangle(self, slmin, slmax, xxmax,atr):
+        diff = abs(slmax * xxmax[0] - slmax * xxmax[-1])
+        if diff < atr * 0.4:
+            return slmin > 0.0
 
-    def _print(self,fig,df, candleid,xxmin, xxmax,slmin,slmax, intercmin,intercmax):
+    def _is_descending_triangle(self, slmin, slmax,xxmin,atr):
+        diff = abs(slmin * xxmin[0] - slmin * xxmin[-1])
+        if diff < atr * 0.4:
+            return  slmax < 0.0
+
+
+
+    def _is_triangle(self, slmin, slmax):
+        return slmin > 0.0 > slmax
+
+    def _print(self,fig,df, candleid,xxmin, xxmax,slmin,slmax, intercmin,intercmax,name):
 
         dfpl = df[candleid - self._lookback - 10:candleid + self._lookback + 10]
 
@@ -112,9 +125,22 @@ class PivotScanner:
         # fig.add_trace(go.Scatter(x=xxmax, y=slmax*xxmax + adjintercmax, mode='lines', name='max slope'))
 
         fig.add_trace(
-            go.Scatter(x=xxmin, y=slmin * xxmin + intercmin, mode='lines', name=f"min slope"))
+            go.Scatter(x=xxmin, y=slmin * xxmin + intercmin, mode='lines', name=f"Lower of {name}",  hovertemplate =
+    f'<b>{name}</b>' +
+    '<i>Price</i>: $%{y:.4f}'+
+    '<br><b>X</b>: %{x}<br>'+
+    '<b>%{text}</b>',
+    text = dfpl.date))
         fig.add_trace(
-            go.Scatter(x=xxmax, y=slmax * xxmax + intercmax, mode='lines', name=f'max slope'))
+            go.Scatter(x=xxmax, y=slmax * xxmax + intercmax, mode='lines', name=f"Upper of {name}", hovertemplate =
+    f'<b>{name}</b>' +
+    '<i>Price</i>: $%{y:.4f}'+
+    '<br><b>X</b>: %{x}<br>'+
+    '<b>%{text}</b>',
+    text = dfpl.date))
+
+
+
         # fig.add_scatter(x=[df[-1:].index.item()],
         #                 y=[df[-1:].close.item()],
         #                 marker=dict(
@@ -142,7 +168,7 @@ class PivotScanner:
 
         # slmin, intercmin = np.polyfit(xxmin, minim,1) #numpy
         # slmax, intercmax = np.polyfit(xxmax, maxim,1)
-        if (xxmax.size < 3 and xxmin.size < 3) or xxmax.size == 0 or xxmin.size == 0:
+        if (xxmax.size < 3 and xxmin.size < 3) or xxmax.size <= 1 or xxmin.size <= 1:
             return
 
         slmin, intercmin, rmin, pmin, semin = linregress(xxmin, minim)
@@ -153,16 +179,35 @@ class PivotScanner:
 
         #sloap >= 0.0 -> steigend
         #sloap <= 0.0 -> fallend
+        current_close = df[-1:].close.item()
+        current_atr = df[-1:].ATR.item()
+        max_distance = current_atr * 2
 
-        if self._is_sync_triangle(slmin,slmax) :
+        if self._is_ascending_triangle(slmin, slmax,xxmax,current_atr):
+            crossing_max = slmax * candleid + intercmax
+            self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
+                                      f"Ascending triangle {candleid}")
+            if current_close > crossing_max and current_close - crossing_max < max_distance:
+                return BasePredictor.BUY
+            return BasePredictor.NONE
+        elif self._is_descending_triangle(slmin, slmax,xxmin,current_atr):
+            crossing_min = slmin * candleid + intercmin
+
+            self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
+                                      f"Descending triangle {candleid}")
+            if current_close < crossing_min and crossing_min - current_close < max_distance:
+                return BasePredictor.SELL
+
+            return BasePredictor.NONE
+
+        elif self._is_triangle(slmin, slmax) :
             crossing_max = slmax * candleid + intercmax
             crossing_min = slmin * candleid + intercmin
-            current_close = df[-1:].close.item()
 
-            self._viewer.custom_print(self._print,df,candleid,xxmin,xxmax,slmin,slmax,intercmin,intercmax)
-            if current_close > crossing_max:
+            self._viewer.custom_print(self._print,df,candleid,xxmin,xxmax,slmin,slmax,intercmin,intercmax,"Symmetric triangle")
+            if current_close > crossing_max and current_close - crossing_max < max_distance:
                 return BasePredictor.BUY
-            if current_close < crossing_min:
+            if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return BasePredictor.SELL
             return BasePredictor.NONE
 

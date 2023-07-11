@@ -101,12 +101,16 @@ class Analytics:
                         last_exit = future.date[j]
                         break
 
-        viewer.show()
 
         trades = wins + losses
         predictor._tracer = old_tracer
         if trades == 0:
+            viewer.show()
             return 0, 0, 0, 0, 0, 0
+
+        viewer.update_title(f"Result {round(wins / trades,7)}")
+        viewer.show()
+
         return reward, \
             round(reward / trades,7), \
             round(trades / len(df_train),7), \

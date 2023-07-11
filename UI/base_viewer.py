@@ -53,4 +53,7 @@ class BaseViewer:
     def custom_print(self, func, *kwargs):
         pass
 
+    def update_title(self,text):
+        pass
+
 

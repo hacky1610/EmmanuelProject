@@ -1,5 +1,6 @@
+import random
+
 from BL import DataProcessor, Analytics, ConfigReader
-from BL.high_low_scanner import PivotScanner
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
 from Predictors.chart_pattern import ChartPatternPredictor
 from UI.plotly_viewer import PlotlyViewer
@@ -23,10 +24,11 @@ only_one_position = False
 only_test = False
 
 
-
-for m in ig.get_markets(tradeable=False, trade_type=trade_type):
+markets = ig.get_markets(tradeable=False, trade_type=trade_type)
+for m in random.choices(markets,k=30):
+#for m in markets:
     symbol = m["symbol"]
-    #symbol = "EURUSD"
+    symbol = "USDNOK"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
 
@@ -41,12 +43,7 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
                                                                                            viewer=viewer,
                                                                                            symbol=symbol,
                                                                                          only_one_position=only_one_position)
-        if win_loss > predictor.best_result:
-            print("Better")
-        elif win_loss == predictor.best_result:
-            print("Same")
-        else:
-            print("Worse")
+
         predictor.best_result = win_loss
         predictor.best_reward = reward
         predictor.trades = trades
@@ -55,5 +52,4 @@ for m in ig.get_markets(tradeable=False, trade_type=trade_type):
             predictor.save(symbol)
         viewer.save(symbol)
         print(f"{symbol} - Reward {reward}, success {avg_reward}, trade_freq {trade_freq}, win_loss {win_loss} avg_minutes {avg_minutes}")
-
 

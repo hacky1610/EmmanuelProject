@@ -34,15 +34,22 @@ class PlotlyViewer(BaseViewer):
                            high=self.df['high'],
                            low=self.df['low'],
                            close=self.df['close']),
+
         ])
         self.fig.update_layout(
             title=self.title,
             legend_title="Legend Title",
         )
 
+    def update_title(self, additional_text:str):
+        self.fig.update_layout(
+            title=self.title + " " + additional_text
+        )
+
     def print_buy(self, x, y):
         self.fig.add_scatter(x=[x],
                              y=[y],
+                             name="buy",
                              marker=dict(
                                  color='Blue',
                                  size=10,
@@ -57,6 +64,7 @@ class PlotlyViewer(BaseViewer):
     def print_sell(self, x, y):
         self.fig.add_scatter(x=[x],
                              y=[y],
+                             name="sell",
                              marker=dict(
                                  color='Blue',
                                  size=10,

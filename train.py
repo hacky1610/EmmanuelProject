@@ -21,12 +21,13 @@ tiingo = Tiingo(conf_reader=conf_reader,cache=cache)
 dp = DataProcessor()
 trade_type = TradeType.FX
 ig = IG(conf_reader=conf_reader)
-train_version = "V2.11"
+train_version = "V2.12"
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 for m in random.choices(markets,k=30):
 #for m in markets:
     symbol = m["symbol"]
+    #symbol = "AUDUSD"
     if trainer.is_trained(symbol, train_version):
         print(f"{symbol} Already trained with version {train_version}.")
         continue
