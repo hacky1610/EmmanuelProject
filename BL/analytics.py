@@ -11,6 +11,15 @@ class Analytics:
     def __init__(self, tracer: Tracer = ConsoleTracer()):
         self._tracer = tracer
 
+    @staticmethod
+    def _create_additional_info(row, *args):
+        text = ""
+        for i in args:
+            text += f"{i}:" + "{0:0.5}".format(row[i].item()) + "\r\n"
+
+        return text
+
+
     def evaluate(self, predictor,
                  df_train: DataFrame,
                  df_eval: DataFrame,
@@ -38,7 +47,6 @@ class Analytics:
         last_exit = df_train.date[0]
         for i in range(len(df_train) - 1):
 
-            # df_train.date[i] == '2023-05-04T02:00:00.000Z'
             open_price = df_train.open[i + 1]
 
             if only_one_position and df_train.date[i] < last_exit:
@@ -51,7 +59,7 @@ class Analytics:
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
 
-            additonal_text = f"{df_train.RSI[i+1]}"
+            additonal_text = self._create_additional_info(df_train[-1:], "RSI")
 
             if action == predictor.BUY:
                 open_price = open_price + spread

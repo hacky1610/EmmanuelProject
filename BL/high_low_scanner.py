@@ -18,19 +18,27 @@ class HlType(Enum):
 
 class Item:
 
-    def __init__(self, type: HlType, value: float, date,id):
+    def __init__(self, type: HlType, value: float, date, id):
         self.type = type
         self.value = value
         self.date = date
         self.id = id
 
-class PivotScanner:
-    #https://www.youtube.com/watch?v=WVNB_6JRbl0
 
-    def __init__(self,lookback=20, be4after=3,viewer: BaseViewer = BaseViewer()):
+class PivotScanner:
+    # https://www.youtube.com/watch?v=WVNB_6JRbl0
+
+    def __init__(self,
+                 lookback: int = 20,
+                 be4after: int = 3,
+                 max_dist_factor: float = 2.0,
+                 straight_factor: float = 0.4,
+                 viewer: BaseViewer = BaseViewer()):
         self._lookback = lookback
         self._viewer = viewer
         self._be4after = be4after
+        self._max_dist_factor = max_dist_factor
+        self._straight_factor = straight_factor
 
     @staticmethod
     def get_pivotid(df, line, before, after):  # n1 n2 before and after candle l
@@ -62,14 +70,14 @@ class PivotScanner:
         else:
             return np.nan
 
-    def get_pivot_ids(self,df):
-        return df[self._lookback * -1:].apply(lambda x: self.get_pivotid(df, x.name, self._be4after , self._be4after ), axis=1)
+    def get_pivot_ids(self, df):
+        return df[self._lookback * -1:].apply(lambda x: self.get_pivotid(df, x.name, self._be4after, self._be4after),
+                                              axis=1)
 
-    def detect(self,df):
+    def detect(self, df):
         temp_df = df.copy()
         temp_df['pivot'] = self.get_pivot_ids(temp_df)
         temp_df['pointpos'] = temp_df.apply(lambda row: self.pointpos(row), axis=1)
-        #self.find_triangle(temp_df, fig, i)
 
     def scan_points(self, df):
 
@@ -79,34 +87,31 @@ class PivotScanner:
                                              low=df['low'],
                                              close=df['close'])])
 
-
-        for i in range(self._lookback,len(df)):
-            temp_df = df[0:i+1].copy()
+        for i in range(self._lookback, len(df)):
+            temp_df = df[0:i + 1].copy()
             self.scan(df)
             self.get_action(temp_df, i)
 
         fig.show()
 
-    def scan(self,df):
+    def scan(self, df):
         df['pivot'] = self.get_pivot_ids(df)
         df['pointpos'] = df.apply(lambda row: self.pointpos(row), axis=1)
 
-    def _is_ascending_triangle(self, slmin, slmax, xxmax,atr):
+    def _is_ascending_triangle(self, slmin, slmax, xxmax, atr):
         diff = abs(slmax * xxmax[0] - slmax * xxmax[-1])
-        if diff < atr * 0.4:
+        if diff < atr * self._straight_factor:
             return slmin > 0.0
 
-    def _is_descending_triangle(self, slmin, slmax,xxmin,atr):
+    def _is_descending_triangle(self, slmin, slmax, xxmin, atr):
         diff = abs(slmin * xxmin[0] - slmin * xxmin[-1])
-        if diff < atr * 0.4:
-            return  slmax < 0.0
-
-
+        if diff < atr * self._straight_factor:
+            return slmax < 0.0
 
     def _is_triangle(self, slmin, slmax):
         return slmin > 0.0 > slmax
 
-    def _print(self,fig,df, candleid,xxmin, xxmax,slmin,slmax, intercmin,intercmax,name):
+    def _print(self, fig, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax, name):
 
         dfpl = df[candleid - self._lookback - 10:candleid + self._lookback + 10]
 
@@ -125,31 +130,21 @@ class PivotScanner:
         # fig.add_trace(go.Scatter(x=xxmax, y=slmax*xxmax + adjintercmax, mode='lines', name='max slope'))
 
         fig.add_trace(
-            go.Scatter(x=xxmin, y=slmin * xxmin + intercmin, mode='lines', name=f"Lower of {name}",  hovertemplate =
-    f'<b>{name}</b>' +
-    '<i>Price</i>: $%{y:.4f}'+
-    '<br><b>X</b>: %{x}<br>'+
-    '<b>%{text}</b>',
-    text = dfpl.date))
+            go.Scatter(x=xxmin, y=slmin * xxmin + intercmin, mode='lines', name=f"Lower of {name}", hovertemplate=
+            f'<b>{name}</b>' +
+            '<i>Price</i>: $%{y:.4f}' +
+            '<br><b>X</b>: %{x}<br>' +
+            '<b>%{text}</b>',
+                       text=dfpl.date))
         fig.add_trace(
-            go.Scatter(x=xxmax, y=slmax * xxmax + intercmax, mode='lines', name=f"Upper of {name}", hovertemplate =
-    f'<b>{name}</b>' +
-    '<i>Price</i>: $%{y:.4f}'+
-    '<br><b>X</b>: %{x}<br>'+
-    '<b>%{text}</b>',
-    text = dfpl.date))
+            go.Scatter(x=xxmax, y=slmax * xxmax + intercmax, mode='lines', name=f"Upper of {name}", hovertemplate=
+            f'<b>{name}</b>' +
+            '<i>Price</i>: $%{y:.4f}' +
+            '<br><b>X</b>: %{x}<br>' +
+            '<b>%{text}</b>',
+                       text=dfpl.date))
 
-
-
-        # fig.add_scatter(x=[df[-1:].index.item()],
-        #                 y=[df[-1:].close.item()],
-        #                 marker=dict(
-        #                     color='Green',
-        #                     size=10
-        #                 ),
-        #                 )
         fig.update_layout(xaxis_rangeslider_visible=False)
-
 
     def get_action(self, df, candleid):
 
@@ -177,20 +172,20 @@ class PivotScanner:
         if abs(rmax) <= 0.7 or abs(rmin) <= 0.7:
             return
 
-        #sloap >= 0.0 -> steigend
-        #sloap <= 0.0 -> fallend
+        # sloap >= 0.0 -> steigend
+        # sloap <= 0.0 -> fallend
         current_close = df[-1:].close.item()
         current_atr = df[-1:].ATR.item()
-        max_distance = current_atr * 2
+        max_distance = current_atr * self._max_dist_factor
 
-        if self._is_ascending_triangle(slmin, slmax,xxmax,current_atr):
+        if self._is_ascending_triangle(slmin, slmax, xxmax, current_atr):
             crossing_max = slmax * candleid + intercmax
             self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       f"Ascending triangle {candleid}")
             if current_close > crossing_max and current_close - crossing_max < max_distance:
                 return BasePredictor.BUY
             return BasePredictor.NONE
-        elif self._is_descending_triangle(slmin, slmax,xxmin,current_atr):
+        elif self._is_descending_triangle(slmin, slmax, xxmin, current_atr):
             crossing_min = slmin * candleid + intercmin
 
             self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
@@ -200,22 +195,19 @@ class PivotScanner:
 
             return BasePredictor.NONE
 
-        elif self._is_triangle(slmin, slmax) :
+        elif self._is_triangle(slmin, slmax):
             crossing_max = slmax * candleid + intercmax
             crossing_min = slmin * candleid + intercmin
 
-            self._viewer.custom_print(self._print,df,candleid,xxmin,xxmax,slmin,slmax,intercmin,intercmax,"Symmetric triangle")
+            self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
+                                      "Symmetric triangle")
             if current_close > crossing_max and current_close - crossing_max < max_distance:
                 return BasePredictor.BUY
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return BasePredictor.SELL
             return BasePredictor.NONE
 
-
         return BasePredictor.NONE
-
-
-
 
 
 class HighLowScanner:
@@ -238,9 +230,9 @@ class HighLowScanner:
         for i in l.iterrows():
             item = i[1]
             if item[self.COLUMN_NAME] == self.MAX:
-                hl_list.append(Item(HlType.HIGH, item.high, item.date,item["index"]))
+                hl_list.append(Item(HlType.HIGH, item.high, item.date, item["index"]))
             else:
-                hl_list.append(Item(HlType.LOW, item.low, item.date,item["index"]))
+                hl_list.append(Item(HlType.LOW, item.low, item.date, item["index"]))
 
         return hl_list
 
