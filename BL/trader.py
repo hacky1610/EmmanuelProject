@@ -68,11 +68,15 @@ class Trader:
         pass
 
     def _is_good(self, win_loss: float, trades: float, symbol: str):
-        if win_loss < self._min_win_loss or trades <= self._min_trades:
-            self._tracer.error(
-                f"{symbol} Best result not good {win_loss} or  trades {trades} less than  {self._min_trades}")
-            return False
-        return True
+        if win_loss >= 0.75 and trades > 3:
+            return True
+
+        if win_loss >= self._min_win_loss and trades >= self._min_trades:
+            return True
+
+        self._tracer.error(
+            f"{symbol} Best result not good {win_loss} or  trades {trades} less than  {self._min_trades}")
+        return False
 
     def _evalutaion_up_to_date(self,last_scan_time):
         return (datetime.utcnow() - last_scan_time).days < 3
