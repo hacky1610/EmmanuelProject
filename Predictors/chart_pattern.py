@@ -97,7 +97,7 @@ class ChartPatternPredictor(BasePredictor):
         json_objs = []
         for lookback, b4after in itertools.product(
                 [17, 31],
-                [3, 6, 9],
+                [3, 6, 9, 12],
         ):
             json_objs.append({
                 "_look_back": lookback,

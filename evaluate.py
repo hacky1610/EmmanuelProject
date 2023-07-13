@@ -31,9 +31,6 @@ for m in random.choices(markets,k=30):
     #symbol = "USDNOK"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
-
-
-
     if len(df) > 0:
         predictor = ChartPatternPredictor(cache=df_cache,viewer=viewer)
         predictor.load(symbol)

@@ -24,6 +24,7 @@ class Trainer:
 
         sets = ChartPatternPredictor.get_training_sets(version)
         random.shuffle(sets)
+        sets.insert(0, {}) #insert a fake set. So that the current best version is beeing testet
         for training_set in sets:
             predictor = ChartPatternPredictor(cache=self._cache)
             predictor.load(symbol)
