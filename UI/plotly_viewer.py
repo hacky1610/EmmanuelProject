@@ -6,11 +6,6 @@ from Connectors import BaseCache
 from UI.base_viewer import BaseViewer
 import plotly.graph_objects as go
 import pandas as pd
-import numpy as np
-
-
-# from zigzag import peak_valley_pivots
-
 
 class PlotlyViewer(BaseViewer):
 
@@ -35,9 +30,9 @@ class PlotlyViewer(BaseViewer):
     def print_graph(self):
 
         self.fig = go.Figure(data=[
-            self._print_line("EMA_10","Red"),
-            self._print_line("EMA_20","Orange"),
-            self._print_line("EMA_30", "Blue"),
+            #self._print_line("EMA_10","Red"),
+            #self._print_line("EMA_20","Orange"),
+            #self._print_line("EMA_30", "Blue"),
             go.Candlestick(x=self.df.index,
                            open=self.df['open'],
                            high=self.df['high'],

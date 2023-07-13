@@ -10,11 +10,14 @@ from UI.base_viewer import BaseViewer
 
 class ChartPatternPredictor(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
+
+    # region Members
     _limit_factor: float = 2
     _look_back: int = 40
     _be4after: int = 3
     _max_dist_factor: float = 2.0
     _straight_factor: float = 0.4
+    # endregion
 
     def __init__(self, config=None,
                  tracer: Tracer = ConsoleTracer(),

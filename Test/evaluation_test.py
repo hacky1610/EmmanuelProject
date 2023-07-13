@@ -9,6 +9,7 @@ class EvaluationTest(unittest.TestCase):
 
     def setUp(self):
         self.a = Analytics()
+        self.a._create_additional_info = MagicMock()
         self.predictor = BasePredictor()
         self.predictor.predict = MagicMock(side_effect=self.predict_mock)
         self.predictor.get_stop_limit = MagicMock(return_value=(10,10))
@@ -20,7 +21,7 @@ class EvaluationTest(unittest.TestCase):
             ignore_index=True)
 
     def predict_mock(self, df):
-        return df[-1:].action.item()
+        return df[-1:].action.item(), 10, 10
 
     def test_no_trades(self):
 
