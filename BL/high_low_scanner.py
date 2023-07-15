@@ -4,12 +4,9 @@ from pandas import DataFrame
 import pandas as pd
 import numpy as np
 from scipy.stats import linregress
-
 from Predictors.base_predictor import BasePredictor
 from UI.base_viewer import BaseViewer
-
 pd.options.mode.chained_assignment = None
-
 
 class HlType(Enum):
     HIGH = 1
@@ -73,11 +70,6 @@ class PivotScanner:
     def get_pivot_ids(self, df):
         return df[self._lookback * -1:].apply(lambda x: self.get_pivotid(df, x.name, self._be4after, self._be4after),
                                               axis=1)
-
-    def detect(self, df):
-        temp_df = df.copy()
-        temp_df['pivot'] = self.get_pivot_ids(temp_df)
-        temp_df['pointpos'] = temp_df.apply(lambda row: self.pointpos(row), axis=1)
 
     def scan_points(self, df):
 

@@ -68,7 +68,7 @@ class Trader:
         pass
 
     def _is_good(self, win_loss: float, trades: float, symbol: str):
-        if win_loss >= 0.75 and trades > 3:
+        if win_loss >= 0.75 and trades >= 3:
             return True
 
         if win_loss >= self._min_win_loss and trades >= self._min_trades:

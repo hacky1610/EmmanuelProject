@@ -15,7 +15,7 @@ class PatternType(Enum):
 
 class ChartPattern:
 
-    def __init__(self, hl_scanner: HighLowScanner, prices: DataFrame,viewer:BaseViewer=BaseViewer()):
+    def __init__(self, hl_scanner, prices: DataFrame,viewer:BaseViewer=BaseViewer()):
         self._hl_scanner = hl_scanner
         self._prices = prices
         self._level_diff = prices.ATR.mean() * 0.7

@@ -1,4 +1,6 @@
 import itertools
+import random
+
 from BL.high_low_scanner import PivotScanner
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
@@ -99,8 +101,8 @@ class ChartPatternPredictor(BasePredictor):
 
         json_objs = []
         for lookback, b4after in itertools.product(
-                [17, 31],
-                [3, 6, 9, 12],
+                random.choices(range(14,36),k=2),
+                random.choices(range(3,12),k=2),
         ):
             json_objs.append({
                 "_look_back": lookback,
