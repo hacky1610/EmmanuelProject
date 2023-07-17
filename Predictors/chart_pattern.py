@@ -1,5 +1,5 @@
 import itertools
-import random
+from random import random
 
 from BL.high_low_scanner import PivotScanner
 from Connectors import BaseCache
