@@ -1,7 +1,7 @@
 import itertools
-from random import random
+import random
 
-from BL.high_low_scanner import PivotScanner
+from BL.high_low_scanner import PivotScanner, ShapeType
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
@@ -81,7 +81,9 @@ class ChartPatternPredictor(BasePredictor):
                           max_dist_factor=self._max_dist_factor,
                           straight_factor=self._straight_factor)
         ps.scan(df)
-        action = ps.get_action(df, df[-1:].index.item())
+        action = ps.get_action(df, df[-1:].index.item(),[
+            ShapeType.Triangle, ShapeType.DescendingTriangle, ShapeType.AscendingTriangle
+        ] )
 
         current_ema_20 = df[-1:].EMA_20.item()
         current_ema_50 = df[-1:].EMA_50.item()

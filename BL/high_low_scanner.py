@@ -12,6 +12,15 @@ class HlType(Enum):
     HIGH = 1
     LOW = 2
 
+class ShapeType(Enum):
+    NoShape = 0
+    Triangle = 1
+    AscendingTriangle = 2
+    DescendingTriangle = 3
+    Rectangle = 4
+
+
+
 
 class Item:
 
@@ -103,6 +112,9 @@ class PivotScanner:
     def _is_triangle(self, slmin, slmax):
         return slmin > 0.0 > slmax
 
+    def _is_rectangle(self, slmin, slmax):
+        return slmin < 0 and slmax < 0 or  slmin > 0 and slmax > 0
+
     def _print(self, fig, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax, name):
 
         dfpl = df[candleid - self._lookback - 10:candleid + self._lookback + 10]
@@ -138,7 +150,7 @@ class PivotScanner:
 
         fig.update_layout(xaxis_rangeslider_visible=False)
 
-    def get_action(self, df, candleid):
+    def get_action(self, df, candleid, filter) -> (ShapeType,str):
 
         maxim = np.array([])
         minim = np.array([])
@@ -156,7 +168,7 @@ class PivotScanner:
         # slmin, intercmin = np.polyfit(xxmin, minim,1) #numpy
         # slmax, intercmax = np.polyfit(xxmax, maxim,1)
         if (xxmax.size < 3 and xxmin.size < 3) or xxmax.size <= 1 or xxmin.size <= 1:
-            return
+            return ShapeType.NoShape, BasePredictor.NONE
 
         slmin, intercmin, rmin, pmin, semin = linregress(xxmin, minim)
         slmax, intercmax, rmax, pmax, semax = linregress(xxmax, maxim)
@@ -170,36 +182,45 @@ class PivotScanner:
         current_atr = df[-1:].ATR.item()
         max_distance = current_atr * self._max_dist_factor
 
-        if self._is_ascending_triangle(slmin, slmax, xxmax, current_atr):
+        if self._is_ascending_triangle(slmin, slmax, xxmax, current_atr) and ShapeType.AscendingTriangle in filter:
             crossing_max = slmax * candleid + intercmax
             self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       f"Ascending triangle {candleid}")
             if current_close > crossing_max and current_close - crossing_max < max_distance:
-                return BasePredictor.BUY
-            return BasePredictor.NONE
-        elif self._is_descending_triangle(slmin, slmax, xxmin, current_atr):
+                return ShapeType.AscendingTriangle, BasePredictor.BUY
+            return ShapeType.AscendingTriangle, BasePredictor.NONE
+        elif self._is_descending_triangle(slmin, slmax, xxmin, current_atr) and ShapeType.DescendingTriangle in filter:
             crossing_min = slmin * candleid + intercmin
 
             self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       f"Descending triangle {candleid}")
             if current_close < crossing_min and crossing_min - current_close < max_distance:
-                return BasePredictor.SELL
+                return ShapeType.DescendingTriangle, BasePredictor.SELL
+            return ShapeType.DescendingTriangle, BasePredictor.NONE
 
-            return BasePredictor.NONE
-
-        elif self._is_triangle(slmin, slmax):
+        elif self._is_triangle(slmin, slmax) and ShapeType.Triangle in filter:
             crossing_max = slmax * candleid + intercmax
             crossing_min = slmin * candleid + intercmin
 
             self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       "Symmetric triangle")
             if current_close > crossing_max and current_close - crossing_max < max_distance:
-                return BasePredictor.BUY
+                return ShapeType.Triangle, BasePredictor.BUY
             if current_close < crossing_min and crossing_min - current_close < max_distance:
-                return BasePredictor.SELL
-            return BasePredictor.NONE
+                return ShapeType.Triangle, BasePredictor.SELL
+        elif self._is_rectangle(slmin, slmax) and ShapeType.Rectangle in filter:
+            crossing_max = slmax * candleid + intercmax
+            crossing_min = slmin * candleid + intercmin
 
-        return BasePredictor.NONE
+            self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
+                                      "Rectangle")
+            if current_close > crossing_max and current_close - crossing_max < max_distance:
+                return ShapeType.Rectangle, BasePredictor.BUY
+            if current_close < crossing_min and crossing_min - current_close < max_distance:
+                return ShapeType.Rectangle, BasePredictor.SELL
+            return ShapeType.Rectangle,BasePredictor.NONE
+
+        return ShapeType.NoShape, BasePredictor.NONE
 
 
 class HighLowScanner:
