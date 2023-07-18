@@ -31,11 +31,11 @@ class TraderTest(unittest.TestCase):
 
         self._tiingo.load_trade_data = MagicMock(return_value=self._stock_data)
         self._trader = Trader(ig=self._ig,
-                   tiingo=self._tiingo,
-                   tracer=self._tracer,
-                   dataprocessor=self._dataProcessor,
-                   analytics=self.analytics,
-                   predictor=self._predictor,
+                              tiingo=self._tiingo,
+                              tracer=self._tracer,
+                              dataprocessor=self._dataProcessor,
+                              analytics=self.analytics,
+                              predictor_class_list=self._predictor,
                               cache=MagicMock())
         self._trader._get_spread = MagicMock(return_value=1)
         self._trader._evalutaion_up_to_date = MagicMock(return_value=True)

@@ -1,4 +1,6 @@
 import os
+from typing import List
+
 import pandas as pd
 from datetime import datetime
 from BL import get_project_dir, Analytics, DataProcessor
@@ -10,13 +12,19 @@ from pandas import DataFrame
 from Predictors.base_predictor import BasePredictor
 class Trader:
 
-    def __init__(self, ig: IG, tiingo, tracer: Tracer, predictor: BasePredictor, dataprocessor: DataProcessor,
-                 analytics: Analytics, cache: DropBoxCache):
+    def __init__(self,
+                 ig: IG,
+                 tiingo,
+                 tracer: Tracer,
+                 predictor_class_list: List[type],
+                 dataprocessor: DataProcessor,
+                 analytics: Analytics,
+                 cache: DropBoxCache):
         self._ig = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
         self._tracer = tracer
-        self._predictorClass = predictor
+        self._predictor_class_list = predictor_class_list
         self._analytics = analytics
         self._min_win_loss = 0.65
         self._min_trades = 4
@@ -48,18 +56,19 @@ class Trader:
         for market in currency_markets:
             try:
                 symbol = market["symbol"]
-                self._tracer.debug(f"Try to trade {symbol}")
-                predictor = self._predictorClass(tracer=self._tracer, cache=self._cache)
-                predictor.load(symbol)
-                self.trade(
-                    predictor=predictor,
-                    symbol=symbol,
-                    epic=market["epic"],
-                    spread=market["spread"],
-                    scaling=market["scaling"],
-                    trade_type=trade_type,
-                    size=market["size"],
-                    currency=market["currency"])
+                for predictor_class in self._predictor_class_list:
+                    self._tracer.debug(f"Try to trade {symbol} with {predictor_class.__name__}")
+                    predictor = predictor_class(tracer=self._tracer, cache=self._cache)
+                    predictor.load(symbol)
+                    self.trade(
+                        predictor=predictor,
+                        symbol=symbol,
+                        epic=market["epic"],
+                        spread=market["spread"],
+                        scaling=market["scaling"],
+                        trade_type=trade_type,
+                        size=market["size"],
+                        currency=market["currency"])
             except Exception as EX:
                 self._tracer.error(f"Error while trading {symbol} {EX}")
 

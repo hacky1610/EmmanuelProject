@@ -1,11 +1,7 @@
-import itertools
-import random
-
-from BL.high_low_scanner import PivotScanner, ShapeType
+from BL.high_low_scanner import ShapeType
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
-
 from Predictors.chart_pattern import ChartPatternPredictor
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -17,6 +13,7 @@ class TrianglePredictor(ChartPatternPredictor):
 
     # region Members
     _straight_factor: float = 0.4
+
     # endregion
 
     def __init__(self, config=None,
@@ -38,9 +35,11 @@ class TrianglePredictor(ChartPatternPredictor):
         if len(df) <= self._look_back:
             return BasePredictor.NONE, 0, 0
         ps = super()._scan(df, straight_factor=self._straight_factor)
-        t, action = ps.get_action(df, df[-1:].index.item(),[
-            ShapeType.Triangle, ShapeType.DescendingTriangle, ShapeType.AscendingTriangle
-        ] )
+        t, action = ps.get_action(df, df[-1:].index.item(), [
+            ShapeType.Triangle,
+            ShapeType.DescendingTriangle,
+            ShapeType.AscendingTriangle
+        ])
 
         current_ema_20 = df[-1:].EMA_20.item()
         current_ema_50 = df[-1:].EMA_50.item()
@@ -54,7 +53,6 @@ class TrianglePredictor(ChartPatternPredictor):
                 return action, stop, limit
 
         return self.NONE, 0, 0
-
 
     @staticmethod
     def _straight_factor_set(version: str):
