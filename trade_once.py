@@ -1,4 +1,3 @@
-from Predictors.adx_stoch import ADXSTOCH
 from Predictors.chart_pattern import ChartPatternPredictor
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors import Tiingo, TradeType,DropBoxCache,IG, DropBoxService

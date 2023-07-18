@@ -1,8 +1,7 @@
 from BL import DataProcessor, Analytics, ConfigReader
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
-from Predictors.sup_res_candle import SupResCandle
+from Predictors.old.sup_res_candle import SupResCandle
 from UI.plotly_viewer import PlotlyViewer
-from UI.base_viewer import BaseViewer
 
 import dropbox
 import pandas as pd

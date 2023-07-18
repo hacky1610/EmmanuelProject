@@ -39,12 +39,14 @@ class PivotScanner:
                  be4after: int = 3,
                  max_dist_factor: float = 2.0,
                  straight_factor: float = 0.4,
+                 _rectangle_line_slope:float = 0.05,
                  viewer: BaseViewer = BaseViewer()):
         self._lookback = lookback
         self._viewer = viewer
         self._be4after = be4after
         self._max_dist_factor = max_dist_factor
         self._straight_factor = straight_factor
+        self._rectangle_line_slope = _rectangle_line_slope
 
     @staticmethod
     def get_pivotid(df, line, before, after):  # n1 n2 before and after candle l
@@ -113,7 +115,17 @@ class PivotScanner:
         return slmin > 0.0 > slmax
 
     def _is_rectangle(self, slmin, slmax):
-        return slmin < 0 and slmax < 0 or  slmin > 0 and slmax > 0
+        if slmin < 0 and slmax < 0 or  slmin > 0 and slmax > 0:
+            diff = PivotScanner.get_percentage_diff(slmin,slmax)
+            return diff < self._rectangle_line_slope
+
+    @staticmethod
+    def get_percentage_diff(previous, current):
+        try:
+            percentage = abs(previous - current) / max(previous, current) * 100
+        except ZeroDivisionError:
+            percentage = float('inf')
+        return percentage
 
     def _print(self, fig, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax, name):
 
@@ -174,7 +186,7 @@ class PivotScanner:
         slmax, intercmax, rmax, pmax, semax = linregress(xxmax, maxim)
 
         if abs(rmax) <= 0.7 or abs(rmin) <= 0.7:
-            return
+            return ShapeType.NoShape, BasePredictor.NONE
 
         # sloap >= 0.0 -> steigend
         # sloap <= 0.0 -> fallend

@@ -1,13 +1,14 @@
+#region import
 import random
-
 from BL import DataProcessor, Analytics, ConfigReader
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
-from Predictors.chart_pattern import ChartPatternPredictor
+from Predictors.chart_pattern_rectangle import RectanglePredictor
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
 import dropbox
+#endregion
 
-# Prep
+#region static
 conf_reader = ConfigReader()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
@@ -17,12 +18,13 @@ ig = IG(conf_reader)
 ti = Tiingo(conf_reader=conf_reader,cache=df_cache)
 analytics = Analytics()
 trade_type = TradeType.FX
+#endregion
 
 viewer = BaseViewer()
 viewer = PlotlyViewer(cache=df_cache)
 only_one_position = False
 only_test = False
-
+predictor_class = RectanglePredictor
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 for m in random.choices(markets,k=30):
@@ -32,7 +34,7 @@ for m in random.choices(markets,k=30):
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
     if len(df) > 0:
-        predictor = ChartPatternPredictor(cache=df_cache,viewer=viewer)
+        predictor = predictor_class(cache=df_cache, viewer=viewer)
         predictor.load(symbol)
         reward, avg_reward, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(predictor=predictor,
                                                                                            df_train=df,

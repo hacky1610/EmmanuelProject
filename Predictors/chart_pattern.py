@@ -1,6 +1,5 @@
 import itertools
 import random
-
 from BL.high_low_scanner import PivotScanner, ShapeType
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
@@ -32,11 +31,10 @@ class ChartPatternPredictor(BasePredictor):
         self._viewer = viewer
 
     def setup(self, config: dict):
-        self._limit_factor = config.get("_limit_factor", self._limit_factor)
-        self._look_back = config.get("_look_back", self._look_back)
-        self._be4after = config.get("_be4after", self._be4after)
-        self._max_dist_factor = config.get("_max_dist_factor", self._max_dist_factor)
-        self._straight_factor = config.get("_straight_factor", self._straight_factor)
+        self._set_att(config, "_limit_factor")
+        self._set_att(config, "_look_back")
+        self._set_att(config, "_be4after")
+        self._set_att(config, "_max_dist_factor")
 
         super().setup(config)
 
@@ -48,7 +46,6 @@ class ChartPatternPredictor(BasePredictor):
                        self._look_back,
                        self._be4after,
                        self._max_dist_factor,
-                       self._straight_factor,
                        self.version,
                        self.best_result,
                        self.best_reward,
@@ -63,7 +60,6 @@ class ChartPatternPredictor(BasePredictor):
                              "_look_back",
                              "_be4after",
                              "_max_dist_factor",
-                             "_straight_factor",
                              "version",
                              "best_result",
                              "best_reward",
@@ -72,31 +68,14 @@ class ChartPatternPredictor(BasePredictor):
                              "last_scan",
                              ])
 
-    def predict(self, df: DataFrame):
-        if len(df) <= self._look_back:
-            return BasePredictor.NONE, 0, 0
+    def _scan(self,df,**kwargs):
         ps = PivotScanner(viewer=self._viewer,
                           lookback=self._look_back,
                           be4after=self._be4after,
                           max_dist_factor=self._max_dist_factor,
-                          straight_factor=self._straight_factor)
+                          **kwargs)
         ps.scan(df)
-        action = ps.get_action(df, df[-1:].index.item(),[
-            ShapeType.Triangle, ShapeType.DescendingTriangle, ShapeType.AscendingTriangle
-        ] )
-
-        current_ema_20 = df[-1:].EMA_20.item()
-        current_ema_50 = df[-1:].EMA_50.item()
-
-        if action != BasePredictor.NONE:
-            if action == BasePredictor.BUY and current_ema_20 > current_ema_50:
-                stop = limit = df.ATR.mean() * self._limit_factor
-                return action, stop, limit
-            if action == BasePredictor.SELL and current_ema_20 < current_ema_50:
-                stop = limit = df.ATR.mean() * self._limit_factor
-                return action, stop, limit
-
-        return self.NONE, 0, 0
+        return ps
 
     @staticmethod
     def _scan_sets(version: str):
@@ -136,19 +115,8 @@ class ChartPatternPredictor(BasePredictor):
         return json_objs
 
     @staticmethod
-    def _straight_factor_set(version: str):
-
-        json_objs = []
-        for fact in [0.1, 0.3, 0.4]:
-            json_objs.append({
-                "_straight_factor": fact,
-                "version": version
-            })
-        return json_objs
-
-    @staticmethod
     def get_training_sets(version: str):
         return ChartPatternPredictor._scan_sets(version) + \
             ChartPatternPredictor._stop_limit_sets(version) + \
-            ChartPatternPredictor._straight_factor_set(version) + \
             ChartPatternPredictor._max_dist_set(version)
+

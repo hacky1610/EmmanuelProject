@@ -3,7 +3,7 @@ from Connectors.IG import IG
 from Connectors.tiingo import Tiingo
 from BL.utils import ConfigReader
 import dropbox
-from Predictors.sup_res_candle import SupResCandle
+from Predictors.old.sup_res_candle import SupResCandle
 from Connectors.dropboxservice import DropBoxService
 
 

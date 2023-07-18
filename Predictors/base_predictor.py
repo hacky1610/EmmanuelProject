@@ -34,14 +34,18 @@ class BasePredictor:
         self._cache = cache
 
     def setup(self, config):
-        self.limit = config.get("limit", self.limit)
-        self.stop = config.get("stop", self.stop)
-        self.version = config.get("version", self.version)
-        self.best_result = config.get("best_result", self.best_result)
-        self.best_reward = config.get("best_reward", self.best_reward)
-        self.trades = config.get("trades", self.trades)
-        self.frequence = config.get("frequence", self.frequence)
-        self.last_scan = config.get("last_scan", self.last_scan)
+        self._set_att(config, "limit")
+        self._set_att(config, "stop")
+        self._set_att(config, "version")
+        self._set_att(config, "best_result")
+        self._set_att(config, "best_reward")
+        self._set_att(config, "trades")
+        self._set_att(config, "frequence")
+        self._set_att(config, "last_scan")
+
+
+    def _set_att(self,config:dict,name:str):
+        self.__setattr__(name, config.get(name, self.__getattribute__(name)))
 
     def predict(self, df: DataFrame) -> str:
         raise NotImplementedError

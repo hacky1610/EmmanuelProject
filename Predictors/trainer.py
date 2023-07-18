@@ -1,6 +1,7 @@
 from pandas import DataFrame, Series
 import random
 from Predictors.chart_pattern import ChartPatternPredictor
+from Predictors.chart_pattern_triangle import TrianglePredictor
 
 
 class Trainer:
@@ -11,22 +12,22 @@ class Trainer:
 
 
 
-    def is_trained(self,symbol:str,version:str):
-        saved_predictor = ChartPatternPredictor(cache=self._cache).load(symbol)
+    def is_trained(self,symbol:str,version:str, predictor):
+        saved_predictor = predictor(cache=self._cache).load(symbol)
         return  version == saved_predictor.version
 
-    def train(self, symbol: str, df, df_eval, version: str) -> DataFrame:
-        print(f"#####Train {symbol}#######################")
+    def train(self, symbol: str, df, df_eval, version: str, predictor_class) -> DataFrame:
+        print(f"#####Train {symbol} with {predictor_class.__name__} #######################")
         best = 0
         best_predictor = None
         predictor = None
         result_df = DataFrame()
 
-        sets = ChartPatternPredictor.get_training_sets(version)
+        sets = predictor_class.get_training_sets(version)
         random.shuffle(sets)
         sets.insert(0, {"version": version}) #insert a fake set. So that the current best version is beeing testet
         for training_set in sets:
-            predictor = ChartPatternPredictor(cache=self._cache)
+            predictor = predictor_class(cache=self._cache)
             predictor.load(symbol)
             predictor.setup(training_set)
             res = predictor.step(df, df_eval, self._analytics)

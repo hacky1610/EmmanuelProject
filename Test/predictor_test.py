@@ -1,8 +1,8 @@
 import unittest
 from pandas import Series, DataFrame
-from Predictors.cci_ema import CCI_EMA
-from Predictors.rsi_stoch import RsiStoch
-from Predictors.rsi_bb import RsiBB
+from Predictors.old.cci_ema import CCI_EMA
+from Predictors.old.rsi_stoch import RsiStoch
+from Predictors.old.rsi_bb import RsiBB
 
 
 class PredictorTest(unittest.TestCase):
