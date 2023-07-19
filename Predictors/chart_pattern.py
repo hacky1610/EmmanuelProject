@@ -73,6 +73,7 @@ class ChartPatternPredictor(BasePredictor):
                           lookback=self._look_back,
                           be4after=self._be4after,
                           max_dist_factor=self._max_dist_factor,
+                          tracer=self._tracer,
                           **kwargs)
         ps.scan(df)
         return ps

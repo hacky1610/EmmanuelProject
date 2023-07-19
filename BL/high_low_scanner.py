@@ -6,6 +6,7 @@ import numpy as np
 from scipy.stats import linregress
 from Predictors.base_predictor import BasePredictor
 from UI.base_viewer import BaseViewer
+from Tracing.Tracer import Tracer
 pd.options.mode.chained_assignment = None
 
 class HlType(Enum):
@@ -40,13 +41,15 @@ class PivotScanner:
                  max_dist_factor: float = 2.0,
                  straight_factor: float = 0.4,
                  _rectangle_line_slope:float = 0.05,
-                 viewer: BaseViewer = BaseViewer()):
+                 viewer: BaseViewer = BaseViewer(),
+                 tracer: Tracer = Tracer()):
         self._lookback = lookback
         self._viewer = viewer
         self._be4after = be4after
         self._max_dist_factor = max_dist_factor
         self._straight_factor = straight_factor
         self._rectangle_line_slope = _rectangle_line_slope
+        self._tracer = tracer
 
     @staticmethod
     def get_pivotid(df, line, before, after):  # n1 n2 before and after candle l
@@ -177,8 +180,6 @@ class PivotScanner:
                 maxim = np.append(maxim, df.iloc[i].high)
                 xxmax = np.append(xxmax, i)  # df.iloc[i].name
 
-        # slmin, intercmin = np.polyfit(xxmin, minim,1) #numpy
-        # slmax, intercmax = np.polyfit(xxmax, maxim,1)
         if (xxmax.size < 3 and xxmin.size < 3) or xxmax.size <= 1 or xxmin.size <= 1:
             return ShapeType.NoShape, BasePredictor.NONE
 
@@ -188,13 +189,12 @@ class PivotScanner:
         if abs(rmax) <= 0.7 or abs(rmin) <= 0.7:
             return ShapeType.NoShape, BasePredictor.NONE
 
-        # sloap >= 0.0 -> steigend
-        # sloap <= 0.0 -> fallend
         current_close = df[-1:].close.item()
         current_atr = df[-1:].ATR.item()
         max_distance = current_atr * self._max_dist_factor
 
         if self._is_ascending_triangle(slmin, slmax, xxmax, current_atr) and ShapeType.AscendingTriangle in filter:
+            self._tracer.debug("Found Ascending Triangle")
             crossing_max = slmax * candleid + intercmax
             self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       f"Ascending triangle {candleid}")
@@ -202,6 +202,7 @@ class PivotScanner:
                 return ShapeType.AscendingTriangle, BasePredictor.BUY
             return ShapeType.AscendingTriangle, BasePredictor.NONE
         elif self._is_descending_triangle(slmin, slmax, xxmin, current_atr) and ShapeType.DescendingTriangle in filter:
+            self._tracer.debug("Found Descending Triangle")
             crossing_min = slmin * candleid + intercmin
 
             self._viewer.custom_print(self._print, df, candleid, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
@@ -211,6 +212,7 @@ class PivotScanner:
             return ShapeType.DescendingTriangle, BasePredictor.NONE
 
         elif self._is_triangle(slmin, slmax) and ShapeType.Triangle in filter:
+            self._tracer.debug("Found Triangle")
             crossing_max = slmax * candleid + intercmax
             crossing_min = slmin * candleid + intercmin
 
@@ -221,6 +223,7 @@ class PivotScanner:
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.Triangle, BasePredictor.SELL
         elif self._is_rectangle(slmin, slmax) and ShapeType.Rectangle in filter:
+            self._tracer.debug("Found Rectangle")
             crossing_max = slmax * candleid + intercmax
             crossing_min = slmin * candleid + intercmin
 

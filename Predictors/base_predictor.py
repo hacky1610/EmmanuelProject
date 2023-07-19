@@ -9,7 +9,6 @@ from Tracing.Tracer import Tracer
 import numpy as np
 from datetime import datetime
 
-
 class BasePredictor:
     SELL = "sell"
     BUY = "buy"

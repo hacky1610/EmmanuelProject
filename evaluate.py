@@ -3,6 +3,7 @@ import random
 from BL import DataProcessor, Analytics, ConfigReader
 from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
 from Predictors.chart_pattern_rectangle import RectanglePredictor
+from Predictors.chart_pattern_triangle import TrianglePredictor
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
 import dropbox
@@ -21,14 +22,14 @@ trade_type = TradeType.FX
 #endregion
 
 viewer = BaseViewer()
-viewer = PlotlyViewer(cache=df_cache)
+#viewer = PlotlyViewer(cache=df_cache)
 only_one_position = False
 only_test = False
-predictor_class = RectanglePredictor
+predictor_class = TrianglePredictor
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-for m in random.choices(markets,k=30):
-#for m in markets:
+#for m in random.choices(markets,k=30):
+for m in markets:
     symbol = m["symbol"]
     #symbol = "USDNOK"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
