@@ -54,12 +54,19 @@ class PivotScanner:
 
     @staticmethod
     def get_pivotid(df, line, before, after):  # n1 n2 before and after candle l
-        if line - before < 0 or line + after >= len(df):
+        if line - before < 0 :
             return 0
 
         pividlow = 1
         pividhigh = 1
-        for i in range(line - before, line + after + 1):
+
+        start = line - before
+        end = line + after + 1
+
+        if  line + after >= len(df):
+            end = len(df)
+
+        for i in range(start,end) :
             if (df.low[line] > df.low[i]):
                 pividlow = 0
             if (df.high[line] < df.high[i]):
