@@ -19,6 +19,7 @@ class BasePredictor:
     stop = 2.0
     METRIC = "reward"
     version = "V1.0"
+    model_version = ""
     last_scan = datetime(1970, 1, 1).isoformat()
     best_result = 0.0
     best_reward = 0.0
@@ -252,13 +253,16 @@ class BasePredictor:
     def get_training_sets(version: str):
         return []
 
+    def _get_filename(self,symbol):
+        return f"{self.__class__.__name__}_{symbol}{self.model_version}.json"
+
     def save(self, symbol: str):
         self.last_scan = datetime.utcnow().isoformat()
         json = self.get_config().to_json()
-        self._cache.save_settings(json, f"{self.__class__.__name__}_{symbol}.json")
+        self._cache.save_settings(json, self._get_filename(symbol) )
 
     def load(self, symbol: str):
-        json = self._cache.load_settings(f"{self.__class__.__name__}_{symbol}.json")
+        json = self._cache.load_settings(self._get_filename(symbol))
         if json is not None:
             self.setup(json)
 
