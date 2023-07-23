@@ -18,6 +18,7 @@ class ChartPatternPredictor(BasePredictor):
     _be4after: int = 3
     _max_dist_factor: float = 2.0
     _straight_factor: float = 0.4
+
     # endregion
 
     def __init__(self, config=None,
@@ -68,7 +69,7 @@ class ChartPatternPredictor(BasePredictor):
                              "last_scan",
                              ])
 
-    def _scan(self,df,**kwargs):
+    def _scan(self, df, **kwargs):
         ps = PivotScanner(viewer=self._viewer,
                           lookback=self._look_back,
                           be4after=self._be4after,
@@ -78,13 +79,26 @@ class ChartPatternPredictor(BasePredictor):
         ps.scan(df)
         return ps
 
+    def _get_action(self, df, filter, local_lookback=1, **kwargs):
+        action = BasePredictor.NONE
+        for i in range(local_lookback):
+            if i == 0:
+                temp_df = df
+            else:
+                temp_df = df[:-1 * i]
+            ps = self._scan(temp_df, **kwargs)
+            t, action = ps.get_action(temp_df, temp_df[-1:].index.item(), filter)
+            if action != BasePredictor.NONE:
+                return action
+        return action
+
     @staticmethod
     def _scan_sets(version: str):
 
         json_objs = []
         for lookback, b4after in itertools.product(
-                random.choices(range(14,36),k=2),
-                random.choices(range(3,12),k=2),
+                random.choices(range(14, 36), k=2),
+                random.choices(range(3, 12), k=2),
         ):
             json_objs.append({
                 "_look_back": lookback,
@@ -120,4 +134,3 @@ class ChartPatternPredictor(BasePredictor):
         return ChartPatternPredictor._scan_sets(version) + \
             ChartPatternPredictor._stop_limit_sets(version) + \
             ChartPatternPredictor._max_dist_set(version)
-

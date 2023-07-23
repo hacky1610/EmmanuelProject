@@ -7,11 +7,14 @@ from scipy.stats import linregress
 from Predictors.base_predictor import BasePredictor
 from UI.base_viewer import BaseViewer
 from Tracing.Tracer import Tracer
+
 pd.options.mode.chained_assignment = None
+
 
 class HlType(Enum):
     HIGH = 1
     LOW = 2
+
 
 class ShapeType(Enum):
     NoShape = 0
@@ -19,8 +22,6 @@ class ShapeType(Enum):
     AscendingTriangle = 2
     DescendingTriangle = 3
     Rectangle = 4
-
-
 
 
 class Item:
@@ -40,7 +41,7 @@ class PivotScanner:
                  be4after: int = 3,
                  max_dist_factor: float = 2.0,
                  straight_factor: float = 0.4,
-                 _rectangle_line_slope:float = 0.05,
+                 _rectangle_line_slope: float = 0.05,
                  viewer: BaseViewer = BaseViewer(),
                  tracer: Tracer = Tracer()):
         self._lookback = lookback
@@ -118,8 +119,8 @@ class PivotScanner:
         return slmin > 0.0 > slmax
 
     def _is_rectangle(self, slmin, slmax):
-        if slmin < 0 and slmax < 0 or  slmin > 0 and slmax > 0:
-            diff = PivotScanner.get_percentage_diff(slmin,slmax)
+        if slmin < 0 and slmax < 0 or slmin > 0 and slmax > 0:
+            diff = PivotScanner.get_percentage_diff(slmin, slmax)
             return diff < self._rectangle_line_slope
 
     @staticmethod
@@ -163,9 +164,19 @@ class PivotScanner:
             '<b>%{text}</b>',
                        text=dfpl.date))
 
+        fig.add_scatter(x=[candleid],
+                        y=[df.close[candleid]],
+                        name=name,
+                        marker=dict(
+                            color='Blue',
+                            size=10,
+                            symbol="square",
+                        )
+                        )
+
         fig.update_layout(xaxis_rangeslider_visible=False)
 
-    def get_action(self, df, candleid, filter) -> (ShapeType,str):
+    def get_action(self, df, candleid, filter) -> (ShapeType, str):
 
         maxim = np.array([])
         minim = np.array([])
@@ -233,7 +244,7 @@ class PivotScanner:
                 return ShapeType.Rectangle, BasePredictor.BUY
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.Rectangle, BasePredictor.SELL
-            return ShapeType.Rectangle,BasePredictor.NONE
+            return ShapeType.Rectangle, BasePredictor.NONE
 
         return ShapeType.NoShape, BasePredictor.NONE
 

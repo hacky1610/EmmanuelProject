@@ -37,10 +37,11 @@ class RectanglePredictor(ChartPatternPredictor):
     def predict(self, df: DataFrame):
         if len(df) <= self._look_back:
             return BasePredictor.NONE, 0, 0
-        ps = super()._scan(df,_rectangle_line_slope=self._rectangle_line_slope)
-        t, action = ps.get_action(df, df[-1:].index.item(),[
-            ShapeType.Rectangle
-        ] )
+
+        action = super()._get_action(df=df,
+                                     filter=[ShapeType.Rectangle],
+                                     local_lookback=1,
+                                     _rectangle_line_slope=self._rectangle_line_slope)
 
         current_ema_20 = df[-1:].EMA_20.item()
         current_ema_50 = df[-1:].EMA_50.item()

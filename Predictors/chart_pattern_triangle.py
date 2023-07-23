@@ -34,12 +34,13 @@ class TrianglePredictor(ChartPatternPredictor):
     def predict(self, df: DataFrame):
         if len(df) <= self._look_back:
             return BasePredictor.NONE, 0, 0
-        ps = super()._scan(df, straight_factor=self._straight_factor)
-        t, action = ps.get_action(df, df[-1:].index.item(), [
-            ShapeType.Triangle,
-            ShapeType.DescendingTriangle,
-            ShapeType.AscendingTriangle
-        ])
+
+        action = super()._get_action(df=df,
+                                     filter=[ShapeType.Triangle,
+                                             ShapeType.DescendingTriangle,
+                                             ShapeType.AscendingTriangle],
+                                     local_lookback=1,
+                                     straight_factor=self._straight_factor)
 
         current_ema_20 = df[-1:].EMA_20.item()
         current_ema_50 = df[-1:].EMA_50.item()

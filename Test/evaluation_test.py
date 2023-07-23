@@ -40,9 +40,9 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T19:15:00.00Z", 900, 950, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T19:20:00.00Z", 900, 950, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T19:25:00.00Z", 900, 950, 850, 900)
-        reward, avg_reward, trade_freq, win_loss, avg_min, trades = self.a.evaluate(self.predictor, df, df_eval)
+        res = self.a.evaluate(self.predictor, df, df_eval)
 
-        assert reward == 0
+        assert res.get_reward() == 0
 
     def test_buy_won_trade(self):
 
@@ -63,11 +63,11 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 950, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 950, 850, 920)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 950, 850, 900)
-        reward, avg_reward, trade_freq, win_loss, avg_min, trades = self.a.evaluate(self.predictor, df, df_eval)
+        res  = self.a.evaluate(self.predictor, df, df_eval)
 
-        assert win_loss == 1.0
-        assert reward == 10
-        assert avg_reward == 10
+        assert res.get_win_loss() == 1.0
+        assert res.get_reward() == 10
+        assert res.get_average_reward() == 10
 
     def test_buy_lost_trade(self):
 
@@ -88,10 +88,10 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 900, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 900, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 900, 850, 900)
-        reward, avg_reward, trade_freq, win_loss, avg_min, trades = self.a.evaluate(self.predictor, df, df_eval)
+        res = self.a.evaluate(self.predictor, df, df_eval)
 
-        assert win_loss == 0.0
-        assert reward == -10
+        assert res.get_win_loss() == 0.0
+        assert res.get_reward() == -10
 
     def test_sell_won_trade(self):
 
@@ -112,11 +112,11 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 900, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 900, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 900, 850, 900)
-        reward, avg_reward, trade_freq, win_loss, avg_min, trades = self.a.evaluate(self.predictor, df, df_eval)
+        res = self.a.evaluate(self.predictor, df, df_eval)
 
-        assert win_loss == 1.0
-        assert reward == 10
-        assert avg_reward == 10
+        assert res.get_win_loss() == 1.0
+        assert res.get_reward() == 10
+        assert res.get_average_reward() == 10
 
     def test_sell_lost_trade(self):
 
@@ -137,7 +137,7 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 900, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 930, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 900, 900, 900)
-        reward, avg_reward, trade_freq, win_loss, avg_min, trades = self.a.evaluate(self.predictor, df, df_eval)
+        res = self.a.evaluate(self.predictor, df, df_eval)
 
-        assert win_loss == 0.0
-        assert reward == -10
+        assert res.get_win_loss() == 0.0
+        assert res.get_reward() == -10

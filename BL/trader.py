@@ -10,6 +10,8 @@ from Connectors.tiingo import TradeType
 from Tracing import Tracer
 from pandas import DataFrame
 from Predictors.base_predictor import BasePredictor
+
+
 class Trader:
 
     def __init__(self,
@@ -72,7 +74,6 @@ class Trader:
             except Exception as EX:
                 self._tracer.error(f"Error while trading {symbol} {EX}")
 
-
     def _report(self, df: DataFrame, symbol: str, reference: str):
         pass
 
@@ -87,7 +88,7 @@ class Trader:
             f"{symbol} Best result not good {win_loss} or  trades {trades} less than  {self._min_trades}")
         return False
 
-    def _evalutaion_up_to_date(self,last_scan_time):
+    def _evalutaion_up_to_date(self, last_scan_time):
         return (datetime.utcnow() - last_scan_time).days < 3
 
     def trade(self, predictor: BasePredictor,
@@ -111,10 +112,10 @@ class Trader:
                 self._tracer.error(f"Could not load train data for {symbol}")
                 return False
 
-            _, _, _, win_loss, _, trades = self._analytics.evaluate(predictor,
-                                                                    trade_df, df_eval,
-                                                                    symbol)
-            if not self._is_good(win_loss, trades, symbol):
+            ev_result = self._analytics.evaluate(predictor,
+                                                 trade_df, df_eval,
+                                                 symbol)
+            if not self._is_good(ev_result.get_win_loss(), ev_result.get_trades(), symbol):
                 return False
 
         if len(trade_df) == 0:

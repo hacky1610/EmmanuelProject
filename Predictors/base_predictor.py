@@ -2,6 +2,8 @@ import itertools
 import json
 import os
 from pandas import DataFrame
+
+from BL.eval_result import EvalResult
 from BL.utils import get_project_dir
 from Connectors.dropbox_cache import BaseCache
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -59,10 +61,15 @@ class BasePredictor:
         return abs(df.close - df.close.shift(-1)).mean()
 
     def step(self, df_train: DataFrame, df_eval: DataFrame, analytics):
-        reward, success, trade_freq, win_loss, avg_minutes, trades = analytics.evaluate(self, df_train, df_eval)
+        ev_result:EvalResult = analytics.evaluate(self, df_train, df_eval)
 
-        return {"done": True, self.METRIC: reward, "success": success, "trade_frequency": trade_freq,
-                "win_loss": win_loss, "avg_minutes": avg_minutes, "trades": trades}
+        return {"done": True,
+                self.METRIC: ev_result.get_reward(),
+                "success": ev_result.get_average_reward(),
+                "trade_frequency": ev_result.get_trade_frequency(),
+                "win_loss": ev_result.get_win_loss(),
+                "avg_minutes": ev_result.get_average_minutes(),
+                "trades": ev_result.get_trades()}
 
     def _get_save_path(self, predictor_name: str, symbol: str) -> str:
         return os.path.join(get_project_dir(), "Settings", f"{predictor_name}_{symbol}.json")

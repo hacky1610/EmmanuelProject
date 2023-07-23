@@ -1,3 +1,4 @@
+from BL.eval_result import EvalResult
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame
@@ -19,13 +20,12 @@ class Analytics:
 
         return text
 
-
     def evaluate(self, predictor,
                  df_train: DataFrame,
                  df_eval: DataFrame,
                  symbol: str = "",
                  viewer: BaseViewer = BaseViewer(),
-                 only_one_position: bool = True):
+                 only_one_position: bool = True) -> EvalResult:
 
         assert len(df_train) > 0
         assert len(df_eval) > 0
@@ -39,9 +39,6 @@ class Analytics:
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
                     df_train, df_eval)
         viewer.print_graph()
-        #s = PivotScanner(viewer=viewer)
-        #s.scan_points(df_train)
-
 
         trading_minutes = 0
         last_exit = df_train.date[0]
@@ -64,7 +61,7 @@ class Analytics:
             if action == predictor.BUY:
                 open_price = open_price + spread
 
-                viewer.print_buy(df_train[i+1:i+2].index.item(), open_price,additonal_text )
+                viewer.print_buy(df_train[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
                     trading_minutes += 5
@@ -89,7 +86,7 @@ class Analytics:
             elif action == predictor.SELL:
                 open_price = open_price - spread
 
-                viewer.print_sell(df_train[i+1:i+2].index.item(), open_price, additonal_text)
+                viewer.print_sell(df_train[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
                     trading_minutes += 5
@@ -111,19 +108,9 @@ class Analytics:
                         last_exit = future.date[j]
                         break
 
-
-        trades = wins + losses
         predictor._tracer = old_tracer
-        if trades == 0:
-            viewer.show()
-            return 0, 0, 0, 0, 0, 0
-
-        viewer.update_title(f"Result {round(wins / trades,7)}")
+        ev_res = EvalResult(reward, wins + losses, len(df_train), trading_minutes, wins)
+        viewer.update_title(f"{ev_res}")
         viewer.show()
 
-        return reward, \
-            round(reward / trades,7), \
-            round(trades / len(df_train),7), \
-            round(wins / trades,7), \
-            round(trading_minutes / trades,7), \
-            trades
+        return ev_res

@@ -29,6 +29,7 @@ ig = IG(conf_reader=conf_reader)
 
 train_version = "V2.18"
 loop = True
+async_exec = False
 predictor = TrianglePredictor
 predictor = RectanglePredictor
 
@@ -44,10 +45,10 @@ while True:
             continue
         df, eval = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         if len(df) > 0:
-            if os.name == "nt":
-                trainer.train(symbol, df, eval, train_version, predictor)
-            else:
-                p = Process(target=trainer.train,args=(symbol,df, eval, train_version))
+            if async_exec:
+                p = Process(target=trainer.train, args=(symbol, df, eval, train_version))
                 p.start()
+            else:
+                trainer.train(symbol, df, eval, train_version, predictor)
         else:
             print(f"No Data in {symbol} ")
