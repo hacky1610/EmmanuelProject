@@ -25,16 +25,16 @@ market_measures = 0
 # endregion
 
 viewer = BaseViewer()
-viewer = PlotlyViewer(cache=df_cache)
+#viewer = PlotlyViewer(cache=df_cache)
 only_one_position = True
 only_test = True
 predictor_class = RectanglePredictor
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-for m in random.choices(markets,k=30):
-#for m in markets:
+#for m in random.choices(markets,k=30):
+for m in markets[:20]:
     symbol = m["symbol"]
-    symbol = "AUDUSD"
+    #symbol = "AUDUSD"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
     if len(df) > 0:
