@@ -1,7 +1,7 @@
 import itertools
 import json
 import os
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from BL.eval_result import EvalResult
 from BL.utils import get_project_dir
@@ -76,7 +76,26 @@ class BasePredictor:
         return os.path.join(get_project_dir(), "Settings", f"{predictor_name}_{symbol}.json")
 
     def get_config(self):
-        raise NotImplementedError
+        return Series([self.__class__,
+                       self.stop,
+                       self.limit,
+                       self.version,
+                       self.best_result,
+                       self.best_reward,
+                       self.trades,
+                       self.frequence,
+                       self.last_scan,
+                       ],
+                      index=["Type",
+                             "stop",
+                             "limit",
+                             "version",
+                             "best_result",
+                             "best_reward",
+                             "trades",
+                             "frequence",
+                             "last_scan",
+                             ])
 
     def load(self, symbol: str):
         raise NotImplementedError

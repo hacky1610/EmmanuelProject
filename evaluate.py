@@ -40,6 +40,7 @@ for m in markets[:20]:
     if len(df) > 0:
         predictor = predictor_class(cache=df_cache, viewer=viewer)
         predictor.load(symbol)
+        predictor.save(symbol)
         ev_result = analytics.evaluate(predictor=predictor,
                                        df_train=df,
                                        df_eval=df_eval,

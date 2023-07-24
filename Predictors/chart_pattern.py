@@ -40,34 +40,20 @@ class ChartPatternPredictor(BasePredictor):
         super().setup(config)
 
     def get_config(self) -> Series:
-        return Series(["SupResCandle",
-                       self.stop,
-                       self.limit,
+        parent_c = super().get_config()
+        my_conf =  Series([
                        self._limit_factor,
                        self._look_back,
                        self._be4after,
-                       self._max_dist_factor,
-                       self.version,
-                       self.best_result,
-                       self.best_reward,
-                       self.trades,
-                       self.frequence,
-                       self.last_scan,
+                       self._max_dist_factor
                        ],
-                      index=["Type",
-                             "stop",
-                             "limit",
+                      index=[
                              "_limit_factor",
                              "_look_back",
                              "_be4after",
                              "_max_dist_factor",
-                             "version",
-                             "best_result",
-                             "best_reward",
-                             "trades",
-                             "frequence",
-                             "last_scan",
                              ])
+        return parent_c.append(my_conf)
 
     def _scan(self, df, **kwargs):
         ps = PivotScanner(viewer=self._viewer,
