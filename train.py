@@ -39,7 +39,7 @@ while True:
     #for m in random.choices(markets,k=30):
     for m in markets:
         symbol = m["symbol"]
-        #symbol = "AUDUSD"
+        symbol = "AUDUSD"
         if trainer.is_trained(symbol, train_version,predictor) and not loop:
             print(f"{symbol} Already trained with version {train_version}.")
             continue

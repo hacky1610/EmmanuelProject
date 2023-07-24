@@ -1,7 +1,5 @@
-from pandas import DataFrame, Series
 import random
-from Predictors.chart_pattern import ChartPatternPredictor
-from Predictors.chart_pattern_triangle import TrianglePredictor
+from BL.eval_result import EvalResult
 
 
 class Trainer:
@@ -10,54 +8,30 @@ class Trainer:
         self._analytics = analytics
         self._cache = cache
 
-
-
-    def is_trained(self,symbol:str,version:str, predictor):
+    def is_trained(self, symbol: str, version: str, predictor):
         saved_predictor = predictor(cache=self._cache).load(symbol)
-        return  version == saved_predictor.version
+        return version == saved_predictor.version
 
-    def train(self, symbol: str, df, df_eval, version: str, predictor_class) -> DataFrame:
+    def train(self, symbol: str, df, df_eval, version: str, predictor_class):
         print(f"#####Train {symbol} with {predictor_class.__name__} #######################")
         best = 0
         best_predictor = None
         predictor = None
-        result_df = DataFrame()
 
         sets = predictor_class.get_training_sets(version)
         random.shuffle(sets)
-        sets.insert(0, {"version": version}) #insert a fake set. So that the current best version is beeing testet
+        sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
         for training_set in sets:
             predictor = predictor_class(cache=self._cache)
             predictor.load(symbol)
             predictor.setup(training_set)
-            res = predictor.step(df, df_eval, self._analytics)
+            res: EvalResult = predictor.step(df, df_eval, self._analytics)
 
-            reward = res["reward"]
-            avg_reward = res["success"]
-            frequ = res["trade_frequency"]
-            w_l = res["win_loss"]
-            minutes = res["avg_minutes"]
-            trades = res["trades"]
-            predictor.setup({"best_result": w_l,
-                             "best_reward": reward,
-                             "frequence": frequ,
-                             "trades": trades })
-
-            res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
-                         index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
-            res = res.append(predictor.get_config())
-            result_df = result_df.append(res,
-                                         ignore_index=True)
-
-            if reward > best and w_l > 0.6 and trades >= 2:
-                best = reward
+            if res.get_reward() > best and res.get_win_loss() > 0.6 and res.get_trades() >= 2:
+                best = res.get_reward()
                 best_predictor = predictor
                 best_predictor.save(symbol)
-                print(f"{symbol} - {predictor.get_config()} - "
-                      f"Avg Reward: {avg_reward:6.5} "
-                      f"Avg Min {int(minutes)}  "
-                      f"Freq: {frequ:4.3} "
-                      f"WL: {w_l:3.2}")
+                print(f"{symbol} - {predictor.get_config()} - Result {res}")
 
         if best_predictor is not None:
             print(f"{symbol} Overwrite result.")
@@ -65,4 +39,3 @@ class Trainer:
         else:
             print(f"{symbol} Couldnt find good result")
             predictor.save(symbol)
-        return result_df

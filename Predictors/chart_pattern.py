@@ -18,7 +18,6 @@ class ChartPatternPredictor(BasePredictor):
     _be4after: int = 3
     _max_dist_factor: float = 2.0
     _straight_factor: float = 0.4
-
     # endregion
 
     def __init__(self, config=None,
@@ -37,6 +36,8 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_be4after")
         self._set_att(config, "_max_dist_factor")
 
+        self._look_back = int(self._look_back)
+        self._be4after = int(self._be4after)
         super().setup(config)
 
     def get_config(self) -> Series:
