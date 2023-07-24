@@ -1,11 +1,7 @@
-import itertools
-import random
-
 from BL.high_low_scanner import PivotScanner, ShapeType
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
-
 from Predictors.chart_pattern import ChartPatternPredictor
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -24,6 +20,7 @@ class RectanglePredictor(ChartPatternPredictor):
                  viewer: BaseViewer = BaseViewer(),
                  cache: BaseCache = BaseCache()):
         super().__init__(config, tracer=tracer, cache=cache, viewer=viewer)
+        self.model_version = "V2.0"
 
     def setup(self, config: dict):
         self._set_att(config, "_rectangle_line_slope")

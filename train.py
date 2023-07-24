@@ -37,7 +37,7 @@ predictor = RectanglePredictor
 while True:
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     #for m in random.choices(markets,k=30):
-    for m in markets:
+    for m in markets[:20]:
         symbol = m["symbol"]
         #symbol = "AUDUSD"
         if trainer.is_trained(symbol, train_version,predictor) and not loop:
