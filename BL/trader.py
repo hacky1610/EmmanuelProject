@@ -89,7 +89,7 @@ class Trader:
         return False
 
     def _evalutaion_up_to_date(self, last_scan_time):
-        return (datetime.utcnow() - last_scan_time).days < 3
+        return (datetime.utcnow() - last_scan_time).days < 10
 
     def trade(self, predictor: BasePredictor,
               symbol: str,
@@ -107,16 +107,7 @@ class Trader:
         else:
             self._tracer.error(
                 f"{symbol} Last evaluation to old")
-            trade_df, df_eval = self._tiingo.load_train_data(symbol, self._dataprocessor, trade_type)
-            if len(trade_df) == 0:
-                self._tracer.error(f"Could not load train data for {symbol}")
-                return False
-
-            ev_result = self._analytics.evaluate(predictor,
-                                                 trade_df, df_eval,
-                                                 symbol)
-            if not self._is_good(ev_result.get_win_loss(), ev_result.get_trades(), symbol):
-                return False
+            return False
 
         if len(trade_df) == 0:
             self._tracer.error(f"Could not load train data for {symbol}")
