@@ -79,6 +79,22 @@ class ChartPatternPredictor(BasePredictor):
                 return action
         return action
 
+    def is_with_trend(self, action,df):
+        current_ema_20 = df[-1:].EMA_20.item()
+        current_ema_50 = df[-1:].EMA_50.item()
+
+        if action != BasePredictor.NONE:
+            self._tracer.debug(f"Got {action} from PivotScanner")
+            if action == BasePredictor.BUY and current_ema_20 > current_ema_50:
+                stop = limit = df.ATR.mean() * self._limit_factor
+                return action, stop, limit
+            if action == BasePredictor.SELL and current_ema_20 < current_ema_50:
+                stop = limit = df.ATR.mean() * self._limit_factor
+                return action, stop, limit
+            self._tracer.debug(f"No action because it is against trend")
+
+        return BasePredictor.NONE, 0, 0
+
     @staticmethod
     def _scan_sets(version: str):
 
