@@ -211,6 +211,9 @@ class PivotScanner:
                                       f"Ascending triangle {candleid}")
             if current_close > crossing_max and current_close - crossing_max < max_distance:
                 return ShapeType.AscendingTriangle, BasePredictor.BUY
+
+            self._tracer.debug(f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} ")
+
             return ShapeType.AscendingTriangle, BasePredictor.NONE
         elif self._is_descending_triangle(slmin, slmax, xxmin, current_atr) and ShapeType.DescendingTriangle in filter:
             self._tracer.debug("Found Descending Triangle")
@@ -220,6 +223,8 @@ class PivotScanner:
                                       f"Descending triangle {candleid}")
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.DescendingTriangle, BasePredictor.SELL
+            self._tracer.debug(f"No action Close {current_close} Max Dist {max_distance} min {crossing_min}")
+
             return ShapeType.DescendingTriangle, BasePredictor.NONE
 
         elif self._is_triangle(slmin, slmax) and ShapeType.Triangle in filter:
@@ -233,6 +238,8 @@ class PivotScanner:
                 return ShapeType.Triangle, BasePredictor.BUY
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.Triangle, BasePredictor.SELL
+            self._tracer.debug(f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
+
         elif self._is_rectangle(slmin, slmax) and ShapeType.Rectangle in filter:
             self._tracer.debug("Found Rectangle")
             crossing_max = slmax * candleid + intercmax
@@ -244,6 +251,8 @@ class PivotScanner:
                 return ShapeType.Rectangle, BasePredictor.BUY
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.Rectangle, BasePredictor.SELL
+
+            self._tracer.debug(f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
             return ShapeType.Rectangle, BasePredictor.NONE
 
         return ShapeType.NoShape, BasePredictor.NONE

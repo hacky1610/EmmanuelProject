@@ -11,7 +11,7 @@ import dropbox
 
 # endregion
 
-# region static
+# region static members
 conf_reader = ConfigReader()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, "DEMO")
@@ -21,20 +21,22 @@ ig = IG(conf_reader)
 ti = Tiingo(conf_reader=conf_reader, cache=df_cache)
 analytics = Analytics()
 trade_type = TradeType.FX
+results = EvalResultCollection()
+viewer = BaseViewer()
 # endregion
 
-viewer = BaseViewer()
-#viewer = PlotlyViewer(cache=df_cache)
+viewer = PlotlyViewer(cache=df_cache)
 only_one_position = True
 only_test = False
 predictor_class = RectanglePredictor
-results = EvalResultCollection()
+predictor_class = TrianglePredictor
+
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 #for m in random.choices(markets,k=30):
-for m in markets[:30]:
+for m in markets:
     symbol = m["symbol"]
-    #symbol = "NZDUSD"
+    #symbol = "AUDUSD"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
     if len(df) > 0:
