@@ -27,7 +27,7 @@ ig = IG(conf_reader=conf_reader)
 
 
 train_version = "V2.18"
-loop = True
+loop = False
 async_exec = False
 predictor = TrianglePredictor
 predictor = RectanglePredictor
@@ -36,9 +36,9 @@ predictor = RectanglePredictor
 while True:
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     #for m in random.choices(markets,k=30):
-    for m in markets[:20]:
+    for m in markets:
         symbol = m["symbol"]
-        symbol = "AUDUSD"
+        #symbol = "AUDUSD"
         if trainer.is_trained(symbol, train_version,predictor) and not loop:
             print(f"{symbol} Already trained with version {train_version}.")
             continue
