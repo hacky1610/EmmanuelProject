@@ -23,37 +23,43 @@ analytics = Analytics()
 trade_type = TradeType.FX
 results = EvalResultCollection()
 viewer = BaseViewer()
+
+
 # endregion
 
-viewer = PlotlyViewer(cache=df_cache)
-only_one_position = True
-only_test = False
-predictor_class = RectanglePredictor
-predictor_class = TrianglePredictor
+# region functions
+def evaluate_predictor(ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, only_one_position: bool = True,
+                       only_test=False):
+    global symbol
+    markets = ig.get_markets(tradeable=False, trade_type=trade_type)
+    # for m in random.choices(markets,k=30):
+    for m in markets:
+        symbol = m["symbol"]
+        # symbol = "AUDUSD"
+        df, df_eval = ti.load_train_data(symbol, dp, trade_type)
+
+        if len(df) > 0:
+            predictor = predictor_class(cache=df_cache, viewer=viewer)
+            predictor.load(symbol)
+            ev_result = analytics.evaluate(predictor=predictor,
+                                           df_train=df,
+                                           df_eval=df_eval,
+                                           viewer=viewer,
+                                           symbol=symbol,
+                                           only_one_position=only_one_position)
+
+            predictor.set_result(ev_result)
+            results.add(ev_result)
+            if not only_test:
+                predictor.save(symbol)
+            viewer.save(symbol)
+            print(f"{symbol} - {ev_result}")
+    print(f"{results}")
 
 
-markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-#for m in random.choices(markets,k=30):
-for m in markets:
-    symbol = m["symbol"]
-    #symbol = "AUDUSD"
-    df, df_eval = ti.load_train_data(symbol, dp, trade_type)
+# endregion
 
-    if len(df) > 0:
-        predictor = predictor_class(cache=df_cache, viewer=viewer)
-        predictor.load(symbol)
-        ev_result = analytics.evaluate(predictor=predictor,
-                                       df_train=df,
-                                       df_eval=df_eval,
-                                       viewer=viewer,
-                                       symbol=symbol,
-                                       only_one_position=only_one_position)
+#viewer = PlotlyViewer(cache=df_cache)
 
-        predictor.set_result(ev_result)
-        results.add(ev_result)
-        if not only_test:
-            predictor.save(symbol)
-        viewer.save(symbol)
-        print(f"{symbol} - {ev_result}")
-
-print(f"{results}")
+evaluate_predictor(ig, ti, RectanglePredictor, viewer)
+evaluate_predictor(ig, ti, TrianglePredictor, viewer)
