@@ -1,7 +1,4 @@
 from datetime import datetime
-
-from pandas import DataFrame
-
 from Connectors import BaseCache
 from UI.base_viewer import BaseViewer
 import plotly.graph_objects as go

@@ -1,6 +1,4 @@
 import unittest
-from pandas import Series, DataFrame
-
 from Predictors.base_predictor import BasePredictor
 
 

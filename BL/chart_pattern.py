@@ -2,7 +2,7 @@ from enum import Enum
 
 from pandas import DataFrame
 
-from BL.high_low_scanner import HighLowScanner,HlType,Item
+from BL.high_low_scanner import HlType
 from Predictors.base_predictor import BasePredictor
 from UI.base_viewer import BaseViewer
 
@@ -62,10 +62,6 @@ class ChartPattern:
             return correct_form() and same_high() and close_under_min() and second_high_lower()
 
         return False
-
-    def _is_triangle(self):
-        from ta import trend
-
 
 
         return False, BasePredictor.NONE

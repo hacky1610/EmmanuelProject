@@ -1,8 +1,6 @@
 import itertools
-import json
 import os
 from pandas import DataFrame, Series
-
 from BL.eval_result import EvalResult
 from BL.utils import get_project_dir
 from Connectors.dropbox_cache import BaseCache
@@ -21,10 +19,6 @@ class BasePredictor:
     version = "V1.0"
     model_version = ""
     last_scan = datetime(1970, 1, 1).isoformat()
-    best_result = 0.0
-    best_reward = 0.0
-    frequence = 0.0
-    trades = 0
     _tracer = ConsoleTracer()
     _last_scan: EvalResult = EvalResult()
 
@@ -76,20 +70,12 @@ class BasePredictor:
                        self.stop,
                        self.limit,
                        self.version,
-                       self.best_result,
-                       self.best_reward,
-                       self.trades,
-                       self.frequence,
                        self.last_scan,
                        ],
                       index=["Type",
                              "stop",
                              "limit",
                              "version",
-                             "best_result",
-                             "best_reward",
-                             "trades",
-                             "frequence",
                              "last_scan",
                              ])
 
