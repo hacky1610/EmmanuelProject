@@ -9,7 +9,6 @@ from Predictors.trainer import Trainer
 from BL.utils import ConfigReader
 from BL.data_processor import DataProcessor
 from BL.analytics import Analytics
-import os
 from Connectors.dropboxservice import DropBoxService
 import dropbox
 #endregions

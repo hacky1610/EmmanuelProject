@@ -1,9 +1,9 @@
 import itertools
 import random
-from BL.high_low_scanner import PivotScanner, ShapeType
+from BL.high_low_scanner import PivotScanner
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
-from pandas import DataFrame, Series
+from pandas import Series
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from UI.base_viewer import BaseViewer
