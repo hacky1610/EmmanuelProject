@@ -49,13 +49,15 @@ class ChartPatternPredictor(BasePredictor):
                        self._limit_factor,
                        self._look_back,
                        self._be4after,
-                       self._max_dist_factor
+                       self._max_dist_factor,
+                       self._local_look_back
                        ],
                       index=[
                              "_limit_factor",
                              "_look_back",
                              "_be4after",
                              "_max_dist_factor",
+                             "_local_look_back"
                              ])
         return parent_c.append(my_conf)
 
