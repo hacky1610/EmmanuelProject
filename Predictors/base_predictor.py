@@ -1,7 +1,7 @@
 import itertools
 import json
 import os
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from BL.eval_result import EvalResult
 from BL.utils import get_project_dir
@@ -26,6 +26,7 @@ class BasePredictor:
     frequence = 0.0
     trades = 0
     _tracer = ConsoleTracer()
+    _last_scan: EvalResult = EvalResult()
 
     def __init__(self, config=None, cache: BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
         if config is None:
@@ -39,11 +40,12 @@ class BasePredictor:
         self._set_att(config, "limit")
         self._set_att(config, "stop")
         self._set_att(config, "version")
-        self._set_att(config, "best_result")
-        self._set_att(config, "best_reward")
-        self._set_att(config, "trades")
-        self._set_att(config, "frequence")
         self._set_att(config, "last_scan")
+        self._last_scan = EvalResult(reward=config.get("_reward",0.0),
+                                     trades=config.get("_trades",0),
+                                     wins=config.get("_wins",0),
+                                     len_df=config.get("_len_df",0),
+                                     trade_minutes=config.get("_trade_minutes",0))
 
     def _set_att(self, config: dict, name: str):
         self.__setattr__(name, config.get(name, self.__getattribute__(name)))
@@ -61,22 +63,35 @@ class BasePredictor:
     def get_mean_range(self, df):
         return abs(df.close - df.close.shift(-1)).mean()
 
-    def step(self, df_train: DataFrame, df_eval: DataFrame, analytics):
-        ev_result:EvalResult = analytics.evaluate(self, df_train, df_eval)
-
-        return {"done": True,
-                self.METRIC: ev_result.get_reward(),
-                "success": ev_result.get_average_reward(),
-                "trade_frequency": ev_result.get_trade_frequency(),
-                "win_loss": ev_result.get_win_loss(),
-                "avg_minutes": ev_result.get_average_minutes(),
-                "trades": ev_result.get_trades()}
+    def step(self, df_train: DataFrame, df_eval: DataFrame, analytics) -> EvalResult:
+        ev_result: EvalResult = analytics.evaluate(self, df_train, df_eval)
+        self._last_scan = ev_result
+        return ev_result
 
     def _get_save_path(self, predictor_name: str, symbol: str) -> str:
         return os.path.join(get_project_dir(), "Settings", f"{predictor_name}_{symbol}.json")
 
     def get_config(self):
-        raise NotImplementedError
+        return Series([self.__class__,
+                       self.stop,
+                       self.limit,
+                       self.version,
+                       self.best_result,
+                       self.best_reward,
+                       self.trades,
+                       self.frequence,
+                       self.last_scan,
+                       ],
+                      index=["Type",
+                             "stop",
+                             "limit",
+                             "version",
+                             "best_result",
+                             "best_reward",
+                             "trades",
+                             "frequence",
+                             "last_scan",
+                             ])
 
     def load(self, symbol: str):
         raise NotImplementedError
@@ -256,10 +271,16 @@ class BasePredictor:
     def _get_filename(self,symbol):
         return f"{self.__class__.__name__}_{symbol}{self.model_version}.json"
 
+    def set_result(self, result:EvalResult):
+        self._last_scan = result
+
+    def get_last_result(self) -> EvalResult:
+        return self._last_scan
+
     def save(self, symbol: str):
         self.last_scan = datetime.utcnow().isoformat()
-        json = self.get_config().to_json()
-        self._cache.save_settings(json, self._get_filename(symbol) )
+        data = self.get_config().append(self._last_scan.get_data())
+        self._cache.save_settings(data.to_json(), self._get_filename(symbol))
 
     def load(self, symbol: str):
         json = self._cache.load_settings(self._get_filename(symbol))

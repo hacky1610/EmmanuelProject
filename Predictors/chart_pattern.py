@@ -18,7 +18,6 @@ class ChartPatternPredictor(BasePredictor):
     _be4after: int = 3
     _max_dist_factor: float = 2.0
     _straight_factor: float = 0.4
-
     # endregion
 
     def __init__(self, config=None,
@@ -37,37 +36,25 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_be4after")
         self._set_att(config, "_max_dist_factor")
 
+        self._look_back = int(self._look_back)
+        self._be4after = int(self._be4after)
         super().setup(config)
 
     def get_config(self) -> Series:
-        return Series(["SupResCandle",
-                       self.stop,
-                       self.limit,
+        parent_c = super().get_config()
+        my_conf =  Series([
                        self._limit_factor,
                        self._look_back,
                        self._be4after,
-                       self._max_dist_factor,
-                       self.version,
-                       self.best_result,
-                       self.best_reward,
-                       self.trades,
-                       self.frequence,
-                       self.last_scan,
+                       self._max_dist_factor
                        ],
-                      index=["Type",
-                             "stop",
-                             "limit",
+                      index=[
                              "_limit_factor",
                              "_look_back",
                              "_be4after",
                              "_max_dist_factor",
-                             "version",
-                             "best_result",
-                             "best_reward",
-                             "trades",
-                             "frequence",
-                             "last_scan",
                              ])
+        return parent_c.append(my_conf)
 
     def _scan(self, df, **kwargs):
         ps = PivotScanner(viewer=self._viewer,

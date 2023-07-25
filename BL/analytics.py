@@ -33,15 +33,17 @@ class Analytics:
         reward = 0
         losses = 0
         wins = 0
-        spread = (abs((df_train.close - df_train.close.shift(1))).median()) * 0.8
+        trading_minutes = 0
+        spread = self._calc_spread(df_train)
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
+        last_exit = df_train.date[0]
+
+
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
                     df_train, df_eval)
         viewer.print_graph()
 
-        trading_minutes = 0
-        last_exit = df_train.date[0]
         for i in range(len(df_train) - 1):
 
             open_price = df_train.open[i + 1]
@@ -114,3 +116,6 @@ class Analytics:
         viewer.show()
 
         return ev_res
+
+    def _calc_spread(self, df_train):
+        return (abs((df_train.close - df_train.close.shift(1))).median()) * 0.8
