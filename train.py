@@ -1,5 +1,8 @@
 #region import
+import os
 from multiprocessing import Process
+
+from BL.async_executor import AsyncExecutor
 from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import TradeType, Tiingo
@@ -23,15 +26,14 @@ tiingo = Tiingo(conf_reader=conf_reader,cache=cache)
 dp = DataProcessor()
 trade_type = TradeType.FX
 ig = IG(conf_reader=conf_reader)
+async_ex = AsyncExecutor()
 #endregion
 
-
-train_version = "V2.19"
-loop = False
-async_exec = False
+train_version = "V2.20"
+loop = True
+async_exec = True
 predictor = TrianglePredictor
 predictor = RectanglePredictor
-
 
 while True:
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
@@ -45,8 +47,7 @@ while True:
         df, eval = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         if len(df) > 0:
             if async_exec:
-                p = Process(target=trainer.train, args=(symbol, df, eval, train_version))
-                p.start()
+                async_ex.run(trainer.train, args=(symbol, df, eval, train_version, predictor))
             else:
                 trainer.train(symbol, df, eval, train_version, predictor)
         else:
