@@ -104,15 +104,13 @@ class ChartPatternPredictor(BasePredictor):
     def _scan_sets(version: str):
 
         json_objs = []
-        for lookback, b4after, local_look_back in itertools.product(
+        for lookback, b4after in itertools.product(
                 random.choices(range(14, 36), k=2),
-                random.choices(range(3, 12), k=2),
-                random.choices(range(1, 6), k=2),
+                random.choices(range(3, 12), k=2)
         ):
             json_objs.append({
                 "_look_back": lookback,
                 "_be4after": b4after,
-                "_local_look_back": local_look_back,
                 "version": version
             })
         return json_objs
