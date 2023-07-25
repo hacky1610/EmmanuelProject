@@ -101,7 +101,9 @@ class Trader:
               currency: str = "USD"):
 
         if self._evalutaion_up_to_date(predictor.get_last_scan_time()):
-            if not self._is_good(predictor.best_result, predictor.trades, symbol):
+            if not self._is_good(win_loss=predictor.get_last_result().get_win_loss(),
+                                 trades=predictor.get_last_result().get_trades(),
+                                 symbol=symbol):
                 return False
             trade_df = self._tiingo.load_trade_data(symbol, self._dataprocessor, trade_type)
         else:

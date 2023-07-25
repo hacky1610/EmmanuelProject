@@ -1,7 +1,4 @@
-from typing import List
-
 from pandas import Series
-
 
 class EvalResult:
 

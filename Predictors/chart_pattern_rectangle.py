@@ -1,7 +1,4 @@
-import itertools
-import random
-
-from BL.high_low_scanner import PivotScanner, ShapeType
+from BL.high_low_scanner import ShapeType
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
