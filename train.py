@@ -26,7 +26,7 @@ ig = IG(conf_reader=conf_reader)
 #endregion
 
 
-train_version = "V2.18"
+train_version = "V2.19"
 loop = False
 async_exec = False
 predictor = TrianglePredictor
