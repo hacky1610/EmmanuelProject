@@ -54,7 +54,7 @@ class PivotScanner:
 
     @staticmethod
     def get_pivotid(df, line, before, after):  # n1 n2 before and after candle l
-        if line - before < 0 :
+        if line - before < 0:
             return 0
 
         pividlow = 1
@@ -63,10 +63,10 @@ class PivotScanner:
         start = line - before
         end = line + after + 1
 
-        if  line + after >= len(df):
+        if line + after >= len(df):
             end = len(df)
 
-        for i in range(start,end) :
+        for i in range(start, end):
             if (df.low[line] > df.low[i]):
                 pividlow = 0
             if (df.high[line] < df.high[i]):
@@ -245,7 +245,8 @@ class PivotScanner:
                 return ShapeType.Triangle, BasePredictor.BUY
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.Triangle, BasePredictor.SELL
-            self._tracer.debug(f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
+            self._tracer.debug(
+                f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
 
         elif self._is_rectangle(slmin, slmax) and ShapeType.Rectangle in filter:
             self._tracer.debug("Found Rectangle")
@@ -259,7 +260,8 @@ class PivotScanner:
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.Rectangle, BasePredictor.SELL
 
-            self._tracer.debug(f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
+            self._tracer.debug(
+                f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
             return ShapeType.Rectangle, BasePredictor.NONE
 
         return ShapeType.NoShape, BasePredictor.NONE
