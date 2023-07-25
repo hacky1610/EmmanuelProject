@@ -40,7 +40,7 @@ class RectanglePredictor(ChartPatternPredictor):
 
         action = super()._get_action(df=df,
                                      filter=[ShapeType.Rectangle],
-                                     local_lookback=1,
+                                     local_lookback=self._local_look_back,
                                      _rectangle_line_slope=self._rectangle_line_slope)
 
         return self.is_with_trend(action, df)

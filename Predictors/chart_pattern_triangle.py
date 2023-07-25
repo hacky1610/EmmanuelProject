@@ -39,7 +39,7 @@ class TrianglePredictor(ChartPatternPredictor):
                                      filter=[ShapeType.Triangle,
                                              ShapeType.DescendingTriangle,
                                              ShapeType.AscendingTriangle],
-                                     local_lookback=1,
+                                     local_lookback=self._local_look_back,
                                      straight_factor=self._straight_factor)
 
         return self.is_with_trend(action,df)
