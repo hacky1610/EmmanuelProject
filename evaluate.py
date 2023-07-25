@@ -23,10 +23,9 @@ analytics = Analytics()
 trade_type = TradeType.FX
 results = EvalResultCollection()
 viewer = BaseViewer()
-
 # endregion
 
-#viewer = PlotlyViewer(cache=df_cache)
+viewer = PlotlyViewer(cache=df_cache)
 only_one_position = True
 only_test = False
 predictor_class = RectanglePredictor
