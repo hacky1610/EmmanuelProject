@@ -15,6 +15,7 @@ class ChartPatternPredictor(BasePredictor):
     # region Members
     _limit_factor: float = 2
     _look_back: int = 40
+    _local_look_back: int = 1
     _be4after: int = 3
     _max_dist_factor: float = 2.0
     _straight_factor: float = 0.4
@@ -35,9 +36,11 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_look_back")
         self._set_att(config, "_be4after")
         self._set_att(config, "_max_dist_factor")
+        self._set_att(config, "_local_look_back")
 
         self._look_back = int(self._look_back)
         self._be4after = int(self._be4after)
+        self._local_look_back = int(self._local_look_back)
         super().setup(config)
 
     def get_config(self) -> Series:
@@ -79,17 +82,35 @@ class ChartPatternPredictor(BasePredictor):
                 return action
         return action
 
+    def is_with_trend(self, action,df):
+        current_ema_20 = df[-1:].EMA_20.item()
+        current_ema_50 = df[-1:].EMA_50.item()
+
+        if action != BasePredictor.NONE:
+            self._tracer.debug(f"Got {action} from PivotScanner")
+            if action == BasePredictor.BUY and current_ema_20 > current_ema_50:
+                stop = limit = df.ATR.mean() * self._limit_factor
+                return action, stop, limit
+            if action == BasePredictor.SELL and current_ema_20 < current_ema_50:
+                stop = limit = df.ATR.mean() * self._limit_factor
+                return action, stop, limit
+            self._tracer.debug(f"No action because it is against trend")
+
+        return BasePredictor.NONE, 0, 0
+
     @staticmethod
     def _scan_sets(version: str):
 
         json_objs = []
-        for lookback, b4after in itertools.product(
+        for lookback, b4after, local_look_back in itertools.product(
                 random.choices(range(14, 36), k=2),
                 random.choices(range(3, 12), k=2),
+                random.choices(range(1, 6), k=2),
         ):
             json_objs.append({
                 "_look_back": lookback,
                 "_be4after": b4after,
+                "_local_look_back": local_look_back,
                 "version": version
             })
         return json_objs
