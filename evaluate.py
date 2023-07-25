@@ -24,7 +24,7 @@ trade_type = TradeType.FX
 # endregion
 
 viewer = BaseViewer()
-#viewer = PlotlyViewer(cache=df_cache)
+viewer = PlotlyViewer(cache=df_cache)
 only_one_position = True
 only_test = False
 predictor_class = RectanglePredictor
@@ -32,9 +32,9 @@ results = EvalResultCollection()
 
 markets = ig.get_markets(tradeable=False, trade_type=trade_type)
 #for m in random.choices(markets,k=30):
-for m in markets[:3]:
+for m in markets:
     symbol = m["symbol"]
-    #symbol = "AUDUSD"
+    symbol = "NZDUSD"
     df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
     if len(df) > 0:
