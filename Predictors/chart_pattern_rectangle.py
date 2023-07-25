@@ -54,6 +54,7 @@ class RectanglePredictor(ChartPatternPredictor):
             if action == BasePredictor.SELL and current_ema_20 < current_ema_50:
                 stop = limit = df.ATR.mean() * self._limit_factor
                 return action, stop, limit
+            self._tracer.debug(f"No action because it is against trend")
 
         return self.NONE, 0, 0
 
