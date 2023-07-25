@@ -40,6 +40,7 @@ class BasePredictor:
         self._set_att(config, "limit")
         self._set_att(config, "stop")
         self._set_att(config, "version")
+        self._set_att(config, "last_scan")
         self._last_scan = EvalResult(reward=config.get("_reward",0.0),
                                      trades=config.get("_trades",0),
                                      wins=config.get("_wins",0),
