@@ -13,3 +13,6 @@ class Tracer:
 
     def result(self, message):
         pass
+
+    def set_prefix(self, prefix):
+        pass

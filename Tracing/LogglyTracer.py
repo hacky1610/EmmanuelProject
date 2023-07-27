@@ -3,17 +3,23 @@ from Tracing.Loggly.connection import LogglyConnection
 
 class LogglyTracer(Tracer):
 
+    _prefix: str = ""
+
     def __init__(self,token:str,type:str):
         self._log = LogglyConnection(token)
         self.type = type
+
     def write(self, message):
-        self._log.create_input(f"[{self.type}] - INFO: : {message}")
+        self._log.create_input(f"[{self.type}] - INFO: {self.type} : {message}")
 
     def debug(self, message):
-        self._log.create_input(f"[{self.type}] - DEBUG: : {message}")
+        self._log.create_input(f"[{self.type}] - DEBUG: {self.type} : {message}")
 
     def error(self, message):
-        self._log.create_input(f"[{self.type}] - ERROR: {message}")
+        self._log.create_input(f"[{self.type}] - ERROR: {self.type} : {message}")
 
     def result(self, message):
         print("Result: {}:".format(message))
+
+    def set_prefix(self, prefix):
+        self._prefix = prefix

@@ -25,7 +25,7 @@ class Trader:
         self._ig = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
-        self._tracer = tracer
+        self._tracer: Tracer = tracer
         self._predictor_class_list = predictor_class_list
         self._analytics = analytics
         self._min_win_loss = 0.65
@@ -58,6 +58,7 @@ class Trader:
         for market in currency_markets:
             try:
                 symbol = market["symbol"]
+                self._tracer.set_prefix(symbol)
                 for predictor_class in self._predictor_class_list:
                     self._tracer.debug(f"Try to trade {symbol} with {predictor_class.__name__}")
                     predictor = predictor_class(tracer=self._tracer, cache=self._cache)
