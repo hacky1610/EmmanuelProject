@@ -1,5 +1,6 @@
-#region import
+# region import
 import os
+import random
 from multiprocessing import Process
 
 from BL.async_executor import AsyncExecutor
@@ -14,41 +15,42 @@ from BL.data_processor import DataProcessor
 from BL.analytics import Analytics
 from Connectors.dropboxservice import DropBoxService
 import dropbox
-#endregions
 
-#region statics
+# endregions
+
+# region statics
 conf_reader = ConfigReader()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, "DEMO")
 cache = DropBoxCache(ds)
-trainer = Trainer(Analytics(),cache=cache)
-tiingo = Tiingo(conf_reader=conf_reader,cache=cache)
+trainer = Trainer(Analytics(), cache=cache)
+tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 dp = DataProcessor()
 trade_type = TradeType.FX
 ig = IG(conf_reader=conf_reader)
 async_ex = AsyncExecutor()
-#endregion
+# endregion
 
 train_version = "V2.20"
-loop = True
-async_exec = True
+loop = False
+async_exec = False
 predictor = TrianglePredictor
-predictor = RectanglePredictor
+# predictor = RectanglePredictor
 
 while True:
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-    #for m in random.choices(markets,k=30):
+    # for m in random.choices(markets,k=30):
     for m in markets:
         symbol = m["symbol"]
-
-        #symbol = "AUDUSD"
-        if trainer.is_trained(symbol, train_version,predictor) and not loop:
+        # symbol = "AUDUSD"
+        if trainer.is_trained(symbol, train_version, predictor) and not loop:
             print(f"{symbol} Already trained with version {train_version}.")
             continue
         df, eval = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         if len(df) > 0:
             if async_exec:
-                async_ex.run(trainer.train, args=(symbol, df, eval, train_version, predictor))
+                if __name__ == '__main__':
+                    async_ex.run(trainer.train, args=(symbol, df, eval, train_version, predictor))
             else:
                 trainer.train(symbol, df, eval, train_version, predictor)
         else:
