@@ -10,13 +10,13 @@ class LogglyTracer(Tracer):
         self.type = type
 
     def write(self, message):
-        self._log.create_input(f"[{self.type}] - INFO: {self.type} : {message}")
+        self._log.create_input(f"[{self.type}] - INFO: {self._prefix} : {message}")
 
     def debug(self, message):
-        self._log.create_input(f"[{self.type}] - DEBUG: {self.type} : {message}")
+        self._log.create_input(f"[{self.type}] - DEBUG: {self._prefix} : {message}")
 
     def error(self, message):
-        self._log.create_input(f"[{self.type}] - ERROR: {self.type} : {message}")
+        self._log.create_input(f"[{self.type}] - ERROR: {self._prefix} : {message}")
 
     def result(self, message):
         print("Result: {}:".format(message))

@@ -25,4 +25,4 @@ steps:
     repository: 'hacky1610/emmanuel'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v9.2'
+    tags: 'v9.3'
