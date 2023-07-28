@@ -32,8 +32,8 @@ async_ex = AsyncExecutor()
 # endregion
 
 train_version = "V2.20"
-loop = False
-async_exec = False
+loop = True
+async_exec = True
 predictor = TrianglePredictor
 # predictor = RectanglePredictor
 
