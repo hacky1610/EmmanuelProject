@@ -32,7 +32,7 @@ class TrianglePredictor(ChartPatternPredictor):
         parent_series["_straight_factor"] = self._straight_factor
         return parent_series
 
-    def predict(self, df: DataFrame):
+    def predict(self, df: DataFrame) -> (str, float, float):
         if len(df) <= self._look_back:
             return BasePredictor.NONE, 0, 0
 

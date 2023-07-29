@@ -44,7 +44,7 @@ class BasePredictor:
     def _set_att(self, config: dict, name: str):
         self.__setattr__(name, config.get(name, self.__getattribute__(name)))
 
-    def predict(self, df: DataFrame) -> str:
+    def predict(self, df: DataFrame) -> (str, float, float):
         raise NotImplementedError
 
     def get_last_scan_time(self):

@@ -65,7 +65,7 @@ class TraderTest(unittest.TestCase):
         position = MagicMock()
         position.direction = "BUY"
         self._ig.get_opened_positions_by_epic = MagicMock(return_value=position)
-        self._predictor.predict = MagicMock(return_value="buy")
+        self._predictor.predict = MagicMock(return_value=("buy", 1, 1))
         res = self._trader.trade(predictor=self._predictor,
                                  epic="myepic",
                                  symbol="mysymbol",
@@ -79,7 +79,7 @@ class TraderTest(unittest.TestCase):
         position = MagicMock()
         position.direction = "SELL"
         self._ig.get_opened_positions_by_epic = MagicMock(return_value=position)
-        self._predictor.predict = MagicMock(return_value="sell")
+        self._predictor.predict = MagicMock(return_value=("sell", 1, 1))
         res = self._trader.trade(predictor=self._predictor,
                                  epic="myepic",
                                  symbol="mysymbol",

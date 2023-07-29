@@ -31,7 +31,7 @@ class RectanglePredictor(ChartPatternPredictor):
         parent_series["_rectangle_line_slope"] = self._rectangle_line_slope
         return parent_series
 
-    def predict(self, df: DataFrame):
+    def predict(self, df: DataFrame) -> (str, float, float):
         if len(df) <= self._look_back:
             return BasePredictor.NONE, 0, 0
 

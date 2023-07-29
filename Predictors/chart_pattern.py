@@ -84,7 +84,7 @@ class ChartPatternPredictor(BasePredictor):
                 return action
         return action
 
-    def is_with_trend(self, action,df):
+    def is_with_trend(self, action, df) -> (str, float, float):
         current_ema_20 = df[-1:].EMA_20.item()
         current_ema_50 = df[-1:].EMA_50.item()
 

@@ -121,12 +121,11 @@ class Trader:
             self._tracer.debug(f"Spread {spread} is greater than {spread_limit} for {symbol}")
             return False
 
-        signal = predictor.predict(trade_df)
+        signal, stop, limit = predictor.predict(trade_df)
 
         if signal == BasePredictor.NONE:
             return False
 
-        stop, limit = self.get_stop_limit(trade_df, scaling, predictor.stop, predictor.limit)
 
         openedPosition = self._ig.get_opened_positions_by_epic(epic)
 
