@@ -32,11 +32,6 @@ class Trader:
         self._min_trades = 4
         self._cache = cache
 
-    def get_stop_limit(self, df, scaling: int, stop_factor: float = 2.5, limit_factor: float = 2.5):
-        stop = int(abs(df.close - df.close.shift(-1)).mean() * stop_factor * scaling)
-        limit = int(abs(df.close - df.close.shift(-1)).mean() * limit_factor * scaling)
-        return stop, limit
-
     @staticmethod
     def _get_spread(df: DataFrame, scaling: float) -> float:
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
@@ -89,7 +84,8 @@ class Trader:
             f"{symbol} Best result not good {win_loss} or  trades {trades} less than  {self._min_trades}")
         return False
 
-    def _evalutaion_up_to_date(self, last_scan_time):
+    @staticmethod
+    def _evalutaion_up_to_date(last_scan_time):
         return (datetime.utcnow() - last_scan_time).days < 10
 
     def trade(self, predictor: BasePredictor,
@@ -125,7 +121,6 @@ class Trader:
 
         if signal == BasePredictor.NONE:
             return False
-
 
         openedPosition = self._ig.get_opened_positions_by_epic(epic)
 
