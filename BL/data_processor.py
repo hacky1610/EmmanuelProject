@@ -3,7 +3,8 @@ from finta import TA
 
 class DataProcessor:
 
-    def addSignals(self, df: DataFrame):
+    @staticmethod
+    def addSignals(df: DataFrame):
         df['SMA_10'] = TA.SMA(df, 10)
         df['SMA_10_LOW'] = TA.SMA(df, 10,column="low")
         df['SMA_10_HIGH'] = TA.SMA(df, 10, column="high")
@@ -42,7 +43,8 @@ class DataProcessor:
 
         df["ATR"] = TA.ATR(df)
 
-    def clean_data(self, df: DataFrame):
+    @staticmethod
+    def clean_data(df: DataFrame):
         DataProcessor.drop_column(df, "Volume")
         DataProcessor.drop_column(df, "Dividends")
         DataProcessor.drop_column(df, "Stock Splits")

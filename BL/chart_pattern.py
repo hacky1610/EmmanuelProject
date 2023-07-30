@@ -23,7 +23,8 @@ class ChartPattern:
         self._viewer = viewer
         self._min_diff_of_points = 2
 
-    def calc_cross_point(self, xa, xb, ya, yb, xz):
+    @staticmethod
+    def calc_cross_point(xa, xb, ya, yb, xz):
         diff_id_a_b = xb - xa
         diff_vall_a_b = yb - ya
 
@@ -38,13 +39,13 @@ class ChartPattern:
     def _is_same_level(self, a, b):
         return abs(a - b) < self._level_diff
 
-    def _is_double_top(self):
+    def _is_double_top(self) -> bool:
         hl = self._hl_scanner.get_high_low_items()
 
         def correct_form():
-            return hl[-1].type ==  HlType.HIGH and \
-                hl[-2].type == HlType.LOW and \
-                hl[-3].type == HlType.HIGH
+            return hl[-1].hl_type ==  HlType.HIGH and \
+                hl[-2].hl_type == HlType.LOW and \
+                hl[-3].hl_type == HlType.HIGH
 
         def same_high():
             return self._is_same_level(hl[-1].value, hl[-3].value)
@@ -63,8 +64,6 @@ class ChartPattern:
 
         return False
 
-
-        return False, BasePredictor.NONE
 
     def get_pattern(self) -> str:
 

@@ -49,6 +49,7 @@ class Trader:
         return results[results.win_loss > 0.7].symbol.values
 
     def trade_markets(self, trade_type: TradeType):
+        global symbol
         currency_markets = self._ig.get_markets(trade_type)
         for market in currency_markets:
             try:
@@ -122,12 +123,12 @@ class Trader:
         if signal == BasePredictor.NONE:
             return False
 
-        openedPosition = self._ig.get_opened_positions_by_epic(epic)
+        opened_position = self._ig.get_opened_positions_by_epic(epic)
 
         if signal == BasePredictor.BUY:
-            if openedPosition is not None and openedPosition.direction == "BUY":
+            if opened_position is not None and opened_position.direction == "BUY":
                 self._tracer.write(
-                    f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
+                    f"There is already an opened position of {symbol} with direction {opened_position.direction}")
                 return False
             result, ref = self._ig.buy(epic, stop, limit, size, currency)
             if result:
@@ -136,9 +137,9 @@ class Trader:
                 self._cache.save_report(trade_df, f"{symbol}_{ref}.csv")
                 return True
         elif signal == BasePredictor.SELL:
-            if openedPosition is not None and openedPosition.direction == "SELL":
+            if opened_position is not None and opened_position.direction == "SELL":
                 self._tracer.write(
-                    f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
+                    f"There is already an opened position of {symbol} with direction {opened_position.direction}")
                 return False
             result, ref = self._ig.sell(epic, stop, limit, size, currency)
             if result:

@@ -9,6 +9,7 @@ from Tracing.Tracer import Tracer
 import numpy as np
 from datetime import datetime
 
+
 class BasePredictor:
     SELL = "sell"
     BUY = "buy"
@@ -35,11 +36,11 @@ class BasePredictor:
         self._set_att(config, "stop")
         self._set_att(config, "version")
         self._set_att(config, "last_scan")
-        self._last_scan = EvalResult(reward=config.get("_reward",0.0),
-                                     trades=config.get("_trades",0),
-                                     wins=config.get("_wins",0),
-                                     len_df=config.get("_len_df",0),
-                                     trade_minutes=config.get("_trade_minutes",0))
+        self._last_scan = EvalResult(reward=config.get("_reward", 0.0),
+                                     trades=config.get("_trades", 0),
+                                     wins=config.get("_wins", 0),
+                                     len_df=config.get("_len_df", 0),
+                                     trade_minutes=config.get("_trade_minutes", 0))
 
     def _set_att(self, config: dict, name: str):
         self.__setattr__(name, config.get(name, self.__getattribute__(name)))
@@ -54,7 +55,8 @@ class BasePredictor:
         mean_diff = abs(df[-96:].close - df[-96:].close.shift(-1)).mean()
         return mean_diff * self.stop, mean_diff * self.limit
 
-    def get_mean_range(self, df):
+    @staticmethod
+    def get_mean_range(df):
         return abs(df.close - df.close.shift(-1)).mean()
 
     def step(self, df_train: DataFrame, df_eval: DataFrame, analytics) -> EvalResult:
@@ -62,7 +64,8 @@ class BasePredictor:
         self._last_scan = ev_result
         return ev_result
 
-    def _get_save_path(self, predictor_name: str, symbol: str) -> str:
+    @staticmethod
+    def _get_save_path(predictor_name: str, symbol: str) -> str:
         return os.path.join(get_project_dir(), "Settings", f"{predictor_name}_{symbol}.json")
 
     def get_config(self):
@@ -79,13 +82,12 @@ class BasePredictor:
                              "last_scan",
                              ])
 
-    def load(self, symbol: str):
-        raise NotImplementedError
+    @staticmethod
+    def is_crossing(a, b):
+        print((a - b).max() > 0 > (a - b).min())
 
-    def is_crossing(self, a, b):
-        print((a - b).max() > 0 and (a - b).min() < 0)
-
-    def get_trend(self, column, step=1):
+    @staticmethod
+    def get_trend(column, step=1):
         diff = column.diff(step)
         mean = (abs(diff)).mean()
         if diff[-1:].item() > mean:
@@ -95,12 +97,10 @@ class BasePredictor:
 
         return 0
 
-    def interpret_candle(self, candle):
+    @staticmethod
+    def interpret_candle(candle):
         open = candle.open.item()
         close = candle.close.item()
-        high = candle.high.item()
-        low = candle.low.item()
-        percentage = 0.4
         if close > open:
             # if (high - low) * percentage < close - open:
             return BasePredictor.BUY
@@ -254,10 +254,10 @@ class BasePredictor:
     def get_training_sets(version: str):
         return []
 
-    def _get_filename(self,symbol):
+    def _get_filename(self, symbol):
         return f"{self.__class__.__name__}_{symbol}{self.model_version}.json"
 
-    def set_result(self, result:EvalResult):
+    def set_result(self, result: EvalResult):
         self._last_scan = result
 
     def get_last_result(self) -> EvalResult:

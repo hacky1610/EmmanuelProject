@@ -74,8 +74,7 @@ class Tiingo:
 
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
-                          clean_data: bool = True, trade_type: TradeType = TradeType.FX,
-                          trim: bool = False) -> DataFrame:
+                          clean_data: bool = True, trade_type: TradeType = TradeType.FX) -> DataFrame:
         res = DataFrame()
         name = f"{ticker}_{resolution}.csv"
         cached = self._cache.load_cache(name)

@@ -18,7 +18,8 @@ class Tracer:
     def set_prefix(self, prefix):
         pass
 
-    def _get_function(self):
+    @staticmethod
+    def _get_function():
         stack = inspect.stack()
         if len(stack) >= 3:
             return inspect.stack()[2].function
