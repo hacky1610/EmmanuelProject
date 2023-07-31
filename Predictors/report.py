@@ -1,5 +1,4 @@
 import dropbox
-
 from BL.eval_result import EvalResultCollection
 from Connectors import DropBoxService, DropBoxCache
 from Connectors.IG import IG
@@ -8,6 +7,7 @@ from Connectors.tiingo import  TradeType
 import plotly.express as px
 from pandas import DataFrame,Series
 from Predictors.chart_pattern_rectangle import RectanglePredictor
+from Predictors.chart_pattern_triangle import TrianglePredictor
 
 #region members
 conf_reader = ConfigReader()
@@ -22,7 +22,7 @@ results = EvalResultCollection()
 currency_markets = ig.get_markets(TradeType.FX)
 for market in currency_markets:
     symbol = market["symbol"]
-    predictor = RectanglePredictor(cache=df_cache)
+    predictor = TrianglePredictor(cache=df_cache)
     predictor.load(symbol)
     results.add(predictor.get_last_result())
     df = df.append(Series([symbol,
@@ -31,6 +31,7 @@ for market in currency_markets:
                            predictor._be4after,
                            predictor._max_dist_factor,
                            predictor._straight_factor,
+                           #predictor._rectangle_line_slope,
                            predictor.get_last_result().get_win_loss(),
                            predictor.get_last_result().get_trade_frequency()],
                           index=["symbol",

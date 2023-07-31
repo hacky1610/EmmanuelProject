@@ -81,7 +81,7 @@ class Trader:
         if win_loss >= self._min_win_loss and trades >= self._min_trades:
             return True
 
-        self._tracer.error(
+        self._tracer.warning(
             f"{symbol} Best result not good {win_loss} or  trades {trades} less than  {self._min_trades}")
         return False
 
@@ -137,6 +137,7 @@ class Trader:
                     f"Buy {symbol} with settings {predictor.get_config()}.")
                 self._cache.save_report(trade_df, f"{symbol}_{ref}.csv")
                 return True
+            self._tracer.error(f"Error while trade {symbol}")
         elif signal == BasePredictor.SELL:
             if opened_position is not None and opened_position.direction == "SELL":
                 self._tracer.write(
@@ -148,5 +149,6 @@ class Trader:
                     f"Sell {symbol} with settings {predictor.get_config()} ")
                 self._cache.save_report(trade_df, f"{symbol}_{ref}.csv")
                 return True
+            self._tracer.error(f"Error while trade {symbol}")
 
         return False

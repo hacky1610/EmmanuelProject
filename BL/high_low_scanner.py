@@ -196,30 +196,30 @@ class PivotScanner:
         max_distance = current_atr * self._max_dist_factor
 
         if self._is_ascending_triangle(slmin, slmax, xxmax, current_atr) and ShapeType.AscendingTriangle in type_filter:
-            self._tracer.debug("Found Ascending Triangle")
+            self._tracer.write("Found Ascending Triangle")
             crossing_max = slmax * candle_id + intercmax
             self._viewer.custom_print(self._print, df, candle_id, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       f"Ascending triangle {candle_id}")
             if current_close > crossing_max and current_close - crossing_max < max_distance:
                 return ShapeType.AscendingTriangle, BasePredictor.BUY
 
-            self._tracer.debug(f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} ")
+            self._tracer.write(f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} ")
 
             return ShapeType.AscendingTriangle, BasePredictor.NONE
         elif self._is_descending_triangle(slmin, slmax, xxmin, current_atr) and ShapeType.DescendingTriangle in type_filter:
-            self._tracer.debug("Found Descending Triangle")
+            self._tracer.write("Found Descending Triangle")
             crossing_min = slmin * candle_id + intercmin
 
             self._viewer.custom_print(self._print, df, candle_id, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       f"Descending triangle {candle_id}")
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.DescendingTriangle, BasePredictor.SELL
-            self._tracer.debug(f"No action Close {current_close} Max Dist {max_distance} min {crossing_min}")
+            self._tracer.write(f"No action Close {current_close} Max Dist {max_distance} min {crossing_min}")
 
             return ShapeType.DescendingTriangle, BasePredictor.NONE
 
         elif self._is_triangle(slmin, slmax) and ShapeType.Triangle in type_filter:
-            self._tracer.debug("Found Triangle")
+            self._tracer.write("Found Triangle")
             crossing_max = slmax * candle_id + intercmax
             crossing_min = slmin * candle_id + intercmin
 
@@ -229,11 +229,11 @@ class PivotScanner:
                 return ShapeType.Triangle, BasePredictor.BUY
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.Triangle, BasePredictor.SELL
-            self._tracer.debug(
+            self._tracer.write(
                 f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
 
         elif self._is_rectangle(slmin, slmax) and ShapeType.Rectangle in type_filter:
-            self._tracer.debug("Found Rectangle")
+            self._tracer.write("Found Rectangle")
             crossing_max = slmax * candle_id + intercmax
             crossing_min = slmin * candle_id + intercmin
 
@@ -244,7 +244,7 @@ class PivotScanner:
             if current_close < crossing_min and crossing_min - current_close < max_distance:
                 return ShapeType.Rectangle, BasePredictor.SELL
 
-            self._tracer.debug(
+            self._tracer.write(
                 f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
             return ShapeType.Rectangle, BasePredictor.NONE
 

@@ -89,16 +89,16 @@ class ChartPatternPredictor(BasePredictor):
         current_ema_50 = df[-1:].EMA_50.item()
 
         if action != BasePredictor.NONE:
-            self._tracer.debug(f"Got {action} from PivotScanner")
+            self._tracer.write(f"Got {action} from PivotScanner")
             if action == BasePredictor.BUY and current_ema_20 > current_ema_50:
                 stop = limit = df.ATR.mean() * self._limit_factor
-                self._tracer.debug(f"{action} confirmed with Uptrend")
+                self._tracer.write(f"{action} confirmed with Uptrend")
                 return action, stop, limit
             if action == BasePredictor.SELL and current_ema_20 < current_ema_50:
                 stop = limit = df.ATR.mean() * self._limit_factor
-                self._tracer.debug(f"{action} confirmed with Downtrend")
+                self._tracer.write(f"{action} confirmed with Downtrend")
                 return action, stop, limit
-            self._tracer.debug("No action because it is against trend")
+            self._tracer.write("No action because it is against trend")
 
         return BasePredictor.NONE, 0, 0
 

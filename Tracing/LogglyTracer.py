@@ -18,6 +18,9 @@ class LogglyTracer(Tracer):
     def error(self, message):
         self._log.create_input(f"[{self.type}] | ERROR | {self._prefix} | {self._get_function()} | {message}")
 
+    def warning(self, message):
+        self._log.create_input(f"[{self.type}] | WARNING | {self._prefix} | {self._get_function()} | {message}")
+
     def result(self, message):
         print("Result: {}:".format(message))
 
