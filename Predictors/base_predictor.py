@@ -110,7 +110,8 @@ class BasePredictor:
 
         return BasePredictor.NONE
 
-    def check_macd_divergence(self, df):
+    @staticmethod
+    def check_macd_divergence(df):
         # Berechne den MACD-Indikator und das Signal
         # Extrahiere die MACD-Linie und das Signal
 
@@ -132,7 +133,8 @@ class BasePredictor:
         else:
             return 0
 
-    def check_rsi_divergence(self, df, step: int = 5):
+    @staticmethod
+    def check_rsi_divergence(df, step: int = 5):
         # Berechne den MACD-Indikator und das Signal
         # Extrahiere die MACD-Linie und das Signal
 
@@ -152,7 +154,8 @@ class BasePredictor:
         else:
             return 0
 
-    def predict_ema_3(self, df, period: int = 2):
+    @staticmethod
+    def predict_ema_3(df, period: int = 2):
         period = df[period * -1:]
 
         ema_14_over_25 = len(period[period.EMA_14 > period.EMA_25]) == len(period)
@@ -169,7 +172,8 @@ class BasePredictor:
 
         return BasePredictor.NONE
 
-    def calc_trend(self, df, period: int = 2):
+    @staticmethod
+    def calc_trend(df, period: int = 2):
         period = df[period * -1:]
 
         ema_14_over_25 = len(period[period.EMA_14 > period.EMA_25]) == len(period)
@@ -186,7 +190,8 @@ class BasePredictor:
 
         return 0
 
-    def predict_macd(self, df, period: int = 2, consider_gradient: bool = False):
+    @staticmethod
+    def predict_macd(df, period: int = 2, consider_gradient: bool = False):
         current_macd_periode = df[period * -1:]
         macd_over_signal = len(current_macd_periode[current_macd_periode.MACD > current_macd_periode.SIGNAL]) == len(
             current_macd_periode)
@@ -218,7 +223,8 @@ class BasePredictor:
 
         return BasePredictor.NONE
 
-    def predict_bb_1(self, df, period: int = 2):
+    @staticmethod
+    def predict_bb_1(df, period: int = 2):
         current_bb_periode = df[period * -1:]
         low_over = len(current_bb_periode[current_bb_periode.low > current_bb_periode.BB1_UPPER]) == len(
             current_bb_periode)

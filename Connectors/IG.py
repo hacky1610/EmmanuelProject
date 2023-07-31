@@ -66,7 +66,7 @@ class IG:
         res = self.ig_service.fetch_sub_nodes_by_node(id)
         if len(res["nodes"]) > 0:
             markets = DataFrame()
-            for i in res["nodes"].candle_id:
+            for i in res["nodes"].id:
                 markets = markets.append(self._get_markets_by_id(i))
             return markets
         else:
@@ -210,7 +210,8 @@ class IG:
     def get_current_balance(self):
         return self.ig_service.fetch_accounts().loc[0].balance
 
-    def _get_hours(self, start_date):
+    @staticmethod
+    def _get_hours(start_date):
         start_time = pd.to_datetime(start_date.openDateUtc.values[0])
         first_hours = datetime(start_time.year, start_time.month, start_time.day, start_time.hour)
         hours = [first_hours]
@@ -219,7 +220,8 @@ class IG:
 
         return hours
 
-    def fix_hist(self, hist):
+    @staticmethod
+    def fix_hist(hist):
         new_column = []
         for values in hist.instrumentName:
             res = re.search(r'\w{3}\/\w{3}', values)
@@ -233,7 +235,8 @@ class IG:
 
         return hist
 
-    def report_symbol(self,ti,ticker,start_time_hours,start_time_str,hist, predictor):
+    @staticmethod
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, predictor):
         predictor.load(ticker)
 
         df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
