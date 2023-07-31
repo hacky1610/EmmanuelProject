@@ -136,10 +136,12 @@ class MultiCandle:
                     return True
         return False
 
-    def _is_black_crow(self, candle: Candle):
+    @staticmethod
+    def _is_black_crow(candle: Candle):
         return candle.direction() == Direction.Bearish and candle.get_body_percentage() > 60
 
-    def _is_white_soldier(self, candle: Candle):
+    @staticmethod
+    def _is_white_soldier(candle: Candle):
         return candle.direction() == Direction.Bullish and candle.get_body_percentage() > 60
 
     def _is_three_black_crows(self):

@@ -116,7 +116,8 @@ class PlotlyViewer(BaseViewer):
         time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         self._cache.save_report_image(filename, f"Report/{symbol}_{time_str}.html")
 
-    def _plot_levels(self, where, levels, only_good=False):
+    @staticmethod
+    def _plot_levels(where, levels, only_good=False):
         for l in levels:
 
             if isinstance(l, float):
