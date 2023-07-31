@@ -118,6 +118,8 @@ class Trader:
             return False
 
         signal, stop, limit = predictor.predict(trade_df)
+        scaled_stop = stop * scaling
+        scaled_limit = limit * scaling
 
         if signal == BasePredictor.NONE:
             return False
@@ -129,7 +131,7 @@ class Trader:
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            result, ref = self._ig.buy(epic, stop, limit, size, currency)
+            result, ref = self._ig.buy(epic, scaled_stop, scaled_limit, size, currency)
             if result:
                 self._tracer.write(
                     f"Buy {symbol} with settings {predictor.get_config()}.")
@@ -140,7 +142,7 @@ class Trader:
                 self._tracer.write(
                     f"There is already an opened position of {symbol} with direction {openedPosition.direction}")
                 return False
-            result, ref = self._ig.sell(epic, stop, limit, size, currency)
+            result, ref = self._ig.sell(epic, scaled_stop, scaled_limit, size, currency)
             if result:
                 self._tracer.write(
                     f"Sell {symbol} with settings {predictor.get_config()} ")
