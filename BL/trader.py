@@ -104,8 +104,7 @@ class Trader:
                 return False
             trade_df = self._tiingo.load_trade_data(symbol, self._dataprocessor, trade_type)
         else:
-            self._tracer.error(
-                f"{symbol} Last evaluation to old")
+            self._tracer.error(f"{symbol} Last evaluation to old")
             return False
 
         if len(trade_df) == 0:

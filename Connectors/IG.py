@@ -144,6 +144,7 @@ class IG:
         deal_reference = None
         result = False
         try:
+            self._tracer.write(f"Open  {epic} - {direction} with limit {limit} and stop {stop}")
             response = self.ig_service.create_open_position(
                 currency_code=currency,
                 direction=direction,
@@ -165,7 +166,7 @@ class IG:
             if response["dealStatus"] != "ACCEPTED":
                 self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
             else:
-                self._tracer.write(f"{direction} {epic} with limit {limit} and stop {stop}")
+                self._tracer.write(f"Opened successfull {epic}")
                 deal_reference = response["dealReference"]
                 result = True
         except IGException as ex:
