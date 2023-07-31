@@ -2,6 +2,7 @@
 import os
 import random
 from multiprocessing import Process
+from typing import Type
 
 from BL.async_executor import AsyncExecutor
 from Connectors.IG import IG
@@ -23,21 +24,31 @@ conf_reader = ConfigReader()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, "DEMO")
 cache = DropBoxCache(ds)
-trainer = Trainer(Analytics(), cache=cache)
-tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
-dp = DataProcessor()
-trade_type = TradeType.FX
-ig = IG(conf_reader=conf_reader)
-async_ex = AsyncExecutor()
+_trainer = Trainer(Analytics(), cache=cache)
+_tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
+_dp = DataProcessor()
+_trade_type = TradeType.FX
+_ig = IG(conf_reader=conf_reader)
+_async_ex = AsyncExecutor()
 # endregion
 
-train_version = "V2.20"
-loop = True
-async_exec = True
-predictor = TrianglePredictor
-# predictor = RectanglePredictor
+_train_version = "V2.20"
+_loop = True
+_async_exec = True
+_predictor = TrianglePredictor
+_predictor = RectanglePredictor
 
-while True:
+
+def train_predictor(ig: IG,
+                    trainer: Trainer,
+                    tiingo: Tiingo,
+                    async_ex: AsyncExecutor,
+                    dp: DataProcessor,
+                    train_version: str,
+                    predictor: Type,
+                    loop: bool,
+                    async_exec: bool,
+                    trade_type: TradeType = TradeType.FX):
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     # for m in random.choices(markets,k=30):
     for m in markets:
@@ -46,12 +57,33 @@ while True:
         if trainer.is_trained(symbol, train_version, predictor) and not loop:
             print(f"{symbol} Already trained with version {train_version}.")
             continue
-        df, eval = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
+        df, eval_df = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         if len(df) > 0:
             if async_exec:
                 if __name__ == '__main__':
-                    async_ex.run(trainer.train, args=(symbol, df, eval, train_version, predictor))
+                    async_ex.run(trainer.train, args=(symbol, df, eval_df, train_version, predictor))
             else:
-                trainer.train(symbol, df, eval, train_version, predictor)
+                trainer.train(symbol, df, eval_df, train_version, predictor)
         else:
             print(f"No Data in {symbol} ")
+
+
+while True:
+    train_predictor(ig=_ig,
+                    trainer=_trainer,
+                    tiingo=_tiingo,
+                    predictor=RectanglePredictor,
+                    async_ex=_async_ex,
+                    async_exec=_async_exec,
+                    train_version=_train_version,
+                    dp=_dp,
+                    loop=_loop)
+    train_predictor(ig=_ig,
+                    trainer=_trainer,
+                    tiingo=_tiingo,
+                    predictor=TrianglePredictor,
+                    async_ex=_async_ex,
+                    async_exec=_async_exec,
+                    train_version=_train_version,
+                    dp=_dp,
+                    loop=_loop)
