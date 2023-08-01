@@ -51,10 +51,6 @@ class BasePredictor:
     def get_last_scan_time(self):
         return datetime.fromisoformat(self.last_scan)
 
-    def get_stop_limit(self, df):
-        mean_diff = abs(df[-96:].close - df[-96:].close.shift(-1)).mean()
-        return mean_diff * self.stop, mean_diff * self.limit
-
     def step(self, df_train: DataFrame, df_eval: DataFrame, analytics) -> EvalResult:
         ev_result: EvalResult = analytics.evaluate(self, df_train, df_eval)
         self._last_scan = ev_result
