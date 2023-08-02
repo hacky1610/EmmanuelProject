@@ -4,6 +4,8 @@
 # Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
+trigger: none
+
 pool:
   vmImage: ubuntu-latest
 strategy:
@@ -19,10 +21,15 @@ steps:
     pip install -r requirements.txt
   displayName: 'Install dependencies'
 
+- script: |
+    pip install pytest pytest-azurepipelines coverage
+    coverage run -m pytest ./Test
+  displayName: 'Test'
+
 - task: Docker@2
   inputs:
     containerRegistry: 'Docker'
     repository: 'hacky1610/emmanuel'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v9.4'
+    tags: 'v9.8'

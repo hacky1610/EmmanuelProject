@@ -8,7 +8,10 @@ class Trainer:
         self._analytics = analytics
         self._cache = cache
 
-    def is_trained(self, symbol: str, version: str, predictor):
+    def is_trained(self,
+                   symbol: str,
+                   version: str,
+                   predictor) -> bool:
         saved_predictor = predictor(cache=self._cache).load(symbol)
         return version == saved_predictor.version
 

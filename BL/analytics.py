@@ -39,7 +39,6 @@ class Analytics:
         predictor._tracer = Tracer()
         last_exit = df_train.date[0]
 
-
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
                     df_train, df_eval)
         viewer.print_graph()
@@ -117,5 +116,6 @@ class Analytics:
 
         return ev_res
 
-    def _calc_spread(self, df_train):
+    @staticmethod
+    def _calc_spread(df_train):
         return (abs((df_train.close - df_train.close.shift(1))).median()) * 0.8

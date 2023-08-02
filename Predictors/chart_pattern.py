@@ -3,7 +3,7 @@ import random
 from BL.high_low_scanner import PivotScanner
 from Connectors import BaseCache
 from Predictors.base_predictor import BasePredictor
-from pandas import Series
+from pandas import Series, DataFrame
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from UI.base_viewer import BaseViewer
@@ -79,26 +79,26 @@ class ChartPatternPredictor(BasePredictor):
             else:
                 temp_df = df[:-1 * i]
             ps = self._scan(temp_df, **kwargs)
-            t, action = ps.get_action(temp_df, temp_df[-1:].index.item(), filter)
+            _, action = ps.get_action(temp_df, temp_df[-1:].index.item(), filter)
             if action != BasePredictor.NONE:
                 return action
         return action
 
-    def is_with_trend(self, action,df):
+    def is_with_trend(self, action: str, df: DataFrame) -> (str, float, float):
         current_ema_20 = df[-1:].EMA_20.item()
         current_ema_50 = df[-1:].EMA_50.item()
 
         if action != BasePredictor.NONE:
-            self._tracer.debug(f"Got {action} from PivotScanner")
+            self._tracer.write(f"Got {action} from PivotScanner")
             if action == BasePredictor.BUY and current_ema_20 > current_ema_50:
                 stop = limit = df.ATR.mean() * self._limit_factor
-                self._tracer.debug(f"{action} confirmed with Uptrend")
+                self._tracer.write(f"{action} confirmed with Uptrend")
                 return action, stop, limit
             if action == BasePredictor.SELL and current_ema_20 < current_ema_50:
                 stop = limit = df.ATR.mean() * self._limit_factor
-                self._tracer.debug(f"{action} confirmed with Downtrend")
+                self._tracer.write(f"{action} confirmed with Downtrend")
                 return action, stop, limit
-            self._tracer.debug(f"No action because it is against trend")
+            self._tracer.write("No action because it is against trend")
 
         return BasePredictor.NONE, 0, 0
 

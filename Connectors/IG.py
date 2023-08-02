@@ -127,21 +127,32 @@ class IG:
         except Exception as ex:
             self._tracer.error(f"Error during open a IG Connection {ex}")
 
-    def get_currency(self, epic: str):
+    @staticmethod
+    def get_currency(epic: str):
         m = re.match("[\w]+\.[\w]+\.[\w]{3}([\w]{3})\.", epic)
         if m != None and len(m.groups()) == 1:
             return m.groups()[0]
         return "USD"
 
-    def buy(self, epic: str, stop: int, limit: int, size: float = 1.0, currency: str = "USD"):
+    def buy(self,
+            epic: str,
+            stop: int,
+            limit: int,
+            size: float = 1.0,
+            currency: str = "USD") -> (bool, str):
         return self.open(epic, "BUY", stop, limit, size, currency)
 
-    def sell(self, epic: str, stop: int, limit: int, size: float = 1.0, currency: str = "USD"):
+    def sell(self,
+             epic: str,
+             stop: int,
+             limit: int,
+             size: float = 1.0,
+             currency: str = "USD") -> (bool, str):
         return self.open(epic, "SELL", stop, limit, size, currency)
 
     def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25, size: float = 1.0,
-             currency: str = "USD") -> bool:
-        deal_reference = None
+             currency: str = "USD") -> (bool, str):
+        deal_reference:str = ""
         result = False
         try:
             response = self.ig_service.create_open_position(
@@ -165,8 +176,8 @@ class IG:
             if response["dealStatus"] != "ACCEPTED":
                 self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
             else:
-                self._tracer.write(f"{direction} {epic} with limit {limit} and stop {stop}")
-                deal_reference = response["dealReference"]
+                self._tracer.write(f"Opened successfull {epic}")
+                deal_reference:str = response["dealReference"]
                 result = True
         except IGException as ex:
             self._tracer.error(f"Error during open a position. {ex} for {epic}")
@@ -199,19 +210,8 @@ class IG:
     def get_current_balance(self):
         return self.ig_service.fetch_accounts().loc[0].balance
 
-    def exit(self, deal_id: str, direction: str):
-        response = self.ig_service.close_open_position(
-            deal_id=deal_id,
-            direction=direction,
-            epic=None,
-            expiry="-",
-            order_type="MARKET",
-            size=1,
-            level=None,
-            quote_id=None
-        )
-
-    def _get_hours(self, start_date):
+    @staticmethod
+    def _get_hours(start_date):
         start_time = pd.to_datetime(start_date.openDateUtc.values[0])
         first_hours = datetime(start_time.year, start_time.month, start_time.day, start_time.hour)
         hours = [first_hours]
@@ -220,7 +220,8 @@ class IG:
 
         return hours
 
-    def fix_hist(self, hist):
+    @staticmethod
+    def fix_hist(hist):
         new_column = []
         for values in hist.instrumentName:
             res = re.search(r'\w{3}\/\w{3}', values)
@@ -234,7 +235,8 @@ class IG:
 
         return hist
 
-    def report_symbol(self,ti,ticker,start_time_hours,start_time_str,hist, predictor):
+    @staticmethod
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, predictor):
         predictor.load(ticker)
 
         df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),

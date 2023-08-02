@@ -2,7 +2,7 @@ import os
 import json
 
 
-class FileHandler():
+class FileHandler:
     _best_runs_file = "best_runs.json"
     _runs = {}
 
