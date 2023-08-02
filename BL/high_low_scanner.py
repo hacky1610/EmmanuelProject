@@ -112,10 +112,19 @@ class PivotScanner:
         df['pivot'] = self.get_pivot_ids(df[:-2])
         df['pointpos'] = df.apply(lambda row: self.pointpos(row), axis=1)
 
-    def _is_ascending_triangle(self, slmin, slmax, xxmax, atr):
-        diff = abs(slmax * xxmax[0] - slmax * xxmax[-1])
+    def _is_ascending_triangle(self, slope_min_line: float, slope_max_line: float, max_pivot_points: float, atr: float):
+        """
+        :param slope_min_line: Steigung der unteren Linie
+        :type slope_min_line: float
+        :param slope_max_line: Steigung der oberen Linie
+        :type slope_max_line: float
+        :param max_pivot_points: Steigung der oberen Linie
+        :type max_pivot_points: float
+
+        """
+        diff = abs(slope_max_line * max_pivot_points[0] - slope_max_line * max_pivot_points[-1])
         if diff < atr * self._straight_factor:
-            return slmin > 0.0
+            return slope_min_line > 0.0
 
     def _is_descending_triangle(self, slmin, slmax, xxmin, atr):
         diff = abs(slmin * xxmin[0] - slmin * xxmin[-1])
