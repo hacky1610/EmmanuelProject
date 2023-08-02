@@ -145,7 +145,7 @@ class Trader:
               """
         return (datetime.utcnow() - last_scan_time).days < 10
 
-    def _execute_trade(self, symbol, epic, stop, limit, size, currency, config, trade_function):
+    def _execute_trade(self, symbol, epic, stop, limit, size, currency, config, last_eval_result, trade_function):
         """Führt den Handel für ein bestimmtes Symbol durch.
 
                 Args:
@@ -156,6 +156,7 @@ class Trader:
                     size (float): Die Größe des Trades.
                     currency (str): Die Währung des Trades.
                     config: Die Handelskonfiguration.
+                    last_eval_result: Das letzte Ergebnis der Evaluation.
                     trade_function: Die Handelsfunktion (z.B. self._ig.buy oder self._ig.sell).
 
                 Returns:
@@ -163,7 +164,7 @@ class Trader:
                 """
         result, _ = trade_function(epic, stop, limit, size, currency)
         if result:
-            self._tracer.write(f"{config} {symbol} with settings {config}.")
+            self._tracer.write(f"Trade {symbol} with settings {config} and evaluation result {last_eval_result}.")
             return TradeResult.SUCCESS
         else:
             self._tracer.error(f"Error while trading {symbol}")
@@ -222,9 +223,11 @@ class Trader:
 
         if signal == BasePredictor.BUY:
             return self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
-                                       config.currency, predictor.get_config(), self._ig.buy)
+                                       config.currency, predictor.get_config(), predictor.get_last_result().get_data(),
+                                       self._ig.buy)
         elif signal == BasePredictor.SELL:
             return self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
-                                       config.currency, predictor.get_config(), self._ig.sell)
+                                       config.currency, predictor.get_config(), predictor.get_last_result().get_data(),
+                                       self._ig.sell)
 
         return TradeResult.NOACTION
