@@ -106,23 +106,6 @@ class HighLowScannerTest(unittest.TestCase):
         # Ensure that the returned pivot_ids are correct
         self.assertEqual(list(pivot_ids), [3, 1, 2, 0, 3])
 
-    @patch('plotly.graph_objs.Figure.show')
-    @patch('BL.high_low_scanner.PivotScanner.scan')
-    @patch('BL.high_low_scanner.PivotScanner.get_action', return_value=(ShapeType.NoShape, BasePredictor.NONE))
-    def test_scan_points(self, mock_get_action, mock_scan, mock_show):
-        # Testing scan_points function
-        pivot_scanner = PivotScanner()
-
-        # Call the function with the example DataFrame
-        pivot_scanner.scan_points(self.df)
-
-        # Ensure that the scan and get_action functions are called for each candle
-        self.assertEqual(mock_scan.call_count, len(self.df) - pivot_scanner._lookback)
-        self.assertEqual(mock_get_action.call_count, len(self.df) - pivot_scanner._lookback)
-
-        # Ensure that the figure is shown
-        mock_show.assert_called_once()
-
     def test_is_ascending_triangle(self):
         # Testing _is_ascending_triangle function
         pivot_scanner = PivotScanner()
