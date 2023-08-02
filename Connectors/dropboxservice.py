@@ -7,11 +7,14 @@ class DropBoxService:
         self._dropbox = dropbox_
         self._basepath = f"{basepath}/{type}"
 
-    def upload_file(self, source:str, destination):
+    def upload_file(self, source: str, destination: str):
         with open(source, "rb") as f:
             byte_array = f.read()
 
-        self._dropbox.files_upload(byte_array, f"{self._basepath}/{destination}")
+        try:
+            self._dropbox.files_upload(byte_array, f"{self._basepath}/{destination}")
+        except Exception as e:
+            print("Error uploading file")
 
     def upload_data(self, data:str, destination):
 

@@ -237,7 +237,6 @@ class IG:
 
     @staticmethod
     def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, predictor):
-        predictor.load(ticker)
 
         df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
                                        None, DataProcessor())
@@ -298,32 +297,6 @@ class IG:
                             symbol="triangle-up"
                         ),
                         )
-
-        for r in long_winner.iterrows():
-            df_temp = df_history[df_history.date < pd.to_datetime(r[1].openDateUtc).strftime("%Y-%m-%dT%H:%M:%S")]
-            level_sections = predictor.get_levels(df_temp)
-            for area in level_sections:
-                fig.add_scatter(x=[df_temp[-7:-6].date.values[0], df_temp[-1:].date.values[0], df_temp[-1:].date.values[0], df_temp[-7:-6].date.values[0]],
-                                     y=[area.lower, area.lower, area.upper, area.upper],
-                                     fill="toself",
-                                     fillcolor="Black",
-                                     mode='text',
-                                     opacity=0.3,
-                                     showlegend=False)
-        for r in long_looser.iterrows():
-            df_temp = df_history[df_history.date < pd.to_datetime(r[1].openDateUtc).strftime("%Y-%m-%dT%H:%M:%S")]
-            level_sections = predictor.get_levels(df_temp)
-            for area in level_sections:
-                fig.add_scatter(
-                    x=[df_temp[-7:-6].date.values[0], df_temp[-1:].date.values[0], df_temp[-1:].date.values[0],
-                       df_temp[-7:-6].date.values[0]],
-                    y=[area.lower, area.lower, area.upper, area.upper],
-                    fill="toself",
-                    fillcolor="Black",
-                    mode='text',
-                    opacity=0.3,
-                    showlegend=False)
-
 
         # short open
         fig.add_scatter(x=short_winner["openDateUtc"],
@@ -431,6 +404,7 @@ class IG:
 
         summary_text += f"\n\rProfit: {all_profit}€"
         summary_text += f"\n\rPerformance: {profit_percentige}%"
+        summary_text += f"\n\rWin_Loss: {len(hist[hist.profitAndLoss > 0]) / len(hist) }"
         summary_text += f"\n\r|Ticker| Profit| Mean |"
         summary_text += f"\n\r|------| ------| ---- |"
         for ticker in hist['name'].unique():
@@ -444,13 +418,11 @@ class IG:
         with open(temp_file, "w") as f:
             f.write(summary_text)
 
-        dp_service.upload_file(temp_file, os.path.join(
-            datetime.now().strftime("%Y_%m_%d"),
-            f"summary_{name}.md"))
+        dp_service.upload_file(temp_file, f"{datetime.now().strftime('%Y_%m_%d')}/summary_{name}.md")
 
         return
 
     def create_report(self, ti, dp_service,predictor):
         # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
-        # self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
+        self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
         self.report_last_day(ti, predictor)
