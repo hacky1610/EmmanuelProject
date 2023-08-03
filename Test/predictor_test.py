@@ -52,7 +52,7 @@ class TestBasePredictor(unittest.TestCase):
         config_series = base_predictor.get_config()
 
         expected_series = Series([
-            BasePredictor,
+            "BasePredictor",
             1.5,
             1.5,
             "V2.0",
@@ -144,7 +144,7 @@ class TestChartPatternPredictor(unittest.TestCase):
         config_series = predictor.get_config()
 
         expected_series = Series([
-            ChartPatternPredictor,
+            ChartPatternPredictor.__class__.__name__,
             2.0,
             2.0,
             "V1.0",
