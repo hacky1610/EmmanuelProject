@@ -19,6 +19,7 @@ class ChartPatternPredictor(BasePredictor):
     _be4after: int = 3
     _max_dist_factor: float = 2.0
     _straight_factor: float = 0.4
+    _stop_limit_ratio: float = 1.0
     # endregion
 
     def __init__(self, config=None,
@@ -37,6 +38,8 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_be4after")
         self._set_att(config, "_max_dist_factor")
         self._set_att(config, "_local_look_back")
+        self._set_att(config, "_stop_limit_ratio")
+
 
         self._look_back = int(self._look_back)
         self._be4after = int(self._be4after)
@@ -50,14 +53,16 @@ class ChartPatternPredictor(BasePredictor):
                        self._look_back,
                        self._be4after,
                        self._max_dist_factor,
-                       self._local_look_back
+                       self._local_look_back,
+                    self._stop_limit_ratio
                        ],
                       index=[
                              "_limit_factor",
                              "_look_back",
                              "_be4after",
                              "_max_dist_factor",
-                             "_local_look_back"
+                             "_local_look_back",
+                          "_stop_limit_ratio"
                              ])
         return parent_c.append(my_conf)
 
@@ -93,11 +98,11 @@ class ChartPatternPredictor(BasePredictor):
             if action == BasePredictor.BUY and current_ema_20 > current_ema_50:
                 stop = limit = df.ATR.mean() * self._limit_factor
                 self._tracer.write(f"{action} confirmed with Uptrend")
-                return action, stop, limit
+                return action, stop * self._stop_limit_ratio, limit
             if action == BasePredictor.SELL and current_ema_20 < current_ema_50:
                 stop = limit = df.ATR.mean() * self._limit_factor
                 self._tracer.write(f"{action} confirmed with Downtrend")
-                return action, stop, limit
+                return action, stop  * self._stop_limit_ratio, limit
             self._tracer.write("No action because it is against trend")
 
         return BasePredictor.NONE, 0, 0
@@ -121,9 +126,13 @@ class ChartPatternPredictor(BasePredictor):
     def _stop_limit_sets(version: str):
 
         json_objs = []
-        for factor in [1.7, 2.1, 2.7]:
+        for factor, ratio in itertools.product(
+                random.choices([1.7,2.1,2.7,2.5], k=2),
+                random.choices([0.7,1.0,1.3,1.5,1.8], k=2)
+        ):
             json_objs.append({
                 "_limit_factor": factor,
+                "_stop_limit_ratio":ratio,
                 "version": version
             })
         return json_objs
