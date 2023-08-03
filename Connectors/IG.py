@@ -23,8 +23,16 @@ class IG:
         self.accNr = conf_reader.get("ig_demo_acc_nr")
         if live:
             self.type = "LIVE"
+            self._fx_id = 342535
+            self._crypto_id = None
+            self._gold_id = None
+            self._silver_id = None
         else:
             self.type = "DEMO"
+            self._fx_id = 264139
+            self._crypto_id = 1002200
+            self._gold_id = 104139
+            self._silver_id = 264211
         self._tracer: Tracer = tracer
         self.connect()
         self._excludedMarkets = ["CHFHUF", "EMFX USDTWD ($1 Contract)", "EMFX USDPHP ($1 Contract)",
@@ -84,13 +92,13 @@ class IG:
 
     def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> DataFrame:
         if trade_type == TradeType.FX:
-            return self._get_markets(264139, tradeable)
+            return self._get_markets(self._fx_id, tradeable)
         elif trade_type == TradeType.CRYPTO:
-            markets = self._get_markets(1002200, tradeable)  # 668997 is only Bitcoin Cash
+            markets = self._get_markets(self._crypto_id , tradeable)  # 668997 is only Bitcoin Cash
             return self._set_symbol(markets)
         elif trade_type == TradeType.METAL:
-            gold = self._get_markets(104139, tradeable)  # Gold
-            silver = self._get_markets(264211, tradeable)
+            gold = self._get_markets(self._gold_id, tradeable)  # Gold
+            silver = self._get_markets(self._silver_id, tradeable)
             return self._set_symbol(gold + silver)
 
         return DataFrame()

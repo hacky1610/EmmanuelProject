@@ -19,16 +19,22 @@ import dropbox
 
 # endregions
 
+type_ = "LIVE"
+if type_ == "DEMO":
+    live = False
+else:
+    live = True
+
 # region statics
-conf_reader = ConfigReader()
+conf_reader = ConfigReader(live_config=live)
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
-ds = DropBoxService(dbx, "DEMO")
+ds = DropBoxService(dbx, type_)
 cache = DropBoxCache(ds)
 _trainer = Trainer(Analytics(), cache=cache)
-_tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
+_tiingo = Tiingo(conf_reader=conf_reader, cache=cache )
 _dp = DataProcessor()
 _trade_type = TradeType.FX
-_ig = IG(conf_reader=conf_reader)
+_ig = IG(conf_reader=conf_reader,live=live )
 _async_ex = AsyncExecutor()
 # endregion
 
