@@ -2,7 +2,8 @@ from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors import Tiingo, TradeType,DropBoxCache,IG, DropBoxService
-from BL import Analytics, EnvReader, DataProcessor, Trader
+from BL import Analytics, EnvReader, DataProcessor
+from BL.trader import Trader
 import dropbox
 
 env_reader = EnvReader()

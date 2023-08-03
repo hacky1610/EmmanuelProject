@@ -32,4 +32,4 @@ steps:
     repository: 'hacky1610/emmanuel'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v9.9'
+    tags: 'v9.91'
