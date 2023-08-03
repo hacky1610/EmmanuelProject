@@ -20,6 +20,12 @@ class BaseCache:
     def save_settings(self, data: DataFrame, name: str):
         pass
 
+    def load_deal_info(self, name: str):
+        pass
+
+    def save_deal_info(self, data: str, name: str):
+        pass
+
     def save_report(self, data: DataFrame, name: str):
         pass
 
@@ -51,6 +57,15 @@ class DropBoxCache(BaseCache):
 
     def save_settings(self, data: str, name: str):
         self.dropbox_servie.upload_data(data, f"Settings/{name}")
+
+    def load_deal_info(self, name: str):
+        res = self.dropbox_servie.load(f"deals/{name}.json")
+        if res is not None:
+            return json.loads(res)
+        return None
+
+    def save_deal_info(self, data: str, name: str):
+        self.dropbox_servie.upload_data(data, f"deals/{name}.json")
 
     def save_report(self, data: DataFrame, name: str):
         self.dropbox_servie.upload_data(data.to_csv(), f"Report/{name}")

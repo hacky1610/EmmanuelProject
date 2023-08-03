@@ -57,7 +57,7 @@ class BasePredictor:
         return ev_result
 
     def get_config(self):
-        return Series([self.__class__,
+        return Series([self.__class__.__name__,
                        self.stop,
                        self.limit,
                        self.version,
