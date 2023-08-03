@@ -176,7 +176,7 @@ class IG:
             if response["dealStatus"] != "ACCEPTED":
                 self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
             else:
-                self._tracer.write(f"Opened successfull {epic}")
+                self._tracer.write(f"Opened successfull {epic}. Deal details {response}")
                 deal_reference:str = response["dealReference"]
                 result = True
         except IGException as ex:
