@@ -71,6 +71,7 @@ class TestChartPatternPredictor(unittest.TestCase):
             "_be4after": 4,
             "_max_dist_factor": 1.8,
             "_local_look_back": 2,
+            "_stop_limit_ratio": 1.5,
             "stop": 2.0,
             "limit": 2.0,
             "version": "V1.0",
@@ -115,14 +116,14 @@ class TestChartPatternPredictor(unittest.TestCase):
         # Testen, ob die Funktion "BUY" mit einem Aufwärtstrend zurückgibt.
         action, stop, limit = self._predictor.is_with_trend(BasePredictor.BUY, self.bull_df)
         self.assertEqual(action, BasePredictor.BUY)
-        self.assertEqual(stop, self.bull_df.ATR.mean() * self._predictor._limit_factor)
+        self.assertEqual(stop, self.bull_df.ATR.mean() * self._predictor._limit_factor  * self._predictor._stop_limit_ratio)
         self.assertEqual(limit, self.bull_df.ATR.mean() * self._predictor._limit_factor)
 
     def test_sell_with_downtrend(self):
         # Testen, ob die Funktion "SELL" mit einem Abwärtstrend zurückgibt.
         action, stop, limit = self._predictor.is_with_trend(BasePredictor.SELL, self.bear_df)
         self.assertEqual(action,  BasePredictor.SELL)
-        self.assertEqual(stop, self.bull_df.ATR.mean() * self._predictor._limit_factor)
+        self.assertEqual(stop, self.bull_df.ATR.mean() * self._predictor._limit_factor * self._predictor._stop_limit_ratio)
         self.assertEqual(limit, self.bull_df.ATR.mean() * self._predictor._limit_factor)
 
     def test_no_action_against_trend(self):
@@ -153,7 +154,8 @@ class TestChartPatternPredictor(unittest.TestCase):
             30,
             4,
             1.8,
-            2
+            2,
+            1.5
         ], index=[
             "Type",
             "stop",
@@ -161,10 +163,12 @@ class TestChartPatternPredictor(unittest.TestCase):
             "version",
             "last_scan",
             "_limit_factor",
+
             "_look_back",
             "_be4after",
             "_max_dist_factor",
-            "_local_look_back"
+            "_local_look_back",
+            "_stop_limit_ratio",
         ])
 
         self.assertTrue(expected_series.equals(config_series))
