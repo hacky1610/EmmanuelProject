@@ -144,7 +144,7 @@ class TestChartPatternPredictor(unittest.TestCase):
         config_series = predictor.get_config()
 
         expected_series = Series([
-            ChartPatternPredictor.__class__.__name__,
+            "ChartPatternPredictor",
             2.0,
             2.0,
             "V1.0",
