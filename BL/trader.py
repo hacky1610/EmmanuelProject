@@ -241,6 +241,6 @@ class Trader:
                                        self._ig.sell)
         if res == TradeResult.SUCCESS:
             data = predictor.get_config().append(predictor.get_last_result().get_data())
-            name = f"{deal_response['date'][:-4]}_{deal_response['epic']}"
+            name = f"{deal_response['date'][:-4]}_{config.symbol}"
             self._cache.save_deal_info(data.to_json(), name)
         return res

@@ -14,4 +14,7 @@ tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
 predictor = RectanglePredictor()
 
-ig.create_report(tiingo,ds,predictor)
+ig.create_report(ti=tiingo,
+                 dp_service=ds,
+                 predictor=predictor,
+                 cache=cache)

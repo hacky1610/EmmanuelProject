@@ -222,7 +222,10 @@ class IG:
                                                          max_span_seconds=60 * 50)
 
     def get_current_balance(self):
-        return self.ig_service.fetch_accounts().loc[0].balance
+        balance = self.ig_service.fetch_accounts().loc[0].balance
+        if balance == None:
+            return 0
+        return balance
 
     @staticmethod
     def _get_hours(start_date):
@@ -250,7 +253,46 @@ class IG:
         return hist
 
     @staticmethod
-    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, predictor):
+    def _print_open(fig, df, symbol):
+        fig.add_scatter(x=df["openDateUtc"],
+                        y=df["openLevel"],
+                        marker=dict(
+                            color='Blue',
+                            size=10,
+                            symbol=symbol
+                        ),
+                        )
+
+    @staticmethod
+    def _print_result(fig, df, color):
+        fig.add_scatter(x=df["dateUtc"],
+                        y=df["closeLevel"],
+                        marker=dict(
+                            color=color,
+                            size=10
+                        ),
+                        )
+
+    @staticmethod
+    def _print_win(fig, df):
+        IG._print_result(fig, df, "Green")
+
+    @staticmethod
+    def _print_loose(fig, df):
+        IG._print_result(fig, df, "Red")
+
+
+    @staticmethod
+    def _print_long_open(fig, df):
+        IG._print_open(fig, df, "triangle-up")
+
+
+    @staticmethod
+    def _print_short_open(fig, df):
+        IG._print_open(fig, df, "triangle-down")
+
+    @staticmethod
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache):
 
         df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
                                        None, DataProcessor())
@@ -258,6 +300,12 @@ class IG:
         df_hour = df_history[df_history["date"] > start_time_str]
 
         temp_hist = hist[hist['name'] == ticker]
+
+        for r in temp_hist.iterrows():
+            t = (str(r[1].openDateUtc)).replace(" ", "T")
+            n = r[1]["name"]
+            name = f"{t}_{n}"
+            deal_info = cache.load_deal_info(name)
 
         winner = temp_hist[temp_hist["profitAndLoss"] >= 0]
         looser = temp_hist[temp_hist["profitAndLoss"] < 0]
@@ -278,6 +326,7 @@ class IG:
                            low=df_hour['low'],
                            close=df_hour['close']),
         ])
+
         for i in range(len(shorts)):
             row = shorts[i:i + 1]
             pl = row.openLevel - row.closeLevel
@@ -287,80 +336,26 @@ class IG:
             # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
             #                      color="#00ff00", label="Limit")
 
-        for i in range(len(longs)):
-            row = longs[i:i + 1]
-            pl = row.closeLevel - row.openLevel
-
-            # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl], color="#ff0000")
-            # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl], color="#00ff00")
 
         # long open
-        fig.add_scatter(x=long_winner["openDateUtc"],
-                        y=long_winner["openLevel"],
-                        marker=dict(
-                            color='Blue',
-                            size=10,
-                            symbol="triangle-up"
-                        ),
-                        )
-        fig.add_scatter(x=long_looser["openDateUtc"],
-                        y=long_looser["openLevel"],
-                        marker=dict(
-                            color='Blue',
-                            size=10,
-                            symbol="triangle-up"
-                        ),
-                        )
+        IG._print_long_open(fig, long_winner)
+        IG._print_long_open(fig, long_looser)
 
         # short open
-        fig.add_scatter(x=short_winner["openDateUtc"],
-                        y=short_winner["openLevel"],
-                        marker=dict(
-                            color='Blue',
-                            size=10,
-                            symbol="triangle-down"
-                        ),
-                        )
-        fig.add_scatter(x=short_looser["openDateUtc"],
-                        y=short_looser["openLevel"],
-                        marker=dict(
-                            color='Blue',
-                            size=10,
-                            symbol="triangle-down"
-                        ),
-                        )
+        IG._print_short_open(fig, short_winner)
+        IG._print_short_open(fig, short_looser)
+
 
         # long close
-        fig.add_scatter(x=long_winner["dateUtc"],
-                        y=long_winner["closeLevel"],
-                        marker=dict(
-                            color='Green',
-                            size=10
-                        ),
-                        )
-        fig.add_scatter(x=long_looser["dateUtc"],
-                        y=long_looser["closeLevel"],
-                        marker=dict(
-                            color='Red',
-                            size=10
-                        ),
-                        )
+        IG._print_win(fig, long_winner)
+        IG._print_loose(fig, long_looser)
+
 
         # short close
-        fig.add_scatter(x=short_winner["dateUtc"],
-                        y=short_winner["closeLevel"],
-                        marker=dict(
-                            color='Green',
-                            size=10
-                        ),
-                        )
-        fig.add_scatter(x=short_looser["dateUtc"],
-                        y=short_looser["closeLevel"],
-                        marker=dict(
-                            color='Red',
-                            size=10
-                        ),
-                        )
+
+        IG._print_win(fig, short_winner)
+        IG._print_loose(fig, short_looser)
+
 
         fig.update_layout(
             title=f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a>",
@@ -368,7 +363,7 @@ class IG:
         )
         fig.show()
 
-    def report_last_day(self, ti, predictor):
+    def report_last_day(self, ti, predictor, cache):
         start_time = (datetime.now() - timedelta(hours=60))
         start_time_hours = (datetime.now() - timedelta(days=30))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -394,13 +389,17 @@ class IG:
                                start_time_hours=start_time_hours,
                                start_time_str=start_time_str,
                                hist=hist,
-                               predictor=predictor)
+                               cache=cache)
 
 
 
 
 
-    def report_summary(self, ti, dp_service, delta: timedelta = timedelta(hours=24), name: str = "lastday"):
+    def report_summary(self,
+                       ti,
+                       dp_service,
+                       delta: timedelta = timedelta(hours=24),
+                       name: str = "lastday"):
         start_time = (datetime.now() - delta)
 
         hist = self.get_transaction_history(start_time)
@@ -436,7 +435,10 @@ class IG:
 
         return
 
-    def create_report(self, ti, dp_service,predictor):
+    def create_report(self, ti, dp_service, predictor, cache):
         # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
-        self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
-        self.report_last_day(ti, predictor)
+        self.report_summary(ti=ti,
+                            dp_service=dp_service,
+                            delta=timedelta(days=7),
+                            name="lastweek")
+        self.report_last_day(ti, predictor, cache)
