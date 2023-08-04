@@ -292,6 +292,14 @@ class IG:
         IG._print_open(fig, df, "triangle-down")
 
     @staticmethod
+    def _print_stop_limit():
+        pass
+            # stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
+            #                     color="#ff0000")
+            # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
+            #                      color="#00ff00", label="Limit")
+
+    @staticmethod
     def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache):
 
         df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
@@ -327,35 +335,14 @@ class IG:
                            close=df_hour['close']),
         ])
 
-        for i in range(len(shorts)):
-            row = shorts[i:i + 1]
-            pl = row.openLevel - row.closeLevel
 
-            # stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
-            #                     color="#ff0000")
-            # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
-            #                      color="#00ff00", label="Limit")
+        #Open
+        IG._print_long_open(fig, longs)
+        IG._print_short_open(fig, shorts)
 
-
-        # long open
-        IG._print_long_open(fig, long_winner)
-        IG._print_long_open(fig, long_looser)
-
-        # short open
-        IG._print_short_open(fig, short_winner)
-        IG._print_short_open(fig, short_looser)
-
-
-        # long close
-        IG._print_win(fig, long_winner)
-        IG._print_loose(fig, long_looser)
-
-
-        # short close
-
-        IG._print_win(fig, short_winner)
-        IG._print_loose(fig, short_looser)
-
+        # result
+        IG._print_win(fig, winner)
+        IG._print_loose(fig, looser)
 
         fig.update_layout(
             title=f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a>",
