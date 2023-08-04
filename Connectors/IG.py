@@ -158,9 +158,15 @@ class IG:
              currency: str = "USD") -> (bool, str):
         return self.open(epic, "SELL", stop, limit, size, currency)
 
-    def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25, size: float = 1.0,
-             currency: str = "USD") -> (bool, str):
-        deal_reference:str = ""
+    def open(self,
+             epic: str,
+             direction: str,
+             stop: int = 25,
+             limit: int = 25,
+             size: float = 1.0,
+             currency: str = "USD") -> (bool, dict):
+
+        deal_response:dict = {}
         result = False
         try:
             response = self.ig_service.create_open_position(
@@ -185,12 +191,12 @@ class IG:
                 self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
             else:
                 self._tracer.write(f"Opened successfull {epic}. Deal details {response}")
-                deal_reference:str = response["dealReference"]
                 result = True
+            deal_response = response
         except IGException as ex:
             self._tracer.error(f"Error during open a position. {ex} for {epic}")
 
-        return result, deal_reference
+        return result, deal_response
 
     def has_opened_positions(self):
         positions = self.ig_service.fetch_open_positions()

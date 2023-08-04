@@ -145,7 +145,16 @@ class Trader:
               """
         return (datetime.utcnow() - last_scan_time).days < 10
 
-    def _execute_trade(self, symbol, epic, stop, limit, size, currency, config, last_eval_result, trade_function) -> (TradeResult, str):
+    def _execute_trade(self,
+                       symbol,
+                       epic,
+                       stop,
+                       limit,
+                       size,
+                       currency,
+                       config,
+                       last_eval_result,
+                       trade_function) -> (TradeResult, dict):
         """Führt den Handel für ein bestimmtes Symbol durch.
 
                 Args:
@@ -162,13 +171,13 @@ class Trader:
                 Returns:
                     TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
                 """
-        result, deal_reference = trade_function(epic, stop, limit, size, currency)
+        result, deal_response = trade_function(epic, stop, limit, size, currency)
         if result:
             self._tracer.write(f"Trade {symbol} with settings {config} and evaluation result {last_eval_result}.")
-            return TradeResult.SUCCESS, deal_reference
+            return TradeResult.SUCCESS, deal_response
         else:
             self._tracer.error(f"Error while trading {symbol}")
-            return TradeResult.ERROR, deal_reference
+            return TradeResult.ERROR, deal_response
 
     def trade(self,
               predictor: BasePredictor,
@@ -223,14 +232,15 @@ class Trader:
 
         res = TradeResult.NOACTION
         if signal == BasePredictor.BUY:
-            res, deal_reference = self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
+            res, deal_response = self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
                                        config.currency, predictor.get_config(), predictor.get_last_result().get_data(),
                                        self._ig.buy)
         else:
-            res, deal_reference = self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
+            res, deal_response = self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
                                        config.currency, predictor.get_config(), predictor.get_last_result().get_data(),
                                        self._ig.sell)
         if res == TradeResult.SUCCESS:
             data = predictor.get_config().append(predictor.get_last_result().get_data())
-            self._cache.save_deal_info(data.to_json(),deal_reference)
+            name = f"{deal_response['date'][:-4]}_{deal_response['epic']}"
+            self._cache.save_deal_info(data.to_json(), name)
         return res

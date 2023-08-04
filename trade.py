@@ -7,7 +7,7 @@ from BL import Analytics, ConfigReader, DataProcessor
 from BL.trader import Trader
 
 
-type_ = "LIVE"
+type_ = "DEMO"
 if type_ == "DEMO":
 
     live = False
