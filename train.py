@@ -19,7 +19,7 @@ import dropbox
 
 # endregions
 
-type_ = "LIVE"
+type_ = "DEMO"
 if type_ == "DEMO":
     live = False
 else:

@@ -174,7 +174,7 @@ class TraderTest(unittest.TestCase):
 
     def test_is_good_high_win_loss_and_trades(self):
         # Testen, ob das Ergebnis gut ist, wenn win_loss >= 0.75 und trades >= 3
-        result = self._trader._is_good(win_loss=0.8, trades=4, symbol="AAPL")
+        result = self._trader._is_good(win_loss=0.8, trades=8, symbol="AAPL")
         self.assertTrue(result)
 
     def test_is_good_good_win_loss_and_trades(self):

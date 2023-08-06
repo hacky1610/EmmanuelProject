@@ -64,8 +64,8 @@ class Trader:
         self._tracer: Tracer = tracer
         self._predictor_class_list = predictor_class_list
         self._analytics = analytics
-        self._min_win_loss = 0.65
-        self._min_trades = 4
+        self._min_win_loss = 0.75
+        self._min_trades = 8
         self._cache = cache
 
     @staticmethod
@@ -123,9 +123,6 @@ class Trader:
                 Returns:
                     bool: True, wenn das Ergebnis gut ist, sonst False.
                 """
-        if win_loss >= 0.75 and trades >= 3:
-            return True
-
         if win_loss >= self._min_win_loss and trades >= self._min_trades:
             return True
 
@@ -240,7 +237,12 @@ class Trader:
                                        config.currency, predictor.get_config(), predictor.get_last_result().get_data(),
                                        self._ig.sell)
         if res == TradeResult.SUCCESS:
-            data = predictor.get_config().append(predictor.get_last_result().get_data())
-            name = f"{deal_response['date'][:-4]}_{config.symbol}"
-            self._cache.save_deal_info(data.to_json(), name)
+            try:
+                predictor_data = predictor.get_config().append(predictor.get_last_result().get_data())
+                deal_data = DataFrame([deal_response])
+                all_data = predictor_data.append(deal_data)
+                name = f"{deal_response['date'][:-4]}_{config.symbol}"
+                self._cache.save_deal_info(all_data.to_json(), name)
+            except:
+                self._tracer.error("Error while save data")
         return res
