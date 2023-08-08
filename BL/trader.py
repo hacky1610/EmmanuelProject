@@ -6,7 +6,7 @@ from Connectors import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import TradeType
 from Tracing import Tracer
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from Predictors.base_predictor import BasePredictor
 
 
@@ -239,7 +239,7 @@ class Trader:
         if res == TradeResult.SUCCESS:
             try:
                 predictor_data = predictor.get_config().append(predictor.get_last_result().get_data())
-                deal_data = DataFrame([deal_response])
+                deal_data = Series(deal_response)
                 all_data = predictor_data.append(deal_data)
                 name = f"{deal_response['date'][:-4]}_{config.symbol}"
                 self._cache.save_deal_info(all_data.to_json(), name)
