@@ -50,6 +50,7 @@ class Trader:
           analytics (Analytics): Die Analytics-Klasse für die Ergebnisanalyse.
           cache (DropBoxCache): Der Cache zum Speichern der Handelsberichte.
       """
+
     def __init__(self,
                  ig: IG,
                  tiingo,
@@ -176,6 +177,13 @@ class Trader:
             self._tracer.error(f"Error while trading {symbol}")
             return TradeResult.ERROR, deal_response
 
+    def _save_result(self, predictor: BasePredictor, deal_response: dict, symbol: str):
+        predictor_data = predictor.get_config().append(predictor.get_last_result().get_data())
+        deal_data = Series(deal_response)
+        all_data = predictor_data.append(deal_data)
+        name = f"{deal_response['date'][:-4]}_{symbol}"
+        self._cache.save_deal_info(all_data.to_json(), name)
+
     def trade(self,
               predictor: BasePredictor,
               config: TradeConfig) -> TradeResult:
@@ -227,22 +235,16 @@ class Trader:
                 f"There is already an opened position of {config.symbol} with direction {opened_position.direction}")
             return TradeResult.NOACTION
 
-        res = TradeResult.NOACTION
         if signal == BasePredictor.BUY:
             res, deal_response = self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
-                                       config.currency, predictor.get_config(), predictor.get_last_result().get_data(),
-                                       self._ig.buy)
+                                                     config.currency, predictor.get_config(),
+                                                     predictor.get_last_result().get_data(),
+                                                     self._ig.buy)
         else:
             res, deal_response = self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
-                                       config.currency, predictor.get_config(), predictor.get_last_result().get_data(),
-                                       self._ig.sell)
+                                                     config.currency, predictor.get_config(),
+                                                     predictor.get_last_result().get_data(),
+                                                     self._ig.sell)
         if res == TradeResult.SUCCESS:
-            try:
-                predictor_data = predictor.get_config().append(predictor.get_last_result().get_data())
-                deal_data = Series(deal_response)
-                all_data = predictor_data.append(deal_data)
-                name = f"{deal_response['date'][:-4]}_{config.symbol}"
-                self._cache.save_deal_info(all_data.to_json(), name)
-            except:
-                self._tracer.error("Error while save data")
+            self._save_result(predictor, deal_response, config.symbol)
         return res

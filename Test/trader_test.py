@@ -202,6 +202,15 @@ class TraderTest(unittest.TestCase):
         result = self._trader._is_good(win_loss=0.7, trades=5, symbol="AAPL")
         self.assertTrue(result)
 
+    def test_save_result(self):
+
+
+        # Testaufruf der trade_markets-Funktion
+        predictor = MagicMock()
+        deal_response = {"A":1, "date":"2020-3-3"}
+        self._trader._save_result(predictor,deal_response,"foo")
+
+
     def trade_bad_result(self):
         self._predictor.best_result = 0.1
         self._predictor.trades = 100

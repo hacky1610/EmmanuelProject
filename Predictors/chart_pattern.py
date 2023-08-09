@@ -1,7 +1,7 @@
 import itertools
 import random
 from BL.high_low_scanner import PivotScanner
-from Connectors import BaseCache
+from Connectors.dropbox_cache import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import Series, DataFrame
 from Tracing.Tracer import Tracer

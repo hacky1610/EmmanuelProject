@@ -1,3 +1,4 @@
+from BL import DataProcessor, Analytics
 from Connectors import DropBoxCache
 from Connectors.IG import IG
 from Connectors.tiingo import Tiingo
@@ -17,4 +18,6 @@ predictor = RectanglePredictor()
 ig.create_report(ti=tiingo,
                  dp_service=ds,
                  predictor=predictor,
-                 cache=cache)
+                 cache=cache,
+                 dp=DataProcessor(),
+                 analytics=Analytics())

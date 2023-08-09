@@ -25,7 +25,8 @@ class Analytics:
                  df_eval: DataFrame,
                  symbol: str = "",
                  viewer: BaseViewer = BaseViewer(),
-                 only_one_position: bool = True) -> EvalResult:
+                 only_one_position: bool = True,
+                 filter=None) -> EvalResult:
 
         assert len(df_train) > 0
         assert len(df_eval) > 0
@@ -44,6 +45,8 @@ class Analytics:
         viewer.print_graph()
 
         for i in range(len(df_train) - 1):
+            if filter is not None and filter.strftime("%Y-%m-%dT%H:00:00.000Z") != df_train.date[i + 1]:
+                continue
 
             open_price = df_train.open[i + 1]
 

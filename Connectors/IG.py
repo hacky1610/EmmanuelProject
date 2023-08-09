@@ -1,7 +1,9 @@
 import os.path
 from trading_ig import IGService
 from trading_ig.rest import IGException
-from BL import DataProcessor, timedelta, BaseReader
+from BL import DataProcessor, timedelta, BaseReader, Analytics
+from Predictors.chart_pattern_rectangle import RectanglePredictor
+from Predictors.chart_pattern_triangle import TrianglePredictor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
@@ -11,6 +13,7 @@ import re
 import tempfile
 from datetime import datetime
 from Connectors.tiingo import TradeType
+from UI.plotly_viewer import PlotlyViewer
 
 
 class IG:
@@ -300,7 +303,7 @@ class IG:
             #                      color="#00ff00", label="Limit")
 
     @staticmethod
-    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache):
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics:Analytics):
 
         df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
                                        None, DataProcessor())
@@ -309,11 +312,28 @@ class IG:
 
         temp_hist = hist[hist['name'] == ticker]
 
+        add_text = ""
         for r in temp_hist.iterrows():
             t = (str(r[1].openDateUtc)).replace(" ", "T")
             n = r[1]["name"]
             name = f"{t}_{n}"
             deal_info = cache.load_deal_info(name)
+            if deal_info != None:
+                win_lost = deal_info["_wins"] / deal_info["_trades"]
+                add_text += f"{deal_info['Type']}: {win_lost}"
+                if deal_info['Type'] == "RectanglePredictor":
+                    predictor = RectanglePredictor(config=deal_info)
+                else:
+                    predictor = TrianglePredictor(config=deal_info)
+                df, df_eval = ti.load_train_data(n, dp, TradeType.FX)
+                dt = datetime.fromisoformat(str(r[1].openDateUtc))
+                filter = datetime(dt.year,dt.month,dt.day, dt.hour)
+                res = analytics.evaluate(predictor,df,df_eval,name,PlotlyViewer(cache), filter=filter)
+                if (r[1]["profitAndLoss"] < 0 and res.get_win_loss() > 0) or (r[1]["profitAndLoss"] > 0 and res.get_win_loss() < 0):
+                    print("ERROR")
+            else:
+                add_text += "Error"
+
 
         winner = temp_hist[temp_hist["profitAndLoss"] >= 0]
         looser = temp_hist[temp_hist["profitAndLoss"] < 0]
@@ -345,12 +365,12 @@ class IG:
         IG._print_loose(fig, looser)
 
         fig.update_layout(
-            title=f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a>",
+            title=f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a> {add_text}",
             legend_title="Legend Title",
         )
         fig.show()
 
-    def report_last_day(self, ti, predictor, cache):
+    def report_last_day(self, ti, cache, dp, analytics):
         start_time = (datetime.now() - timedelta(hours=60))
         start_time_hours = (datetime.now() - timedelta(days=30))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -376,7 +396,9 @@ class IG:
                                start_time_hours=start_time_hours,
                                start_time_str=start_time_str,
                                hist=hist,
-                               cache=cache)
+                               cache=cache,
+                               dp=dp,
+                               analytics=analytics)
 
 
 
@@ -422,10 +444,10 @@ class IG:
 
         return
 
-    def create_report(self, ti, dp_service, predictor, cache):
+    def create_report(self, ti, dp_service, predictor, cache,dp, analytics):
         # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
         self.report_summary(ti=ti,
                             dp_service=dp_service,
                             delta=timedelta(days=7),
                             name="lastweek")
-        self.report_last_day(ti, predictor, cache)
+        self.report_last_day(ti=ti, cache=cache,dp=dp, analytics=analytics)
