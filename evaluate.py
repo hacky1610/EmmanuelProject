@@ -2,7 +2,8 @@
 import random
 from BL import DataProcessor, Analytics, ConfigReader
 from BL.eval_result import EvalResult, EvalResultCollection
-from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
+from Connectors import Tiingo, TradeType, DropBoxCache, DropBoxService
+from Connectors.IG import IG
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from UI.plotly_viewer import PlotlyViewer

@@ -1,5 +1,6 @@
 import dropbox
-from Connectors import IG, Tiingo, TradeType, DropBoxService, DropBoxCache
+from Connectors import  Tiingo, TradeType, DropBoxService, DropBoxCache
+from Connectors.IG import IG
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from Tracing.LogglyTracer import LogglyTracer
