@@ -17,8 +17,8 @@ class TraderTest(unittest.TestCase):
         self.analytics = Analytics(ConsoleTracer())
         self._tiingo = MagicMock()
         self._mock_ig = MagicMock()
-        self._mock_ig.buy = MagicMock(return_value=(True, "1"))
-        self._mock_ig.sell = MagicMock(return_value=(True, "1"))
+        self._mock_ig.buy = MagicMock(return_value=(True, {"date":"2016-3-4T00:00:00"}))
+        self._mock_ig.sell = MagicMock(return_value=(True, {"date":"2016-3-4T00:00:00"}))
         self._trainer = MagicMock()
         self._predictor = MagicMock()
         self._predictor.stop = 2

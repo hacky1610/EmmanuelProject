@@ -1,4 +1,4 @@
-from BL.high_low_scanner import PivotScanner, ShapeType
+from BL.high_low_scanner import ShapeType
 from Connectors.dropbox_cache import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
