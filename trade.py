@@ -25,7 +25,7 @@ cache = DropBoxCache(ds)
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
 ig = IG(tracer=tracer, conf_reader=conf_reader, live=live)
 analytics = Analytics(tracer)
-predictor_class_list = [RectanglePredictor, TrianglePredictor]
+predictor_class_list = [TrianglePredictor]
 #endregion
 
 trader = Trader(
