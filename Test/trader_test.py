@@ -17,8 +17,8 @@ class TraderTest(unittest.TestCase):
         self.analytics = Analytics(ConsoleTracer())
         self._tiingo = MagicMock()
         self._mock_ig = MagicMock()
-        self._mock_ig.buy = MagicMock(return_value=(True, "1"))
-        self._mock_ig.sell = MagicMock(return_value=(True, "1"))
+        self._mock_ig.buy = MagicMock(return_value=(True, {"date":"2016-3-4T00:00:00"}))
+        self._mock_ig.sell = MagicMock(return_value=(True, {"date":"2016-3-4T00:00:00"}))
         self._trainer = MagicMock()
         self._predictor = MagicMock()
         self._predictor.stop = 2
@@ -201,6 +201,15 @@ class TraderTest(unittest.TestCase):
         # Testen, ob das Ergebnis gut ist, wenn win_loss = _min_win_loss und trades = _min_trades
         result = self._trader._is_good(win_loss=0.7, trades=5, symbol="AAPL")
         self.assertTrue(result)
+
+    def test_save_result(self):
+
+
+        # Testaufruf der trade_markets-Funktion
+        predictor = MagicMock()
+        deal_response = {"A":1, "date":"2020-3-3"}
+        self._trader._save_result(predictor,deal_response,"foo")
+
 
     def trade_bad_result(self):
         self._predictor.best_result = 0.1

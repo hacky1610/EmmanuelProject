@@ -2,7 +2,8 @@
 import random
 from BL import DataProcessor, Analytics, ConfigReader
 from BL.eval_result import EvalResult, EvalResultCollection
-from Connectors import Tiingo, TradeType, IG, DropBoxCache, DropBoxService, BaseCache
+from Connectors import Tiingo, TradeType, DropBoxCache, DropBoxService
+from Connectors.IG import IG
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from UI.plotly_viewer import PlotlyViewer
@@ -35,7 +36,7 @@ def evaluate_predictor(ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, 
     # for m in random.choices(markets,k=30):
     for m in markets:
         symbol = m["symbol"]
-        symbol = "EURCHF"
+        #symbol = "EURCHF"
         df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
         if len(df) > 0:
@@ -61,5 +62,5 @@ def evaluate_predictor(ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, 
 
 viewer = PlotlyViewer(cache=df_cache)
 
-evaluate_predictor(ig, ti, RectanglePredictor, viewer, only_test=True)
+#evaluate_predictor(ig, ti, RectanglePredictor, viewer, only_test=True)
 evaluate_predictor(ig, ti, TrianglePredictor, viewer, only_test=True)
