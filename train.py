@@ -75,15 +75,15 @@ def train_predictor(ig: IG,
 
 
 while True:
-    # train_predictor(ig=_ig,
-    #                 trainer=_trainer,
-    #                 tiingo=_tiingo,
-    #                 predictor=RectanglePredictor,
-    #                 async_ex=_async_ex,
-    #                 async_exec=_async_exec,
-    #                 train_version=_train_version,
-    #                 dp=_dp,
-    #                 loop=_loop)
+    train_predictor(ig=_ig,
+                    trainer=_trainer,
+                    tiingo=_tiingo,
+                    predictor=RectanglePredictor,
+                    async_ex=_async_ex,
+                    async_exec=_async_exec,
+                    train_version=_train_version,
+                    dp=_dp,
+                    loop=_loop)
     train_predictor(ig=_ig,
                     trainer=_trainer,
                     tiingo=_tiingo,

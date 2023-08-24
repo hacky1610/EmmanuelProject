@@ -320,7 +320,7 @@ class IG:
             deal_info = cache.load_deal_info(name)
             if deal_info != None:
                 win_lost = deal_info["_wins"] / deal_info["_trades"]
-                add_text += f"{deal_info['Type']}: {win_lost}"
+                add_text += f"{deal_info['Type']}: WL: {win_lost} - Trades: {deal_info['_trades']}"
                 if deal_info['Type'] == "RectanglePredictor":
                     predictor = RectanglePredictor(config=deal_info)
                 else:
@@ -365,14 +365,14 @@ class IG:
         IG._print_loose(fig, looser)
 
         fig.update_layout(
-            title=f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a> {add_text}",
+            title=f"Live trade of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a> {add_text}",
             legend_title="Legend Title",
         )
         fig.show()
 
-    def report_last_day(self, ti, cache, dp, analytics):
-        start_time = (datetime.now() - timedelta(hours=60))
-        start_time_hours = (datetime.now() - timedelta(days=30))
+    def report_last_day(self, ti, cache, dp, analytics, days: int = 7):
+        start_time = (datetime.now() - timedelta(hours=days * 24))
+        start_time_hours = (datetime.now() - timedelta(days=days * 2))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
 
         hist = self.get_transaction_history(start_time)

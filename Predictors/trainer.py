@@ -27,7 +27,14 @@ class Trainer:
         for training_set in sets:
             predictor = predictor_class(cache=self._cache)
             predictor.load(symbol)
+            if predictor.get_last_result().get_trades() < 8:
+                print(f"{symbol} To less trades")
+                return
+            if predictor.get_last_result().get_win_loss() < 0.67:
+                print(f"{symbol} To less win losses")
+                return
             predictor.setup(training_set)
+
             res: EvalResult = predictor.step(df, df_eval, self._analytics)
 
             if res.get_reward() > best and res.get_win_loss() > 0.6 and res.get_trades() >= 2:
