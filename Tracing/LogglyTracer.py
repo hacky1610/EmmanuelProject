@@ -12,6 +12,9 @@ class LogglyTracer(Tracer):
     def write(self, message):
         self._log.create_input(f"[{self.type}] | INFO | {self._prefix} | {self._get_function()} | {message}")
 
+    def info(self, message):
+        self._log.create_input(f"[{self.type}] | INFO | {self._prefix} | {self._get_function()} | {message}")
+
     def debug(self, message):
         self._log.create_input(f"[{self.type}] | DEBUG | {self._prefix} | {self._get_function()} | {message}")
 

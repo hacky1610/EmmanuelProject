@@ -36,7 +36,7 @@ def evaluate_predictor(ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, 
     # for m in random.choices(markets,k=30):
     for m in markets:
         symbol = m["symbol"]
-        #symbol = "EURCHF"
+        #symbol = "USDCAD"
         df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
         if len(df) > 0:
@@ -60,7 +60,7 @@ def evaluate_predictor(ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, 
 
 # endregion
 
-viewer = PlotlyViewer(cache=df_cache)
+#viewer = PlotlyViewer(cache=df_cache)
 
-#evaluate_predictor(ig, ti, RectanglePredictor, viewer, only_test=True)
-evaluate_predictor(ig, ti, TrianglePredictor, viewer, only_test=True)
+evaluate_predictor(ig, ti, RectanglePredictor, viewer, only_test=False)
+evaluate_predictor(ig, ti, TrianglePredictor, viewer, only_test=False)

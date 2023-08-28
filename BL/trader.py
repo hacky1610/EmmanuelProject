@@ -65,8 +65,8 @@ class Trader:
         self._tracer: Tracer = tracer
         self._predictor_class_list = predictor_class_list
         self._analytics = analytics
-        self._min_win_loss = 0.75
-        self._min_trades = 8
+        self._min_win_loss = 0.82
+        self._min_trades = 11
         self._cache = cache
 
     @staticmethod
@@ -219,6 +219,7 @@ class Trader:
             self._tracer.debug(f"Spread {config.spread} is greater than {spread_limit} for {config.symbol}")
             return TradeResult.ERROR
 
+        self._tracer.info(f"{config.symbol} valid to predict")
         signal, stop, limit = predictor.predict(trade_df)
         scaled_stop = stop * config.scaling
         scaled_limit = limit * config.scaling

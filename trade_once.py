@@ -22,7 +22,7 @@ cache = DropBoxCache(ds)
 tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_)
 tiingo = Tiingo(tracer=tracer, conf_reader=env_reader, cache=cache)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
-predictor_class_list = [RectanglePredictor, TrianglePredictor]
+predictor_class_list = [TrianglePredictor, RectanglePredictor]
 analytics = Analytics(tracer)
 
 trader = Trader(

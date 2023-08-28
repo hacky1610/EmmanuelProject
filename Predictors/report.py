@@ -25,6 +25,7 @@ for market in currency_markets:
     predictor = TrianglePredictor(cache=df_cache)
     predictor.load(symbol)
     results.add(predictor.get_last_result())
+    print(f"{symbol} - {predictor.get_last_result()}")
     df = df.append(Series([symbol,
                            predictor._limit_factor,
                            predictor._look_back,
