@@ -219,6 +219,7 @@ class Trader:
             self._tracer.debug(f"Spread {config.spread} is greater than {spread_limit} for {config.symbol}")
             return TradeResult.ERROR
 
+        self._tracer.info(f"{config.symbol} valid to predict")
         signal, stop, limit = predictor.predict(trade_df)
         scaled_stop = stop * config.scaling
         scaled_limit = limit * config.scaling

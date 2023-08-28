@@ -22,7 +22,7 @@ results = EvalResultCollection()
 currency_markets = ig.get_markets(TradeType.FX)
 for market in currency_markets:
     symbol = market["symbol"]
-    predictor = RectanglePredictor(cache=df_cache)
+    predictor = TrianglePredictor(cache=df_cache)
     predictor.load(symbol)
     results.add(predictor.get_last_result())
     print(f"{symbol} - {predictor.get_last_result()}")
