@@ -74,12 +74,13 @@ class Tiingo:
 
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
-                          clean_data: bool = True, trade_type: TradeType = TradeType.FX) -> DataFrame:
+                          clean_data: bool = True, trade_type: TradeType = TradeType.FX,
+                          use_cache: bool = True) -> DataFrame:
         res = DataFrame()
         name = f"{ticker}_{resolution}.csv"
         cached = self._cache.load_cache(name)
 
-        if len(cached) > 0:
+        if len(cached) > 0 and use_cache:
             lastchached = pd.to_datetime(cached[-1:].date.item())
             now = datetime.utcnow().replace(tzinfo=lastchached.tzinfo)
             toCompare = datetime(now.year, now.month, now.day, now.hour, tzinfo=lastchached.tzinfo) - timedelta(hours=1)
@@ -115,6 +116,39 @@ class Tiingo:
                                       data_processor=dp,
                                       trade_type=trade_type,
                                       resolution="1hour")
+
+    def _load_long_period(self, symbol: str, trade_type, days: int = 100, resolution: str = "1hour"):
+        end_time = datetime.now()
+        start_time = end_time - timedelta(days=10)
+        data = DataFrame()
+        for i in range(0, days, 10):
+            df = self._send_history_request(ticker=symbol,
+                                            start=start_time,
+                                            end=end_time,
+                                            trade_type=trade_type,
+                                            resolution=resolution, )
+            if len(data) == 0:
+                data = df
+            else:
+                df = df[df.date < data[0:1].date.item()]
+                data = df.append(data)
+            end_time = start_time + timedelta(days=1)
+            start_time = end_time - timedelta(days=10)
+
+        if len(data) == 0:
+            return data
+
+        name = f"{symbol}_{resolution}.csv"
+        self._cache.save_cache(data, name)
+
+        return data
+
+    def init_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 100):
+
+        df = self._load_long_period(symbol=symbol,trade_type=trade_type,days=days, resolution="1hour")
+        df_minutes = self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="5min")
+        return
+
 
     def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 30):
 
