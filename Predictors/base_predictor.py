@@ -52,7 +52,7 @@ class BasePredictor:
         return datetime.fromisoformat(self.last_scan)
 
     def step(self, df_train: DataFrame, df_eval: DataFrame, analytics) -> EvalResult:
-        ev_result: EvalResult = analytics.evaluate(self, df_train, df_eval)
+        ev_result: EvalResult = analytics.evaluate(self, df_train, df_eval, only_one_position=False)
         self._last_scan = ev_result
         return ev_result
 

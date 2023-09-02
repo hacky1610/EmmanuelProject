@@ -22,6 +22,7 @@ class ShapeType(Enum):
     AscendingTriangle = 2
     DescendingTriangle = 3
     Rectangle = 4
+    HeadShoulder = 5
 
 
 class Item:
@@ -124,6 +125,28 @@ class PivotScanner:
         if slmin < 0 and slmax < 0 or slmin > 0 and slmax > 0:
             diff = PivotScanner.get_percentage_diff(slmin, slmax)
             return diff < self._rectangle_line_slope
+
+    def _is_head_shoulder(self, max_pivot_points, min_pivot_points, df, atr):
+        max_pivot_points = np.int_(max_pivot_points)
+        min_pivot_points = np.int_(min_pivot_points)
+        if min_pivot_points[-1] > max_pivot_points[-1]:
+            if len(min_pivot_points) < 3:
+                return False
+            if len(max_pivot_points) < 2:
+                return False
+
+            head = df.iloc[min_pivot_points[-2]].low
+            s1 = df.iloc[min_pivot_points[-3]].low
+            s2 = df.iloc[min_pivot_points[-1]].low
+            n1 = df.iloc[max_pivot_points[-2]].high
+            n2 = df.iloc[max_pivot_points[-1]].high
+
+            if head < s1 and head < s2:
+                if abs(s1 - s2) < atr * 3:
+                    return True
+
+
+        return False
 
     @staticmethod
     def get_percentage_diff(previous, current):
@@ -257,4 +280,14 @@ class PivotScanner:
                 f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
             return ShapeType.Rectangle, BasePredictor.NONE
 
+        elif self._is_head_shoulder(xxmax, xxmin, df, current_atr) and ShapeType.HeadShoulder in type_filter:
+            self._tracer.write("Found Head Shoulder")
+
+           # self._viewer.custom_print(self._print, df, candle_id, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
+            #                          "HeadShoulder")
+            return ShapeType.HeadShoulder, BasePredictor.NONE
+
+
         return ShapeType.NoShape, BasePredictor.NONE
+
+

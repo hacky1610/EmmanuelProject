@@ -35,7 +35,7 @@ _tiingo = Tiingo(conf_reader=conf_reader, cache=cache )
 _dp = DataProcessor()
 _trade_type = TradeType.FX
 _ig = IG(conf_reader=conf_reader,live=live )
-_async_ex = AsyncExecutor()
+_async_ex = AsyncExecutor(free_cpus=2)
 # endregion
 
 _train_version = "V2.20"

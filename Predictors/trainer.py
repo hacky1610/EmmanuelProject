@@ -4,9 +4,10 @@ from BL.eval_result import EvalResult
 
 class Trainer:
 
-    def __init__(self, analytics, cache):
+    def __init__(self, analytics, cache, check_trainable = False):
         self._analytics = analytics
         self._cache = cache
+        self._check_trainable = check_trainable
 
     def is_trained(self,
                    symbol: str,
@@ -14,6 +15,18 @@ class Trainer:
                    predictor) -> bool:
         saved_predictor = predictor(cache=self._cache).load(symbol)
         return version == saved_predictor.version
+
+    def _trainable(self, predictor):
+        if not self._check_trainable:
+            return True
+
+        if predictor.get_last_result().get_trades() < 8:
+            print("To less trades")
+            return False
+        if predictor.get_last_result().get_win_loss() < 0.67:
+            print("To less win losses")
+            return False
+        return True
 
     def train(self, symbol: str, df, df_eval, version: str, predictor_class):
         print(f"#####Train {symbol} with {predictor_class.__name__} #######################")
@@ -27,11 +40,7 @@ class Trainer:
         for training_set in sets:
             predictor = predictor_class(cache=self._cache)
             predictor.load(symbol)
-            if predictor.get_last_result().get_trades() < 8:
-                print(f"{symbol} To less trades")
-                return
-            if predictor.get_last_result().get_win_loss() < 0.67:
-                print(f"{symbol} To less win losses")
+            if not self._trainable(predictor):
                 return
             predictor.setup(training_set)
 
