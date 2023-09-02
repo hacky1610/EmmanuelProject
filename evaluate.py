@@ -4,6 +4,7 @@ from BL import DataProcessor, Analytics, ConfigReader
 from BL.eval_result import EvalResult, EvalResultCollection
 from Connectors import Tiingo, TradeType, DropBoxCache, DropBoxService
 from Connectors.IG import IG
+from Predictors.chart_pattern_hs import HeadShoulderPredictor
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from UI.plotly_viewer import PlotlyViewer
@@ -24,6 +25,7 @@ analytics = Analytics()
 trade_type = TradeType.FX
 results = EvalResultCollection()
 viewer = BaseViewer()
+only_one_position = False
 
 
 # endregion
@@ -60,7 +62,7 @@ def evaluate_predictor(ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, 
 
 # endregion
 
-#viewer = PlotlyViewer(cache=df_cache)
-
-#evaluate_predictor(ig, ti, RectanglePredictor, viewer, only_test=False)
-evaluate_predictor(ig, ti, TrianglePredictor, viewer, only_test=False, only_one_position=False)
+viewer = PlotlyViewer(cache=df_cache)
+#evaluate_predictor(ig, ti, RectanglePredictor, viewer, only_test=False, only_one_position=only_one_position)
+#evaluate_predictor(ig, ti, TrianglePredictor, viewer, only_test=False, only_one_position=only_one_position)
+evaluate_predictor(ig, ti, HeadShoulderPredictor, viewer, only_test=False, only_one_position=only_one_position)

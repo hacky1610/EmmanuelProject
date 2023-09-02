@@ -40,7 +40,7 @@ _async_ex = AsyncExecutor(free_cpus=2)
 
 _train_version = "V2.20"
 _loop = True
-_async_exec = True
+_async_exec = False
 _predictor = TrianglePredictor
 _predictor = RectanglePredictor
 
