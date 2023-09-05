@@ -117,11 +117,16 @@ class Tiingo:
                                       trade_type=trade_type,
                                       resolution="1hour")
 
-    def _load_long_period(self, symbol: str, trade_type, days: int = 100, resolution: str = "1hour"):
+    def _load_long_period(self, symbol: str, trade_type, days: int = 100, resolution: str = "1hour", window: int = 10):
+        name = f"{symbol}_{resolution}.csv"
+
+        if len(self._cache.load_cache(name)) > 0:
+            return
+
         end_time = datetime.now()
-        start_time = end_time - timedelta(days=10)
+        start_time = end_time - timedelta(days=window)
         data = DataFrame()
-        for i in range(0, days, 10):
+        for i in range(0, days, window):
             df = self._send_history_request(ticker=symbol,
                                             start=start_time,
                                             end=end_time,
@@ -133,22 +138,19 @@ class Tiingo:
                 df = df[df.date < data[0:1].date.item()]
                 data = df.append(data)
             end_time = start_time + timedelta(days=1)
-            start_time = end_time - timedelta(days=10)
+            start_time = end_time - timedelta(days=window)
 
         if len(data) == 0:
             return data
 
-        name = f"{symbol}_{resolution}.csv"
         self._cache.save_cache(data, name)
-
+        print(f"Saved {name}")
         return data
 
-    def init_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 100):
+    def init_data(self, symbol: str, trade_type, days: int = 100):
 
-        df = self._load_long_period(symbol=symbol,trade_type=trade_type,days=days, resolution="1hour")
-        df_minutes = self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="5min")
-        return
-
+        self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="1hour")
+        self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="5min")
 
     def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 30):
 
