@@ -19,7 +19,10 @@ class DropBoxService:
     def upload_data(self, data:str, destination):
 
         byte_data = bytes(data, encoding='utf-8')
-        self._dropbox.files_upload(byte_data, f"{self._basepath}/{destination}", mode=dropbox.files.WriteMode("overwrite"))
+        try:
+            self._dropbox.files_upload(byte_data, f"{self._basepath}/{destination}", mode=dropbox.files.WriteMode("overwrite"))
+        except Exception as e:
+            print("Error uploading file")
 
     def load(self, source:str):
         try:
