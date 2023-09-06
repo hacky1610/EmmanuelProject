@@ -20,6 +20,7 @@ class ChartPatternPredictor(BasePredictor):
     _max_dist_factor: float = 2.0
     _straight_factor: float = 0.4
     _stop_limit_ratio: float = 1.0
+    _use_ema_confirmation: bool = True
     # endregion
 
     def __init__(self, config=None,
@@ -39,6 +40,7 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_max_dist_factor")
         self._set_att(config, "_local_look_back")
         self._set_att(config, "_stop_limit_ratio")
+        self._set_att(config, "_use_ema_confirmation")
 
 
         self._look_back = int(self._look_back)
@@ -54,7 +56,8 @@ class ChartPatternPredictor(BasePredictor):
                        self._be4after,
                        self._max_dist_factor,
                        self._local_look_back,
-                    self._stop_limit_ratio
+                       self._stop_limit_ratio,
+                       self._use_ema_confirmation
                        ],
                       index=[
                              "_limit_factor",
@@ -62,7 +65,8 @@ class ChartPatternPredictor(BasePredictor):
                              "_be4after",
                              "_max_dist_factor",
                              "_local_look_back",
-                          "_stop_limit_ratio"
+                             "_stop_limit_ratio",
+                             "_use_ema_confirmation"
                              ])
         return parent_c.append(my_conf)
 
@@ -75,6 +79,18 @@ class ChartPatternPredictor(BasePredictor):
                           **kwargs)
         ps.scan(df)
         return ps
+
+    def _ema_confirmation(self, df):
+        current_ema_10 = df[-1:].EMA_10.item()
+        current_ema_20 = df[-1:].EMA_20.item()
+        current_ema_30 = df[-1:].EMA_30.item()
+
+        if current_ema_10 > current_ema_20 > current_ema_30:
+            return BasePredictor.BUY
+        elif current_ema_30 > current_ema_20 > current_ema_10:
+            return BasePredictor.SELL
+
+        return BasePredictor.NONE
 
     def _get_action(self, df, filter, local_lookback=1, **kwargs):
         action = BasePredictor.NONE
@@ -89,17 +105,17 @@ class ChartPatternPredictor(BasePredictor):
                 return action
         return action
 
-    def is_with_trend(self, action: str, df: DataFrame) -> (str, float, float):
-        current_ema_20 = df[-1:].EMA_20.item()
-        current_ema_50 = df[-1:].EMA_50.item()
+    def validate(self, action: str, df: DataFrame) -> (str, float, float):
+
 
         if action != BasePredictor.NONE:
             self._tracer.write(f"Got {action} from PivotScanner")
-            if action == BasePredictor.BUY and current_ema_20 > current_ema_50:
+            validation_result = self._ema_confirmation(df)
+            if action == validation_result:
                 stop = limit = df.ATR.mean() * self._limit_factor
                 self._tracer.write(f"{action} confirmed with Uptrend")
                 return action, stop * self._stop_limit_ratio, limit
-            if action == BasePredictor.SELL and current_ema_20 < current_ema_50:
+            if action == validation_result:
                 stop = limit = df.ATR.mean() * self._limit_factor
                 self._tracer.write(f"{action} confirmed with Downtrend")
                 return action, stop  * self._stop_limit_ratio, limit

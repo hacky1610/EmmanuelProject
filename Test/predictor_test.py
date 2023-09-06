@@ -114,28 +114,28 @@ class TestChartPatternPredictor(unittest.TestCase):
 
     def test_buy_with_uptrend(self):
         # Testen, ob die Funktion "BUY" mit einem Aufwärtstrend zurückgibt.
-        action, stop, limit = self._predictor.is_with_trend(BasePredictor.BUY, self.bull_df)
+        action, stop, limit = self._predictor.validate(BasePredictor.BUY, self.bull_df)
         self.assertEqual(action, BasePredictor.BUY)
         self.assertEqual(stop, self.bull_df.ATR.mean() * self._predictor._limit_factor  * self._predictor._stop_limit_ratio)
         self.assertEqual(limit, self.bull_df.ATR.mean() * self._predictor._limit_factor)
 
     def test_sell_with_downtrend(self):
         # Testen, ob die Funktion "SELL" mit einem Abwärtstrend zurückgibt.
-        action, stop, limit = self._predictor.is_with_trend(BasePredictor.SELL, self.bear_df)
+        action, stop, limit = self._predictor.validate(BasePredictor.SELL, self.bear_df)
         self.assertEqual(action,  BasePredictor.SELL)
         self.assertEqual(stop, self.bull_df.ATR.mean() * self._predictor._limit_factor * self._predictor._stop_limit_ratio)
         self.assertEqual(limit, self.bull_df.ATR.mean() * self._predictor._limit_factor)
 
     def test_no_action_against_trend(self):
         # Testen, ob die Funktion "NONE" zurückgibt, wenn die Aktion gegen den Trend ist.
-        action, stop, limit = self._predictor.is_with_trend(BasePredictor.SELL,
-                                                            self.bull_df)  # Nehmen Sie eine ungültige Aktion, um gegen den Trend zu gehen.
+        action, stop, limit = self._predictor.validate(BasePredictor.SELL,
+                                                       self.bull_df)  # Nehmen Sie eine ungültige Aktion, um gegen den Trend zu gehen.
         self.assertEqual(action, BasePredictor.NONE)
         self.assertEqual(stop, 0)
         self.assertEqual(limit, 0)
 
-        action, stop, limit = self._predictor.is_with_trend(BasePredictor.BUY,
-                                                            self.bear_df)  # Nehmen Sie eine ungültige Aktion, um gegen den Trend zu gehen.
+        action, stop, limit = self._predictor.validate(BasePredictor.BUY,
+                                                       self.bear_df)  # Nehmen Sie eine ungültige Aktion, um gegen den Trend zu gehen.
         self.assertEqual(action, BasePredictor.NONE)
         self.assertEqual(stop, 0)
         self.assertEqual(limit, 0)

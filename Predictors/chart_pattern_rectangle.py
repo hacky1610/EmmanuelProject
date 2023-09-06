@@ -40,7 +40,7 @@ class RectanglePredictor(ChartPatternPredictor):
                                      local_lookback=self._local_look_back,
                                      _rectangle_line_slope=self._rectangle_line_slope)
 
-        return self.is_with_trend(action, df)
+        return self.validate(action, df)
 
     @staticmethod
     def _line_slope_diff(version: str):

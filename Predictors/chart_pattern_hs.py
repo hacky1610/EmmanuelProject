@@ -36,7 +36,7 @@ class HeadShoulderPredictor(ChartPatternPredictor):
                                      filter=[ShapeType.HeadShoulder],
                                      local_lookback=self._local_look_back)
 
-        return self.is_with_trend(action, df)
+        return self.validate(action, df)
 
     @staticmethod
     def _line_slope_diff(version: str):
