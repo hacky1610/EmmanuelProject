@@ -45,22 +45,23 @@ class Analytics:
         viewer.print_graph()
 
         for i in range(len(df_train) - 1):
-            if filter is not None and filter.strftime("%Y-%m-%dT%H:00:00.000Z") != df_train.date[i + 1]:
+            current_index = i + 1
+            if filter is not None and filter.strftime("%Y-%m-%dT%H:00:00.000Z") != df_train.date[current_index]:
                 continue
 
-            open_price = df_train.open[i + 1]
+            open_price = df_train.open[current_index]
 
             if only_one_position and df_train.date[i] < last_exit:
                 continue
 
-            action, stop, limit = predictor.predict(df_train[:i + 1])
+            action, stop, limit = predictor.predict(df_train[:current_index])
             if action == predictor.NONE:
                 continue
 
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
 
-            additonal_text = self._create_additional_info(df_train[-1:], "RSI")
+            additonal_text = self._create_additional_info(df_train.iloc[current_index], "RSI")
 
             if action == predictor.BUY:
                 open_price = open_price + spread
