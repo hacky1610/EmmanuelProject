@@ -74,7 +74,11 @@ class IG:
         }
 
     def _get_markets_by_id(self, id):
-        res = self.ig_service.fetch_sub_nodes_by_node(id)
+        try:
+            res = self.ig_service.fetch_sub_nodes_by_node(id)
+        except Exception:
+            return DataFrame()
+
         if len(res["nodes"]) > 0:
             markets = DataFrame()
             for i in res["nodes"].id:
