@@ -20,7 +20,7 @@ class ChartPatternPredictor(BasePredictor):
     _max_dist_factor: float = 2.0
     _straight_factor: float = 0.4
     _stop_limit_ratio: float = 1.0
-    _use_ema_confirmation: bool = True
+    _rsi_add_value: int = 0
     # endregion
 
     def __init__(self, config=None,
@@ -40,7 +40,7 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_max_dist_factor")
         self._set_att(config, "_local_look_back")
         self._set_att(config, "_stop_limit_ratio")
-        self._set_att(config, "_use_ema_confirmation")
+        self._set_att(config, "_rsi_add_value")
 
 
         self._look_back = int(self._look_back)
@@ -57,7 +57,7 @@ class ChartPatternPredictor(BasePredictor):
                        self._max_dist_factor,
                        self._local_look_back,
                        self._stop_limit_ratio,
-                       self._use_ema_confirmation
+                       self._rsi_add_value
                        ],
                       index=[
                              "_limit_factor",
@@ -66,7 +66,7 @@ class ChartPatternPredictor(BasePredictor):
                              "_max_dist_factor",
                              "_local_look_back",
                              "_stop_limit_ratio",
-                             "_use_ema_confirmation"
+                             "_rsi_add_value"
                              ])
         return parent_c.append(my_conf)
 
@@ -92,6 +92,27 @@ class ChartPatternPredictor(BasePredictor):
 
         return BasePredictor.NONE
 
+    def _rsi_confirmation(self,df):
+        current_rsi = df[-1:].RSI.item()
+        if current_rsi < 50 - self._rsi_add_value:
+            return BasePredictor.SELL
+        elif current_rsi > 50 + self._rsi_add_value:
+            return BasePredictor.BUY
+
+        return BasePredictor.NONE
+
+    def _confirm(self, df) -> str:
+        confirmation_func_list = [self._rsi_confirmation, self._ema_confirmation]
+        confirmation_list = []
+        for f in confirmation_func_list:
+            confirmation_list.append(f(df))
+
+        s = set(confirmation_list)
+        if len(s) == 1:
+            return confirmation_list[0]
+        else:
+            return BasePredictor.NONE
+
     def _get_action(self, df, filter, local_lookback=1, **kwargs):
         action = BasePredictor.NONE
         for i in range(local_lookback):
@@ -110,16 +131,17 @@ class ChartPatternPredictor(BasePredictor):
 
         if action != BasePredictor.NONE:
             self._tracer.write(f"Got {action} from PivotScanner")
-            validation_result = self._ema_confirmation(df)
+            validation_result = self._confirm(df)
             if action == validation_result:
                 stop = limit = df.ATR.mean() * self._limit_factor
                 self._tracer.write(f"{action} confirmed with Uptrend")
                 return action, stop * self._stop_limit_ratio, limit
-            if action == validation_result:
+            elif action == validation_result:
                 stop = limit = df.ATR.mean() * self._limit_factor
                 self._tracer.write(f"{action} confirmed with Downtrend")
                 return action, stop  * self._stop_limit_ratio, limit
-            self._tracer.write("No action because it is against trend")
+            else:
+                self._tracer.write("No action because it was not confirmed")
 
         return BasePredictor.NONE, 0, 0
 
@@ -165,7 +187,19 @@ class ChartPatternPredictor(BasePredictor):
         return json_objs
 
     @staticmethod
+    def _indicator_set(version: str):
+
+        json_objs = []
+        for rsi_add_val in random.choices(range(0, 10, 3), k=1):
+            json_objs.append({
+                "_rsi_add_value": rsi_add_val,
+                "version": version
+            })
+        return json_objs
+
+    @staticmethod
     def get_training_sets(version: str):
         return ChartPatternPredictor._scan_sets(version) + \
             ChartPatternPredictor._stop_limit_sets(version) + \
+            ChartPatternPredictor._indicator_set(version) + \
             ChartPatternPredictor._max_dist_set(version)

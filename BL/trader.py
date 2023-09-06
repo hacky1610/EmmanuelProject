@@ -65,7 +65,7 @@ class Trader:
         self._tracer: Tracer = tracer
         self._predictor_class_list = predictor_class_list
         self._analytics = analytics
-        self._min_win_loss = 0.82
+        self._min_win_loss = 0.8
         self._min_trades = 11
         self._cache = cache
 

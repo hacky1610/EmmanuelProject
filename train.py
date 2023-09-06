@@ -56,8 +56,8 @@ def train_predictor(ig: IG,
                     async_exec: bool,
                     trade_type: TradeType = TradeType.FX):
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-    # for m in random.choices(markets,k=30):
-    for m in markets:
+    for m in random.choices(markets,k=10):
+    #for m in markets:
         symbol = m["symbol"]
         # symbol = "AUDUSD"
         if trainer.is_trained(symbol, train_version, predictor) and not loop:
