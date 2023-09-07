@@ -30,7 +30,7 @@ conf_reader = ConfigReader(live_config=live)
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, type_)
 cache = DropBoxCache(ds)
-_trainer = Trainer(Analytics(), cache=cache)
+_trainer = Trainer(Analytics(), cache=cache, check_trainable=True)
 _tiingo = Tiingo(conf_reader=conf_reader, cache=cache )
 _dp = DataProcessor()
 _trade_type = TradeType.FX
