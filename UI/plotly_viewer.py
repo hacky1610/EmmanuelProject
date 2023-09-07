@@ -43,7 +43,12 @@ class PlotlyViewer(BaseViewer):
                                    y=self.df["MACD"],
                                    line=dict(shape='linear', color="Blue")),
                                     secondary_y=True)
+        self.fig.add_trace(go.Line(x=self.df.index,
+                                   y=self.df["SIGNAL"],
+                                   line=dict(shape='linear', color="Red")),
+                           secondary_y=True)
 
+        self.fig.update_yaxes(range=[self.df["MACD"].min(), self.df["MACD"].max() * 4], secondary_y=True)
 
         self.fig.update_layout(
             title=self.title,

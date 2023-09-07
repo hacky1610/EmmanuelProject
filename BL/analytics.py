@@ -61,7 +61,7 @@ class Analytics:
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
 
-            additonal_text = self._create_additional_info(df_train.iloc[current_index], "RSI")
+            additonal_text = self._create_additional_info(df_train.iloc[current_index - 1], "RSI")
 
             if action == predictor.BUY:
                 open_price = open_price + spread
