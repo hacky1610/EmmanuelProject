@@ -21,6 +21,7 @@ class ChartPatternPredictor(BasePredictor):
     _straight_factor: float = 0.4
     _stop_limit_ratio: float = 1.0
     _rsi_add_value: int = 0
+    _use_macd:bool = True
     # endregion
 
     def __init__(self, config=None,
@@ -41,6 +42,7 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_local_look_back")
         self._set_att(config, "_stop_limit_ratio")
         self._set_att(config, "_rsi_add_value")
+        self._set_att(config, "_use_macd")
 
 
         self._look_back = int(self._look_back)
@@ -57,7 +59,8 @@ class ChartPatternPredictor(BasePredictor):
                        self._max_dist_factor,
                        self._local_look_back,
                        self._stop_limit_ratio,
-                       self._rsi_add_value
+                       self._rsi_add_value,
+                       self._use_macd,
                        ],
                       index=[
                              "_limit_factor",
@@ -66,7 +69,8 @@ class ChartPatternPredictor(BasePredictor):
                              "_max_dist_factor",
                              "_local_look_back",
                              "_stop_limit_ratio",
-                             "_rsi_add_value"
+                             "_rsi_add_value",
+                             "_use_macd"
                              ])
         return parent_c.append(my_conf)
 
@@ -101,8 +105,25 @@ class ChartPatternPredictor(BasePredictor):
 
         return BasePredictor.NONE
 
+    def _macd_confirmation(self,df):
+        current_macd = df[-1:].MACD.item()
+        current_signal = df[-1:].SIGNAL.item()
+        if current_macd > current_signal:
+            return BasePredictor.BUY
+        else:
+            return BasePredictor.SELL
+
+    def _add_extra_confirmations(self, confirmation_func_list:list):
+        if self._use_macd:
+            confirmation_func_list.append(self._macd_confirmation)
+
+        return confirmation_func_list
+
+
     def _confirm(self, df) -> str:
         confirmation_func_list = [self._rsi_confirmation, self._ema_confirmation]
+        confirmation_func_list = self._add_extra_confirmations(confirmation_func_list)
+
         confirmation_list = []
         for f in confirmation_func_list:
             confirmation_list.append(f(df))
@@ -190,9 +211,11 @@ class ChartPatternPredictor(BasePredictor):
     def _indicator_set(version: str):
 
         json_objs = []
-        for rsi_add_val in random.choices(range(0, 10, 3), k=1):
+        for rsi_add_val, macd in itertools.product(
+                                                    random.choices(range(0, 10, 3), k=1),[True,False]) :
             json_objs.append({
                 "_rsi_add_value": rsi_add_val,
+                "_use_macd": macd,
                 "version": version
             })
         return json_objs
