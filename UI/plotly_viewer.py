@@ -1,4 +1,7 @@
 from datetime import datetime
+
+from plotly.subplots import make_subplots
+
 from Connectors.dropbox_cache import BaseCache
 from UI.base_viewer import BaseViewer
 import plotly.graph_objects as go
@@ -26,17 +29,22 @@ class PlotlyViewer(BaseViewer):
 
     def print_graph(self):
 
-        self.fig = go.Figure(data=[
-            self._print_line("EMA_10","Red"),
-            self._print_line("EMA_20","Orange"),
-            self._print_line("EMA_30", "Blue"),
-            go.Candlestick(x=self.df.index,
+        self.fig = make_subplots(specs=[[{"secondary_y": True}]])
+        self.fig.add_trace(go.Candlestick(x=self.df.index,
                            open=self.df['open'],
                            high=self.df['high'],
                            low=self.df['low'],
-                           close=self.df['close']),
+                           close=self.df['close']))
 
-        ])
+        self.fig.add_trace(self._print_line("EMA_10", "Red"))
+        self.fig.add_trace(self._print_line("EMA_20", "Orange"))
+        self.fig.add_trace(self._print_line("EMA_30", "Blue"))
+        self.fig.add_trace(go.Line(x=self.df.index,
+                                   y=self.df["MACD"],
+                                   line=dict(shape='linear', color="Blue")),
+                                    secondary_y=True)
+
+
         self.fig.update_layout(
             title=self.title,
             legend_title="Legend Title",
