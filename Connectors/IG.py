@@ -111,6 +111,16 @@ class IG:
 
         return DataFrame()
 
+    def _get_spread(self, market_object):
+        offer = market_object.offer
+        bid = market_object.bid
+        scaling = market_object.scalingFactor
+
+        if offer is not None and bid is not None:
+            return (offer - bid) * scaling
+
+        return 0
+
     def _get_markets(self, id: int, tradebale: bool = True):
         market_df = self._get_markets_by_id(id)
         if len(market_df) == 0:
@@ -125,7 +135,7 @@ class IG:
                 markets.append({
                     "symbol": symbol,
                     "epic": market[1].epic,
-                    "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
+                    "spread": self._get_spread(market[1]),
                     "scaling": market[1].scalingFactor,
                     "size": 1.0,
                     "currency": self.get_currency(market[1].epic)
