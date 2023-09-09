@@ -134,15 +134,17 @@ class ChartPatternPredictor(BasePredictor):
         return BasePredictor.NONE
 
     def _psar_confirmation(self, df):
-        psar = df[-1:].PSAR.item()
-        ema_20 = df[-1:].EMA_20.item()
-        close = df[-1:].close.item()
+        try:
+            psar = df[-1:].PSAR.item()
+            ema_20 = df[-1:].EMA_20.item()
+            close = df[-1:].close.item()
 
-        if psar > ema_20 and close > ema_20 and psar < close:
-            return BasePredictor.BUY
-        elif psar < ema_20 and close < ema_20 and psar > close:
-            return BasePredictor.SELL
-
+            if psar > ema_20 and close > ema_20 and psar < close:
+                return BasePredictor.BUY
+            elif psar < ema_20 and close < ema_20 and psar > close:
+                return BasePredictor.SELL
+        except:
+            print("Error with PSAR")
         return BasePredictor.NONE
 
     def _candle_confirmation(self, df):
@@ -300,6 +302,15 @@ class ChartPatternPredictor(BasePredictor):
 
         json_objs.append({
             "_use_bb": True,
+            "version": version
+        })
+
+        json_objs.append({
+            "_use_bb": random.choice([True,False]),
+            "_use_psar": random.choice([True,False]),
+            "_use_cci" : random.choice([True,False]),
+            "_use_candle": random.choice([True,False]),
+            "_use_macd":  random.choice([True,False]),
             "version": version
         })
         random.shuffle(json_objs)

@@ -41,7 +41,11 @@ class DataProcessor:
         df["STOCHD_21"] = TA.STOCH(df, period=21)
         df["STOCHD_30"] = TA.STOCH(df, period=21)
         df["ADX"] = TA.ADX(df, period=9)
-        df["PSAR"] = TA.PSAR(df)["psar"]
+        try:
+            psar = TA.PSAR(df)
+            df["PSAR"] = psar["psar"]
+        except Exception as e:
+            print(f"Failed to psar {e}")
 
         df["ATR"] = TA.ATR(df)
 
