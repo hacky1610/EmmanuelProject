@@ -28,6 +28,7 @@ class ChartPatternPredictor(BasePredictor):
     _use_cci: bool = False
     _use_psar: bool = False
     _use_bb: bool = False
+    _use_all: bool = False
 
     # endregion
 
@@ -54,6 +55,7 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_use_cci")
         self._set_att(config, "_use_psar")
         self._set_att(config, "_use_bb")
+        self._set_att(config, "_use_all")
 
         self._look_back = int(self._look_back)
         self._be4after = int(self._be4after)
@@ -74,7 +76,8 @@ class ChartPatternPredictor(BasePredictor):
             self._use_candle,
             self._use_cci,
             self._use_psar,
-            self._use_bb
+            self._use_bb,
+            self._use_all
         ],
             index=[
                 "_limit_factor",
@@ -88,7 +91,8 @@ class ChartPatternPredictor(BasePredictor):
                 "_use_candle",
                 "_use_cci",
                 "_use_psar",
-                "_use_bb"
+                "_use_bb",
+                "_use_all"
             ])
         return parent_c.append(my_conf)
 
@@ -175,6 +179,14 @@ class ChartPatternPredictor(BasePredictor):
             return BasePredictor.SELL
 
     def _add_extra_confirmations(self, confirmation_func_list: list):
+        if self._use_all:
+            confirmation_func_list.append(self._macd_confirmation)
+            confirmation_func_list.append(self._candle_confirmation)
+            confirmation_func_list.append(self._cci_confirmation)
+            confirmation_func_list.append(self._psar_confirmation)
+            confirmation_func_list.append(self._bb_confirmation)
+            return confirmation_func_list
+
         if self._use_macd:
             confirmation_func_list.append(self._macd_confirmation)
         if self._use_candle:
@@ -183,8 +195,8 @@ class ChartPatternPredictor(BasePredictor):
             confirmation_func_list.append(self._cci_confirmation)
         if self._use_psar:
             confirmation_func_list.append(self._psar_confirmation)
-
-        confirmation_func_list.append(self._bb_confirmation)
+        if self._use_bb:
+            confirmation_func_list.append(self._bb_confirmation)
 
 
         return confirmation_func_list
@@ -197,11 +209,20 @@ class ChartPatternPredictor(BasePredictor):
         for f in confirmation_func_list:
             confirmation_list.append(f(df))
 
-        s = set(confirmation_list)
-        if len(s) == 1:
-            return confirmation_list[0]
+        if self._use_all:
+            if confirmation_list.count(BasePredictor.BUY) > len(confirmation_list) * 0.7:
+                return BasePredictor.BUY
+            elif confirmation_list.count(BasePredictor.SELL) > len(confirmation_list) * 0.7:
+                return BasePredictor.SELL
         else:
-            return BasePredictor.NONE
+            s = set(confirmation_list)
+            if len(s) == 1:
+                return confirmation_list[0]
+
+        return BasePredictor.NONE
+
+
+
 
     def _get_action(self, df, filter, local_lookback=1, **kwargs):
         action = BasePredictor.NONE
@@ -306,6 +327,12 @@ class ChartPatternPredictor(BasePredictor):
         })
 
         json_objs.append({
+            "_use_all": True,
+            "version": version
+        })
+
+        json_objs.append({
+            "_use_all": False,
             "_use_bb": random.choice([True,False]),
             "_use_psar": random.choice([True,False]),
             "_use_cci" : random.choice([True,False]),

@@ -34,6 +34,10 @@ for market in currency_markets:
                            predictor._straight_factor,
                            predictor._rsi_add_value,
                            predictor._use_macd,
+                           predictor._use_bb,
+                           predictor._use_cci,
+                           predictor._use_psar,
+                           predictor._use_candle,
                            predictor.get_last_result().get_win_loss(),
                            predictor.get_last_result().get_trade_frequency()],
                           index=["symbol",
@@ -44,6 +48,10 @@ for market in currency_markets:
                                  "_straight_factor",
                                  "_rsi_add_value",
                                  "_use_macd",
+                                 "_use_bb",
+                                 "_use_cci",
+                                 "_use_psar",
+                                 "_use_candle",
                                  "win_los",
                                  "frequence"]),ignore_index=True)
 
@@ -61,6 +69,10 @@ shop_pie("_max_dist_factor")
 shop_pie("_straight_factor")
 shop_pie("_rsi_add_value")
 shop_pie("_use_macd")
+shop_pie("_use_bb")
+shop_pie("_use_cci")
+shop_pie("_use_psar")
+shop_pie("_use_candle")
 
 fig = px.bar(df, x='symbol', y='frequence')
 fig.show()
