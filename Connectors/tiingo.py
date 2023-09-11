@@ -89,6 +89,8 @@ class Tiingo:
             else:
                 res = self._send_history_request(ticker, lastchached.strftime("%Y-%m-%d"), end, resolution, trade_type)
                 res = cached.append(res[res.date > cached[-1:].date.item()])
+                res.reset_index(inplace=True)
+                res.drop(columns=["index"], inplace=True)
         else:
             res = self._send_history_request(ticker, start, end, resolution, trade_type)
 
