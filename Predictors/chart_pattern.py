@@ -198,7 +198,6 @@ class ChartPatternPredictor(BasePredictor):
         if self._use_bb:
             confirmation_func_list.append(self._bb_confirmation)
 
-
         return confirmation_func_list
 
     def _confirm(self, df) -> str:
@@ -220,9 +219,6 @@ class ChartPatternPredictor(BasePredictor):
                 return confirmation_list[0]
 
         return BasePredictor.NONE
-
-
-
 
     def _get_action(self, df, filter, local_lookback=1, **kwargs):
         action = BasePredictor.NONE
@@ -328,16 +324,21 @@ class ChartPatternPredictor(BasePredictor):
 
         json_objs.append({
             "_use_all": True,
+            "_use_bb": False,
+            "_use_psar": False,
+            "_use_cci": False,
+            "_use_candle": False,
+            "_use_macd": False,
             "version": version
         })
 
         json_objs.append({
             "_use_all": False,
-            "_use_bb": random.choice([True,False]),
-            "_use_psar": random.choice([True,False]),
-            "_use_cci" : random.choice([True,False]),
-            "_use_candle": random.choice([True,False]),
-            "_use_macd":  random.choice([True,False]),
+            "_use_bb": random.choice([True, False]),
+            "_use_psar": random.choice([True, False]),
+            "_use_cci": random.choice([True, False]),
+            "_use_candle": random.choice([True, False]),
+            "_use_macd": random.choice([True, False]),
             "version": version
         })
         random.shuffle(json_objs)
@@ -345,7 +346,9 @@ class ChartPatternPredictor(BasePredictor):
 
     @staticmethod
     def get_training_sets(version: str):
-        return ChartPatternPredictor._scan_sets(version) + \
-            ChartPatternPredictor._stop_limit_sets(version) + \
-            ChartPatternPredictor._indicator_set(version) + \
-            ChartPatternPredictor._max_dist_set(version)
+        # return ChartPatternPredictor._scan_sets(version) + \
+        #     ChartPatternPredictor._stop_limit_sets(version) + \
+        #     ChartPatternPredictor._indicator_set(version) + \
+        #     ChartPatternPredictor._max_dist_set(version)
+
+        return ChartPatternPredictor._indicator_set(version)
