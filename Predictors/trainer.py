@@ -33,14 +33,11 @@ class Trainer:
         best = 0
         best_predictor = None
         predictor = None
-        set_id = 1
 
         sets = predictor_class.get_training_sets(version)
         random.shuffle(sets)
         sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
         for training_set in sets:
-            print(f"Running set {set_id} of {len(sets)}")
-            set_id += 1
             predictor = predictor_class(cache=self._cache)
             predictor.load(symbol)
             if not self._trainable(predictor):

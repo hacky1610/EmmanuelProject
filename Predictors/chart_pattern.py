@@ -138,17 +138,15 @@ class ChartPatternPredictor(BasePredictor):
         return BasePredictor.NONE
 
     def _psar_confirmation(self, df):
-        try:
-            psar = df[-1:].PSAR.item()
-            ema_20 = df[-1:].EMA_20.item()
-            close = df[-1:].close.item()
+        psar = df[-1:].PSAR.item()
+        ema_20 = df[-1:].EMA_20.item()
+        close = df[-1:].close.item()
 
-            if psar > ema_20 and close > ema_20 and psar < close:
-                return BasePredictor.BUY
-            elif psar < ema_20 and close < ema_20 and psar > close:
-                return BasePredictor.SELL
-        except:
-            print("Error with PSAR")
+        if psar < ema_20 and close > ema_20 and psar < close:
+            return BasePredictor.BUY
+        elif psar > ema_20 and close < ema_20 and psar > close:
+            return BasePredictor.SELL
+
         return BasePredictor.NONE
 
     def _candle_confirmation(self, df):
@@ -177,6 +175,8 @@ class ChartPatternPredictor(BasePredictor):
             return BasePredictor.BUY
         elif bb_middle > close > bb_lower:
             return BasePredictor.SELL
+
+        return BasePredictor.NONE
 
     def _add_extra_confirmations(self, confirmation_func_list: list):
         if self._use_all:

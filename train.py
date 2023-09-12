@@ -52,7 +52,6 @@ def train_predictor(ig: IG,
                     dp: DataProcessor,
                     train_version: str,
                     predictor: Type,
-                    loop: bool,
                     async_exec: bool,
                     trade_type: TradeType = TradeType.FX):
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
@@ -60,9 +59,6 @@ def train_predictor(ig: IG,
     #for m in markets:
         symbol = m["symbol"]
         # symbol = "AUDUSD"
-        if trainer.is_trained(symbol, train_version, predictor) and not loop:
-            print(f"{symbol} Already trained with version {train_version}.")
-            continue
         df, eval_df = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         if len(df) > 0:
             if async_exec:
@@ -82,8 +78,7 @@ while True:
                     async_ex=_async_ex,
                     async_exec=_async_exec,
                     train_version=_train_version,
-                    dp=_dp,
-                    loop=_loop)
+                    dp=_dp)
     train_predictor(ig=_ig,
                     trainer=_trainer,
                     tiingo=_tiingo,
@@ -91,5 +86,4 @@ while True:
                     async_ex=_async_ex,
                     async_exec=_async_exec,
                     train_version=_train_version,
-                    dp=_dp,
-                    loop=_loop)
+                    dp=_dp)

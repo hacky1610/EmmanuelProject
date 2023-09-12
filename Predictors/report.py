@@ -6,6 +6,7 @@ from BL import  ConfigReader
 from Connectors.tiingo import  TradeType
 import plotly.express as px
 from pandas import DataFrame,Series
+import pandas as pd
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 
@@ -22,7 +23,7 @@ results = EvalResultCollection()
 currency_markets = ig.get_markets(TradeType.FX)
 for market in currency_markets:
     symbol = market["symbol"]
-    predictor = TrianglePredictor(cache=df_cache)
+    predictor = RectanglePredictor(cache=df_cache)
     predictor.load(symbol)
     results.add(predictor.get_last_result())
     print(f"{symbol} - {predictor.get_last_result()}")
@@ -38,6 +39,7 @@ for market in currency_markets:
                            predictor._use_cci,
                            predictor._use_psar,
                            predictor._use_candle,
+                           predictor._use_all,
                            predictor.get_last_result().get_win_loss(),
                            predictor.get_last_result().get_trade_frequency()],
                           index=["symbol",
@@ -52,6 +54,7 @@ for market in currency_markets:
                                  "_use_cci",
                                  "_use_psar",
                                  "_use_candle",
+                                 "_use_all",
                                  "win_los",
                                  "frequence"]),ignore_index=True)
 
@@ -61,6 +64,27 @@ def shop_pie(name:str):
     fig = px.pie(df, values=name, names=name, title=name)
     fig.show()
 
+def shop_pie_bool(name:str):
+    true_count = df[name].sum()
+    false_count = len(df) - true_count
+
+    true_percentage = (true_count / len(df)) * 100
+    false_percentage = (false_count / len(df)) * 100
+
+    percentage_df = pd.DataFrame({
+        'Label': ['True', 'False'],
+        'Percentage': [true_percentage, false_percentage]
+    })
+
+    percentage_df = pd.DataFrame({
+        'Label': ['True', 'False'],
+        'Percentage': [true_percentage, false_percentage]
+    })
+
+    fig = px.pie(percentage_df, names='Label', values='Percentage',
+                 title=name)
+    fig.show()
+
 df.fillna(0,inplace=True)
 shop_pie("_limit_factor")
 shop_pie("_look_back")
@@ -68,11 +92,12 @@ shop_pie("_be4after")
 shop_pie("_max_dist_factor")
 shop_pie("_straight_factor")
 shop_pie("_rsi_add_value")
-shop_pie("_use_macd")
-shop_pie("_use_bb")
-shop_pie("_use_cci")
-shop_pie("_use_psar")
-shop_pie("_use_candle")
+shop_pie_bool("_use_macd")
+shop_pie_bool("_use_bb")
+shop_pie_bool("_use_cci")
+shop_pie_bool("_use_psar")
+shop_pie_bool("_use_candle")
+shop_pie_bool("_use_all")
 
 fig = px.bar(df, x='symbol', y='frequence')
 fig.show()
