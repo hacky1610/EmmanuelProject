@@ -29,6 +29,7 @@ class ChartPatternPredictor(BasePredictor):
     _use_psar: bool = False
     _use_bb: bool = False
     _use_all: bool = False
+    _indicator_confirm_factor:float = 0.7
 
     # endregion
 
@@ -56,6 +57,8 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_use_psar")
         self._set_att(config, "_use_bb")
         self._set_att(config, "_use_all")
+        self._set_att(config, "_indicator_confirm_factor")
+
 
         self._look_back = int(self._look_back)
         self._be4after = int(self._be4after)
@@ -77,7 +80,8 @@ class ChartPatternPredictor(BasePredictor):
             self._use_cci,
             self._use_psar,
             self._use_bb,
-            self._use_all
+            self._use_all,
+            self._indicator_confirm_factor
         ],
             index=[
                 "_limit_factor",
@@ -92,7 +96,8 @@ class ChartPatternPredictor(BasePredictor):
                 "_use_cci",
                 "_use_psar",
                 "_use_bb",
-                "_use_all"
+                "_use_all",
+                "_indicator_confirm_factor"
             ])
         return parent_c.append(my_conf)
 
@@ -209,9 +214,9 @@ class ChartPatternPredictor(BasePredictor):
             confirmation_list.append(f(df))
 
         if self._use_all:
-            if confirmation_list.count(BasePredictor.BUY) > len(confirmation_list) * 0.7:
+            if confirmation_list.count(BasePredictor.BUY) > len(confirmation_list) * self._indicator_confirm_factor:
                 return BasePredictor.BUY
-            elif confirmation_list.count(BasePredictor.SELL) > len(confirmation_list) * 0.7:
+            elif confirmation_list.count(BasePredictor.SELL) > len(confirmation_list) * self._indicator_confirm_factor:
                 return BasePredictor.SELL
         else:
             s = set(confirmation_list)
@@ -291,56 +296,21 @@ class ChartPatternPredictor(BasePredictor):
     def _indicator_set(version: str):
 
         json_objs = []
-        for rsi_add_val in random.choices(range(0, 15, 3), k=1):
+
+        for fact in [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
             json_objs.append({
-                "_rsi_add_value": rsi_add_val,
+                "_use_all": True,
+                "_use_bb": False,
+                "_use_psar": False,
+                "_use_cci": False,
+                "_use_candle": False,
+                "_use_macd": False,
+                "_indicator_confirm_factor": fact,
                 "version": version
             })
 
-        json_objs.append({
-            "_use_macd": True,
-            "version": version
-        })
 
-        json_objs.append({
-            "_use_candle": True,
-            "version": version
-        })
 
-        json_objs.append({
-            "_use_cci": True,
-            "version": version
-        })
-
-        json_objs.append({
-            "_use_psar": True,
-            "version": version
-        })
-
-        json_objs.append({
-            "_use_bb": True,
-            "version": version
-        })
-
-        json_objs.append({
-            "_use_all": True,
-            "_use_bb": False,
-            "_use_psar": False,
-            "_use_cci": False,
-            "_use_candle": False,
-            "_use_macd": False,
-            "version": version
-        })
-
-        json_objs.append({
-            "_use_all": False,
-            "_use_bb": random.choice([True, False]),
-            "_use_psar": random.choice([True, False]),
-            "_use_cci": random.choice([True, False]),
-            "_use_candle": random.choice([True, False]),
-            "_use_macd": random.choice([True, False]),
-            "version": version
-        })
         random.shuffle(json_objs)
         return json_objs
 

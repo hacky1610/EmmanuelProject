@@ -20,7 +20,8 @@ class RectanglePredictor(ChartPatternPredictor):
                  viewer: BaseViewer = BaseViewer(),
                  cache: BaseCache = BaseCache()):
         super().__init__(config, tracer=tracer, cache=cache, viewer=viewer)
-        self.model_version = "V2.0"
+        self.fallback_model_version = "V2.0"
+        self.model_version = "V3.0"
 
     def setup(self, config: dict):
         self._set_att(config, "_rectangle_line_slope")
