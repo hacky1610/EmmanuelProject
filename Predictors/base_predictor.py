@@ -19,6 +19,7 @@ class BasePredictor:
     METRIC = "reward"
     version = "V1.0"
     model_version = ""
+    fallback_model_version = ""
     last_scan = datetime(1970, 1, 1).isoformat()
     _tracer = ConsoleTracer()
     _last_scan: EvalResult = EvalResult()
@@ -88,8 +89,8 @@ class BasePredictor:
     def get_training_sets(version: str):
         return []
 
-    def _get_filename(self, symbol):
-        return f"{self.__class__.__name__}_{symbol}{self.model_version}.json"
+    def _get_filename(self, symbol, model_version: str):
+        return f"{self.__class__.__name__}_{symbol}{model_version}.json"
 
     def set_result(self, result: EvalResult):
         self._last_scan = result
@@ -100,10 +101,13 @@ class BasePredictor:
     def save(self, symbol: str):
         self.last_scan = datetime.utcnow().isoformat()
         data = self.get_config().append(self._last_scan.get_data())
-        self._cache.save_settings(data.to_json(), self._get_filename(symbol))
+        self._cache.save_settings(data.to_json(), self._get_filename(symbol, self.model_version))
 
     def load(self, symbol: str):
-        json = self._cache.load_settings(self._get_filename(symbol))
+        json = self._cache.load_settings(self._get_filename(symbol,self.model_version))
+        if json is None:
+            json = self._cache.load_settings(self._get_filename(symbol,self.fallback_model_version))
+
         if json is not None:
             self.setup(json)
 
