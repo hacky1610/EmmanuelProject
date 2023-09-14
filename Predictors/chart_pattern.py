@@ -346,9 +346,8 @@ class ChartPatternPredictor(BasePredictor):
 
     @staticmethod
     def get_training_sets(version: str):
-        # return ChartPatternPredictor._scan_sets(version) + \
-        #     ChartPatternPredictor._stop_limit_sets(version) + \
-        #     ChartPatternPredictor._indicator_set(version) + \
-        #     ChartPatternPredictor._max_dist_set(version)
+        return ChartPatternPredictor._scan_sets(version) + \
+            ChartPatternPredictor._indicator_set(version) + \
+            ChartPatternPredictor._max_dist_set(version)
 
-        return ChartPatternPredictor._indicator_set(version)
+        #return ChartPatternPredictor._indicator_set(version)
