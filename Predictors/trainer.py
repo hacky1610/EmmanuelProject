@@ -35,6 +35,7 @@ class Trainer:
         predictor = None
 
         sets = predictor_class.get_training_sets(version)
+        sets = random.choices(sets, k=7)
         random.shuffle(sets)
         sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
         for training_set in sets:
