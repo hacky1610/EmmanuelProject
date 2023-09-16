@@ -28,7 +28,7 @@ class Trainer:
             return False
         return True
 
-    def train(self, symbol: str, df, df_eval, version: str, predictor_class):
+    def train(self, symbol: str, df, df_eval, version: str, predictor_class, indicators):
         print(f"#####Train {symbol} with {predictor_class.__name__} #######################")
         best = 0
         best_predictor = None
@@ -39,7 +39,7 @@ class Trainer:
         random.shuffle(sets)
         sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
         for training_set in sets:
-            predictor = predictor_class(cache=self._cache)
+            predictor = predictor_class(indicators=indicators, cache=self._cache)
             predictor.load(symbol)
             if not self._trainable(predictor):
                 return

@@ -5,6 +5,7 @@ from multiprocessing import Process
 from typing import Type
 
 from BL.async_executor import AsyncExecutor
+from BL.indicators import Indicators
 from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import TradeType, Tiingo
@@ -36,13 +37,12 @@ _dp = DataProcessor()
 _trade_type = TradeType.FX
 _ig = IG(conf_reader=conf_reader,live=live )
 _async_ex = AsyncExecutor(free_cpus=2)
+_indicators = Indicators()
 # endregion
 
 _train_version = "V2.20"
 _loop = True
 _async_exec = False #os.name != "nt"
-_predictor = TrianglePredictor
-_predictor = RectanglePredictor
 
 
 def train_predictor(ig: IG,
@@ -53,6 +53,7 @@ def train_predictor(ig: IG,
                     train_version: str,
                     predictor: Type,
                     async_exec: bool,
+                    indicators: Indicators,
                     trade_type: TradeType = TradeType.FX):
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     for m in random.choices(markets,k=10):
@@ -63,9 +64,9 @@ def train_predictor(ig: IG,
         if len(df) > 0:
             if async_exec:
                 if __name__ == '__main__':
-                    async_ex.run(trainer.train, args=(symbol, df, eval_df, train_version, predictor))
+                    async_ex.run(trainer.train, args=(symbol, df, eval_df, train_version, predictor, indicators))
             else:
-                trainer.train(symbol, df, eval_df, train_version, predictor)
+                trainer.train(symbol, df, eval_df, train_version, predictor, indicators)
         else:
             print(f"No Data in {symbol} ")
 
@@ -78,7 +79,8 @@ while True:
                     async_ex=_async_ex,
                     async_exec=_async_exec,
                     train_version=_train_version,
-                    dp=_dp)
+                    dp=_dp,
+                    indicators=_indicators)
     train_predictor(ig=_ig,
                     trainer=_trainer,
                     tiingo=_tiingo,
@@ -86,4 +88,5 @@ while True:
                     async_ex=_async_ex,
                     async_exec=_async_exec,
                     train_version=_train_version,
-                    dp=_dp)
+                    dp=_dp,
+                    indicators=_indicators)

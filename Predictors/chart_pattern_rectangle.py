@@ -15,11 +15,11 @@ class RectanglePredictor(ChartPatternPredictor):
     _rectangle_line_slope = 0.05
     # endregion
 
-    def __init__(self, config=None,
+    def __init__(self, indicators, config=None,
                  tracer: Tracer = ConsoleTracer(),
                  viewer: BaseViewer = BaseViewer(),
                  cache: BaseCache = BaseCache()):
-        super().__init__(config, tracer=tracer, cache=cache, viewer=viewer)
+        super().__init__(indicators, config, tracer=tracer, cache=cache, viewer=viewer)
         self.fallback_model_version = "V2.0"
         self.model_version = "V3.0"
 

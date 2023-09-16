@@ -25,13 +25,15 @@ class BasePredictor:
     _tracer = ConsoleTracer()
     _last_scan: EvalResult = EvalResult()
 
-    def __init__(self, config=None, cache: BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
+
+    def __init__(self, indicators, config=None , cache: BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
         if config is None:
             config = {}
         self.setup(config)
         self._tracer = tracer
         self.lastState = ""
         self._cache = cache
+        self._indicators = indicators
 
     def setup(self, config):
         self._set_att(config, "limit")

@@ -33,11 +33,11 @@ class ChartPatternPredictor(BasePredictor):
 
     # endregion
 
-    def __init__(self, config=None,
+    def __init__(self, indicators, config=None,
                  tracer: Tracer = ConsoleTracer(),
                  viewer: BaseViewer = BaseViewer(),
                  cache: BaseCache = BaseCache()):
-        super().__init__(config, tracer=tracer, cache=cache)
+        super().__init__(indicators, config, tracer=tracer, cache=cache)
         if config is None:
             config = {}
         self.setup(config)
@@ -51,12 +51,6 @@ class ChartPatternPredictor(BasePredictor):
         self._set_att(config, "_local_look_back")
         self._set_att(config, "_stop_limit_ratio")
         self._set_att(config, "_rsi_add_value")
-        self._set_att(config, "_use_macd")
-        self._set_att(config, "_use_candle")
-        self._set_att(config, "_use_cci")
-        self._set_att(config, "_use_psar")
-        self._set_att(config, "_use_bb")
-        self._set_att(config, "_use_all")
         self._set_att(config, "_indicator_confirm_factor")
 
         self._look_back = int(self._look_back)
@@ -75,12 +69,6 @@ class ChartPatternPredictor(BasePredictor):
             self._local_look_back,
             self._stop_limit_ratio,
             self._rsi_add_value,
-            self._use_macd,
-            self._use_candle,
-            self._use_cci,
-            self._use_psar,
-            self._use_bb,
-            self._use_all,
             self._indicator_confirm_factor
         ],
             index=[
@@ -91,12 +79,6 @@ class ChartPatternPredictor(BasePredictor):
                 "_local_look_back",
                 "_stop_limit_ratio",
                 "_rsi_add_value",
-                "_use_macd",
-                "_use_candle",
-                "_use_cci",
-                "_use_psar",
-                "_use_bb",
-                "_use_all",
                 "_indicator_confirm_factor"
             ])
         return parent_c.append(my_conf)
@@ -111,122 +93,9 @@ class ChartPatternPredictor(BasePredictor):
         ps.scan(df)
         return ps
 
-    def _ema_confirmation(self, df):
-        len_period = 4
-        period = df[-1 * len_period:]
-
-        if (len(period[period.EMA_30 < period.EMA_20]) == len_period and
-                len(period[period.EMA_20 < period.EMA_10]) == len_period):
-            return BasePredictor.BUY
-        elif (len(period[period.EMA_30 > period.EMA_20]) == len_period and
-              len(period[period.EMA_20 > period.EMA_10]) == len_period):
-            return BasePredictor.SELL
-
-        return BasePredictor.NONE
-
-    def _rsi_smooth_slope(self, df):
-        diff = df.RSI_SMOOTH.diff()[-1:].item()
-        if diff < 0:
-            return BasePredictor.SELL
-        else:
-            return BasePredictor.BUY
-
-
-    def _rsi_confirmation(self, df):
-        current_rsi = df[-1:].RSI.item()
-        if current_rsi < 50 - self._rsi_add_value:
-            return BasePredictor.SELL
-        elif current_rsi > 50 + self._rsi_add_value:
-            return BasePredictor.BUY
-
-        return BasePredictor.NONE
-
-    def _cci_confirmation(self, df):
-        cci = df[-1:].CCI.item()
-
-        if cci > 100:
-            return BasePredictor.BUY
-        elif cci < -100:
-            return BasePredictor.SELL
-
-        return BasePredictor.NONE
-
-    def _psar_confirmation(self, df):
-        psar = df[-1:].PSAR.item()
-        ema_20 = df[-1:].EMA_20.item()
-        close = df[-1:].close.item()
-
-        if psar < ema_20 and close > ema_20 and psar < close:
-            return BasePredictor.BUY
-        elif psar > ema_20 and close < ema_20 and psar > close:
-            return BasePredictor.SELL
-
-        return BasePredictor.NONE
-
-    def _candle_confirmation(self, df):
-        c = Candle(df[-1:])
-
-        if c.direction() == Direction.Bullish:
-            return BasePredictor.BUY
-        else:
-            return BasePredictor.SELL
-
-    def _adx_confirmation(self, df):
-        adx = df.ADX[-1:].item()
-
-        if adx > 25:
-            return BasePredictor.BOTH
-
-        return BasePredictor.NONE
-
-    def _macd_confirmation(self, df):
-        current_macd = df[-1:].MACD.item()
-        current_signal = df[-1:].SIGNAL.item()
-        if current_macd > current_signal:
-            return BasePredictor.BUY
-        else:
-            return BasePredictor.SELL
-
-    def _bb_confirmation(self, df):
-        bb_middle = df[-1:].BB_MIDDLE.item()
-        bb_upper = df[-1:].BB_UPPER.item()
-        bb_lower = df[-1:].BB_LOWER.item()
-        close = df[-1:].close.item()
-
-        if bb_middle < close < bb_upper:
-            return BasePredictor.BUY
-        elif bb_middle > close > bb_lower:
-            return BasePredictor.SELL
-
-        return BasePredictor.NONE
-
-    def _add_extra_confirmations(self, confirmation_func_list: list):
-        confirmation_func_list.append(self._macd_confirmation)
-        confirmation_func_list.append(self._candle_confirmation)
-        confirmation_func_list.append(self._cci_confirmation)
-        confirmation_func_list.append(self._psar_confirmation)
-        confirmation_func_list.append(self._bb_confirmation)
-        confirmation_func_list.append(self._rsi_smooth_slope)
-        confirmation_func_list.append(self._adx_confirmation)
-        return confirmation_func_list
-
-
-
     def _confirm(self, df) -> str:
-        confirmation_func_list = [self._rsi_confirmation, self._ema_confirmation]
-        confirmation_func_list = self._add_extra_confirmations(confirmation_func_list)
 
-        confirmation_list = []
-        for f in confirmation_func_list:
-            confirmation_list.append(f(df))
-
-        if (confirmation_list.count(BasePredictor.BUY) + confirmation_list.count(BasePredictor.BOTH)) > len(confirmation_list) * self._indicator_confirm_factor:
-            return BasePredictor.BUY
-        elif (confirmation_list.count(BasePredictor.SELL) + confirmation_list.count(BasePredictor.BOTH)) > len(confirmation_list) * self._indicator_confirm_factor:
-            return BasePredictor.SELL
-
-
-        return BasePredictor.NONE
+        return self._indicators.predict_all(df, self._indicator_confirm_factor)
 
     def _get_action(self, df, filter, local_lookback=1, **kwargs):
         action = BasePredictor.NONE
@@ -302,12 +171,6 @@ class ChartPatternPredictor(BasePredictor):
 
         for fact in [0.6, 0.7, 0.8, 0.9]:
             json_objs.append({
-                "_use_all": True,
-                "_use_bb": False,
-                "_use_psar": False,
-                "_use_cci": False,
-                "_use_candle": False,
-                "_use_macd": False,
                 "_indicator_confirm_factor": fact,
                 "version": version
             })
