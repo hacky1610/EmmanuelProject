@@ -35,7 +35,7 @@ class Indicators:
     def _add_indicator(self, name, function):
         self._indicators.append(Indicator(name, function))
 
-    def predict_all(self, df, factor):
+    def predict_all(self, df, factor:float = 0.7):
         confirmation_list = []
         for indicator in self._indicators:
             confirmation_list.append(indicator.function(df))
