@@ -26,6 +26,7 @@ class DataProcessor:
         df['BB1_LOWER'] = bb1['BB_LOWER']
 
         df['RSI'] = TA.RSI(df, period=14)
+        df['RSI_SMOOTH'] = TA.SMA(df, column="RSI")
         df['RSI_7'] = TA.RSI(df, period=7)
         df['RSI_21'] = TA.RSI(df, period=21)
         df['ROC'] = TA.ROC(df, period=10)

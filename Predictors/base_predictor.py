@@ -13,6 +13,7 @@ from datetime import datetime
 class BasePredictor:
     SELL = "sell"
     BUY = "buy"
+    BOTH = "both"
     NONE = "none"
     limit = 2.0
     stop = 2.0

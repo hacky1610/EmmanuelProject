@@ -62,7 +62,7 @@ def evaluate_predictor(ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, 
 
 # endregion
 
-viewer = PlotlyViewer(cache=df_cache)
+#viewer = PlotlyViewer(cache=df_cache)
 evaluate_predictor(ig, ti, RectanglePredictor, viewer, only_test=False, only_one_position=only_one_position)
 evaluate_predictor(ig, ti, TrianglePredictor, viewer, only_test=False, only_one_position=only_one_position)
 #evaluate_predictor(ig, ti, HeadShoulderPredictor, viewer, only_test=False, only_one_position=only_one_position)

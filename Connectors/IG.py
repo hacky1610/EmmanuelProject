@@ -319,7 +319,7 @@ class IG:
 
     @staticmethod
     def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics:Analytics):
-
+        df_results = DataFrame()
         df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
                                        None, DataProcessor())
 
@@ -329,8 +329,9 @@ class IG:
 
         add_text = ""
         for r in temp_hist.iterrows():
-            t = (str(r[1].openDateUtc)).replace(" ", "T")
-            n = r[1]["name"]
+            row = r[1]
+            t = (str(row.openDateUtc)).replace(" ", "T")
+            n = row["name"]
             name = f"{t}_{n}"
             deal_info = cache.load_deal_info(name)
             if deal_info != None:
@@ -341,8 +342,25 @@ class IG:
                 else:
                     predictor = TrianglePredictor(config=deal_info)
                 df, df_eval = ti.load_train_data(n, dp, TradeType.FX)
-                dt = datetime.fromisoformat(str(r[1].openDateUtc))
-                filter = datetime(dt.year,dt.month,dt.day, dt.hour)
+                dt = datetime.fromisoformat(str(row.openDateUtc))
+                filter = datetime(dt.year,dt.month,dt.day, dt.hour) - timedelta(hours=1)
+                open_data = (df[df.date == filter.strftime("%Y-%m-%dT%H:00:00.000Z")]).iloc[0]
+                open_data["predictor"] = deal_info['Type']
+                open_data["ticker"] = ticker
+                if row.profitAndLoss > 0:
+                    open_data["wl"] = "won"
+                    if row["closeLevel"] >= row["openLevel"]:
+                        open_data["sl"] = "long"
+                    else:
+                        open_data["sl"] = "short"
+                else:
+                    open_data["wl"] = "lost"
+                    if row["closeLevel"] >= row["openLevel"]:
+                        open_data["sl"] = "short"
+                    else:
+                        open_data["sl"] = "long"
+
+                df_results = df_results.append(open_data)
                 res = analytics.evaluate(predictor,df,df_eval,name,PlotlyViewer(cache), filter=filter)
                 if (r[1]["profitAndLoss"] < 0 and res.get_win_loss() > 0) or (r[1]["profitAndLoss"] > 0 and res.get_win_loss() < 0):
                     print("ERROR")
@@ -384,6 +402,7 @@ class IG:
             legend_title="Legend Title",
         )
         fig.show()
+        return df_results
 
     def report_last_day(self, ti, cache, dp, analytics, days: int = 7):
         start_time = (datetime.now() - timedelta(hours=days * 24))
@@ -405,8 +424,9 @@ class IG:
 
         hist = self.fix_hist(hist)
 
+        df_results = DataFrame()
         for ticker in hist['name'].unique():
-            self.report_symbol(ti=ti,
+            df_res = self.report_symbol(ti=ti,
                                ticker=ticker,
                                start_time_hours=start_time_hours,
                                start_time_str=start_time_str,
@@ -414,7 +434,9 @@ class IG:
                                cache=cache,
                                dp=dp,
                                analytics=analytics)
+            df_results = df_results.append(df_res)
 
+        print(df_results)
 
 
 
