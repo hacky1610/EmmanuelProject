@@ -57,6 +57,8 @@ def train_predictor(ig: IG,
                     indicators: Indicators,
                     trade_type: TradeType = TradeType.FX):
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
+    if len(markets) == 0:
+        return
     for m in random.choices(markets,k=10):
     #for m in markets:
         symbol = m["symbol"]
