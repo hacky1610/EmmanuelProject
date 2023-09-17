@@ -3,6 +3,7 @@ import random
 
 from BL.candle import Candle, Direction
 from BL.high_low_scanner import PivotScanner
+from BL.indicators import Indicators
 from Connectors.dropbox_cache import BaseCache
 from Predictors.base_predictor import BasePredictor
 from pandas import Series, DataFrame
@@ -16,6 +17,7 @@ class GenericPredictor(BasePredictor):
 
     # region Members
     _limit_factor: float = 2
+    _indicator_names = [Indicators.RSI, Indicators.EMA]
     # endregion
 
     def __init__(self, indicators, config=None,
@@ -30,87 +32,47 @@ class GenericPredictor(BasePredictor):
 
     def setup(self, config: dict):
         self._set_att(config, "_limit_factor")
-
+        self._set_att(config, "_indicator_names")
         super().setup(config)
 
     def get_config(self) -> Series:
         parent_c = super().get_config()
         my_conf = Series([
             self._limit_factor,
+            self._indicator_names
 
         ],
             index=[
-                "_limit_factor"
+                "_limit_factor",
+                "_indicator_names",
             ])
         return parent_c.append(my_conf)
 
     def predict(self, df: DataFrame) -> (str, float, float):
-
-        action = self._indicators.predict_all(df, 0.9)
+        #action = self._indicators.predict_all(df, 1.0)
+        action = self._indicators.predict_some(df, self._indicator_names)
         stop = limit = df.ATR.mean() * self._limit_factor
         return action, stop, limit
 
 
 
     @staticmethod
-    def _scan_sets(version: str):
+    def _indicator_names_sets(version: str):
 
         json_objs = []
-        for lookback, b4after in itertools.product(
-                random.choices(range(14, 36), k=1),
-                random.choices(range(3, 12), k=1)
-        ):
+
+        for i in range(5):
+            names = Indicators.get_random_indicator_names(Indicators.ICHIMOKU)
             json_objs.append({
-                "_look_back": lookback,
-                "_be4after": b4after,
+                "_indicator_names": names,
                 "version": version
             })
         return json_objs
 
-    @staticmethod
-    def _stop_limit_sets(version: str):
 
-        json_objs = []
-        for factor, ratio in itertools.product(
-                random.choices([1.7, 2.1, 2.7, 2.5], k=1),
-                random.choices([0.7, 1.0, 1.3, 1.5, 1.8], k=1)
-        ):
-            json_objs.append({
-                "_limit_factor": factor,
-                "_stop_limit_ratio": ratio,
-                "version": version
-            })
-        return json_objs
-
-    @staticmethod
-    def _max_dist_set(version: str):
-
-        json_objs = []
-        for max_dist in [0.7, 1.5, 2.0]:
-            json_objs.append({
-                "_max_dist_factor": max_dist,
-                "version": version
-            })
-        return json_objs
-
-    @staticmethod
-    def _indicator_set(version: str):
-
-        json_objs = []
-
-        for fact in [0.6, 0.7, 0.8, 0.9]:
-            json_objs.append({
-                "_indicator_confirm_factor": fact,
-                "version": version
-            })
-
-        random.shuffle(json_objs)
-        return json_objs
 
     @staticmethod
     def get_training_sets(version: str):
-        return ChartPatternPredictor._scan_sets(version) + \
-            ChartPatternPredictor._indicator_set(version) + \
-            ChartPatternPredictor._max_dist_set(version)
+        return GenericPredictor._indicator_names_sets(version)
 
         # return ChartPatternPredictor._indicator_set(version)

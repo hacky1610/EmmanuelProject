@@ -1,5 +1,6 @@
 from BL.candle import Candle, Direction
 from Predictors.base_predictor import BasePredictor
+import random
 
 
 class Indicator:
@@ -19,6 +20,7 @@ class Indicators:
     CCI = "cci"
     CANDLE = "candle"
     BB = "bb"
+    ICHIMOKU = "ichi"
     _indicator_confirm_factor = 0.7
 
     def __init__(self):
@@ -31,23 +33,67 @@ class Indicators:
         self._add_indicator(self.CCI, self._cci_confirmation)
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope)
         self._add_indicator(self.PSAR, self._psar_confirmation)
+        self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
 
     def _add_indicator(self, name, function):
         self._indicators.append(Indicator(name, function))
 
-    def predict_all(self, df, factor:float = 0.7):
-        confirmation_list = []
-        for indicator in self._indicators:
-            confirmation_list.append(indicator.function(df))
+    def _get_indicator_by_name(self, name):
+        for i in self._indicators:
+            if i.name == name:
+                return i
 
-        if (confirmation_list.count(BasePredictor.BUY) + confirmation_list.count(BasePredictor.BOTH)) > len(
-                confirmation_list) * factor:
+        raise Exception()
+
+    @staticmethod
+    def get_random_indicator_names(must):
+        all_indicator_names = [Indicators.RSI,
+                               Indicators.RSISLOPE,
+                               Indicators.MACD,
+                               Indicators.EMA,
+                               Indicators.BB,
+                               Indicators.PSAR,
+                               Indicators.CCI,
+                               Indicators.ICHIMOKU,
+                               Indicators.ADX]
+        r = random.choices(all_indicator_names, k=random.randint(3,6))
+        r.append(must)
+
+        return list(set(r))
+
+    def _get_indicators_by_names(self, names):
+        indicators = []
+        for n in names:
+            indicators.append(self._get_indicator_by_name(n))
+
+        return indicators
+
+    def _predict(self, predict_values, factor=0.7):
+        if (predict_values.count(BasePredictor.BUY) + predict_values.count(BasePredictor.BOTH)) >= len(
+                predict_values) * factor:
             return BasePredictor.BUY
-        elif (confirmation_list.count(BasePredictor.SELL) + confirmation_list.count(BasePredictor.BOTH)) > len(
-                confirmation_list) * factor:
+        elif (predict_values.count(BasePredictor.SELL) + predict_values.count(BasePredictor.BOTH)) >= len(
+                predict_values) * factor:
             return BasePredictor.SELL
 
         return BasePredictor.NONE
+
+    def predict_some(self, df, indicator_names):
+        predict_values = []
+        for indicator in self._get_indicators_by_names(indicator_names):
+            predict_values.append(indicator.function(df))
+
+        return self._predict(predict_values, 1.0)
+
+
+    def predict_all(self, df, factor:float = 0.7):
+        predict_values = []
+        for indicator in self._indicators:
+            predict_values.append(indicator.function(df))
+
+        return self._predict(predict_values,factor)
+
+
 
     def _ema_confirmation(self, df):
         current_ema_10 = df[-1:].EMA_10.item()
@@ -135,3 +181,50 @@ class Indicators:
             return BasePredictor.SELL
         else:
             return BasePredictor.BUY
+
+    def _ichimoku_predict(self, df):
+
+        actions = []
+        actions.append(self._ichimoku_tenkan_kijun_predict(df))
+        actions.append(self._ichimoku_chikou_predict(df))
+        actions.append(self._ichimoku_cloud_predict(df))
+
+        if actions.count(BasePredictor.BUY) == len(actions):
+            return BasePredictor.BUY
+        elif actions.count(BasePredictor.SELL) == len(actions):
+            return BasePredictor.SELL
+
+        return BasePredictor.NONE
+
+    def _ichimoku_cloud_predict(self, df):
+        senkou_a = df.SENKOU_A[-1:].item()
+        senkou_b = df.SENKOU_B[-1:].item()
+        close = df.close[-1:].item()
+
+        if senkou_a > senkou_b:
+            if close > senkou_a:
+                return BasePredictor.BUY
+        else:
+            if close < senkou_a:
+                return BasePredictor.SELL
+
+    def _ichimoku_tenkan_kijun_predict(self, df):
+        tenkan = df.TENKAN[-1:].item()
+        kijun = df.KIJUN[-1:].item()
+
+        if kijun > tenkan:
+            return BasePredictor.BUY
+        else:
+            return BasePredictor.SELL
+
+    def _ichimoku_chikou_predict(self, df):
+        chikou = df.CHIKOU[-1:].item()
+        close = df.close[-1:].item()
+
+        if chikou > close:
+            return BasePredictor.BUY
+        else:
+            return BasePredictor.SELL
+
+
+

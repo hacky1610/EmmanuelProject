@@ -11,6 +11,7 @@ from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
+from Predictors.generic_predictor import GenericPredictor
 from Predictors.trainer import Trainer
 from BL.utils import ConfigReader
 from BL.data_processor import DataProcessor
@@ -31,7 +32,7 @@ conf_reader = ConfigReader(live_config=live)
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, type_)
 cache = DropBoxCache(ds)
-_trainer = Trainer(Analytics(), cache=cache, check_trainable=True)
+_trainer = Trainer(Analytics(), cache=cache, check_trainable=False)
 _tiingo = Tiingo(conf_reader=conf_reader, cache=cache )
 _dp = DataProcessor()
 _trade_type = TradeType.FX
@@ -75,18 +76,28 @@ while True:
     train_predictor(ig=_ig,
                     trainer=_trainer,
                     tiingo=_tiingo,
-                    predictor=RectanglePredictor,
+                    predictor=GenericPredictor,
                     async_ex=_async_ex,
                     async_exec=_async_exec,
                     train_version=_train_version,
                     dp=_dp,
                     indicators=_indicators)
-    train_predictor(ig=_ig,
-                    trainer=_trainer,
-                    tiingo=_tiingo,
-                    predictor=TrianglePredictor,
-                    async_ex=_async_ex,
-                    async_exec=_async_exec,
-                    train_version=_train_version,
-                    dp=_dp,
-                    indicators=_indicators)
+
+    # train_predictor(ig=_ig,
+    #                 trainer=_trainer,
+    #                 tiingo=_tiingo,
+    #                 predictor=RectanglePredictor,
+    #                 async_ex=_async_ex,
+    #                 async_exec=_async_exec,
+    #                 train_version=_train_version,
+    #                 dp=_dp,
+    #                 indicators=_indicators)
+    # train_predictor(ig=_ig,
+    #                 trainer=_trainer,
+    #                 tiingo=_tiingo,
+    #                 predictor=TrianglePredictor,
+    #                 async_ex=_async_ex,
+    #                 async_exec=_async_exec,
+    #                 train_version=_train_version,
+    #                 dp=_dp,
+    #                 indicators=_indicators)

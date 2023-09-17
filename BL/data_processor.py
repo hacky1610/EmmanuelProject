@@ -50,6 +50,18 @@ class DataProcessor:
 
         df["ATR"] = TA.ATR(df)
 
+        ichi = TA.ICHIMOKU(df)
+        df["TENKAN"] = ichi["TENKAN"]
+        df["KIJUN"] = ichi["KIJUN"]
+        df["SENKOU_A"] = ichi["senkou_span_a"]
+        df["SENKOU_B"] = ichi["SENKOU"]
+        df["CHIKOU"] = ichi["CHIKOU"]
+
+
+
+
+
+
     @staticmethod
     def clean_data(df: DataFrame):
         DataProcessor.drop_column(df, "Volume")
