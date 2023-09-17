@@ -12,8 +12,10 @@ class Indicator:
 class Indicators:
     _indicators = []
     RSI = "rsi"
+    RSI30_70 = "rsi_30_70"
     RSISLOPE = "rsi_slope"
     MACD = "macd"
+    MACDCROSSING = "macd_crossing"
     ADX = "adx"
     EMA = "ema"
     PSAR = "psar"
@@ -25,7 +27,9 @@ class Indicators:
 
     def __init__(self):
         self._add_indicator(self.RSI, self._rsi_confirmation)
+        self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70)
         self._add_indicator(self.MACD, self._macd_confirmation)
+        self._add_indicator(self.MACDCROSSING, self._macd_crossing_confirmation)
         self._add_indicator(self.ADX, self._adx_confirmation)
         self._add_indicator(self.EMA, self._ema_confirmation)
         self._add_indicator(self.BB, self._bb_confirmation)
@@ -50,6 +54,7 @@ class Indicators:
         all_indicator_names = [Indicators.RSI,
                                Indicators.RSISLOPE,
                                Indicators.MACD,
+                               Indicators.MACDCROSSING,
                                Indicators.EMA,
                                Indicators.BB,
                                Indicators.PSAR,
@@ -154,6 +159,17 @@ class Indicators:
         else:
             return BasePredictor.SELL
 
+    def _macd_crossing_confirmation(self, df):
+        period = df[-4:-1]
+        current_macd = df[-1:].MACD.item()
+        current_signal = df[-1:].SIGNAL.item()
+        if current_macd > current_signal: #MACD größer als SIGNAL
+            if len(period[period.MACD < period.SIGNAL]) > 0:
+                return BasePredictor.BUY
+        else: #SIGNAL größer als MACD
+            if len(period[period.MACD > period.SIGNAL]) > 0:
+                return BasePredictor.SELL
+
     def _bb_confirmation(self, df):
         bb_middle = df[-1:].BB_MIDDLE.item()
         bb_upper = df[-1:].BB_UPPER.item()
@@ -182,6 +198,15 @@ class Indicators:
         else:
             return BasePredictor.BUY
 
+    def _rsi_smooth_30_70(self, df):
+        rsi_smooth = df.RSI_SMOOTH[-1:].item()
+        if rsi_smooth > 70:
+            return BasePredictor.BUY
+        elif rsi_smooth < 30:
+            return BasePredictor.SELL
+
+        return BasePredictor.NONE
+
     def _ichimoku_predict(self, df):
 
         actions = []
@@ -196,6 +221,8 @@ class Indicators:
 
         return BasePredictor.NONE
 
+
+
     def _ichimoku_cloud_predict(self, df):
         senkou_a = df.SENKOU_A[-1:].item()
         senkou_b = df.SENKOU_B[-1:].item()
@@ -208,14 +235,21 @@ class Indicators:
             if close < senkou_a:
                 return BasePredictor.SELL
 
+        return BasePredictor.NONE
+
     def _ichimoku_tenkan_kijun_predict(self, df):
+        period = df[-4:-1]
         tenkan = df.TENKAN[-1:].item()
         kijun = df.KIJUN[-1:].item()
 
-        if kijun > tenkan:
-            return BasePredictor.BUY
+        if tenkan > kijun:
+            if len(period[period.TENKAN < period.KIJUN]) > 0:
+                return BasePredictor.BUY
         else:
-            return BasePredictor.SELL
+            if len(period[period.TENKAN > period.KIJUN]) > 0:
+                return BasePredictor.SELL
+
+        return BasePredictor.NONE
 
     def _ichimoku_chikou_predict(self, df):
         chikou = df.CHIKOU[-1:].item()
