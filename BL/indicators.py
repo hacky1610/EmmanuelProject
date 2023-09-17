@@ -60,7 +60,8 @@ class Indicators:
                                Indicators.PSAR,
                                Indicators.CCI,
                                Indicators.ICHIMOKU,
-                               Indicators.ADX]
+                               Indicators.ADX,
+                               Indicators.RSI30_70]
         r = random.choices(all_indicator_names, k=random.randint(3,6))
         r.append(must)
 
