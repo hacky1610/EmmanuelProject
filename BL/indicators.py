@@ -1,7 +1,12 @@
+from typing import NamedTuple
+
 from BL.candle import Candle, Direction
 from Predictors.base_predictor import BasePredictor
 import random
 
+class IndicatorList(NamedTuple):
+    RSI = "rsi"
+    RSI30_70 = "rsi_30_70"
 
 class Indicator:
     def __init__(self, name, function):
@@ -10,7 +15,6 @@ class Indicator:
 
 
 class Indicators:
-    _indicators = []
     RSI = "rsi"
     RSI30_70 = "rsi_30_70"
     RSISLOPE = "rsi_slope"
@@ -23,9 +27,11 @@ class Indicators:
     CANDLE = "candle"
     BB = "bb"
     ICHIMOKU = "ichi"
-    _indicator_confirm_factor = 0.7
+    ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
 
     def __init__(self):
+        self._indicators = []
+        self._indicator_confirm_factor = 0.7
         self._add_indicator(self.RSI, self._rsi_confirmation)
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70)
         self._add_indicator(self.MACD, self._macd_confirmation)
@@ -38,6 +44,7 @@ class Indicators:
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope)
         self._add_indicator(self.PSAR, self._psar_confirmation)
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
+        self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
 
     def _add_indicator(self, name, function):
         self._indicators.append(Indicator(name, function))
@@ -49,19 +56,8 @@ class Indicators:
 
         raise Exception()
 
-    @staticmethod
-    def get_random_indicator_names(must):
-        all_indicator_names = [Indicators.RSI,
-                               Indicators.RSISLOPE,
-                               Indicators.MACD,
-                               Indicators.MACDCROSSING,
-                               Indicators.EMA,
-                               Indicators.BB,
-                               Indicators.PSAR,
-                               Indicators.CCI,
-                               Indicators.ICHIMOKU,
-                               Indicators.ADX,
-                               Indicators.RSI30_70]
+    def get_random_indicator_names(self, must):
+        all_indicator_names = [indikator.name for indikator in self._indicators]
         r = random.choices(all_indicator_names, k=random.randint(3,6))
         r.append(must)
 
@@ -222,6 +218,16 @@ class Indicators:
 
         return BasePredictor.NONE
 
+    def _ichimoku_kijun_close_predict(self, df):
+        # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
+        # Linie nur Long-Trades vorgenommen werden sollten, und unterhalb entsprechend nur Short-Trades.
+        kijun = df.KIJUN[-1:].item()
+        close = df.close[-1:].item()
+
+        if close > kijun:
+            return BasePredictor.BUY
+        else:
+            return BasePredictor.SELL
 
 
     def _ichimoku_cloud_predict(self, df):

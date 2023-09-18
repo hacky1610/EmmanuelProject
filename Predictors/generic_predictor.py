@@ -62,7 +62,7 @@ class GenericPredictor(BasePredictor):
         json_objs = []
 
         for i in range(5):
-            names = Indicators.get_random_indicator_names(Indicators.ICHIMOKU)
+            names = Indicators().get_random_indicator_names(Indicators.ICHIMOKU)
             json_objs.append({
                 "_indicator_names": names,
                 "version": version
