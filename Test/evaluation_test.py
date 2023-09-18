@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 from BL.analytics import Analytics
+from BL.indicators import Indicators
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
 
@@ -10,7 +11,7 @@ class EvaluationTest(unittest.TestCase):
     def setUp(self):
         self.a = Analytics()
         self.a._create_additional_info = MagicMock()
-        self.predictor = BasePredictor()
+        self.predictor = BasePredictor(Indicators())
         self.predictor.predict = MagicMock(side_effect=self.predict_mock)
         self.predictor.get_stop_limit = MagicMock(return_value=(10,10))
 
