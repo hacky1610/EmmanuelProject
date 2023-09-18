@@ -11,16 +11,13 @@ from UI.base_viewer import BaseViewer
 class TrianglePredictor(ChartPatternPredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
 
-    # region Members
-    _straight_factor: float = 0.4
-
-    # endregion
 
     def __init__(self,indicators, config=None,
                  tracer: Tracer = ConsoleTracer(),
                  viewer: BaseViewer = BaseViewer(),
                  cache: BaseCache = BaseCache()):
         super().__init__(indicators, config, tracer=tracer, cache=cache, viewer=viewer)
+        self._straight_factor: float = 0.4
         self.fallback_model_version = "V2.0"
         self.model_version = "V3.0"
 

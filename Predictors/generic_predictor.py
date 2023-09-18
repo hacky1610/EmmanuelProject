@@ -15,16 +15,17 @@ from UI.base_viewer import BaseViewer
 class GenericPredictor(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
 
-    # region Members
-    _limit_factor: float = 2
-    _indicator_names = [Indicators.RSI, Indicators.EMA]
-    # endregion
+
 
     def __init__(self, indicators, config=None,
                  tracer: Tracer = ConsoleTracer(),
                  viewer: BaseViewer = BaseViewer(),
                  cache: BaseCache = BaseCache()):
         super().__init__(indicators, config, tracer=tracer, cache=cache)
+        # region Members
+        self._limit_factor: float = 2
+        self._indicator_names = [Indicators.RSI, Indicators.EMA]
+        # endregion
         if config is None:
             config = {}
         self.setup(config)

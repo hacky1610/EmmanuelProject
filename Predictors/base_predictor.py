@@ -15,18 +15,17 @@ class BasePredictor:
     BUY = "buy"
     BOTH = "both"
     NONE = "none"
-    limit = 2.0
-    stop = 2.0
     METRIC = "reward"
     version = "V1.0"
     model_version = ""
     fallback_model_version = ""
-    last_scan = datetime(1970, 1, 1).isoformat()
-    _tracer = ConsoleTracer()
-    _last_scan: EvalResult = EvalResult()
-
 
     def __init__(self, indicators, config=None , cache: BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
+        self.limit = 2.0
+        self.stop = 2.0
+        self.last_scan = datetime(1970, 1, 1).isoformat()
+        self._last_scan: EvalResult = EvalResult()
+
         if config is None:
             config = {}
         self.setup(config)

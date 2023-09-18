@@ -14,30 +14,29 @@ from UI.base_viewer import BaseViewer
 class ChartPatternPredictor(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
 
-    # region Members
-    _limit_factor: float = 2
-    _look_back: int = 40
-    _local_look_back: int = 1
-    _be4after: int = 3
-    _max_dist_factor: float = 2.0
-    _straight_factor: float = 0.4
-    _stop_limit_ratio: float = 1.0
-    _rsi_add_value: int = 0
-    _use_macd: bool = False
-    _use_candle: bool = False
-    _use_cci: bool = False
-    _use_psar: bool = False
-    _use_bb: bool = False
-    _use_all: bool = False
-    _indicator_confirm_factor: float = 0.7
-
-    # endregion
-
     def __init__(self, indicators, config=None,
                  tracer: Tracer = ConsoleTracer(),
                  viewer: BaseViewer = BaseViewer(),
                  cache: BaseCache = BaseCache()):
         super().__init__(indicators, config, tracer=tracer, cache=cache)
+        # region Members
+        self._limit_factor: float = 2
+        self._look_back: int = 40
+        self._local_look_back: int = 1
+        self._be4after: int = 3
+        self._max_dist_factor: float = 2.0
+        self._straight_factor: float = 0.4
+        self._stop_limit_ratio: float = 1.0
+        self._rsi_add_value: int = 0
+        self._use_macd: bool = False
+        self._use_candle: bool = False
+        self. _use_cci: bool = False
+        self._use_psar: bool = False
+        self._use_bb: bool = False
+        self._use_all: bool = False
+        self._indicator_confirm_factor: float = 0.7
+        # endregion
+
         if config is None:
             config = {}
         self.setup(config)
