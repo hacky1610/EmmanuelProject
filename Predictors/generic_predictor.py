@@ -21,15 +21,14 @@ class GenericPredictor(BasePredictor):
                  tracer: Tracer = ConsoleTracer(),
                  viewer: BaseViewer = BaseViewer(),
                  cache: BaseCache = BaseCache()):
-        super().__init__(indicators, config, tracer=tracer, cache=cache)
-        # region Members
         self._limit_factor: float = 2
         self._indicator_names = [Indicators.RSI, Indicators.EMA]
-        # endregion
+        self._viewer = viewer
         if config is None:
             config = {}
+
+        super().__init__(indicators, config, tracer=tracer, cache=cache)
         self.setup(config)
-        self._viewer = viewer
 
     def setup(self, config: dict):
         self._set_att(config, "_limit_factor")
