@@ -2,6 +2,10 @@ from BL.candle import Candle, Direction
 from BL.datatypes import TradeAction
 import random
 
+from Tracing.ConsoleTracer import ConsoleTracer
+from Tracing.Tracer import Tracer
+
+
 class Indicator:
     def __init__(self, name, function):
         self.name = name
@@ -24,7 +28,7 @@ class Indicators:
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
     ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
 
-    def __init__(self):
+    def __init__(self, tracer: Tracer = ConsoleTracer()):
         self._indicators = []
         self._indicator_confirm_factor = 0.7
         self._add_indicator(self.RSI, self._rsi_predict)
@@ -42,6 +46,7 @@ class Indicators:
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
 
+        self._tracer:Tracer = tracer
     def _add_indicator(self, name, function):
         self._indicators.append(Indicator(name, function))
 
@@ -67,6 +72,7 @@ class Indicators:
         return indicators
 
     def _predict(self, predict_values, factor=0.7):
+        self._tracer.debug(f"Predict for multiple values {predict_values} and factor {factor}")
         if (predict_values.count(TradeAction.BUY) + predict_values.count(TradeAction.BOTH)) >= len(
                 predict_values) * factor:
             return TradeAction.BUY

@@ -24,7 +24,7 @@ tiingo = Tiingo(tracer=tracer, conf_reader=env_reader, cache=cache)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
 predictor_class_list = [GenericPredictor]
 analytics = Analytics(tracer)
-indicators = Indicators()
+indicators = Indicators(tracer=tracer)
 
 trader = Trader(
     ig=ig,
