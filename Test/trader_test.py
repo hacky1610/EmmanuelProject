@@ -167,7 +167,7 @@ class TraderTest(unittest.TestCase):
         self._trader.trade = MagicMock()
 
         # Testaufruf der trade_markets-Funktion
-        self._trader.trade_markets(trade_type=TradeType.FX)
+        self._trader.trade_markets(trade_type=TradeType.FX, indicators=MagicMock())
 
         # Überprüfen, ob die trade-Funktion für jeden currency_market aufgerufen wurde
         self.assertEqual(self._trader.trade.call_count, len(mock_currency_markets) * len(self._predictor_class_list))
