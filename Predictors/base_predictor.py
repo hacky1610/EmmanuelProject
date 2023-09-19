@@ -3,14 +3,20 @@ import os
 from pandas import DataFrame, Series
 from BL.eval_result import EvalResult
 from BL.utils import get_project_dir
+from BL.indicators import Indicators
 from Connectors.dropbox_cache import BaseCache
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
-import numpy as np
 from datetime import datetime
 
 
 class BasePredictor:
+    """Klasse, die als Basis dient.
+
+            Attributes:
+                indicators (Indicators): Indikatoren
+            """
+
     SELL = "sell"
     BUY = "buy"
     BOTH = "both"
@@ -19,6 +25,7 @@ class BasePredictor:
     version = "V1.0"
     model_version = ""
     fallback_model_version = ""
+
 
     def __init__(self, indicators, config=None , cache: BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
         self.limit = 2.0
@@ -32,7 +39,7 @@ class BasePredictor:
         self._tracer = tracer
         self.lastState = ""
         self._cache = cache
-        self._indicators = indicators
+        self._indicators: Indicators = indicators
 
     def setup(self, config):
         self._set_att(config, "limit")
