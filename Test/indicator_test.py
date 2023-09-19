@@ -303,3 +303,31 @@ class TestIndicators(unittest.TestCase):
         data['ADX'] = [10]
         action = self.indicators._adx_predict(data)
         self.assertEqual(action, TradeAction.NONE)
+
+    def test_ema_10_50(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['EMA_10'] = [60, 75, 80, 90]
+        data['EMA_50'] = [70, 70, 70, 70]
+        data = self.indicators._ema_10_50_diff(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        data = DataFrame()
+        data['EMA_10'] = [70, 70, 70, 70]
+        data['EMA_50'] = [60, 65, 75, 80]
+        data = self.indicators._ema_10_50_diff(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+        data = DataFrame()
+        data['EMA_10'] = [70, 70, 70, 70]
+        data['EMA_50'] = [70, 70, 70, 70]
+        data = self.indicators._ema_10_50_diff(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+        data = DataFrame()
+        data['EMA_10'] = [80, 80, 80, 71]
+        data['EMA_50'] = [70, 70, 70, 70]
+        data = self.indicators._ema_10_50_diff(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+

@@ -102,6 +102,19 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _ema_10_50_diff(self, df):
+        period = df[-3:]
+        ema_diff = period.EMA_10 - period.EMA_50
+
+        if ema_diff.iloc[-1] > 0:
+            if ema_diff.iloc[-1] > ema_diff[-3:-1].max():
+                return TradeAction.BUY
+        else:
+            if ema_diff.iloc[-1] < ema_diff[-3:-1].min():
+                return TradeAction.SELL
+
+        return TradeAction.NONE
+
     def _rsi_predict(self, df):
         current_rsi = df.RSI.iloc[-1]
         if current_rsi < 50:
