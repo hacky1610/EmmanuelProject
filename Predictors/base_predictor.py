@@ -1,8 +1,6 @@
 import itertools
-import os
 from pandas import DataFrame, Series
 from BL.eval_result import EvalResult
-from BL.utils import get_project_dir
 from BL.indicators import Indicators
 from Connectors.dropbox_cache import BaseCache
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -17,11 +15,6 @@ class BasePredictor:
                 indicators (Indicators): Indikatoren
             """
 
-    SELL = "sell"
-    BUY = "buy"
-    BOTH = "both"
-    NONE = "none"
-    METRIC = "reward"
     version = "V1.0"
     model_version = ""
     fallback_model_version = ""

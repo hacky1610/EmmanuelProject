@@ -1,3 +1,4 @@
+from BL.datatypes import TradeAction
 from BL.high_low_scanner import ShapeType
 from Connectors.dropbox_cache import BaseCache
 from Predictors.base_predictor import BasePredictor
@@ -30,7 +31,7 @@ class HeadShoulderPredictor(ChartPatternPredictor):
 
     def predict(self, df: DataFrame) -> (str, float, float):
         if len(df) <= self._look_back:
-            return BasePredictor.NONE, 0, 0
+            return TradeAction.NONE, 0, 0
 
         action = super()._get_action(df=df,
                                      filter=[ShapeType.HeadShoulder],

@@ -1,3 +1,4 @@
+from BL.datatypes import TradeAction
 from Predictors.base_predictor import BasePredictor
 import numpy as np
 
@@ -23,12 +24,12 @@ class IndicatorBL:
         close = candle.close.item()
         if close > open:
             # if (high - low) * percentage < close - open:
-            return BasePredictor.BUY
+            return TradeAction.BUY
         elif close < open:
             # if (high - low) * percentage < open - close:
-            return BasePredictor.SELL
+            return TradeAction.SELL
 
-        return BasePredictor.NONE
+        return TradeAction.NONE
 
     @staticmethod
     def check_macd_divergence(df):
@@ -85,12 +86,12 @@ class IndicatorBL:
         ema_25_under_50 = len(period[period.EMA_25 < period.EMA_50]) == len(period)
 
         if ema_14_over_25 and ema_25_over_50:
-            return BasePredictor.BUY
+            return TradeAction.BUY
 
         if ema_14_under_25 and ema_25_under_50:
-            return BasePredictor.SELL
+            return TradeAction.SELL
 
-        return BasePredictor.NONE
+        return TradeAction.NONE
 
     @staticmethod
     def calc_trend(df, period: int = 2):
@@ -126,22 +127,22 @@ class IndicatorBL:
         if macd_over_signal:
             if consider_gradient:
                 if cur_macd - cur_sig > pre_macd - pre_sig:
-                    return BasePredictor.BUY
+                    return TradeAction.BUY
                 else:
-                    return BasePredictor.NONE
+                    return TradeAction.NONE
 
-            return BasePredictor.BUY
+            return TradeAction.BUY
 
         if macd_under_signal:
             if consider_gradient:
                 if cur_sig - cur_macd > pre_sig - pre_macd:
-                    return BasePredictor.SELL
+                    return TradeAction.SELL
                 else:
-                    return BasePredictor.NONE
+                    return TradeAction.NONE
 
-            return BasePredictor.SELL
+            return TradeAction.SELL
 
-        return BasePredictor.NONE
+        return TradeAction.NONE
 
     @staticmethod
     def predict_bb_1(df, period: int = 2):
@@ -152,9 +153,9 @@ class IndicatorBL:
             current_bb_periode)
 
         if low_over:
-            return BasePredictor.BUY
+            return TradeAction.BUY
 
         if high_under:
-            return BasePredictor.SELL
+            return TradeAction.SELL
 
-        return BasePredictor.NONE
+        return TradeAction.NONE

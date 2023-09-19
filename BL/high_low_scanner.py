@@ -7,6 +7,7 @@ from scipy.stats import linregress
 from Predictors.base_predictor import BasePredictor
 from UI.base_viewer import BaseViewer
 from Tracing.Tracer import Tracer
+from BL.datatypes import TradeAction
 
 pd.options.mode.chained_assignment = None
 
@@ -215,13 +216,13 @@ class PivotScanner:
                 xxmax = np.append(xxmax, i)  # df.iloc[i].name
 
         if (xxmax.size < 3 and xxmin.size < 3) or xxmax.size <= 1 or xxmin.size <= 1:
-            return ShapeType.NoShape, BasePredictor.NONE
+            return ShapeType.NoShape, TradeAction.NONE
 
         slmin, intercmin, rmin, _, _ = linregress(xxmin, minim)
         slmax, intercmax, rmax, _, _ = linregress(xxmax, maxim)
 
         if abs(rmax) <= 0.7 or abs(rmin) <= 0.7:
-            return ShapeType.NoShape, BasePredictor.NONE
+            return ShapeType.NoShape, TradeAction.NONE
 
         current_close = df[-1:].close.item()
         current_atr = df[-1:].ATR.item()
@@ -233,11 +234,11 @@ class PivotScanner:
             self._viewer.custom_print(self._print, df, candle_id, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       f"Ascending triangle {candle_id}")
             if current_close > crossing_max and current_close - crossing_max < max_distance:
-                return ShapeType.AscendingTriangle, BasePredictor.BUY
+                return ShapeType.AscendingTriangle, TradeAction.BUY
 
             self._tracer.write(f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} ")
 
-            return ShapeType.AscendingTriangle, BasePredictor.NONE
+            return ShapeType.AscendingTriangle, TradeAction.NONE
         elif self._is_descending_triangle(slmin, slmax, xxmin, current_atr) and ShapeType.DescendingTriangle in type_filter:
             self._tracer.write("Found Descending Triangle")
             crossing_min = slmin * candle_id + intercmin
@@ -245,10 +246,10 @@ class PivotScanner:
             self._viewer.custom_print(self._print, df, candle_id, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       f"Descending triangle {candle_id}")
             if current_close < crossing_min and crossing_min - current_close < max_distance:
-                return ShapeType.DescendingTriangle, BasePredictor.SELL
+                return ShapeType.DescendingTriangle, TradeAction.SELL
             self._tracer.write(f"No action Close {current_close} Max Dist {max_distance} min {crossing_min}")
 
-            return ShapeType.DescendingTriangle, BasePredictor.NONE
+            return ShapeType.DescendingTriangle, TradeAction.NONE
 
         elif self._is_triangle(slmin, slmax) and ShapeType.Triangle in type_filter:
             self._tracer.write("Found Triangle")
@@ -258,9 +259,9 @@ class PivotScanner:
             self._viewer.custom_print(self._print, df, candle_id, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       "Symmetric triangle")
             if current_close > crossing_max and current_close - crossing_max < max_distance:
-                return ShapeType.Triangle, BasePredictor.BUY
+                return ShapeType.Triangle, TradeAction.BUY
             if current_close < crossing_min and crossing_min - current_close < max_distance:
-                return ShapeType.Triangle, BasePredictor.SELL
+                return ShapeType.Triangle, TradeAction.SELL
             self._tracer.write(
                 f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
 
@@ -272,22 +273,22 @@ class PivotScanner:
             self._viewer.custom_print(self._print, df, candle_id, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
                                       "Rectangle")
             if current_close > crossing_max and current_close - crossing_max < max_distance:
-                return ShapeType.Rectangle, BasePredictor.BUY
+                return ShapeType.Rectangle, TradeAction.BUY
             if current_close < crossing_min and crossing_min - current_close < max_distance:
-                return ShapeType.Rectangle, BasePredictor.SELL
+                return ShapeType.Rectangle, TradeAction.SELL
 
             self._tracer.write(
                 f"No action Close {current_close} Max Dist {max_distance} Max {crossing_max} min {crossing_min}")
-            return ShapeType.Rectangle, BasePredictor.NONE
+            return ShapeType.Rectangle, TradeAction.NONE
 
         elif self._is_head_shoulder(xxmax, xxmin, df, current_atr) and ShapeType.HeadShoulder in type_filter:
             self._tracer.write("Found Head Shoulder")
 
            # self._viewer.custom_print(self._print, df, candle_id, xxmin, xxmax, slmin, slmax, intercmin, intercmax,
             #                          "HeadShoulder")
-            return ShapeType.HeadShoulder, BasePredictor.NONE
+            return ShapeType.HeadShoulder, TradeAction.NONE
 
 
-        return ShapeType.NoShape, BasePredictor.NONE
+        return ShapeType.NoShape, TradeAction.NONE
 
 

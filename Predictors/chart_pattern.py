@@ -2,6 +2,7 @@ import itertools
 import random
 
 from BL.candle import Candle, Direction
+from BL.datatypes import TradeAction
 from BL.high_low_scanner import PivotScanner
 from Connectors.dropbox_cache import BaseCache
 from Predictors.base_predictor import BasePredictor
@@ -97,7 +98,7 @@ class ChartPatternPredictor(BasePredictor):
         return self._indicators.predict_all(df, self._indicator_confirm_factor)
 
     def _get_action(self, df, filter, local_lookback=1, **kwargs):
-        action = BasePredictor.NONE
+        action = TradeAction.NONE
         for i in range(local_lookback):
             if i == 0:
                 temp_df = df
@@ -105,12 +106,12 @@ class ChartPatternPredictor(BasePredictor):
                 temp_df = df[:-1 * i]
             ps = self._scan(temp_df, **kwargs)
             _, action = ps.get_action(temp_df, temp_df[-1:].index.item(), filter)
-            if action != BasePredictor.NONE:
+            if action != TradeAction.NONE:
                 return action
         return action
 
     def validate(self, action: str, df: DataFrame) -> (str, float, float):
-        if action != BasePredictor.NONE:
+        if action != TradeAction.NONE:
             self._tracer.write(f"Got {action} from PivotScanner")
             validation_result = self._confirm(df)
             if action == validation_result:
@@ -120,7 +121,7 @@ class ChartPatternPredictor(BasePredictor):
             else:
                 self._tracer.write("No action because it was not confirmed")
 
-        return BasePredictor.NONE, 0, 0
+        return TradeAction.NONE, 0, 0
 
     @staticmethod
     def _scan_sets(version: str):

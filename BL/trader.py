@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List, NamedTuple
 from datetime import datetime
 from BL import Analytics, DataProcessor
+from BL.datatypes import TradeAction
 from Connectors import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import TradeType
@@ -224,19 +225,19 @@ class Trader:
         scaled_stop = stop * config.scaling
         scaled_limit = limit * config.scaling
 
-        if signal == BasePredictor.NONE:
+        if signal == TradeAction.NONE:
             return TradeResult.NOACTION
 
         opened_position = self._ig.get_opened_positions_by_epic(config.epic)
         if opened_position is not None and (
-                (signal == BasePredictor.BUY and opened_position.direction == "BUY") or
-                (signal == BasePredictor.SELL and opened_position.direction == "SELL")
+                (signal == TradeAction.BUY and opened_position.direction == "BUY") or
+                (signal == TradeAction.SELL and opened_position.direction == "SELL")
         ):
             self._tracer.write(
                 f"There is already an opened position of {config.symbol} with direction {opened_position.direction}")
             return TradeResult.NOACTION
 
-        if signal == BasePredictor.BUY:
+        if signal == TradeAction.BUY:
             res, deal_response = self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
                                                      config.currency, predictor.get_config(),
                                                      predictor.get_last_result().get_data(),

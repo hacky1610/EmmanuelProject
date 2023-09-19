@@ -2,6 +2,7 @@ from enum import Enum
 
 from pandas import DataFrame
 
+from BL.datatypes import TradeAction
 from BL.high_low_scanner import HlType
 from Predictors.base_predictor import BasePredictor
 from UI.base_viewer import BaseViewer
@@ -68,4 +69,4 @@ class ChartPattern:
         if is_triangel:
             return action
 
-        return BasePredictor.NONE
+        return TradeAction.NONE

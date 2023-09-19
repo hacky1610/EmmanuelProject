@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 from BL.analytics import Analytics
+from BL.datatypes import TradeAction
 from BL.indicators import Indicators
 from Predictors.base_predictor import BasePredictor
 from pandas import DataFrame, Series
@@ -15,7 +16,7 @@ class EvaluationTest(unittest.TestCase):
         self.predictor.predict = MagicMock(side_effect=self.predict_mock)
         self.predictor.get_stop_limit = MagicMock(return_value=(10,10))
 
-    def add_line(self, df: DataFrame, date, open, high, low, close, action=BasePredictor.NONE):
+    def add_line(self, df: DataFrame, date, open, high, low, close, action=TradeAction.NONE):
         return df.append(
             Series([open, high, low, close, date, action],
                    index=["open", "high", "low", "close", "date", "action"]),
@@ -52,7 +53,7 @@ class EvaluationTest(unittest.TestCase):
         df = self.add_line(df, "2023-01-01T14:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T15:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T16:00:00.00Z", 900, 950, 850, 900)
-        df = self.add_line(df, "2023-01-01T17:00:00.00Z", 900, 900, 900, 901, action=BasePredictor.BUY)
+        df = self.add_line(df, "2023-01-01T17:00:00.00Z", 900, 900, 900, 901, action=TradeAction.BUY)
         df = self.add_line(df, "2023-01-01T18:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T19:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T20:00:00.00Z", 900, 950, 850, 900)
@@ -75,7 +76,7 @@ class EvaluationTest(unittest.TestCase):
         df = DataFrame()
         df = self.add_line(df, "2023-01-01T13:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T14:00:00.00Z", 900, 950, 850, 900)
-        df = self.add_line(df, "2023-01-01T15:00:00.00Z", 900, 950, 850, 900, action=BasePredictor.BUY)
+        df = self.add_line(df, "2023-01-01T15:00:00.00Z", 900, 950, 850, 900, action=TradeAction.BUY)
         df = self.add_line(df, "2023-01-01T16:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T17:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T18:00:00.00Z", 900, 950, 850, 900)
@@ -100,7 +101,7 @@ class EvaluationTest(unittest.TestCase):
         df = self.add_line(df, "2023-01-01T13:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T14:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T15:00:00.00Z", 900, 950, 850, 900)
-        df = self.add_line(df, "2023-01-01T16:00:00.00Z", 900, 950, 850, 900, action=BasePredictor.SELL)
+        df = self.add_line(df, "2023-01-01T16:00:00.00Z", 900, 950, 850, 900, action=TradeAction.SELL)
         df = self.add_line(df, "2023-01-01T17:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T18:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T19:00:00.00Z", 900, 950, 850, 900)
@@ -125,7 +126,7 @@ class EvaluationTest(unittest.TestCase):
         df = self.add_line(df, "2023-01-01T13:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T14:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T15:00:00.00Z", 900, 950, 850, 900)
-        df = self.add_line(df, "2023-01-01T16:00:00.00Z", 900, 950, 850, 900, action=BasePredictor.SELL)
+        df = self.add_line(df, "2023-01-01T16:00:00.00Z", 900, 950, 850, 900, action=TradeAction.SELL)
         df = self.add_line(df, "2023-01-01T17:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T18:00:00.00Z", 900, 950, 850, 900)
         df = self.add_line(df, "2023-01-01T19:00:00.00Z", 900, 950, 850, 900)

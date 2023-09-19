@@ -2,6 +2,7 @@ from BL.eval_result import EvalResult
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame
+from BL.datatypes import TradeAction
 import pandas as pd
 from datetime import timedelta
 from UI.base_viewer import BaseViewer
@@ -55,7 +56,7 @@ class Analytics:
                 continue
 
             action, stop, limit = predictor.predict(df_train[:current_index])
-            if action == predictor.NONE:
+            if action == TradeAction.NONE:
                 continue
 
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
@@ -63,7 +64,7 @@ class Analytics:
 
             additonal_text = self._create_additional_info(df_train.iloc[current_index - 1], "RSI")
 
-            if action == predictor.BUY:
+            if action == TradeAction.BUY:
                 open_price = open_price + spread
 
                 viewer.print_buy(df_train[i + 1:i + 2].index.item(), open_price, additonal_text)
@@ -88,7 +89,7 @@ class Analytics:
                         losses += 1
                         last_exit = future.date[j]
                         break
-            elif action == predictor.SELL:
+            elif action == TradeAction.SELL:
                 open_price = open_price - spread
 
                 viewer.print_sell(df_train[i + 1:i + 2].index.item(), open_price, additonal_text)
