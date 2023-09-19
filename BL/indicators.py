@@ -22,6 +22,7 @@ class Indicators:
     BB = "bb"
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
+    ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
 
     def __init__(self):
         self._indicators = []
@@ -39,6 +40,7 @@ class Indicators:
         self._add_indicator(self.PSAR, self._psar_predict)
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
+        self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
 
     def _add_indicator(self, name, function):
         self._indicators.append(Indicator(name, function))
@@ -256,3 +258,17 @@ class Indicators:
             return TradeAction.BUY
         else:
             return TradeAction.SELL
+
+    def _ichimoku_cloud_thickness_predict(self, df):
+        period = df[-4:]
+        cloud_thickness = period.SENKOU_A - period.SENKOU_B
+
+        if cloud_thickness.iloc[-1] > 0:
+            if cloud_thickness.iloc[-1] > cloud_thickness[-4:-1].max():
+                return TradeAction.BUY
+        else:
+            if cloud_thickness.iloc[-1] < cloud_thickness[-4:-1].min():
+                return TradeAction.SELL
+
+
+        return TradeAction.NONE
