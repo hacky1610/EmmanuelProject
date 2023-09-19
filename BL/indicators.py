@@ -57,10 +57,11 @@ class Indicators:
 
         raise Exception()
 
-    def get_random_indicator_names(self, must):
+    def get_random_indicator_names(self, must:str = None, min:int = 3, max:int = 6):
         all_indicator_names = [indikator.name for indikator in self._indicators]
-        r = random.choices(all_indicator_names, k=random.randint(3, 6))
-        r.append(must)
+        r = random.choices(all_indicator_names, k=random.randint(min, max))
+        if must is not None:
+            r.append(must)
 
         return list(set(r))
 

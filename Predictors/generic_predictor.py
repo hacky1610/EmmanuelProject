@@ -1,5 +1,6 @@
 import itertools
 import random
+from typing import List
 
 from BL.candle import Candle, Direction
 from BL.high_low_scanner import PivotScanner
@@ -21,6 +22,7 @@ class GenericPredictor(BasePredictor):
                  cache: BaseCache = BaseCache()):
         self._limit_factor: float = 2
         self._indicator_names = [Indicators.RSI, Indicators.EMA]
+        self._additional_indicators:List = []
         self._viewer = viewer
         if config is None:
             config = {}
@@ -31,6 +33,10 @@ class GenericPredictor(BasePredictor):
     def setup(self, config: dict):
         self._set_att(config, "_limit_factor")
         self._set_att(config, "_indicator_names")
+        self._set_att(config, "_additional_indicators")
+
+        if len(self._additional_indicators) > 0:
+            self._indicator_names = self._indicator_names + self._additional_indicators
         super().setup(config)
 
     def get_config(self) -> Series:
@@ -57,8 +63,23 @@ class GenericPredictor(BasePredictor):
 
         json_objs = []
 
-        for i in range(5):
-            names = Indicators().get_random_indicator_names(Indicators.ICHIMOKU)
+        for i in range(2):
+            r = random.choices([Indicators.RSI,Indicators.MACD, Indicators.EMA,Indicators.ICHIMOKU_KIJUN_CONFIRM], k=random.randint(2,3))
+            r.append(Indicators.ICHIMOKU)
+            json_objs.append({
+                "_indicator_names": r,
+                "version": version
+            })
+
+        for i in range(4):
+            r = Indicators().get_random_indicator_names(min=1, max=1)
+            json_objs.append({
+                "_additional_indicators": r,
+                "version": version
+            })
+
+        for i in range(4):
+            names = Indicators().get_random_indicator_names(must=Indicators.ICHIMOKU)
             json_objs.append({
                 "_indicator_names": names,
                 "version": version
