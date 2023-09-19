@@ -1,4 +1,6 @@
 import dropbox
+
+from BL.indicators import Indicators
 from Connectors import  Tiingo, TradeType, DropBoxService, DropBoxCache
 from Connectors.IG import IG
 from Predictors.chart_pattern_rectangle import RectanglePredictor
@@ -26,6 +28,7 @@ tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
 ig = IG(tracer=tracer, conf_reader=conf_reader, live=live)
 analytics = Analytics(tracer)
 predictor_class_list = [TrianglePredictor]
+indicators = Indicators()
 #endregion
 
 trader = Trader(
@@ -38,4 +41,4 @@ trader = Trader(
     cache=cache
 )
 
-trader.trade_markets(TradeType.FX)
+trader.trade_markets(TradeType.FX, indicators)

@@ -82,7 +82,7 @@ class Trader:
           """
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
 
-    def trade_markets(self, trade_type: TradeType):
+    def trade_markets(self, trade_type: TradeType, indicators):
         """Führt den Handel für alle Märkte eines bestimmten Typs durch.
 
                Args:
@@ -96,7 +96,7 @@ class Trader:
                 self._tracer.set_prefix(symbol)
                 for predictor_class in self._predictor_class_list:
                     self._tracer.debug(f"Try to trade {symbol} with {predictor_class.__name__}")
-                    predictor = predictor_class(tracer=self._tracer, cache=self._cache)
+                    predictor = predictor_class(tracer=self._tracer, cache=self._cache, indicators=indicators)
                     predictor.load(symbol)
                     self.trade(
                         predictor=predictor,

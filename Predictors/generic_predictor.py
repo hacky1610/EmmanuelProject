@@ -15,8 +15,6 @@ from UI.base_viewer import BaseViewer
 class GenericPredictor(BasePredictor):
     # https://www.youtube.com/watch?v=6c5exPYoz3U
 
-
-
     def __init__(self, indicators, config=None,
                  tracer: Tracer = ConsoleTracer(),
                  viewer: BaseViewer = BaseViewer(),
@@ -49,12 +47,10 @@ class GenericPredictor(BasePredictor):
         return parent_c.append(my_conf)
 
     def predict(self, df: DataFrame) -> (str, float, float):
-        #action = self._indicators.predict_all(df, 1.0)
+        # action = self._indicators.predict_all(df, 1.0)
         action = self._indicators.predict_some(df, self._indicator_names)
         stop = limit = df.ATR.mean() * self._limit_factor
         return action, stop, limit
-
-
 
     @staticmethod
     def _indicator_names_sets(version: str):
@@ -68,8 +64,6 @@ class GenericPredictor(BasePredictor):
                 "version": version
             })
         return json_objs
-
-
 
     @staticmethod
     def get_training_sets(version: str):

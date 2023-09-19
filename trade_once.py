@@ -1,3 +1,4 @@
+from BL.indicators import Indicators
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from Tracing.LogglyTracer import LogglyTracer
@@ -24,6 +25,7 @@ tiingo = Tiingo(tracer=tracer, conf_reader=env_reader, cache=cache)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
 predictor_class_list = [TrianglePredictor, RectanglePredictor]
 analytics = Analytics(tracer)
+indicators = Indicators()
 
 trader = Trader(
     ig=ig,
@@ -35,7 +37,7 @@ trader = Trader(
     cache=cache)
 
 tracer.debug(f"Start trading")
-trader.trade_markets(TradeType.FX)
+trader.trade_markets(TradeType.FX, indicators )
 
 # report
 # if datetime.now().hour == 18:
