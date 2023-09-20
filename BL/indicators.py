@@ -1,3 +1,5 @@
+from typing import List
+
 from BL.candle import Candle, Direction
 from BL.datatypes import TradeAction
 import random
@@ -46,7 +48,8 @@ class Indicators:
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
 
-        self._tracer:Tracer = tracer
+        self._tracer: Tracer = tracer
+
     def _add_indicator(self, name, function):
         self._indicators.append(Indicator(name, function))
 
@@ -57,11 +60,20 @@ class Indicators:
 
         raise Exception()
 
-    def get_random_indicator_names(self, must:str = None, min:int = 3, max:int = 6):
+    def get_random_indicator_names(self, must: str = None, skip:List = None,  min: int = 3, max: int = 6):
+
+
+
         all_indicator_names = [indikator.name for indikator in self._indicators]
+
+        if skip is not None:
+            all_indicator_names = [element for element in all_indicator_names if element not in skip]
+
         r = random.choices(all_indicator_names, k=random.randint(min, max))
         if must is not None:
             r.append(must)
+
+
 
         return list(set(r))
 
@@ -289,6 +301,5 @@ class Indicators:
         else:
             if cloud_thickness.iloc[-1] < cloud_thickness[-4:-1].min():
                 return TradeAction.SELL
-
 
         return TradeAction.NONE
