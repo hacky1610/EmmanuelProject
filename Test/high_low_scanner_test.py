@@ -74,9 +74,9 @@ class HighLowScannerTest(unittest.TestCase):
     def test_pointpos(self):
         # Testing pointpos function
         pivot_scanner = PivotScanner()
-        row_pivot_1 = {'pivot': 1, 'low': 10, 'high': 20}
-        row_pivot_2 = {'pivot': 2, 'low': 10, 'high': 20}
-        row_no_pivot = {'pivot': 0, 'low': 10, 'high': 20}
+        row_pivot_1 = {'pivot_point': 1, 'low': 10, 'high': 20}
+        row_pivot_2 = {'pivot_point': 2, 'low': 10, 'high': 20}
+        row_no_pivot = {'pivot_point': 0, 'low': 10, 'high': 20}
 
         # Call the function with different rows
         self.assertAlmostEqual(pivot_scanner.pointpos(row_pivot_1), 9.999)  # 10 - 1e-3
