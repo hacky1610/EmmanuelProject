@@ -17,14 +17,13 @@ class TestIndicators(unittest.TestCase):
         self.df_small = pd.DataFrame(data)
 
         data = {
-            'close': [100,100,100,115]
+            'close': [100, 100, 100, 115]
         }
 
         self.df_big = pd.DataFrame(data)
         self.indicators = Indicators()
 
     def test_ema_predict(self):
-
         # Teste Buy-Pfad
         data = DataFrame()
         data['EMA_10'] = [118]
@@ -49,8 +48,25 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._ema_predict(data)
         self.assertEqual(action, TradeAction.NONE)
 
-    def test_rsi_predict(self):
+    def test_rsi_convergence_predict(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['high'] = [110, 110, 110, 110, 110, 80, 110, 110, 110, 110, 110, 70, 110]
+        data['low'] = [90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
+        data['RSI'] = [50, 50, 50, 50, 30, 90, 50, 50, 50, 50, 50, 40, 50]
+        data = self.indicators._rsi_convergence_predict(data)
+        self.assertEqual(data, TradeAction.BUY)
 
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['high'] = [110, 110, 110, 110, 110, 130, 110, 110, 110, 110, 110, 140, 110]
+        data['low'] = [90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
+        data['RSI'] = [50,50 , 50, 50, 50, 90, 50, 50, 50, 50, 50, 60, 50]
+        data = self.indicators._rsi_convergence_predict(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+    def test_rsi_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()
         data['RSI'] = [51]
@@ -70,7 +86,6 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(action, TradeAction.NONE)
 
     def test_rsi_30_70_predict(self):
-
         # Teste Buy-Pfad
         data = DataFrame()
         data['RSI_SMOOTH'] = [80]
@@ -90,7 +105,6 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(action, TradeAction.NONE)
 
     def test_rsi_30_70_predict(self):
-
         # Teste Buy-Pfad
         data = DataFrame()
         data['RSI_SMOOTH'] = [80]
@@ -110,10 +124,9 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(action, TradeAction.NONE)
 
     def test_rsi_slope_predict(self):
-
         # Teste Buy-Pfad
         data = DataFrame()
-        data['RSI_SMOOTH'] = [80,80,60,80]
+        data['RSI_SMOOTH'] = [80, 80, 60, 80]
         data = self.indicators._rsi_smooth_slope_predict(data)
         self.assertEqual(data, TradeAction.BUY)
 
@@ -124,7 +137,6 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(action, TradeAction.SELL)
 
     def test_macd_predict(self):
-
         # Teste Buy-Pfad
         data = DataFrame()
         data['MACD'] = [80]
@@ -140,23 +152,21 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(action, TradeAction.SELL)
 
     def test_macd_cross_predict(self):
-
         # Teste Buy-Pfad
         data = DataFrame()
-        data['MACD'] = [80,70,80,80]
-        data['SIGNAL'] = [70,80,70,70]
+        data['MACD'] = [80, 70, 80, 80]
+        data['SIGNAL'] = [70, 80, 70, 70]
         data = self.indicators._macd_crossing_predict(data)
         self.assertEqual(data, TradeAction.BUY)
 
         # Teste Sell-Pfad
         data = DataFrame()
-        data['MACD'] = [80,80, 80, 70]
+        data['MACD'] = [80, 80, 80, 70]
         data['SIGNAL'] = [70, 70, 70, 80]
         action = self.indicators._macd_crossing_predict(data)
         self.assertEqual(action, TradeAction.SELL)
 
     def test_candle(self):
-
         # Teste Buy-Pfad
         data = DataFrame()
         data['close'] = [80]
@@ -176,8 +186,6 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(action, TradeAction.SELL)
 
     def test_macd_cross_predict(self):
-
-
         # Teste Buy-Pfad
         data = DataFrame()
         data['MACD'] = [80, 70, 80, 80]
@@ -193,8 +201,6 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(action, TradeAction.SELL)
 
     def test_ichimoku_chikou(self):
-
-
         # Teste Buy-Pfad
         data = DataFrame()
         data['CHIKOU'] = [80]
@@ -210,12 +216,10 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(action, TradeAction.SELL)
 
     def test_tenkan_kijun_chikou(self):
-
-
         # Teste Buy-Pfad
         data = DataFrame()
-        data['TENKAN'] = [60,70,75,80]
-        data['KIJUN'] = [70,70,70,70]
+        data['TENKAN'] = [60, 70, 75, 80]
+        data['KIJUN'] = [70, 70, 70, 70]
         data = self.indicators._ichimoku_tenkan_kijun_predict(data)
         self.assertEqual(data, TradeAction.BUY)
 
@@ -227,8 +231,6 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(action, TradeAction.SELL)
 
     def test_ichimoku_cloud(self):
-
-
         # Teste Buy-Pfad
         data = DataFrame()
         data['SENKOU_A'] = [80]
@@ -253,14 +255,11 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._ichimoku_cloud_predict(data)
         self.assertEqual(action, TradeAction.NONE)
 
-
     def test_ichimoku_cloud_thickness(self):
-
-
         # Teste Buy-Pfad
         data = DataFrame()
-        data['SENKOU_A'] = [60,75,80,90]
-        data['SENKOU_B'] = [70,70,70,70]
+        data['SENKOU_A'] = [60, 75, 80, 90]
+        data['SENKOU_B'] = [70, 70, 70, 70]
         data = self.indicators._ichimoku_cloud_thickness_predict(data)
         self.assertEqual(data, TradeAction.BUY)
 
@@ -281,7 +280,6 @@ class TestIndicators(unittest.TestCase):
         data['SENKOU_B'] = [70, 70, 70, 70]
         data = self.indicators._ichimoku_cloud_thickness_predict(data)
         self.assertEqual(data, TradeAction.NONE)
-
 
         # Teste None-Pfad
         data = DataFrame()
@@ -329,5 +327,3 @@ class TestIndicators(unittest.TestCase):
         data['EMA_50'] = [70, 70, 70, 70]
         data = self.indicators._ema_10_50_diff(data)
         self.assertEqual(data, TradeAction.NONE)
-
-

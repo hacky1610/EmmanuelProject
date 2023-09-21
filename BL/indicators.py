@@ -4,6 +4,7 @@ from BL.candle import Candle, Direction
 from BL.datatypes import TradeAction
 import random
 
+from BL.high_low_scanner import PivotScanner
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 
@@ -20,6 +21,7 @@ class Indicators:
     RSISLOPE = "rsi_slope"
     MACD = "macd"
     MACDCROSSING = "macd_crossing"
+    RSI_CONVERGENCE = "rsi_convergence"
     ADX = "adx"
     EMA = "ema"
     PSAR = "psar"
@@ -34,6 +36,7 @@ class Indicators:
         self._indicators = []
         self._indicator_confirm_factor = 0.7
         self._add_indicator(self.RSI, self._rsi_predict)
+        self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict)
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
         self._add_indicator(self.MACD, self._macd_predict)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
@@ -58,7 +61,7 @@ class Indicators:
             if i.name == name:
                 return i
 
-        raise Exception()
+        return None
 
     def get_random_indicator_names(self, must: str = None, skip:List = None,  min: int = 3, max: int = 6):
 
@@ -80,7 +83,9 @@ class Indicators:
     def _get_indicators_by_names(self, names):
         indicators = []
         for n in names:
-            indicators.append(self._get_indicator_by_name(n))
+            i = self._get_indicator_by_name(n)
+            if i is not None:
+                indicators.append(i)
 
         return indicators
 
@@ -140,6 +145,26 @@ class Indicators:
             return TradeAction.SELL
         elif current_rsi > 50:
             return TradeAction.BUY
+
+        return TradeAction.NONE
+
+    def _rsi_convergence_predict(self, df):
+        pv = PivotScanner()
+        pv.scan(df)
+        highs = df[df.pivot_point == 3.0]
+        sorted_highs = highs.sort_values(by=["high"])
+
+        if sorted_highs[-1:].index.item() > sorted_highs[-2:-1].index.item():
+            #Aufwärtstrend
+            if sorted_highs[-1:].RSI.item() < sorted_highs[-2:-1].RSI.item():
+                return TradeAction.SELL
+
+        lows = df[df.pivot_point == 1.0]
+        sorted_lows = lows.sort_values(by=["low"])
+        if sorted_lows[:1].index.item() < sorted_lows[1:2].index.item():
+            # Aufwärtstrend
+            if sorted_lows[:1].RSI.item() > sorted_lows[1:2].RSI.item():
+                return TradeAction.BUY
 
         return TradeAction.NONE
 

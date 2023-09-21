@@ -84,9 +84,9 @@ class PivotScanner:
 
     @staticmethod
     def pointpos(x):
-        if x['pivot'] == 1:
+        if x['pivot_point'] == 1:
             return x['low'] - 1e-3
-        elif x['pivot'] == 2:
+        elif x['pivot_point'] == 2:
             return x['high'] + 1e-3
         else:
             return np.nan
@@ -96,7 +96,7 @@ class PivotScanner:
                                               axis=1)
 
     def scan(self, df):
-        df['pivot'] = self.get_pivot_ids(df[:-2])
+        df['pivot_point'] = self.get_pivot_ids(df)
         df['pointpos'] = df.apply(lambda row: self.pointpos(row), axis=1)
 
     def _is_ascending_triangle(self, slope_min_line, slope_max_line, max_pivot_points, atr):
@@ -208,10 +208,10 @@ class PivotScanner:
         xxmax = np.array([])
 
         for i in range(candle_id - self._lookback, candle_id + 1):
-            if df.iloc[i].pivot == 1:
+            if df.iloc[i].pivot_point == 1:
                 minim = np.append(minim, df.iloc[i].low)
                 xxmin = np.append(xxmin, i)  # could be i instead df.iloc[i].name
-            if df.iloc[i].pivot == 2:
+            if df.iloc[i].pivot_point == 2:
                 maxim = np.append(maxim, df.iloc[i].high)
                 xxmax = np.append(xxmax, i)  # df.iloc[i].name
 

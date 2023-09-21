@@ -1,7 +1,6 @@
 import itertools
 from pandas import DataFrame, Series
 from BL.eval_result import EvalResult
-from BL.indicators import Indicators
 from Connectors.dropbox_cache import BaseCache
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
@@ -32,7 +31,7 @@ class BasePredictor:
         self._tracer = tracer
         self.lastState = ""
         self._cache = cache
-        self._indicators: Indicators = indicators
+        self._indicators = indicators
 
     def setup(self, config):
         self._set_att(config, "limit")
