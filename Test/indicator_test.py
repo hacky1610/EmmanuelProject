@@ -66,6 +66,14 @@ class TestIndicators(unittest.TestCase):
         data = self.indicators._rsi_convergence_predict(data)
         self.assertEqual(data, TradeAction.SELL)
 
+        # Teste None-Pfad
+        data = DataFrame()
+        data['high'] = [110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110]
+        data['low'] = [90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
+        data['RSI'] = [50, 50, 50, 50, 30, 90, 50, 50, 50, 50, 50, 40, 50]
+        data = self.indicators._rsi_convergence_predict(data)
+        self.assertEqual(data, TradeAction.NONE)
+
     def test_rsi_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()

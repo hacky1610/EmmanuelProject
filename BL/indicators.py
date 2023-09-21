@@ -150,18 +150,20 @@ class Indicators:
 
     def _rsi_convergence_predict(self, df):
         pv = PivotScanner()
+
+
         pv.scan(df)
         highs = df[df.pivot_point == 3.0]
         sorted_highs = highs.sort_values(by=["high"])
 
-        if sorted_highs[-1:].index.item() > sorted_highs[-2:-1].index.item():
+        if len(highs) >= 2 and  sorted_highs[-1:].index.item() > sorted_highs[-2:-1].index.item():
             #Aufwärtstrend
             if sorted_highs[-1:].RSI.item() < sorted_highs[-2:-1].RSI.item():
                 return TradeAction.SELL
 
         lows = df[df.pivot_point == 1.0]
         sorted_lows = lows.sort_values(by=["low"])
-        if sorted_lows[:1].index.item() < sorted_lows[1:2].index.item():
+        if len(lows) >= 2 and sorted_lows[:1].index.item() < sorted_lows[1:2].index.item():
             # Aufwärtstrend
             if sorted_lows[:1].RSI.item() > sorted_lows[1:2].RSI.item():
                 return TradeAction.BUY
