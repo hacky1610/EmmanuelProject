@@ -16,12 +16,15 @@ class Indicator:
 
 
 class Indicators:
+
+    #region Static Members
     RSI = "rsi"
     RSI30_70 = "rsi_30_70"
     RSISLOPE = "rsi_slope"
+    RSI_CONVERGENCE = "rsi_convergence"
     MACD = "macd"
     MACDCROSSING = "macd_crossing"
-    RSI_CONVERGENCE = "rsi_convergence"
+    MACD_CONVERGENCE = "macd_convergence"
     ADX = "adx"
     EMA = "ema"
     PSAR = "psar"
@@ -31,7 +34,9 @@ class Indicators:
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
     ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
+    #endregion
 
+    #region Constructor
     def __init__(self, tracer: Tracer = ConsoleTracer()):
         self._indicators = []
         self._indicator_confirm_factor = 0.7
@@ -40,6 +45,7 @@ class Indicators:
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
         self._add_indicator(self.MACD, self._macd_predict)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
+        self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
         self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.EMA, self._ema_predict)
         self._add_indicator(self.BB, self._bb_predict)
@@ -52,7 +58,9 @@ class Indicators:
         self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
 
         self._tracer: Tracer = tracer
+    #endregion
 
+    #region Get/Add Indicators
     def _add_indicator(self, name, function):
         self._indicators.append(Indicator(name, function))
 
@@ -88,7 +96,9 @@ class Indicators:
                 indicators.append(i)
 
         return indicators
+    #endregion
 
+    #region Predict
     def _predict(self, predict_values, factor=0.7):
         self._tracer.debug(f"Predict for multiple values {predict_values} and factor {factor}")
         if (predict_values.count(TradeAction.BUY) + predict_values.count(TradeAction.BOTH)) >= len(
@@ -113,7 +123,9 @@ class Indicators:
             predict_values.append(indicator.function(df))
 
         return self._predict(predict_values, factor)
+    #endregion
 
+    #region BL
     def _ema_predict(self, df):
         current_ema_10 = df.EMA_10.iloc[-1]
         current_ema_20 = df.EMA_20.iloc[-1]
@@ -148,27 +160,30 @@ class Indicators:
 
         return TradeAction.NONE
 
-    def _rsi_convergence_predict(self, df):
+    def _convergence_predict(self, df, indicator_name):
         pv = PivotScanner()
-
 
         pv.scan(df)
         highs = df[df.pivot_point == 3.0]
         sorted_highs = highs.sort_values(by=["high"])
 
-        if len(highs) >= 2 and  sorted_highs[-1:].index.item() > sorted_highs[-2:-1].index.item():
-            #Aufwärtstrend
-            if sorted_highs[-1:].RSI.item() < sorted_highs[-2:-1].RSI.item():
+        if len(highs) >= 2 and sorted_highs[-1:].index.item() > sorted_highs[-2:-1].index.item():
+            # Aufwärtstrend
+            if sorted_highs[-1:][indicator_name].item() < sorted_highs[-2:-1][indicator_name].item():
                 return TradeAction.SELL
 
         lows = df[df.pivot_point == 1.0]
         sorted_lows = lows.sort_values(by=["low"])
         if len(lows) >= 2 and sorted_lows[:1].index.item() < sorted_lows[1:2].index.item():
             # Aufwärtstrend
-            if sorted_lows[:1].RSI.item() > sorted_lows[1:2].RSI.item():
+            if sorted_lows[:1][indicator_name].item() > sorted_lows[1:2][indicator_name].item():
                 return TradeAction.BUY
 
         return TradeAction.NONE
+
+    def _rsi_convergence_predict(self, df):
+        return self._convergence_predict(df, "RSI")
+
 
     def _cci_predict(self, df):
         cci = df.CCI.iloc[-1]
@@ -207,6 +222,9 @@ class Indicators:
             return TradeAction.BUY
         else:
             return TradeAction.SELL
+
+    def _macd_convergence_predict(self, df):
+        return self._convergence_predict(df, "MACD")
 
     def _macd_crossing_predict(self, df):
         period = df[-4:-1]
@@ -330,3 +348,4 @@ class Indicators:
                 return TradeAction.SELL
 
         return TradeAction.NONE
+    #endregion
