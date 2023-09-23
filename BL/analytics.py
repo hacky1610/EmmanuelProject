@@ -17,7 +17,7 @@ class Analytics:
     def _create_additional_info(row, *args):
         text = ""
         for i in args:
-            text += f"{i}:" + "{0:0.5}".format(row[i].item()) + "\r\n"
+            text += f"{i}:" + "{0:0.5}".format(row[i]) + "\r\n"
 
         return text
 
@@ -62,7 +62,9 @@ class Analytics:
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
 
-            additonal_text = self._create_additional_info(df_train.iloc[current_index - 1], "RSI")
+            additonal_text = self._create_additional_info(df_train.iloc[current_index - 1],
+                                                          "RSI", "CCI", "MACD", "SIGNAL", "PSAR")
+            additonal_text += df_train.iloc[current_index - 1].date
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread

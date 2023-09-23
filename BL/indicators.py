@@ -19,10 +19,12 @@ class Indicators:
 
     #region Static Members
     RSI = "rsi"
+    RSI_LIMIT = "rsi_limit"
     RSI30_70 = "rsi_30_70"
     RSISLOPE = "rsi_slope"
     RSI_CONVERGENCE = "rsi_convergence"
     MACD = "macd"
+    MACD_ZERO = "macd_zero"
     MACDCROSSING = "macd_crossing"
     MACD_CONVERGENCE = "macd_convergence"
     ADX = "adx"
@@ -41,9 +43,11 @@ class Indicators:
         self._indicators = []
         self._indicator_confirm_factor = 0.7
         self._add_indicator(self.RSI, self._rsi_predict)
+        self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict)
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
         self._add_indicator(self.MACD, self._macd_predict)
+        self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
         self._add_indicator(self.ADX, self._adx_predict)
@@ -117,10 +121,11 @@ class Indicators:
 
         return self._predict(predict_values, 1.0)
 
-    def predict_all(self, df, factor: float = 0.7):
+    def predict_all(self, df, factor: float = 0.7, exclude:list = []):
         predict_values = []
         for indicator in self._indicators:
-            predict_values.append(indicator.function(df))
+            if indicator.name not in exclude:
+                predict_values.append(indicator.function(df))
 
         return self._predict(predict_values, factor)
     #endregion
@@ -156,6 +161,15 @@ class Indicators:
         if current_rsi < 50:
             return TradeAction.SELL
         elif current_rsi > 50:
+            return TradeAction.BUY
+
+        return TradeAction.NONE
+
+    def _rsi_limit_predict(self, df):
+        current_rsi = df.RSI.iloc[-1]
+        if 50 > current_rsi > 30:
+            return TradeAction.SELL
+        elif 70 > current_rsi > 50:
             return TradeAction.BUY
 
         return TradeAction.NONE
@@ -225,6 +239,16 @@ class Indicators:
 
     def _macd_convergence_predict(self, df):
         return self._convergence_predict(df, "MACD")
+
+    def _macd_predict_zero_line(self, df):
+        current_macd = df.MACD.iloc[-1]
+        current_signal = df.SIGNAL.iloc[-1]
+        if current_macd > current_signal and current_macd > 0:
+            return TradeAction.BUY
+        elif current_macd < current_signal and current_macd < 0:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
 
     def _macd_crossing_predict(self, df):
         period = df[-4:-1]

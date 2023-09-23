@@ -43,7 +43,7 @@ _indicators = Indicators()
 
 _train_version = "V2.20"
 _loop = True
-_async_exec = False #os.name != "nt"
+_async_exec =  os.name != "nt"
 
 
 def train_predictor(ig: IG,

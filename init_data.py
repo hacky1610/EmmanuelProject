@@ -1,7 +1,7 @@
 # region import
 import random
 from BL import DataProcessor, Analytics, ConfigReader
-from BL.eval_result import  EvalResultCollection
+from BL.eval_result import EvalResultCollection
 from Connectors import Tiingo, TradeType, DropBoxCache, DropBoxService
 from Connectors.IG import IG
 from UI.base_viewer import BaseViewer
@@ -15,8 +15,8 @@ dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, "DEMO")
 df_cache = DropBoxCache(ds)
 dp = DataProcessor()
-ig = IG(conf_reader)
-ti = Tiingo(conf_reader=conf_reader, cache=df_cache)
+_ig = IG(conf_reader)
+_ti = Tiingo(conf_reader=conf_reader, cache=df_cache)
 analytics = Analytics()
 trade_type = TradeType.FX
 results = EvalResultCollection()
@@ -32,10 +32,13 @@ def init_data(ig: IG, ti: Tiingo):
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     for m in markets:
         symbol = m["symbol"]
-        #symbol = "AUDJPY"
-        ti.init_data(symbol, trade_type)
+        #symbol = "AUDUSD"
+        try:
+            ti.init_data(symbol, trade_type, days=250)
+        except Exception as e:
+            print(e)
 
 
 # endregion
 
-init_data(ig, ti)
+init_data(_ig, _ti)

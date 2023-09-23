@@ -159,6 +159,21 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._macd_predict(data)
         self.assertEqual(action, TradeAction.SELL)
 
+    def test_macd_zero_predict(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['MACD'] = [80]
+        data['SIGNAL'] = [70]
+        data = self.indicators._macd_predict_zero_line(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['MACD'] = [-40]
+        data['SIGNAL'] = [-30]
+        action = self.indicators._macd_predict_zero_line(data)
+        self.assertEqual(action, TradeAction.SELL)
+
     def test_macd_cross_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()

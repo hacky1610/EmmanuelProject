@@ -7,6 +7,7 @@ from Connectors.IG import IG
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor
+from Predictors.ichi_predictor import IchimokuPredictor
 from UI.plotly_viewer import PlotlyViewer
 from UI.base_viewer import BaseViewer
 from BL.indicators import Indicators
@@ -67,4 +68,6 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
 viewer = PlotlyViewer(cache=df_cache)
 #evaluate_predictor(indicators, ig, ti, RectanglePredictor, viewer, only_test=False, only_one_position=only_one_position)
 #evaluate_predictor(indicators, ig, ti, TrianglePredictor, viewer, only_test=False, only_one_position=only_one_position)
+evaluate_predictor(indicators, ig, ti, GenericPredictor, viewer, only_test=False, only_one_position=only_one_position)
+#evaluate_predictor(indicators, ig, ti, IchimokuPredictor, viewer, only_test=False, only_one_position=only_one_position)
 evaluate_predictor(indicators, ig, ti, GenericPredictor, viewer, only_test=True, only_one_position=only_one_position)

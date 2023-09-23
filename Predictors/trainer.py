@@ -1,4 +1,7 @@
 import random
+from datetime import datetime
+from time import time
+
 from BL.eval_result import EvalResult
 
 
@@ -28,11 +31,15 @@ class Trainer:
             return False
         return True
 
-    def train(self, symbol: str, df, df_eval, version: str, predictor_class, indicators):
-        print(f"#####Train {symbol} with {predictor_class.__name__} #######################")
+    def _get_time_range(self, df):
+        return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
+
+    def     train(self, symbol: str, df, df_eval, version: str, predictor_class, indicators):
+        print(f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best = 0
         best_predictor = None
         predictor = None
+        startzeit = time()
 
         sets = predictor_class.get_training_sets(version)
         sets = random.choices(sets, k=7)
@@ -59,3 +66,5 @@ class Trainer:
         else:
             print(f"{symbol} Couldnt find good result")
             predictor.save(symbol)
+
+        print(f"Needed time for {symbol} -  {(time() - startzeit) / 60} minutes")
