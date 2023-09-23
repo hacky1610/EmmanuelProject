@@ -24,7 +24,7 @@ results = EvalResultCollection()
 indicators = []
 #endregion
 
-currency_markets = ig.get_markets(TradeType.FX)
+currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
 for market in currency_markets:
     symbol = market["symbol"]
     predictor = GenericPredictor(cache=df_cache, indicators=Indicators())

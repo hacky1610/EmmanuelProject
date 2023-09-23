@@ -97,6 +97,13 @@ class GenericPredictor(BasePredictor):
                 "_indicator_names": names,
                 "version": version
             })
+
+        for i in range(4):
+            names = Indicators().get_random_indicator_names(skip=to_skip)
+            json_objs.append({
+                "_indicator_names": names,
+                "version": version
+            })
         return json_objs
 
     @staticmethod
