@@ -33,9 +33,11 @@ class Indicators:
     ADX = "adx"
     EMA = "ema"
     PSAR = "psar"
+    PSAR_CHANGE = "psar_change"
     CCI = "cci"
     CANDLE = "candle"
     BB = "bb"
+    BB_MIDDLE_CROSS = "bb_middle_crossing"
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
     ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
@@ -59,10 +61,12 @@ class Indicators:
         self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.EMA, self._ema_predict)
         self._add_indicator(self.BB, self._bb_predict)
+        self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
         self._add_indicator(self.CANDLE, self._candle_predict)
         self._add_indicator(self.CCI, self._cci_predict)
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
         self._add_indicator(self.PSAR, self._psar_predict)
+        self._add_indicator(self.PSAR_CHANGE, self._psar_change_predict)
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
@@ -251,6 +255,18 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _psar_change_predict(self, df):
+        psar = df.PSAR.iloc[-1]
+        close = df.close.iloc[-1]
+        period = df[-3:-1]
+
+        if psar < close and len(period[period.PSAR > period.close]) > 0:
+            return TradeAction.BUY
+        elif psar > close and len(period[period.PSAR < period.close]) > 0:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
     def _candle_predict(self, df):
         c = Candle(df[-1:])
 
@@ -300,6 +316,18 @@ class Indicators:
         if bb_middle < close < bb_upper:
             return TradeAction.BUY
         elif bb_middle > close > bb_lower:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _bb_middle_cross_predict(self, df):
+        bb_middle = df.BB_MIDDLE.iloc[-1]
+        close = df.close.iloc[-1]
+        period = df[-3:-1]
+
+        if close > bb_middle and len(period[period.close < period.BB_MIDDLE]) > 0:
+            return TradeAction.BUY
+        elif close < bb_middle and len(period[close > period.BB_MIDDLE]) > 0:
             return TradeAction.SELL
 
         return TradeAction.NONE

@@ -72,7 +72,6 @@ class GenericPredictor(BasePredictor):
                    Indicators.CANDLE,
                    Indicators.MACDCROSSING,
                    Indicators.MACD_CONVERGENCE,
-                   Indicators.ICHIMOKU_CLOUD_CONFIRM,
                    Indicators.RSI30_70]
 
         for i in range(2):

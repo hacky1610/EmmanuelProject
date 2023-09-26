@@ -32,18 +32,18 @@ conf_reader = ConfigReader(live_config=live)
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, type_)
 cache = DropBoxCache(ds)
-_trainer = Trainer(Analytics(), cache=cache, check_trainable=False)
-_tiingo = Tiingo(conf_reader=conf_reader, cache=cache )
+_trainer = Trainer(Analytics(), cache=cache, check_trainable=True)
+_tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 _dp = DataProcessor()
 _trade_type = TradeType.FX
-_ig = IG(conf_reader=conf_reader,live=live )
+_ig = IG(conf_reader=conf_reader, live=live)
 _async_ex = AsyncExecutor(free_cpus=2)
 _indicators = Indicators()
 # endregion
 
 _train_version = "V2.20"
 _loop = True
-_async_exec =  os.name != "nt"
+_async_exec = os.name != "nt"
 
 
 def train_predictor(ig: IG,
@@ -59,8 +59,8 @@ def train_predictor(ig: IG,
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     if len(markets) == 0:
         return
-    for m in random.choices(markets,k=10):
-    #for m in markets:
+    for m in random.choices(markets, k=10):
+        # for m in markets:
         symbol = m["symbol"]
         # symbol = "AUDUSD"
         df, eval_df = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
