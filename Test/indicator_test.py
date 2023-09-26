@@ -74,6 +74,57 @@ class TestIndicators(unittest.TestCase):
         data = self.indicators._rsi_convergence_predict(data)
         self.assertEqual(data, TradeAction.NONE)
 
+    def test_rsi_break_predict(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['RSI'] = [40,40,40,51]
+        data = self.indicators._rsi_break_predict(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['RSI'] = [40, 40, 60, 40]
+        data = self.indicators._rsi_break_predict(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+    def test_williams_break_predict(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['WILLIAMS'] = [-40, -60, -60, -40]
+        data = self.indicators._williams_break_predict(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['WILLIAMS'] = [-40, -40, -30, -70]
+        data = self.indicators._williams_break_predict(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+    def test_williams_limit_predict(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['WILLIAMS'] = [-40]
+        data = self.indicators._williams_limit_predict(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['WILLIAMS'] = [-70]
+        data = self.indicators._williams_limit_predict(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+        # Teste None-Pfad
+        data = DataFrame()
+        data['WILLIAMS'] = [-10]
+        data = self.indicators._williams_limit_predict(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+        # Teste None-Pfad
+        data = DataFrame()
+        data['WILLIAMS'] = [-90]
+        data = self.indicators._williams_limit_predict(data)
+        self.assertEqual(data, TradeAction.NONE)
+
     def test_rsi_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()

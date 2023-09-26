@@ -20,9 +20,12 @@ class Indicators:
     #region Static Members
     RSI = "rsi"
     RSI_LIMIT = "rsi_limit"
+    RSI_BREAK = "rsi_break"
     RSI30_70 = "rsi_30_70"
     RSISLOPE = "rsi_slope"
     RSI_CONVERGENCE = "rsi_convergence"
+    WILLIAMS_LIMIT = "williams_limit"
+    WILLIAMS_BREAK = "williams_break"
     MACD = "macd"
     MACD_ZERO = "macd_zero"
     MACDCROSSING = "macd_crossing"
@@ -44,8 +47,11 @@ class Indicators:
         self._indicator_confirm_factor = 0.7
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
+        self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict)
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
+        self._add_indicator(self.WILLIAMS_BREAK, self._williams_break_predict)
+        self._add_indicator(self.WILLIAMS_LIMIT, self._williams_limit_predict)
         self._add_indicator(self.MACD, self._macd_predict)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
@@ -166,10 +172,34 @@ class Indicators:
         return TradeAction.NONE
 
     def _rsi_limit_predict(self, df):
-        current_rsi = df.RSI.iloc[-1]
-        if 50 > current_rsi > 30:
+        return self._oscillator_limit(df, "RSI", 50, 70, 30)
+
+    def _williams_limit_predict(self, df):
+        return self._oscillator_limit(df, "WILLIAMS", -50, -20, -80)
+
+    def _rsi_break_predict(self, df):
+        return self._oscillator_break(df, "RSI", 50)
+
+    def _williams_break_predict(self, df):
+        return self._oscillator_break(df, "WILLIAMS", -50)
+
+    @staticmethod
+    def _oscillator_break(df, name: str, middle_line: int):
+        period = df[-3:-1]
+        current_rsi = df[name].iloc[-1]
+        if current_rsi >= middle_line and len(period[period[name] < middle_line]) > 0:
+            return TradeAction.BUY
+        elif current_rsi <= middle_line and len(period[period[name] > middle_line]) > 0:
             return TradeAction.SELL
-        elif 70 > current_rsi > 50:
+
+        return TradeAction.NONE
+
+    @staticmethod
+    def _oscillator_limit(df, name: str, middle_line: int, upper_limit: int, lower_limit:int):
+        current_rsi = df[name].iloc[-1]
+        if middle_line > current_rsi > lower_limit:
+            return TradeAction.SELL
+        elif upper_limit > current_rsi > middle_line:
             return TradeAction.BUY
 
         return TradeAction.NONE

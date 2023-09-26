@@ -70,10 +70,14 @@ class GenericPredictor(BasePredictor):
         json_objs = []
         to_skip = [Indicators.BB,
                    Indicators.CANDLE,
-                   Indicators.MACDCROSSING]
+                   Indicators.MACDCROSSING,
+                   Indicators.MACD_CONVERGENCE,
+                   Indicators.ICHIMOKU_CLOUD_CONFIRM,
+                   Indicators.RSI30_70]
 
         for i in range(2):
             r = random.choices([Indicators.RSI,
+                                Indicators.RSI_LIMIT,
                                 Indicators.MACD,
                                 Indicators.EMA,
                                 Indicators.ICHIMOKU_KIJUN_CONFIRM],

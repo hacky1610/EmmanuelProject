@@ -30,7 +30,7 @@ class DataProcessor:
         df['RSI_7'] = TA.RSI(df, period=7)
         df['RSI_21'] = TA.RSI(df, period=21)
         df['ROC'] = TA.ROC(df, period=10)
-        df['%R'] = TA.WILLIAMS(df, period=14)
+        df['WILLIAMS'] = TA.WILLIAMS(df, period=14)
         md = TA.MACD(df)
         df['MACD'] = md['MACD']
         df['SIGNAL'] = md['SIGNAL']
