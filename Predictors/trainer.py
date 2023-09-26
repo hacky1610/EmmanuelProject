@@ -54,7 +54,7 @@ class Trainer:
 
             res: EvalResult = predictor.step(df, df_eval, self._analytics)
 
-            if res.get_reward() > best and res.get_win_loss() > 0.6 and res.get_trades() >= 2:
+            if res.get_reward() > best and res.get_win_loss() >= 0.75 and res.get_trades() >= 10:
                 best = res.get_reward()
                 best_predictor = predictor
                 best_predictor.save(symbol)
