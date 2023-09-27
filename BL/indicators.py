@@ -40,6 +40,7 @@ class Indicators:
     BB_MIDDLE_CROSS = "bb_middle_crossing"
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
+    ICHIMOKU_KIJUN_CROSS_CONFIRM = "ichi_kijun_cross_confirm"
     ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
     ICHIMOKU_CLOUD_THICKNESS = "ichi_cloud_thickness"
     #endregion
@@ -70,6 +71,7 @@ class Indicators:
         self._add_indicator(self.PSAR_CHANGE, self._psar_change_predict)
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
+        self._add_indicator(self.ICHIMOKU_KIJUN_CROSS_CONFIRM, self._ichimoku_kijun_close_cross_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_THICKNESS, self._ichimoku_cloud_thickness_predict)
 
@@ -383,6 +385,20 @@ class Indicators:
             return TradeAction.BUY
         else:
             return TradeAction.SELL
+
+    def _ichimoku_kijun_close_cross_predict(self, df):
+        # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
+        # Linie nur Long-Trades vorgenommen werden sollten, und unterhalb entsprechend nur Short-Trades.
+        kijun = df.KIJUN.iloc[-1]
+        close = df.close.iloc[-1]
+        period = df[-3:-1]
+
+        if close > kijun and len(period[period.close < period.KIJUN]) > 0:
+            return TradeAction.BUY
+        elif close < kijun and len(period[period.close > period.KIJUN]) > 0:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
 
     def _ichimoku_cloud_predict(self, df):
         senkou_a = df.SENKOU_A.iloc[-1]
