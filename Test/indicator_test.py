@@ -321,6 +321,42 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._ichimoku_tenkan_kijun_predict(data)
         self.assertEqual(action, TradeAction.SELL)
 
+    def test_kijun_close(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['KIJUN'] = [80]
+        data['close'] = [90]
+        data = self.indicators._ichimoku_kijun_close_predict(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['KIJUN'] = [80]
+        data['close'] = [70]
+        data = self.indicators._ichimoku_kijun_close_predict(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+    def test_kijun_close_cross(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['KIJUN'] = [80,80]
+        data['close'] = [70,90]
+        data = self.indicators._ichimoku_kijun_close_cross_predict(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['KIJUN'] = [80,80]
+        data['close'] = [90,70]
+        data = self.indicators._ichimoku_kijun_close_cross_predict(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+        data = DataFrame()
+        data['KIJUN'] = [80, 80]
+        data['close'] = [90, 90]
+        data = self.indicators._ichimoku_kijun_close_cross_predict(data)
+        self.assertEqual(data, TradeAction.NONE)
+
     def test_ichimoku_cloud(self):
         # Teste Buy-Pfad
         data = DataFrame()
