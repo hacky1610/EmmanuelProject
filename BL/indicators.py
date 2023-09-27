@@ -41,6 +41,7 @@ class Indicators:
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
     ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
+    ICHIMOKU_CLOUD_THICKNESS = "ichi_cloud_thickness"
     #endregion
 
     #region Constructor
@@ -70,6 +71,8 @@ class Indicators:
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
+        self._add_indicator(self.ICHIMOKU_CLOUD_THICKNESS, self._ichimoku_cloud_thickness_predict)
+
 
         self._tracer: Tracer = tracer
     #endregion
@@ -410,6 +413,16 @@ class Indicators:
         return TradeAction.NONE
 
     def _ichimoku_chikou_predict(self, df):
+        """
+                Wenn Chickou über Close -> BUY
+                Wenn Chickou unter Close -> SELL
+
+                Args:
+                df (DataFrame): Ein DataFrame mit den EMA-Werten für verschiedene Perioden.
+
+                Returns:
+                TradeAction: Eine Handlungsempfehlung, entweder "BUY", "SELL" oder "NONE".
+                """
         chikou = df.CHIKOU.iloc[-1]
         close = df.close.iloc[-1]
 
@@ -419,6 +432,15 @@ class Indicators:
             return TradeAction.SELL
 
     def _ichimoku_cloud_thickness_predict(self, df):
+        """
+           Wenn die Cloudn dicker wird, kann ein Handel eröffne werden
+
+           Args:
+           df (DataFrame): Ein DataFrame mit den EMA-Werten für verschiedene Perioden.
+
+           Returns:
+           TradeAction: Eine Handlungsempfehlung, entweder "BUY", "SELL" oder "NONE".
+           """
         period = df[-4:]
         cloud_thickness = period.SENKOU_A - period.SENKOU_B
 
