@@ -18,28 +18,38 @@ class Indicator:
 class Indicators:
 
     #region Static Members
+    #RSI
     RSI = "rsi"
     RSI_LIMIT = "rsi_limit"
     RSI_BREAK = "rsi_break"
+    RSI_BREAK3070 = "rsi_break_30_70"
     RSI30_70 = "rsi_30_70"
     RSISLOPE = "rsi_slope"
     RSI_CONVERGENCE = "rsi_convergence"
     RSI_CONVERGENCE5 = "rsi_convergence5"
     RSI_CONVERGENCE7 = "rsi_convergence7"
+    #Williams
     WILLIAMS_LIMIT = "williams_limit"
     WILLIAMS_BREAK = "williams_break"
+    #MACD
     MACD = "macd"
     MACD_ZERO = "macd_zero"
     MACDCROSSING = "macd_crossing"
     MACD_CONVERGENCE = "macd_convergence"
-    ADX = "adx"
+    #EMA
     EMA = "ema"
+    EMA10_50 = "ema_10_50"
+    #Others
+    ADX = "adx"
     PSAR = "psar"
     PSAR_CHANGE = "psar_change"
     CCI = "cci"
     CANDLE = "candle"
+    #Bollinger
     BB = "bb"
     BB_MIDDLE_CROSS = "bb_middle_crossing"
+    BB_BORDER_CROSS = "bb_border_crossing"
+    #ICHIMOKU
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
     ICHIMOKU_KIJUN_CROSS_CONFIRM = "ichi_kijun_cross_confirm"
@@ -55,6 +65,7 @@ class Indicators:
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
+        self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict)
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
         self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
         self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
@@ -64,27 +75,37 @@ class Indicators:
         #Williams
         self._add_indicator(self.WILLIAMS_BREAK, self._williams_break_predict)
         self._add_indicator(self.WILLIAMS_LIMIT, self._williams_limit_predict)
+
         #MACD
         self._add_indicator(self.MACD, self._macd_predict)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
 
-        self._add_indicator(self.ADX, self._adx_predict)
+        #EMA
         self._add_indicator(self.EMA, self._ema_predict)
-        self._add_indicator(self.BB, self._bb_predict)
-        self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
+        self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
+
+        #Others
+        self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.CANDLE, self._candle_predict)
         self._add_indicator(self.CCI, self._cci_predict)
+
+        #PSAR
         self._add_indicator(self.PSAR, self._psar_predict)
         self._add_indicator(self.PSAR_CHANGE, self._psar_change_predict)
-        #ICHIMOKI
+
+        #Bollinger
+        self._add_indicator(self.BB, self._bb_predict)
+        self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
+        self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict)
+
+        #ICHIMOKU
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CROSS_CONFIRM, self._ichimoku_kijun_close_cross_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_THICKNESS, self._ichimoku_cloud_thickness_predict)
-
 
         self._tracer: Tracer = tracer
     #endregion
@@ -197,18 +218,21 @@ class Indicators:
         return self._oscillator_limit(df, "WILLIAMS", -50, -20, -80)
 
     def _rsi_break_predict(self, df):
-        return self._oscillator_break(df, "RSI", 50)
+        return self._oscillator_break(df, "RSI", 50, 50)
+
+    def _rsi_break_30_70_predict(self, df):
+        return self._oscillator_break(df, "RSI", 70, 30)
 
     def _williams_break_predict(self, df):
-        return self._oscillator_break(df, "WILLIAMS", -50)
+        return self._oscillator_break(df, "WILLIAMS", -50, -50)
 
     @staticmethod
-    def _oscillator_break(df, name: str, middle_line: int):
+    def _oscillator_break(df, name: str, upper_line: int, lower_line:int):
         period = df[-3:-1]
         current_rsi = df[name].iloc[-1]
-        if current_rsi >= middle_line and len(period[period[name] < middle_line]) > 0:
+        if current_rsi >= lower_line and len(period[period[name] < lower_line]) > 0:
             return TradeAction.BUY
-        elif current_rsi <= middle_line and len(period[period[name] > middle_line]) > 0:
+        elif current_rsi <= upper_line and len(period[period[name] > upper_line]) > 0:
             return TradeAction.SELL
 
         return TradeAction.NONE
@@ -349,6 +373,19 @@ class Indicators:
         if close > bb_middle and len(period[period.close < period.BB_MIDDLE]) > 0:
             return TradeAction.BUY
         elif close < bb_middle and len(period[close > period.BB_MIDDLE]) > 0:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _bb_border_cross_predict(self, df):
+        bb_lower = df.BB_LOWER.iloc[-1]
+        bb_upper = df.BB_UPPER.iloc[-1]
+        close = df.close.iloc[-1]
+        period = df[-3:-1]
+
+        if close > bb_lower and len(period[period.close < period.BB_LOWER]) > 0:
+            return TradeAction.BUY
+        elif close < bb_upper and len(period[close > period.BB_UPPER]) > 0:
             return TradeAction.SELL
 
         return TradeAction.NONE

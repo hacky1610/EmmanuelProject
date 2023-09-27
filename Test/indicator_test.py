@@ -87,7 +87,20 @@ class TestIndicators(unittest.TestCase):
         data = self.indicators._rsi_break_predict(data)
         self.assertEqual(data, TradeAction.SELL)
 
-    def test_bb_crossing(self):
+    def test_rsi_30_70_break_predict(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['RSI'] = [40,40,20,51]
+        data = self.indicators._rsi_break_30_70_predict(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['RSI'] = [40, 40, 90, 66]
+        data = self.indicators._rsi_break_30_70_predict(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+    def test_bb_middle_crossing(self):
         # Teste Buy-Pfad
         data = DataFrame()
         data['BB_MIDDLE'] = [110, 110, 110, 110, 110, 80, 110, 110, 110, 110, 110, 70, 110]
