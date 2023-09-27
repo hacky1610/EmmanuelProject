@@ -1,160 +1,78 @@
+from BL.indicators import Indicators
+from Predictors.base_predictor import BasePredictor
 import unittest
-from pandas import Series, DataFrame
-from Predictors.cci_ema import CCI_EMA
-from Predictors.rsi_stoch import RsiStoch
-from Predictors.rsi_bb import RsiBB
+from datetime import datetime
+from pandas import DataFrame, Series
+
+from Predictors.chart_pattern import ChartPatternPredictor
 
 
-class PredictorTest(unittest.TestCase):
+class TestBasePredictor(unittest.TestCase):
 
-    def test_set_config_default(self):
-        pred = CCI_EMA({})
-        pred.set_config("Foo")
-        assert pred.upper_limit == 90
+    def test_get_last_scan_time(self):
+        base_predictor = BasePredictor(Indicators())
+        base_predictor.last_scan = datetime(2023, 8, 1, 12, 0, 0).isoformat()
 
-    def test_set_config_GBPUSD(self):
-        pred = CCI_EMA({})
-        pred.set_config("GBPUSD")
-        assert pred.upper_limit == 90
+        last_scan_time = base_predictor.get_last_scan_time()
 
+        self.assertEqual(last_scan_time, datetime(2023, 8, 1, 12, 0, 0))
 
-class RsiStochTest(unittest.TestCase):
-    def setUp(self):
-        self._predictor = RsiStoch()
+    def test_setup(self):
+        config = {
+            "limit": 1.5,
+            "stop": 1.5,
+            "version": "V2.0",
+            "last_scan": datetime(2023, 7, 31, 18, 0, 0).isoformat(),
+            "_reward": 100.0,
+            "_trades": 10,
+            "_wins": 7,
+            "_len_df": 1000,
+            "_trade_minutes": 240
+        }
+        base_predictor = BasePredictor(indicators=Indicators(), config=config)
 
-    def test_df_to_small(self):
-        df = DataFrame()
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        res = self._predictor.predict(df)
-        assert res == "none"
-
-    def test_df_no_peek(self):
-        pred = RsiStoch({})
-        df = DataFrame()
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        res = self._predictor.predict(df)
-        assert res == "none"
-
-    def test_buy(self):
-        pred = RsiStoch({})
-        df = DataFrame()
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 10, 10], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 10, 10], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([10, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        res = self._predictor.predict(df)
-        assert res == "buy"
-
-    def test_sell(self):
-        pred = RsiStoch({})
-        df = DataFrame()
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 90, 90], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 90, 90], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([90, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        res = self._predictor.predict(df)
-        assert res == "sell"
-
-    def test_none_peek_to_far_away(self):
-        pred = RsiStoch({})
-        df = DataFrame()
-        df = df.append(Series([50, 10, 10], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 10, 10], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([50, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        df = df.append(Series([10, 50, 50], index=["RSI", "STOCHD", "STOCHK"]), ignore_index=True)
-        res = pred.predict(df)
-        assert res == "none"
+        self.assertEqual(base_predictor.limit, 1.5)
+        self.assertEqual(base_predictor.stop, 1.5)
+        self.assertEqual(base_predictor.version, "V2.0")
+        self.assertEqual(base_predictor.get_last_scan_time(), datetime(2023, 7, 31, 18, 0, 0))
 
 
-class RsiBBTest(unittest.TestCase):
-    def setUp(self):
-        self._predictor = RsiBB()
+    def test_predict_not_implemented(self):
+        base_predictor = BasePredictor(Indicators())
 
-    def add_line(self, df: DataFrame, low, high, rsi, bb_lower, bb_middle,bb_upper):
-        return df.append(
-            Series([low, high, rsi, bb_lower,bb_middle, bb_upper,"date"],
-                   index=["low", "high", "RSI", "BB_LOWER","BB_MIDDLE" , "BB_UPPER", "date"]),
-            ignore_index=True)
+        with self.assertRaises(NotImplementedError):
+            base_predictor.predict(DataFrame())
 
-    def test_df_to_small(self):
-        df = DataFrame()
-        df = self.add_line(df, 900, 901, 50, 800, 900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800, 900, 1000)
-        res = self._predictor.predict(df)
-        assert res == "none"
+    def test_get_config(self):
+        base_predictor = BasePredictor(Indicators())
+        base_predictor.limit = 1.5
+        base_predictor.stop = 1.5
+        base_predictor.version = "V2.0"
+        base_predictor.last_scan = datetime(2023, 7, 31, 18, 0, 0).isoformat()
 
-    def test_df_no_peek(self):
-        df = DataFrame()
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        res = self._predictor.predict(df)
-        assert res == "none"
+        config_series = base_predictor.get_config()
 
-    def test_buy(self):
-        df = DataFrame()
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,1050, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,1000, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,950, 1000)
-        df = self.add_line(df, 700, 901, 20, 800,900, 1000)
-        res = self._predictor.predict(df)
-        assert res == "buy"
+        expected_series = Series([
+            "BasePredictor",
+            1.5,
+            1.5,
+            "V2.0",
+            datetime(2023, 7, 31, 18, 0, 0).isoformat()
+        ], index=["Type", "stop", "limit", "version", "last_scan"])
 
-    def test_sell(self):
-        df = DataFrame()
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,750, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,500, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,850, 1000)
-        df = self.add_line(df, 900, 1001, 81, 800,900, 1000)
-        res = self._predictor.predict(df)
-        assert res == "sell"
+        self.assertTrue(expected_series.equals(config_series))
 
-    def test_none_peek_to_far_away(self):
-        df = DataFrame()
-        df = self.add_line(df, 900, 1001, 81, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        df = self.add_line(df, 900, 901, 50, 800,900, 1000)
-        res = self._predictor.predict(df)
-        assert res == "none"
+
+
+
+
+
+
+
+
+
+
+
+
+
+

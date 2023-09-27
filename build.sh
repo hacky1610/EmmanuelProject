@@ -1,3 +1,3 @@
-docker build . -t "hacky1610/emmanuel:v5.1"
-docker push hacky1610/emmanuel:v5.1
+docker build . -t "hacky1610/emmanuel:v8.9"
+docker push hacky1610/emmanuel:v8.9
 

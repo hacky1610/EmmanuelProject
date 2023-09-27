@@ -75,12 +75,12 @@ class Tiingo:
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
                           clean_data: bool = True, trade_type: TradeType = TradeType.FX,
-                          trim: bool = False) -> DataFrame:
+                          use_cache: bool = True) -> DataFrame:
         res = DataFrame()
         name = f"{ticker}_{resolution}.csv"
-        cached = self._cache.load(name)
+        cached = self._cache.load_cache(name)
 
-        if len(cached) > 0:
+        if len(cached) > 0 and use_cache:
             lastchached = pd.to_datetime(cached[-1:].date.item())
             now = datetime.utcnow().replace(tzinfo=lastchached.tzinfo)
             toCompare = datetime(now.year, now.month, now.day, now.hour, tzinfo=lastchached.tzinfo) - timedelta(hours=1)
@@ -89,13 +89,15 @@ class Tiingo:
             else:
                 res = self._send_history_request(ticker, lastchached.strftime("%Y-%m-%d"), end, resolution, trade_type)
                 res = cached.append(res[res.date > cached[-1:].date.item()])
+                res.reset_index(inplace=True)
+                res.drop(columns=["index"], inplace=True)
         else:
             res = self._send_history_request(ticker, start, end, resolution, trade_type)
 
         if len(res) == 0:
             return res
 
-        self._cache.save(res, name)
+        self._cache.save_cache(res, name)
 
         if add_signals:
             data_processor.addSignals(res)
@@ -115,10 +117,48 @@ class Tiingo:
                                       end=None,
                                       data_processor=dp,
                                       trade_type=trade_type,
-                                      resolution="1hour",
-                                      trim=True)
+                                      resolution="1hour")
 
-    def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 30):
+    def _load_long_period(self, symbol: str, trade_type, days: int = 100, resolution: str = "1hour", window: int = 10):
+        name = f"{symbol}_{resolution}.csv"
+
+        cache = self._cache.load_cache(name)
+        start = datetime.strptime(cache.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")
+        diff = datetime.now() - start
+
+        if diff.days > 200:
+            return
+
+        end_time = datetime.now()
+        start_time = end_time - timedelta(days=window)
+        data = DataFrame()
+        for i in range(0, days, window):
+            df = self._send_history_request(ticker=symbol,
+                                            start=start_time,
+                                            end=end_time,
+                                            trade_type=trade_type,
+                                            resolution=resolution, )
+            if len(data) == 0:
+                data = df
+            else:
+                df = df[df.date < data[0:1].date.item()]
+                data = df.append(data)
+            end_time = start_time + timedelta(days=1)
+            start_time = end_time - timedelta(days=window)
+
+        if len(data) == 0:
+            return data
+
+        self._cache.save_cache(data, name)
+        print(f"Saved {name}")
+        return data
+
+    def init_data(self, symbol: str, trade_type, days: int = 100):
+
+        self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="1hour")
+        self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="5min")
+
+    def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 240):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,
@@ -126,12 +166,12 @@ class Tiingo:
                                     end=None,
                                     data_processor=dp,
                                     trade_type=trade_type,
-                                    resolution="1hour",
-                                    trim=True)
+                                    resolution="1hour")
         df_eval = self.load_data_by_date(ticker=symbol,
                                          start=start_time,
                                          end=None,
                                          data_processor=dp,
                                          trade_type=trade_type,
-                                         resolution="5min")
+                                         resolution="5min",
+                                         add_signals=False)
         return df, df_eval

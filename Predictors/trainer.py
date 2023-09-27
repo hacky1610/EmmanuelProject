@@ -1,134 +1,70 @@
-from pandas import DataFrame, Series
 import random
-import itertools
-from Predictors.sup_res_candle import SupResCandle
+from datetime import datetime
+from time import time
+
+from BL.eval_result import EvalResult
 
 
 class Trainer:
 
-    def __init__(self, analytics):
+    def __init__(self, analytics, cache, check_trainable = False):
         self._analytics = analytics
+        self._cache = cache
+        self._check_trainable = check_trainable
 
-    def _rsi_trainer(self, version: str):
+    def is_trained(self,
+                   symbol: str,
+                   version: str,
+                   predictor) -> bool:
+        saved_predictor = predictor(cache=self._cache).load(symbol)
+        return version == saved_predictor.version
 
-        json_objs = []
-        for rsi_upper, rsi_lower, trend in itertools.product(list(range(55, 80, 3)), list(range(20, 45, 3)),
-                                                             [None, .005, .01, .03, .05]):
-            json_objs.append({
-                "rsi_upper_limit": rsi_upper,
-                "rsi_lowe_limit": rsi_lower,
-                "rsi_trend": trend,
-                "version": version
-            })
-        return json_objs
+    def _trainable(self, predictor):
+        if not self._check_trainable:
+            return True
 
-    def _sr_trainer(self, version: str):
+        if predictor.get_last_result().get_trades() < 8:
+            print("To less trades")
+            return False
+        if predictor.get_last_result().get_win_loss() < 0.67:
+            print("To less win losses")
+            return False
+        return True
 
-        json_objs = []
-        for zig_zag_percent, merge_percent, min_bars_between_peaks in itertools.product([.3,.4,.5, .7, .9], [0.05, 0.1, .2, .3], [17,23,27]):
-            json_objs.append({
-                "zig_zag_percent": zig_zag_percent,
-                "merge_percent": merge_percent,
-                "min_bars_between_peaks": min_bars_between_peaks,
-                "version": version
-            })
-        return json_objs
+    def _get_time_range(self, df):
+        return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
-    def _sr_trainer2(self, version: str):
-
-        json_objs = []
-        for look_back_days, level_section_size in itertools.product([13,17,21,24],[0.7,1.0,1.3,1.7]):
-            json_objs.append({
-                "look_back_days": look_back_days,
-                "level_section_size": level_section_size,
-            })
-        return json_objs
-
-    def _BB_trainer(self, version: str):
-
-        json_objs = []
-        for p1, p2, peaks in itertools.product(
-                list(range(1, 5)),
-                list(range(1, 5)),
-                list(range(0, 4))):
-            json_objs.append({
-                "period_1": p1,
-                "period_2": p2,
-                "peak_count": peaks,
-                "version": version
-            })
-        return json_objs
-
-    def _stop_limt_trainer(self, version: str):
-
-        json_objs = []
-        for stop, limit in itertools.product(
-                [1.8, 2.0, 2.3, 2.7, 3.],
-                [1.8, 2.0, 2.3, 2.7, 3.]):
-            json_objs.append({
-                "stop": stop,
-                "limit": limit,
-                "version": version
-            })
-        return json_objs
-
-    def _BB_change_trainer(self, version: str):
-
-        json_objs = []
-        for change in [None, 0.1, 0.3, .5, .7, 1.0]:
-            json_objs.append({
-                "bb_change": change,
-                "version": version
-            })
-        return json_objs
-
-    def is_trained(self,symbol:str,version:str):
-        saved_predictor = SupResCandle().load(symbol)
-        return  version == saved_predictor.version
-
-    def train(self, symbol: str, df, df_eval, version: str) -> DataFrame:
-        print(f"#####Train {symbol}#######################")
+    def     train(self, symbol: str, df, df_eval, version: str, predictor_class, indicators):
+        print(f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best = 0
         best_predictor = None
-        result_df = DataFrame()
+        predictor = None
+        startzeit = time()
 
-        sets = self._stop_limt_trainer(version)
+        sets = predictor_class.get_training_sets(version)
+        sets = random.choices(sets, k=7)
         random.shuffle(sets)
+        sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
         for training_set in sets:
-            predictor = SupResCandle()
+            predictor = predictor_class(indicators=indicators, cache=self._cache)
             predictor.load(symbol)
+            if not self._trainable(predictor):
+                return
             predictor.setup(training_set)
-            res = predictor.step(df, df_eval, self._analytics)
 
-            reward = res["reward"]
-            avg_reward = res["success"]
-            frequ = res["trade_frequency"]
-            w_l = res["win_loss"]
-            minutes = res["avg_minutes"]
-            trades = res["trades"]
-            predictor.setup({"best_result": w_l,
-                             "best_reward": reward,
-                             "frequence": frequ,
-                             "trades": trades })
+            res: EvalResult = predictor.step(df, df_eval, self._analytics)
 
-            res = Series([symbol, reward, avg_reward, frequ, w_l, minutes],
-                         index=["Symbol", "Reward", "Avg Reward", "Frequence", "WinLos", "Minutes"])
-            res = res.append(predictor.get_config())
-            result_df = result_df.append(res,
-                                         ignore_index=True)
-
-            if reward > best and w_l > 0.66 and trades >= 5:
-                best = reward
+            if res.get_reward() > best and res.get_win_loss() >= 0.75 and res.get_trades() >= 10:
+                best = res.get_reward()
                 best_predictor = predictor
-                print(f"{symbol} - {predictor.get_config()} - "
-                      f"Avg Reward: {avg_reward:6.5} "
-                      f"Avg Min {int(minutes)}  "
-                      f"Freq: {frequ:4.3} "
-                      f"WL: {w_l:3.2}")
+                best_predictor.save(symbol)
+                print(f"{symbol} - {predictor.get_config()} - Result {res}")
 
         if best_predictor is not None:
             print(f"{symbol} Overwrite result.")
             best_predictor.save(symbol)
         else:
             print(f"{symbol} Couldnt find good result")
-        return result_df
+            predictor.save(symbol)
+
+        print(f"Needed time for {symbol} -  {(time() - startzeit) / 60} minutes")

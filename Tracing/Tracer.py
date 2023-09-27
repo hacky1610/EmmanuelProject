@@ -1,3 +1,4 @@
+import inspect
 class Tracer:
 
     def write(self, text):
@@ -11,5 +12,19 @@ class Tracer:
     def error(self, message):
         pass
 
+    def warning(self, message):
+        pass
+
     def result(self, message):
         pass
+
+    def set_prefix(self, prefix):
+        pass
+
+    @staticmethod
+    def _get_function():
+        stack = inspect.stack()
+        if len(stack) >= 3:
+            return inspect.stack()[2].function
+        return ""
+

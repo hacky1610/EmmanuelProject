@@ -1,7 +1,9 @@
 import os.path
 from trading_ig import IGService
 from trading_ig.rest import IGException
-from BL import DataProcessor, timedelta, BaseReader
+from BL import DataProcessor, timedelta, BaseReader, Analytics
+from Predictors.chart_pattern_rectangle import RectanglePredictor
+from Predictors.chart_pattern_triangle import TrianglePredictor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
@@ -11,6 +13,7 @@ import re
 import tempfile
 from datetime import datetime
 from Connectors.tiingo import TradeType
+from UI.plotly_viewer import PlotlyViewer
 
 
 class IG:
@@ -23,8 +26,16 @@ class IG:
         self.accNr = conf_reader.get("ig_demo_acc_nr")
         if live:
             self.type = "LIVE"
+            self._fx_id = 342535
+            self._crypto_id = None
+            self._gold_id = None
+            self._silver_id = None
         else:
             self.type = "DEMO"
+            self._fx_id = 264139
+            self._crypto_id = 1002200
+            self._gold_id = 104139
+            self._silver_id = 264211
         self._tracer: Tracer = tracer
         self.connect()
         self._excludedMarkets = ["CHFHUF", "EMFX USDTWD ($1 Contract)", "EMFX USDPHP ($1 Contract)",
@@ -63,7 +74,12 @@ class IG:
         }
 
     def _get_markets_by_id(self, id):
-        res = self.ig_service.fetch_sub_nodes_by_node(id)
+        try:
+            res = self.ig_service.fetch_sub_nodes_by_node(id)
+        except Exception:
+            self._tracer.error("Error while fetching nodes")
+            return DataFrame()
+
         if len(res["nodes"]) > 0:
             markets = DataFrame()
             for i in res["nodes"].id:
@@ -84,16 +100,26 @@ class IG:
 
     def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> DataFrame:
         if trade_type == TradeType.FX:
-            return self._get_markets(264139, tradeable)
+            return self._get_markets(self._fx_id, tradeable)
         elif trade_type == TradeType.CRYPTO:
-            markets = self._get_markets(1002200, tradeable)  # 668997 is only Bitcoin Cash
+            markets = self._get_markets(self._crypto_id , tradeable)  # 668997 is only Bitcoin Cash
             return self._set_symbol(markets)
         elif trade_type == TradeType.METAL:
-            gold = self._get_markets(104139, tradeable)  # Gold
-            silver = self._get_markets(264211, tradeable)
+            gold = self._get_markets(self._gold_id, tradeable)  # Gold
+            silver = self._get_markets(self._silver_id, tradeable)
             return self._set_symbol(gold + silver)
 
         return DataFrame()
+
+    def _get_spread(self, market_object):
+        offer = market_object.offer
+        bid = market_object.bid
+        scaling = market_object.scalingFactor
+
+        if offer is not None and bid is not None:
+            return (offer - bid) * scaling
+
+        return 0
 
     def _get_markets(self, id: int, tradebale: bool = True):
         market_df = self._get_markets_by_id(id)
@@ -109,7 +135,7 @@ class IG:
                 markets.append({
                     "symbol": symbol,
                     "epic": market[1].epic,
-                    "spread": (market[1].offer - market[1].bid) * market[1].scalingFactor,
+                    "spread": self._get_spread(market[1]),
                     "scaling": market[1].scalingFactor,
                     "size": 1.0,
                     "currency": self.get_currency(market[1].epic)
@@ -127,21 +153,38 @@ class IG:
         except Exception as ex:
             self._tracer.error(f"Error during open a IG Connection {ex}")
 
-    def get_currency(self, epic: str):
+    @staticmethod
+    def get_currency(epic: str):
         m = re.match("[\w]+\.[\w]+\.[\w]{3}([\w]{3})\.", epic)
         if m != None and len(m.groups()) == 1:
             return m.groups()[0]
         return "USD"
 
-    def buy(self, epic: str, stop: int, limit: int, size: float = 1.0, currency: str = "USD"):
+    def buy(self,
+            epic: str,
+            stop: int,
+            limit: int,
+            size: float = 1.0,
+            currency: str = "USD") -> (bool, str):
         return self.open(epic, "BUY", stop, limit, size, currency)
 
-    def sell(self, epic: str, stop: int, limit: int, size: float = 1.0, currency: str = "USD"):
+    def sell(self,
+             epic: str,
+             stop: int,
+             limit: int,
+             size: float = 1.0,
+             currency: str = "USD") -> (bool, str):
         return self.open(epic, "SELL", stop, limit, size, currency)
 
-    def open(self, epic: str, direction: str, stop: int = 25, limit: int = 25, size: float = 1.0,
-             currency: str = "USD") -> bool:
-        deal_reference = None
+    def open(self,
+             epic: str,
+             direction: str,
+             stop: int = 25,
+             limit: int = 25,
+             size: float = 1.0,
+             currency: str = "USD") -> (bool, dict):
+
+        deal_response:dict = {}
         result = False
         try:
             response = self.ig_service.create_open_position(
@@ -165,13 +208,13 @@ class IG:
             if response["dealStatus"] != "ACCEPTED":
                 self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
             else:
-                self._tracer.write(f"{direction} {epic} with limit {limit} and stop {stop}")
-                deal_reference = response["dealReference"]
+                self._tracer.write(f"Opened successfull {epic}. Deal details {response}")
                 result = True
+            deal_response = response
         except IGException as ex:
             self._tracer.error(f"Error during open a position. {ex} for {epic}")
 
-        return result, deal_reference
+        return result, deal_response
 
     def has_opened_positions(self):
         positions = self.ig_service.fetch_open_positions()
@@ -197,21 +240,13 @@ class IG:
                                                          max_span_seconds=60 * 50)
 
     def get_current_balance(self):
-        return self.ig_service.fetch_accounts().loc[0].balance
+        balance = self.ig_service.fetch_accounts().loc[0].balance
+        if balance == None:
+            return 0
+        return balance
 
-    def exit(self, deal_id: str, direction: str):
-        response = self.ig_service.close_open_position(
-            deal_id=deal_id,
-            direction=direction,
-            epic=None,
-            expiry="-",
-            order_type="MARKET",
-            size=1,
-            level=None,
-            quote_id=None
-        )
-
-    def _get_hours(self, start_date):
+    @staticmethod
+    def _get_hours(start_date):
         start_time = pd.to_datetime(start_date.openDateUtc.values[0])
         first_hours = datetime(start_time.year, start_time.month, start_time.day, start_time.hour)
         hours = [first_hours]
@@ -220,7 +255,8 @@ class IG:
 
         return hours
 
-    def fix_hist(self, hist):
+    @staticmethod
+    def fix_hist(hist):
         new_column = []
         for values in hist.instrumentName:
             res = re.search(r'\w{3}\/\w{3}', values)
@@ -234,9 +270,143 @@ class IG:
 
         return hist
 
-    def report_last_day(self, ti, dp_service):
-        start_time = (datetime.now() - timedelta(hours=60))
-        start_time_hours = (datetime.now() - timedelta(hours=200))
+    @staticmethod
+    def _print_open(fig, df, symbol):
+        fig.add_scatter(x=df["openDateUtc"],
+                        y=df["openLevel"],
+                        marker=dict(
+                            color='Blue',
+                            size=10,
+                            symbol=symbol
+                        ),
+                        )
+
+    @staticmethod
+    def _print_result(fig, df, color):
+        fig.add_scatter(x=df["dateUtc"],
+                        y=df["closeLevel"],
+                        marker=dict(
+                            color=color,
+                            size=10
+                        ),
+                        )
+
+    @staticmethod
+    def _print_win(fig, df):
+        IG._print_result(fig, df, "Green")
+
+    @staticmethod
+    def _print_loose(fig, df):
+        IG._print_result(fig, df, "Red")
+
+
+    @staticmethod
+    def _print_long_open(fig, df):
+        IG._print_open(fig, df, "triangle-up")
+
+
+    @staticmethod
+    def _print_short_open(fig, df):
+        IG._print_open(fig, df, "triangle-down")
+
+    @staticmethod
+    def _print_stop_limit():
+        pass
+            # stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
+            #                     color="#ff0000")
+            # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
+            #                      color="#00ff00", label="Limit")
+
+    @staticmethod
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics:Analytics):
+        df_results = DataFrame()
+        df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
+                                       None, DataProcessor())
+
+        df_hour = df_history[df_history["date"] > start_time_str]
+
+        temp_hist = hist[hist['name'] == ticker]
+
+        add_text = ""
+        for r in temp_hist.iterrows():
+            row = r[1]
+            t = (str(row.openDateUtc)).replace(" ", "T")
+            n = row["name"]
+            name = f"{t}_{n}"
+            deal_info = cache.load_deal_info(name)
+            if deal_info != None:
+                win_lost = deal_info["_wins"] / deal_info["_trades"]
+                add_text += f"{deal_info['Type']}: WL: {win_lost} - Trades: {deal_info['_trades']}"
+                if deal_info['Type'] == "RectanglePredictor":
+                    predictor = RectanglePredictor(config=deal_info)
+                else:
+                    predictor = TrianglePredictor(config=deal_info)
+                df, df_eval = ti.load_train_data(n, dp, TradeType.FX)
+                dt = datetime.fromisoformat(str(row.openDateUtc))
+                filter = datetime(dt.year,dt.month,dt.day, dt.hour) - timedelta(hours=1)
+                open_data = (df[df.date == filter.strftime("%Y-%m-%dT%H:00:00.000Z")]).iloc[0]
+                open_data["predictor"] = deal_info['Type']
+                open_data["ticker"] = ticker
+                if row.profitAndLoss > 0:
+                    open_data["wl"] = "won"
+                    if row["closeLevel"] >= row["openLevel"]:
+                        open_data["sl"] = "long"
+                    else:
+                        open_data["sl"] = "short"
+                else:
+                    open_data["wl"] = "lost"
+                    if row["closeLevel"] >= row["openLevel"]:
+                        open_data["sl"] = "short"
+                    else:
+                        open_data["sl"] = "long"
+
+                df_results = df_results.append(open_data)
+                res = analytics.evaluate(predictor,df,df_eval,name,PlotlyViewer(cache), filter=filter)
+                if (r[1]["profitAndLoss"] < 0 and res.get_win_loss() > 0) or (r[1]["profitAndLoss"] > 0 and res.get_win_loss() < 0):
+                    print("ERROR")
+            else:
+                add_text += "Error"
+
+
+        winner = temp_hist[temp_hist["profitAndLoss"] >= 0]
+        looser = temp_hist[temp_hist["profitAndLoss"] < 0]
+
+        long_winner = winner[winner["closeLevel"] >= winner["openLevel"]]
+        short_winner = winner[winner["closeLevel"] <= winner["openLevel"]]
+
+        long_looser = looser[looser["closeLevel"] < looser["openLevel"]]
+        short_looser = looser[looser["closeLevel"] > looser["openLevel"]]
+
+        shorts = short_winner.append(short_looser)
+        longs = long_winner.append(long_looser)
+
+        fig = go.Figure(data=[
+            go.Candlestick(x=df_hour['date'],
+                           open=df_hour['open'],
+                           high=df_hour['high'],
+                           low=df_hour['low'],
+                           close=df_hour['close']),
+        ])
+
+
+        #Open
+        IG._print_long_open(fig, longs)
+        IG._print_short_open(fig, shorts)
+
+        # result
+        IG._print_win(fig, winner)
+        IG._print_loose(fig, looser)
+
+        fig.update_layout(
+            title=f"Live trade of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a> {add_text}",
+            legend_title="Legend Title",
+        )
+        fig.show()
+        return df_results
+
+    def report_last_day(self, ti, cache, dp, analytics, days: int = 7):
+        start_time = (datetime.now() - timedelta(hours=days * 24))
+        start_time_hours = (datetime.now() - timedelta(days=days * 2))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
 
         hist = self.get_transaction_history(start_time)
@@ -247,7 +417,6 @@ class IG:
         hist.sort_index(inplace=True)
         hist.reset_index(inplace=True)
 
-        # hist['profitAndLoss'] = hist['profitAndLoss'].str.replace('E', '', regex=True).astype('float64')
         hist["openDateUtc"] = pd.to_datetime(hist["openDateUtc"])
         hist["dateUtc"] = pd.to_datetime(hist["dateUtc"])
         hist["openLevel"] = hist["openLevel"].astype("float")
@@ -255,147 +424,28 @@ class IG:
 
         hist = self.fix_hist(hist)
 
+        df_results = DataFrame()
         for ticker in hist['name'].unique():
+            df_res = self.report_symbol(ti=ti,
+                               ticker=ticker,
+                               start_time_hours=start_time_hours,
+                               start_time_str=start_time_str,
+                               hist=hist,
+                               cache=cache,
+                               dp=dp,
+                               analytics=analytics)
+            df_results = df_results.append(df_res)
 
-            df_min = ti.load_data_by_date(ticker, start_time.strftime("%Y-%m-%d"),
-                                          None, DataProcessor(), "1min", False, False)
-            df_hour = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
-                                           None, DataProcessor())
-            if len(df_min) == 0:
-                continue
+        print(df_results)
 
-            df_min = df_min[df_min["date"] > start_time_str]
-            df_hour = df_hour[df_hour["date"] > start_time_str]
 
-            temp_hist = hist[hist['name'] == ticker]
 
-            df_min = df_min.filter(["close", "date"])
 
-            winner = temp_hist[temp_hist["profitAndLoss"] >= 0]
-            looser = temp_hist[temp_hist["profitAndLoss"] < 0]
-
-            long_winner = winner[winner["closeLevel"] >= winner["openLevel"]]
-            short_winner = winner[winner["closeLevel"] <= winner["openLevel"]]
-
-            long_looser = looser[looser["closeLevel"] < looser["openLevel"]]
-            short_looser = looser[looser["closeLevel"] > looser["openLevel"]]
-
-            shorts = short_winner.append(short_looser)
-            longs = long_winner.append(long_looser)
-
-            fig = go.Figure(data=[
-                go.Line(x=df_min['date'], y=df_min["close"],
-                        line=dict(shape='linear', color='Gray')),
-                go.Line(x=df_hour['date'], y=df_hour["BB_LOWER"],
-                        line=dict(shape='linear', color='Orange')),
-                go.Line(x=df_hour['date'], y=df_hour["BB_UPPER"],
-                        line=dict(shape='linear', color='Orange')),
-                go.Candlestick(x=df_hour['date'],
-                               open=df_hour['open'],
-                               high=df_hour['high'],
-                               low=df_hour['low'],
-                               close=df_hour['close']),
-            ])
-            for i in range(len(shorts)):
-                row = shorts[i:i + 1]
-                pl = row.openLevel - row.closeLevel
-
-                # stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
-                #                     color="#ff0000")
-                # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
-                #                      color="#00ff00", label="Limit")
-
-            for i in range(len(longs)):
-                row = longs[i:i + 1]
-                pl = row.closeLevel - row.openLevel
-
-                # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl], color="#ff0000")
-                # plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl], color="#00ff00")
-
-            # long open
-            fig.add_scatter(x=long_winner["openDateUtc"],
-                            y=long_winner["openLevel"],
-                            marker=dict(
-                                color='Blue',
-                                size=10,
-                                symbol="triangle-up"
-                            ),
-                            )
-            fig.add_scatter(x=long_looser["openDateUtc"],
-                            y=long_looser["openLevel"],
-                            marker=dict(
-                                color='Blue',
-                                size=10,
-                                symbol="triangle-up"
-                            ),
-                            )
-
-            # short open
-            fig.add_scatter(x=short_winner["openDateUtc"],
-                            y=short_winner["openLevel"],
-                            marker=dict(
-                                color='Blue',
-                                size=10,
-                                symbol="triangle-down"
-                            ),
-                            )
-            fig.add_scatter(x=short_looser["openDateUtc"],
-                            y=short_looser["openLevel"],
-                            marker=dict(
-                                color='Blue',
-                                size=10,
-                                symbol="triangle-down"
-                            ),
-                            )
-
-            # long close
-            fig.add_scatter(x=long_winner["dateUtc"],
-                            y=long_winner["closeLevel"],
-                            marker=dict(
-                                color='Green',
-                                size=10
-                            ),
-                            )
-            fig.add_scatter(x=long_looser["dateUtc"],
-                            y=long_looser["closeLevel"],
-                            marker=dict(
-                                color='Red',
-                                size=10
-                            ),
-                            )
-
-            # short close
-            fig.add_scatter(x=short_winner["dateUtc"],
-                            y=short_winner["closeLevel"],
-                            marker=dict(
-                                color='Green',
-                                size=10
-                            ),
-                            )
-            fig.add_scatter(x=short_looser["dateUtc"],
-                            y=short_looser["closeLevel"],
-                            marker=dict(
-                                color='Red',
-                                size=10
-                            ),
-                            )
-
-            fig.update_layout(
-                title=ticker,
-                legend_title="Legend Title",
-            )
-            fig.show()
-
-            hours = self._get_hours(temp_hist[0:1])
-
-        # tempng = os.path.join(tempfile.gettempdir(), f"{ticker}.png")
-
-        # dp_service.upload(tempng,
-        #                  os.path.join(
-        #                      datetime.now().strftime("%Y_%m_%d"),
-        #                      f"{ticker}.png"))
-
-    def report_summary(self, ti, dp_service, delta: timedelta = timedelta(hours=24), name: str = "lastday"):
+    def report_summary(self,
+                       ti,
+                       dp_service,
+                       delta: timedelta = timedelta(hours=24),
+                       name: str = "lastday"):
         start_time = (datetime.now() - delta)
 
         hist = self.get_transaction_history(start_time)
@@ -413,6 +463,7 @@ class IG:
 
         summary_text += f"\n\rProfit: {all_profit}€"
         summary_text += f"\n\rPerformance: {profit_percentige}%"
+        summary_text += f"\n\rWin_Loss: {len(hist[hist.profitAndLoss > 0]) / len(hist) }"
         summary_text += f"\n\r|Ticker| Profit| Mean |"
         summary_text += f"\n\r|------| ------| ---- |"
         for ticker in hist['name'].unique():
@@ -426,13 +477,14 @@ class IG:
         with open(temp_file, "w") as f:
             f.write(summary_text)
 
-        dp_service.upload_file(temp_file, os.path.join(
-            datetime.now().strftime("%Y_%m_%d"),
-            f"summary_{name}.md"))
+        dp_service.upload_file(temp_file, f"{datetime.now().strftime('%Y_%m_%d')}/summary_{name}.md")
 
         return
 
-    def create_report(self, ti, dp_service):
+    def create_report(self, ti, dp_service, predictor, cache,dp, analytics):
         # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
-        # self.report_summary(ti, dp_service, timedelta(days=7), "lastweek")
-        self.report_last_day(ti, dp_service)
+        self.report_summary(ti=ti,
+                            dp_service=dp_service,
+                            delta=timedelta(days=7),
+                            name="lastweek")
+        self.report_last_day(ti=ti, cache=cache,dp=dp, analytics=analytics)
