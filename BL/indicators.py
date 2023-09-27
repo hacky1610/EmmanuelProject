@@ -24,6 +24,8 @@ class Indicators:
     RSI30_70 = "rsi_30_70"
     RSISLOPE = "rsi_slope"
     RSI_CONVERGENCE = "rsi_convergence"
+    RSI_CONVERGENCE5 = "rsi_convergence5"
+    RSI_CONVERGENCE7 = "rsi_convergence7"
     WILLIAMS_LIMIT = "williams_limit"
     WILLIAMS_BREAK = "williams_break"
     MACD = "macd"
@@ -49,26 +51,34 @@ class Indicators:
     def __init__(self, tracer: Tracer = ConsoleTracer()):
         self._indicators = []
         self._indicator_confirm_factor = 0.7
+        #RSI
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
-        self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict)
+        self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
+        self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
+        self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
+        self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
+
+        #Williams
         self._add_indicator(self.WILLIAMS_BREAK, self._williams_break_predict)
         self._add_indicator(self.WILLIAMS_LIMIT, self._williams_limit_predict)
+        #MACD
         self._add_indicator(self.MACD, self._macd_predict)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
+
         self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.EMA, self._ema_predict)
         self._add_indicator(self.BB, self._bb_predict)
         self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
         self._add_indicator(self.CANDLE, self._candle_predict)
         self._add_indicator(self.CCI, self._cci_predict)
-        self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
         self._add_indicator(self.PSAR, self._psar_predict)
         self._add_indicator(self.PSAR_CHANGE, self._psar_change_predict)
+        #ICHIMOKI
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CROSS_CONFIRM, self._ichimoku_kijun_close_cross_predict)
@@ -213,8 +223,8 @@ class Indicators:
 
         return TradeAction.NONE
 
-    def _convergence_predict(self, df, indicator_name):
-        pv = PivotScanner()
+    def _convergence_predict(self, df, indicator_name, b4after: int = 3):
+        pv = PivotScanner(be4after=b4after)
 
         pv.scan(df)
         highs = df[df.pivot_point == 3.0]
@@ -234,7 +244,13 @@ class Indicators:
 
         return TradeAction.NONE
 
-    def _rsi_convergence_predict(self, df):
+    def _rsi_convergence_predict5(self, df):
+        return self._convergence_predict(df, "RSI", 5)
+
+    def _rsi_convergence_predict7(self, df):
+        return self._convergence_predict(df, "RSI", 7)
+
+    def _rsi_convergence_predict3(self, df):
         return self._convergence_predict(df, "RSI")
 
 

@@ -54,7 +54,7 @@ class TestIndicators(unittest.TestCase):
         data['high'] = [110, 110, 110, 110, 110, 80, 110, 110, 110, 110, 110, 70, 110]
         data['low'] = [90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
         data['RSI'] = [50, 50, 50, 50, 30, 90, 50, 50, 50, 50, 50, 40, 50]
-        data = self.indicators._rsi_convergence_predict(data)
+        data = self.indicators._rsi_convergence_predict3(data)
         self.assertEqual(data, TradeAction.BUY)
 
 
@@ -63,7 +63,7 @@ class TestIndicators(unittest.TestCase):
         data['high'] = [110, 110, 110, 110, 110, 130, 110, 110, 110, 110, 110, 140, 110]
         data['low'] = [90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
         data['RSI'] = [50,50 , 50, 50, 50, 90, 50, 50, 50, 50, 50, 60, 50]
-        data = self.indicators._rsi_convergence_predict(data)
+        data = self.indicators._rsi_convergence_predict3(data)
         self.assertEqual(data, TradeAction.SELL)
 
         # Teste None-Pfad
@@ -71,7 +71,7 @@ class TestIndicators(unittest.TestCase):
         data['high'] = [110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110]
         data['low'] = [90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
         data['RSI'] = [50, 50, 50, 50, 30, 90, 50, 50, 50, 50, 50, 40, 50]
-        data = self.indicators._rsi_convergence_predict(data)
+        data = self.indicators._rsi_convergence_predict3(data)
         self.assertEqual(data, TradeAction.NONE)
 
     def test_rsi_break_predict(self):
