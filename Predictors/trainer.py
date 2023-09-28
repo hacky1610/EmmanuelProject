@@ -34,18 +34,14 @@ class Trainer:
     def _get_time_range(self, df):
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
-    def     train(self, symbol: str, df, df_eval, version: str, predictor_class, indicators):
+    def train(self, symbol: str, df, df_eval, version: str, predictor_class, indicators):
         print(f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
-        best = 0
+        best_win_loss = 0
         best_predictor = None
         predictor = None
         startzeit = time()
 
-        sets = predictor_class.get_training_sets(version)
-        sets = random.choices(sets, k=7)
-        random.shuffle(sets)
-        sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
-        for training_set in sets:
+        for training_set in self._get_sets(predictor_class, version):
             predictor = predictor_class(indicators=indicators, cache=self._cache)
             predictor.load(symbol)
             if not self._trainable(predictor):
@@ -54,11 +50,11 @@ class Trainer:
 
             res: EvalResult = predictor.step(df, df_eval, self._analytics)
 
-            if res.get_reward() > best and res.get_win_loss() >= 0.75 and res.get_trades() >= 10:
-                best = res.get_reward()
+            if res.get_win_loss() >= best_win_loss and res.get_trades() >= 15:
+                best_win_loss = res.get_win_loss()
                 best_predictor = predictor
                 best_predictor.save(symbol)
-                print(f"{symbol} - {predictor.get_config()} - Result {res}")
+                print(f"{symbol} - Result {res}")
 
         if best_predictor is not None:
             print(f"{symbol} Overwrite result.")
@@ -68,3 +64,10 @@ class Trainer:
             predictor.save(symbol)
 
         print(f"Needed time for {symbol} -  {(time() - startzeit) / 60} minutes")
+
+    def _get_sets(self, predictor_class, version):
+        sets = predictor_class.get_training_sets(version)
+        sets = random.choices(sets, k=7)
+        random.shuffle(sets)
+        sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
+        return sets
