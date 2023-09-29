@@ -1,15 +1,28 @@
+from typing import List
+
 from pandas import Series
+
+from BL.datatypes import TradeAction
+
+
+class TradeResult:
+     def __init__(self):
+         self.action:str = TradeAction.NONE
+         self.result:str  = ""
+         self.last_df_time = ""
+
 
 
 class EvalResult:
 
-    def __init__(self, reward: float = 0.0,
+    def __init__(self, trades_results:List = [], reward: float = 0.0,
                  trades: int = 0, len_df: int = 0, trade_minutes: int = 0, wins: int = 0):
         self._reward = reward
         self._trades = trades
         self._len_df = len_df
         self._trade_minutes = trade_minutes
         self._wins = wins
+        self._trade_results:List = trades_results
 
     def get_reward(self):
         return self._reward

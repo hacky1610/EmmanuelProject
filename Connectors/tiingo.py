@@ -75,7 +75,7 @@ class Tiingo:
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
                           clean_data: bool = True, trade_type: TradeType = TradeType.FX,
-                          use_cache: bool = True) -> DataFrame:
+                          use_cache: bool = True, validate:bool = True) -> DataFrame:
         res = DataFrame()
         name = f"{ticker}_{resolution}.csv"
         cached = self._cache.load_cache(name)
@@ -103,7 +103,14 @@ class Tiingo:
             data_processor.addSignals(res)
         if clean_data:
             data_processor.clean_data(res)
+        if validate:
+            self._validate(res)
         return res
+
+    def _validate(self, res):
+        t = (datetime.utcnow() - timedelta(hours=1)).strftime("%Y-%m-%dT%H:00:00.000Z")
+        if res.date.iloc[-1] != t:
+            raise Exception("Invalid date")
 
     @staticmethod
     def _get_start_time(days: int):
@@ -173,5 +180,6 @@ class Tiingo:
                                          data_processor=dp,
                                          trade_type=trade_type,
                                          resolution="5min",
-                                         add_signals=False)
+                                         add_signals=False,
+                                         validate=False)
         return df, df_eval

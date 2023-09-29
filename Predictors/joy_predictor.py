@@ -62,7 +62,7 @@ class JoyPredictor(BasePredictor):
     def _confirm_ratio_sets(version: str):
 
         json_objs = []
-        for ratio in [.6,.7,.8,.9,.95]:
+        for ratio in [.5, .6,.7,.8,.9,.95]:
 
             json_objs.append({
                 "_confirm_ratio": ratio,

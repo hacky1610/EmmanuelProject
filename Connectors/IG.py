@@ -2,8 +2,10 @@ import os.path
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from BL import DataProcessor, timedelta, BaseReader, Analytics
+from BL.indicators import Indicators
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
+from Predictors.generic_predictor import GenericPredictor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
@@ -337,10 +339,8 @@ class IG:
             if deal_info != None:
                 win_lost = deal_info["_wins"] / deal_info["_trades"]
                 add_text += f"{deal_info['Type']}: WL: {win_lost} - Trades: {deal_info['_trades']}"
-                if deal_info['Type'] == "RectanglePredictor":
-                    predictor = RectanglePredictor(config=deal_info)
-                else:
-                    predictor = TrianglePredictor(config=deal_info)
+                predictor = GenericPredictor(indicators=Indicators())
+                predictor.setup(deal_info)
                 df, df_eval = ti.load_train_data(n, dp, TradeType.FX)
                 dt = datetime.fromisoformat(str(row.openDateUtc))
                 filter = datetime(dt.year,dt.month,dt.day, dt.hour) - timedelta(hours=1)
@@ -359,6 +359,8 @@ class IG:
                         open_data["sl"] = "short"
                     else:
                         open_data["sl"] = "long"
+
+                df_validate = df[df.date <= filter.strftime("%Y-%m-%dT%H:00:00.000Z")]
 
                 df_results = df_results.append(open_data)
                 res = analytics.evaluate(predictor,df,df_eval,name,PlotlyViewer(cache), filter=filter)

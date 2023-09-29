@@ -418,7 +418,6 @@ class Indicators:
 
         actions = []
         actions.append(self._ichimoku_tenkan_kijun_predict(df))
-        actions.append(self._ichimoku_chikou_predict(df))
         actions.append(self._ichimoku_cloud_predict(df))
 
         if actions.count(TradeAction.BUY) == len(actions):
@@ -492,8 +491,12 @@ class Indicators:
                 Returns:
                 TradeAction: Eine Handlungsempfehlung, entweder "BUY", "SELL" oder "NONE".
                 """
-        chikou = df.CHIKOU.iloc[-1]
-        close = df.close.iloc[-1]
+
+        if len(df[-27:]) < 27:
+            return TradeAction.NONE
+
+        chikou = df.CHIKOU.iloc[-27]
+        close = df.close.iloc[-27]
 
         if chikou > close:
             return TradeAction.BUY
