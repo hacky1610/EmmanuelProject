@@ -3,6 +3,8 @@ from BL import DataProcessor, BaseReader
 import requests
 from pandas import DataFrame
 import pandas as pd
+
+from Predictors.utils import TimeUtils
 from Tracing.Tracer import Tracer
 from enum import Enum
 from Connectors.dropbox_cache import DropBoxCache
@@ -87,7 +89,7 @@ class Tiingo:
             if lastchached.to_pydatetime() == toCompare:
                 res = cached
             else:
-                res = self._send_history_request(ticker, lastchached.strftime("%Y-%m-%d"), end, resolution, trade_type)
+                res = self._send_history_request(ticker, TimeUtils.get_date_string(lastchached), end, resolution, trade_type)
                 res = cached.append(res[res.date > cached[-1:].date.item()])
                 res.reset_index(inplace=True)
                 res.drop(columns=["index"], inplace=True)
@@ -108,13 +110,14 @@ class Tiingo:
         return res
 
     def _validate(self, res):
-        t = (datetime.utcnow() - timedelta(hours=1)).strftime("%Y-%m-%dT%H:00:00.000Z")
-        if res.date.iloc[-1] != t:
+        if res.date.iloc[-1] != TimeUtils.get_time_string(datetime.utcnow() - timedelta(hours=1)):
             raise Exception("Invalid date")
 
     @staticmethod
     def _get_start_time(days: int):
-        return (date.today() - timedelta(days=days)).strftime("%Y-%m-%d")
+        return TimeUtils.get_date_string(date.today() - timedelta(days=days))
+
+
 
     def load_trade_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 30):
 

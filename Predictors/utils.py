@@ -1,12 +1,12 @@
-from Predictors.base_predictor import BasePredictor
-from pandas import DataFrame
+from datetime import datetime, date
 
-def compare(a:BasePredictor,b:BasePredictor,df:DataFrame):
-    similar = 0
-    for i in range(len(df)):
-        pred_a = a.predict(df[:i+1])
-        pred_b = b.predict(df[:i + 1])
-        if pred_a == pred_b:
-            similar += 1
 
-    print(similar/len(df))
+class TimeUtils:
+
+    @staticmethod
+    def get_time_string(da: datetime):
+        return da.strftime("%Y-%m-%dT%H:00:00.000Z")
+
+    @staticmethod
+    def get_date_string(da: date):
+        return da.strftime("%Y-%m-%d")

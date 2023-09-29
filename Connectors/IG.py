@@ -6,6 +6,7 @@ from BL.indicators import Indicators
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor
+from Predictors.utils import TimeUtils
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
@@ -104,7 +105,7 @@ class IG:
         if trade_type == TradeType.FX:
             return self._get_markets(self._fx_id, tradeable)
         elif trade_type == TradeType.CRYPTO:
-            markets = self._get_markets(self._crypto_id , tradeable)  # 668997 is only Bitcoin Cash
+            markets = self._get_markets(self._crypto_id, tradeable)  # 668997 is only Bitcoin Cash
             return self._set_symbol(markets)
         elif trade_type == TradeType.METAL:
             gold = self._get_markets(self._gold_id, tradeable)  # Gold
@@ -186,7 +187,7 @@ class IG:
              size: float = 1.0,
              currency: str = "USD") -> (bool, dict):
 
-        deal_response:dict = {}
+        deal_response: dict = {}
         result = False
         try:
             response = self.ig_service.create_open_position(
@@ -301,11 +302,9 @@ class IG:
     def _print_loose(fig, df):
         IG._print_result(fig, df, "Red")
 
-
     @staticmethod
     def _print_long_open(fig, df):
         IG._print_open(fig, df, "triangle-up")
-
 
     @staticmethod
     def _print_short_open(fig, df):
@@ -314,16 +313,18 @@ class IG:
     @staticmethod
     def _print_stop_limit():
         pass
-            # stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
-            #                     color="#ff0000")
-            # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
-            #                      color="#00ff00", label="Limit")
+        # stopLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel + pl, row.openLevel + pl],
+        #                     color="#ff0000")
+        # limitLine, = plt.plot([row.openDateUtc, row.dateUtc], [row.openLevel - pl, row.openLevel - pl],
+        #                      color="#00ff00", label="Limit")
 
     @staticmethod
-    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics:Analytics):
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics: Analytics):
         df_results = DataFrame()
-        df_history = ti.load_data_by_date(ticker, start_time_hours.strftime("%Y-%m-%d"),
-                                       None, DataProcessor())
+        df_history = ti.load_data_by_date(ticker,
+                                          TimeUtils.get_date_string(start_time_hours),
+                                          None,
+                                          DataProcessor())
 
         df_hour = df_history[df_history["date"] > start_time_str]
 
@@ -343,8 +344,8 @@ class IG:
                 predictor.setup(deal_info)
                 df, df_eval = ti.load_train_data(n, dp, TradeType.FX)
                 dt = datetime.fromisoformat(str(row.openDateUtc))
-                filter = datetime(dt.year,dt.month,dt.day, dt.hour) - timedelta(hours=1)
-                open_data = (df[df.date == filter.strftime("%Y-%m-%dT%H:00:00.000Z")]).iloc[0]
+                filter = datetime(dt.year, dt.month, dt.day, dt.hour) - timedelta(hours=1)
+                open_data = (df[df.date == TimeUtils.get_time_string(filter)]).iloc[0]
                 open_data["predictor"] = deal_info['Type']
                 open_data["ticker"] = ticker
                 if row.profitAndLoss > 0:
@@ -360,15 +361,13 @@ class IG:
                     else:
                         open_data["sl"] = "long"
 
-                df_validate = df[df.date <= filter.strftime("%Y-%m-%dT%H:00:00.000Z")]
-
                 df_results = df_results.append(open_data)
-                res = analytics.evaluate(predictor,df,df_eval,name,PlotlyViewer(cache), filter=filter)
-                if (r[1]["profitAndLoss"] < 0 and res.get_win_loss() > 0) or (r[1]["profitAndLoss"] > 0 and res.get_win_loss() < 0):
+                res = analytics.evaluate(predictor, df, df_eval, name, PlotlyViewer(cache), filter=filter)
+                if (r[1]["profitAndLoss"] < 0 and res.get_win_loss() > 0) or (
+                        r[1]["profitAndLoss"] > 0 and res.get_win_loss() < 0):
                     print("ERROR")
             else:
                 add_text += "Error"
-
 
         winner = temp_hist[temp_hist["profitAndLoss"] >= 0]
         looser = temp_hist[temp_hist["profitAndLoss"] < 0]
@@ -390,8 +389,7 @@ class IG:
                            close=df_hour['close']),
         ])
 
-
-        #Open
+        # Open
         IG._print_long_open(fig, longs)
         IG._print_short_open(fig, shorts)
 
@@ -429,19 +427,16 @@ class IG:
         df_results = DataFrame()
         for ticker in hist['name'].unique():
             df_res = self.report_symbol(ti=ti,
-                               ticker=ticker,
-                               start_time_hours=start_time_hours,
-                               start_time_str=start_time_str,
-                               hist=hist,
-                               cache=cache,
-                               dp=dp,
-                               analytics=analytics)
+                                        ticker=ticker,
+                                        start_time_hours=start_time_hours,
+                                        start_time_str=start_time_str,
+                                        hist=hist,
+                                        cache=cache,
+                                        dp=dp,
+                                        analytics=analytics)
             df_results = df_results.append(df_res)
 
         print(df_results)
-
-
-
 
     def report_summary(self,
                        ti,
@@ -465,7 +460,7 @@ class IG:
 
         summary_text += f"\n\rProfit: {all_profit}€"
         summary_text += f"\n\rPerformance: {profit_percentige}%"
-        summary_text += f"\n\rWin_Loss: {len(hist[hist.profitAndLoss > 0]) / len(hist) }"
+        summary_text += f"\n\rWin_Loss: {len(hist[hist.profitAndLoss > 0]) / len(hist)}"
         summary_text += f"\n\r|Ticker| Profit| Mean |"
         summary_text += f"\n\r|------| ------| ---- |"
         for ticker in hist['name'].unique():
@@ -483,10 +478,10 @@ class IG:
 
         return
 
-    def create_report(self, ti, dp_service, predictor, cache,dp, analytics):
+    def create_report(self, ti, dp_service, predictor, cache, dp, analytics):
         # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
         self.report_summary(ti=ti,
                             dp_service=dp_service,
                             delta=timedelta(days=7),
                             name="lastweek")
-        self.report_last_day(ti=ti, cache=cache,dp=dp, analytics=analytics)
+        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics)

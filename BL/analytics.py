@@ -1,4 +1,5 @@
 from BL.eval_result import EvalResult, TradeResult
+from Predictors.utils import TimeUtils
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame
@@ -49,7 +50,7 @@ class Analytics:
 
         for i in range(len(df_train) - 1):
             current_index = i + 1
-            if filter is not None and filter.strftime("%Y-%m-%dT%H:00:00.000Z") != df_train.date[current_index]:
+            if filter is not None and TimeUtils.get_time_string(filter) != df_train.date[current_index]:
                 continue
 
             open_price = df_train.open[current_index]
