@@ -20,6 +20,8 @@ from BL.analytics import Analytics
 from Connectors.dropboxservice import DropBoxService
 import dropbox
 
+from Predictors.utils import Reporting
+
 # endregions
 
 type_ = "DEMO"
@@ -40,6 +42,7 @@ _trade_type = TradeType.FX
 _ig = IG(conf_reader=conf_reader, live=live)
 _async_ex = AsyncExecutor(free_cpus=2)
 _indicators = Indicators()
+_reporting = Reporting(cache)
 # endregion
 
 _train_version = "V2.20"
@@ -56,10 +59,15 @@ def train_predictor(ig: IG,
                     predictor: Type,
                     async_exec: bool,
                     indicators: Indicators,
-                    trade_type: TradeType = TradeType.FX):
+                    reporting:Reporting,
+                    trade_type: TradeType = TradeType.FX,
+                    ):
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     if len(markets) == 0:
         return
+    best_indicators = reporting.get_best_indicators(markets, predictor)
+    print(f"Best indicators: {best_indicators}")
+
     for m in random.choices(markets, k=10):
         # for m in markets:
         symbol = m["symbol"]
@@ -68,14 +76,15 @@ def train_predictor(ig: IG,
         if len(df) > 0:
             if async_exec:
                 if __name__ == '__main__':
-                    async_ex.run(trainer.train, args=(symbol, df, eval_df, train_version, predictor, indicators))
+                    async_ex.run(trainer.train, args=(symbol, df, eval_df, train_version, predictor, indicators, best_indicators))
             else:
-                trainer.train(symbol, df, eval_df, train_version, predictor, indicators)
+                trainer.train(symbol, df, eval_df, train_version, predictor, indicators, best_indicators)
         else:
             print(f"No Data in {symbol} ")
 
 
 while True:
+
     train_predictor(ig=_ig,
                     trainer=_trainer,
                     tiingo=_tiingo,
@@ -84,6 +93,7 @@ while True:
                     async_exec=_async_exec,
                     train_version=_train_version,
                     dp=_dp,
+                    reporting=_reporting,
                     indicators=_indicators)
 
     train_predictor(ig=_ig,
@@ -94,6 +104,7 @@ while True:
                     async_exec=_async_exec,
                     train_version=_train_version,
                     dp=_dp,
+                    reporting=_reporting,
                     indicators=_indicators)
 
     # train_predictor(ig=_ig,

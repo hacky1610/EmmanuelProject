@@ -1,17 +1,13 @@
 import dropbox
-from BL.eval_result import EvalResultCollection
-from BL.indicators import Indicators
-from Connectors import DropBoxService, DropBoxCache
+from Connectors.dropbox_cache import DropBoxService, DropBoxCache
 from Connectors.IG import IG
 from BL import  ConfigReader
 from Connectors.tiingo import  TradeType
 import plotly.express as px
-from pandas import DataFrame,Series
 import pandas as pd
 from collections import Counter
-from Predictors.chart_pattern_rectangle import RectanglePredictor
-from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor
+from Predictors.utils import Reporting
 
 #region members
 conf_reader = ConfigReader()
@@ -19,41 +15,13 @@ dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
 df_cache = DropBoxCache(ds)
 ig = IG(ConfigReader())
-df = DataFrame()
-results = EvalResultCollection()
 indicators = []
 #endregion
 
 currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
 
-
-def report_predictor():
-    global indicators, df
-    symbol = market["symbol"]
-    predictor = GenericPredictor(cache=df_cache, indicators=Indicators())
-    predictor.load(symbol)
-    results.add(predictor.get_last_result())
-    indicators = indicators + predictor._indicator_names
-    print(f"{symbol} - {predictor.get_last_result()} {predictor._indicator_names}")
-    return Series([symbol,
-                           predictor._limit_factor,
-                           predictor._indicator_names,
-                           predictor.get_last_result().get_win_loss(),
-                           predictor.get_last_result().get_trade_frequency()],
-                          index=["symbol",
-                                 "_limit_factor",
-                                 "_indicator_names",
-                                 "win_los",
-                                 "frequence"])
-
-
-def method_name():
-    global market, df
-    for market in currency_markets:
-        df = df.append(report_predictor(), ignore_index=True)
-
-
-method_name()
+r = Reporting()
+results, df = r.report_predictors(currency_markets,GenericPredictor,df_cache)
 
 print(results)
 

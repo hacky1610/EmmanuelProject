@@ -1,10 +1,9 @@
 import os.path
 from trading_ig import IGService
 from trading_ig.rest import IGException
-from BL import DataProcessor, timedelta, BaseReader, Analytics
+from BL import DataProcessor, timedelta, BaseReader
+from BL.analytics import Analytics
 from BL.indicators import Indicators
-from Predictors.chart_pattern_rectangle import RectanglePredictor
-from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import TimeUtils
 from Tracing.ConsoleTracer import ConsoleTracer

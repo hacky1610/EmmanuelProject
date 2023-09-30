@@ -1,6 +1,7 @@
 import random
 from datetime import datetime
 from time import time
+from typing import List
 
 from BL.eval_result import EvalResult
 
@@ -34,14 +35,14 @@ class Trainer:
     def _get_time_range(self, df):
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
-    def train(self, symbol: str, df, df_eval, version: str, predictor_class, indicators):
+    def train(self, symbol: str, df, df_eval, version: str, predictor_class, indicators, best_indicators:List):
         print(f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best_win_loss = 0
         best_predictor = None
         predictor = None
         startzeit = time()
 
-        for training_set in self._get_sets(predictor_class, version):
+        for training_set in self._get_sets(predictor_class, version, best_indicators):
             predictor = predictor_class(indicators=indicators, cache=self._cache)
             predictor.load(symbol)
             if not self._trainable(predictor):
@@ -65,8 +66,8 @@ class Trainer:
 
         print(f"Needed time for {symbol} -  {(time() - startzeit) / 60} minutes")
 
-    def _get_sets(self, predictor_class, version):
-        sets = predictor_class.get_training_sets(version)
+    def _get_sets(self, predictor_class, version, best_indicators:List):
+        sets = predictor_class.get_training_sets(version, best_indicators)
         sets = random.choices(sets, k=7)
         random.shuffle(sets)
         sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
