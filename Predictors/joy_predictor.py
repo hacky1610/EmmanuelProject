@@ -23,6 +23,7 @@ class JoyPredictor(BasePredictor):
         self._limit_factor: float = 2
         self._confirm_ratio = 0.7
         self._viewer = viewer
+        self._indicator_names = ""
         if config is None:
             config = {}
 
@@ -68,6 +69,8 @@ class JoyPredictor(BasePredictor):
                 "_confirm_ratio": ratio,
                 "version": version
             })
+
+        return json_objs
 
 
     @staticmethod
