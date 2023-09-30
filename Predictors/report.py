@@ -25,21 +25,35 @@ indicators = []
 #endregion
 
 currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
-for market in currency_markets:
+
+
+def report_predictor():
+    global indicators, df
     symbol = market["symbol"]
     predictor = GenericPredictor(cache=df_cache, indicators=Indicators())
     predictor.load(symbol)
     results.add(predictor.get_last_result())
     indicators = indicators + predictor._indicator_names
     print(f"{symbol} - {predictor.get_last_result()} {predictor._indicator_names}")
-    df = df.append(Series([symbol,
+    return Series([symbol,
                            predictor._limit_factor,
+                           predictor._indicator_names,
                            predictor.get_last_result().get_win_loss(),
                            predictor.get_last_result().get_trade_frequency()],
                           index=["symbol",
                                  "_limit_factor",
+                                 "_indicator_names",
                                  "win_los",
-                                 "frequence"]),ignore_index=True)
+                                 "frequence"])
+
+
+def method_name():
+    global market, df
+    for market in currency_markets:
+        df = df.append(report_predictor(), ignore_index=True)
+
+
+method_name()
 
 print(results)
 
