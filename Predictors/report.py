@@ -37,8 +37,8 @@ for market in currency_markets:
                            predictor.get_last_result().get_win_loss(),
                            predictor.get_last_result().get_trade_frequency()],
                           index=["symbol",
-                                 "win_los",
                                  "_limit_factor",
+                                 "win_los",
                                  "frequence"]),ignore_index=True)
 
 print(results)
@@ -73,7 +73,7 @@ df.fillna(0,inplace=True)
 
 fig = px.bar(df, x='symbol', y='frequence')
 fig.show()
-fig = px.bar(df, x='symbol', y='win_los')
+fig = px.bar(df.sort_values(by=["win_los"]), x='symbol', y='win_los')
 fig.show()
 
 # Zählen Sie die Häufigkeit der Elemente

@@ -36,11 +36,14 @@ class Indicators:
     MACD_ZERO = "macd_zero"
     MACDCROSSING = "macd_crossing"
     MACD_CONVERGENCE = "macd_convergence"
+    MACD_MAX = "macd_max"
+    MACD_SLOPE = "macd_slope"
     #EMA
     EMA = "ema"
     EMA10_50 = "ema_10_50"
     #Others
     ADX = "adx"
+    ADX_MAX = "adx_max"
     PSAR = "psar"
     PSAR_CHANGE = "psar_change"
     CCI = "cci"
@@ -78,6 +81,8 @@ class Indicators:
 
         #MACD
         self._add_indicator(self.MACD, self._macd_predict)
+        self._add_indicator(self.MACD_SLOPE, self._macd_slope_predict)
+        self._add_indicator(self.MACD_MAX, self._macd_max_predict)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
@@ -86,8 +91,12 @@ class Indicators:
         self._add_indicator(self.EMA, self._ema_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
 
-        #Others
+        #ADX
         self._add_indicator(self.ADX, self._adx_predict)
+        self._add_indicator(self.ADX_MAX, self._adx_max_predict)
+
+        #Others
+
         self._add_indicator(self.CANDLE, self._candle_predict)
         self._add_indicator(self.CCI, self._cci_predict)
 
@@ -397,6 +406,34 @@ class Indicators:
             return TradeAction.BOTH
 
         return TradeAction.NONE
+
+    def _adx_max_predict(self, df):
+        current_adx = df.ADX.iloc[-1]
+        max_adx = df[(7 * 24) * -1:].ADX.max()
+
+        if current_adx > max_adx * 0.9:
+            return TradeAction.NONE
+
+        return TradeAction.BOTH
+
+    def _macd_max_predict(self, df):
+        current_macd = df.MACD.iloc[-1]
+        max_macd = df[(7 * 24) * -1:].MACD.max()
+
+        if current_macd > max_macd * 0.9:
+            return TradeAction.NONE
+
+        return TradeAction.BOTH
+
+    def _macd_slope_predict(self, df):
+        current_macd = df.MACD.iloc[-1]
+        before_macd = df.MACD.iloc[-2]
+
+        if current_macd > before_macd:
+            return TradeAction.BUY
+        else:
+            return TradeAction.SELL
+
 
     def _rsi_smooth_slope_predict(self, df):
         diff = df.RSI_SMOOTH.diff().iloc[-1]

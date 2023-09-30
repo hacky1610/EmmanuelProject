@@ -442,6 +442,32 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._adx_predict(data)
         self.assertEqual(action, TradeAction.NONE)
 
+    def test_max_adx(self):
+        # Teste Both-Pfad
+        data_both = DataFrame()
+        data_both['ADX'] = [40,40,30]
+        data = self.indicators._adx_max_predict(data_both)
+        self.assertEqual(data, TradeAction.BOTH)
+
+        # Teste Both-Pfad
+        data_both = DataFrame()
+        data_both['ADX'] = [29, 31, 30]
+        data = self.indicators._adx_max_predict(data_both)
+        self.assertEqual(data, TradeAction.NONE)
+
+    def test_macd_slope(self):
+        # Teste Buy-Pfad
+        data_both = DataFrame()
+        data_both['MACD'] = [100,100,101]
+        data = self.indicators._macd_slope_predict(data_both)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Buy-Pfad
+        data_both = DataFrame()
+        data_both['MACD'] = [100, 100, 90]
+        data = self.indicators._macd_slope_predict(data_both)
+        self.assertEqual(data, TradeAction.SELL)
+
     def test_ema_10_50(self):
         # Teste Buy-Pfad
         data = DataFrame()
