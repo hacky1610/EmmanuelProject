@@ -54,7 +54,7 @@ class Trainer:
                 best_win_loss = res.get_win_loss()
                 best_predictor = predictor
                 best_predictor.save(symbol)
-                print(f"{symbol} - Result {res}")
+                print(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
 
         if best_predictor is not None:
             print(f"{symbol} Overwrite result.")
