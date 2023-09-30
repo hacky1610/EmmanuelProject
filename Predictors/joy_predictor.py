@@ -74,6 +74,6 @@ class JoyPredictor(BasePredictor):
 
 
     @staticmethod
-    def get_training_sets(version: str):
+    def get_training_sets(version: str, indicator_names):
         return JoyPredictor._confirm_ratio_sets(version)
 
