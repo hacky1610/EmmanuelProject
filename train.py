@@ -63,7 +63,7 @@ def train_predictor(ig: IG,
     for m in random.choices(markets, k=10):
         # for m in markets:
         symbol = m["symbol"]
-        # symbol = "AUDUSD"
+        symbol = "USDDKK"
         df, eval_df = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         if len(df) > 0:
             if async_exec:

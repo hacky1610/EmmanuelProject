@@ -173,7 +173,8 @@ class Tiingo:
                                     end=None,
                                     data_processor=dp,
                                     trade_type=trade_type,
-                                    resolution="1hour")
+                                    resolution="1hour",
+                                    validate=False)
         df_eval = self.load_data_by_date(ticker=symbol,
                                          start=start_time,
                                          end=None,
