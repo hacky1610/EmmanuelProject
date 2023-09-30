@@ -468,6 +468,12 @@ class TestIndicators(unittest.TestCase):
         data = self.indicators._macd_slope_predict(data_both)
         self.assertEqual(data, TradeAction.SELL)
 
+        # Teste None-Pfad
+        data_both = DataFrame()
+        data_both['MACD'] = [90]
+        data = self.indicators._macd_slope_predict(data_both)
+        self.assertEqual(data, TradeAction.NONE)
+
     def test_ema_10_50(self):
         # Teste Buy-Pfad
         data = DataFrame()

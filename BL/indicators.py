@@ -426,6 +426,9 @@ class Indicators:
         return TradeAction.BOTH
 
     def _macd_slope_predict(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
         current_macd = df.MACD.iloc[-1]
         before_macd = df.MACD.iloc[-2]
 

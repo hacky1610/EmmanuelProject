@@ -69,4 +69,4 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
 #evaluate_predictor(indicators, ig, ti, RectanglePredictor, viewer, only_test=False, only_one_position=only_one_position)
 #evaluate_predictor(indicators, ig, ti, TrianglePredictor, viewer, only_test=False, only_one_position=only_one_position)
 #evaluate_predictor(indicators, ig, ti, IchimokuPredictor, viewer, only_test=False, only_one_position=only_one_position)
-evaluate_predictor(indicators, ig, ti, GenericPredictor, viewer, only_test=True, only_one_position=only_one_position)
+evaluate_predictor(indicators, ig, ti, GenericPredictor, viewer, only_test=False, only_one_position=only_one_position)
