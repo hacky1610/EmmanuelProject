@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock
-from Connectors import Tiingo
+from Connectors.tiingo import Tiingo
 
 
 class TiingoTest(unittest.TestCase):
