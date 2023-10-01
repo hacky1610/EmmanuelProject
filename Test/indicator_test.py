@@ -48,6 +48,16 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._ema_predict(data)
         self.assertEqual(action, TradeAction.NONE)
 
+    def test_ema_hist_predict(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['EMA_10'] = [118,118,118,118]
+        data['EMA_20'] = [115,115,115,115]
+        data['EMA_30'] = [114,114,114,114]
+        data = self.indicators._ema_hist_predict(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+
     def test_rsi_convergence_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()

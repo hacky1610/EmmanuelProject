@@ -42,6 +42,9 @@ class Indicators:
     MACD_SLOPE = "macd_slope"
     # EMA
     EMA = "ema"
+    EMA_HIST = "ema_hist"
+    EMA_ALLIGATOR = "ema_alligator"
+    EMA_ALLIGATOR_HIST = "ema_alligator_hist"
     EMA10_50 = "ema_10_50"
     # Others
     ADX = "adx"
@@ -94,6 +97,9 @@ class Indicators:
 
         # EMA
         self._add_indicator(self.EMA, self._ema_predict)
+        self._add_indicator(self.EMA_ALLIGATOR, self._ema_alligator_predict)
+        self._add_indicator(self.EMA_HIST, self._ema_hist_predict)
+        self._add_indicator(self.EMA_ALLIGATOR_HIST, self._ema_alligator_hist_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
 
         # ADX
@@ -199,6 +205,44 @@ class Indicators:
         if current_ema_10 > current_ema_20 > current_ema_30:
             return TradeAction.BUY
         elif current_ema_30 > current_ema_20 > current_ema_10:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _ema_hist_predict(self, df):
+        if len(df) < 4:
+            return TradeAction.NONE
+
+        period = df[-3:]
+
+        if len(period[period.EMA_10 > period.EMA_20]) > 0 and len(period[period.EMA_20 > period.EMA_30]) > 0:
+            return TradeAction.BUY
+        elif  len(period[period.EMA_10 < period.EMA_20]) > 0 and len(period[period.EMA_20 < period.EMA_30]) > 0:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _ema_alligator_hist_predict(self, df):
+        if len(df) < 4:
+            return TradeAction.NONE
+
+        period = df[-3:]
+
+        if len(period[period.EMA_5 > period.EMA_8]) > 0 and len(period[period.EMA_8 > period.EMA_13]) > 0:
+            return TradeAction.BUY
+        elif len(period[period.EMA_5 < period.EMA_8]) > 0 and len(period[period.EMA_8 < period.EMA_13]) > 0:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _ema_alligator_predict(self, df):
+        current_ema_13 = df.EMA_13.iloc[-1]
+        current_ema_8 = df.EMA_8.iloc[-1]
+        current_ema_5 = df.EMA_5.iloc[-1]
+
+        if current_ema_5 > current_ema_8 > current_ema_13:
+            return TradeAction.BUY
+        elif current_ema_13 > current_ema_8 > current_ema_5:
             return TradeAction.SELL
 
         return TradeAction.NONE
