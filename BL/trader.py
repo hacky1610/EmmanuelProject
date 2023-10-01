@@ -1,7 +1,8 @@
 from enum import Enum
 from typing import List, NamedTuple
 from datetime import datetime
-from BL import Analytics, DataProcessor
+from BL import  DataProcessor
+from BL.analytics import Analytics
 from BL.datatypes import TradeAction
 from Connectors import IG
 from Connectors.dropbox_cache import DropBoxCache

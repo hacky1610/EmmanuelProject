@@ -20,8 +20,11 @@ indicators = []
 
 currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
 
-r = Reporting()
-results, df = r.report_predictors(currency_markets,GenericPredictor,df_cache)
+r = Reporting(df_cache)
+results, df = r.report_predictors(currency_markets,GenericPredictor)
+
+for r in df.iterrows():
+    indicators = indicators + r[1]._indicator_names
 
 print(results)
 

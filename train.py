@@ -96,16 +96,16 @@ while True:
                     reporting=_reporting,
                     indicators=_indicators)
 
-    train_predictor(ig=_ig,
-                    trainer=_trainer,
-                    tiingo=_tiingo,
-                    predictor=JoyPredictor,
-                    async_ex=_async_ex,
-                    async_exec=_async_exec,
-                    train_version=_train_version,
-                    dp=_dp,
-                    reporting=_reporting,
-                    indicators=_indicators)
+    # train_predictor(ig=_ig,
+    #                 trainer=_trainer,
+    #                 tiingo=_tiingo,
+    #                 predictor=JoyPredictor,
+    #                 async_ex=_async_ex,
+    #                 async_exec=_async_exec,
+    #                 train_version=_train_version,
+    #                 dp=_dp,
+    #                 reporting=_reporting,
+    #                 indicators=_indicators)
 
     # train_predictor(ig=_ig,
     #                 trainer=_trainer,

@@ -18,7 +18,7 @@ class Indicator:
 class Indicators:
 
     #region Static Members
-    #RSI
+    #region RSI
     RSI = "rsi"
     RSI_LIMIT = "rsi_limit"
     RSI_BREAK = "rsi_break"
@@ -28,13 +28,16 @@ class Indicators:
     RSI_CONVERGENCE = "rsi_convergence"
     RSI_CONVERGENCE5 = "rsi_convergence5"
     RSI_CONVERGENCE7 = "rsi_convergence7"
-    #Williams
+    #endregion
+    #region Williams
     WILLIAMS_LIMIT = "williams_limit"
     WILLIAMS_BREAK = "williams_break"
+    #endregion
     #MACD
     MACD = "macd"
     MACD_ZERO = "macd_zero"
     MACDCROSSING = "macd_crossing"
+    MACDSINGALDIFF = "macd_signal_diff"
     MACD_CONVERGENCE = "macd_convergence"
     MACD_MAX = "macd_max"
     MACD_SLOPE = "macd_slope"
@@ -86,6 +89,7 @@ class Indicators:
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
+        self._add_indicator(self.MACDSINGALDIFF, self._macd_signal_diff_predict)
 
         #EMA
         self._add_indicator(self.EMA, self._ema_predict)
@@ -361,6 +365,23 @@ class Indicators:
             if len(period[period.MACD > period.SIGNAL]) > 0:
                 return TradeAction.SELL
 
+    def _macd_signal_diff_predict(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        current_macd = df.MACD.iloc[-1]
+        current_signal = df.SIGNAL.iloc[-1]
+        before_macd = df.MACD.iloc[-2]
+        before_signal = df.SIGNAL.iloc[-2]
+        if current_macd > current_signal and before_macd > before_signal:
+            if (current_macd - current_signal) > (before_macd - before_signal):
+                return TradeAction.BUY
+        elif current_macd < current_signal and before_macd < before_signal:
+            if (current_signal - current_macd) > (before_signal- before_macd):
+                return TradeAction.SELL
+
+        return TradeAction.NONE
+
     def _bb_predict(self, df):
         bb_middle = df.BB_MIDDLE.iloc[-1]
         bb_upper = df.BB_UPPER.iloc[-1]
@@ -416,11 +437,29 @@ class Indicators:
 
         return TradeAction.BOTH
 
+    def _macd_max(self, df, days, ratio):
+        current_macd = df.MACD.iloc[-1]
+        max_macd = df[(days * 24) * -1:].MACD.max()
+
+        if current_macd > max_macd * ratio:
+            return TradeAction.NONE
+
+        return TradeAction.BOTH
+
     def _macd_max_predict(self, df):
         current_macd = df.MACD.iloc[-1]
         max_macd = df[(7 * 24) * -1:].MACD.max()
 
         if current_macd > max_macd * 0.9:
+            return TradeAction.NONE
+
+        return TradeAction.BOTH
+
+    def _macd_max_predict2(self, df):
+        current_macd = df.MACD.iloc[-1]
+        max_macd = df[(14 * 24) * -1:].MACD.max()
+
+        if current_macd > max_macd * 0.8:
             return TradeAction.NONE
 
         return TradeAction.BOTH
