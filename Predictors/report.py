@@ -1,17 +1,13 @@
 import dropbox
-from BL.eval_result import EvalResultCollection
-from BL.indicators import Indicators
-from Connectors import DropBoxService, DropBoxCache
+from Connectors.dropbox_cache import DropBoxService, DropBoxCache
 from Connectors.IG import IG
 from BL import  ConfigReader
 from Connectors.tiingo import  TradeType
 import plotly.express as px
-from pandas import DataFrame,Series
 import pandas as pd
 from collections import Counter
-from Predictors.chart_pattern_rectangle import RectanglePredictor
-from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor
+from Predictors.utils import Reporting
 
 #region members
 conf_reader = ConfigReader()
@@ -19,27 +15,16 @@ dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
 df_cache = DropBoxCache(ds)
 ig = IG(ConfigReader())
-df = DataFrame()
-results = EvalResultCollection()
 indicators = []
 #endregion
 
 currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
-for market in currency_markets:
-    symbol = market["symbol"]
-    predictor = GenericPredictor(cache=df_cache, indicators=Indicators())
-    predictor.load(symbol)
-    results.add(predictor.get_last_result())
-    indicators = indicators + predictor._indicator_names
-    print(f"{symbol} - {predictor.get_last_result()} {predictor._indicator_names}")
-    df = df.append(Series([symbol,
-                           predictor._limit_factor,
-                           predictor.get_last_result().get_win_loss(),
-                           predictor.get_last_result().get_trade_frequency()],
-                          index=["symbol",
-                                 "win_los",
-                                 "_limit_factor",
-                                 "frequence"]),ignore_index=True)
+
+r = Reporting(df_cache)
+results, df = r.report_predictors(currency_markets,GenericPredictor)
+
+for r in df.iterrows():
+    indicators = indicators + r[1]._indicator_names
 
 print(results)
 
@@ -73,7 +58,7 @@ df.fillna(0,inplace=True)
 
 fig = px.bar(df, x='symbol', y='frequence')
 fig.show()
-fig = px.bar(df, x='symbol', y='win_los')
+fig = px.bar(df.sort_values(by=["win_los"]), x='symbol', y='win_los')
 fig.show()
 
 # Zählen Sie die Häufigkeit der Elemente

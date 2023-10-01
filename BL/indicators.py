@@ -18,7 +18,7 @@ class Indicator:
 class Indicators:
 
     #region Static Members
-    #RSI
+    #region RSI
     RSI = "rsi"
     RSI_LIMIT = "rsi_limit"
     RSI_BREAK = "rsi_break"
@@ -28,19 +28,25 @@ class Indicators:
     RSI_CONVERGENCE = "rsi_convergence"
     RSI_CONVERGENCE5 = "rsi_convergence5"
     RSI_CONVERGENCE7 = "rsi_convergence7"
-    #Williams
+    #endregion
+    #region Williams
     WILLIAMS_LIMIT = "williams_limit"
     WILLIAMS_BREAK = "williams_break"
+    #endregion
     #MACD
     MACD = "macd"
     MACD_ZERO = "macd_zero"
     MACDCROSSING = "macd_crossing"
+    MACDSINGALDIFF = "macd_signal_diff"
     MACD_CONVERGENCE = "macd_convergence"
+    MACD_MAX = "macd_max"
+    MACD_SLOPE = "macd_slope"
     #EMA
     EMA = "ema"
     EMA10_50 = "ema_10_50"
     #Others
     ADX = "adx"
+    ADX_MAX = "adx_max"
     PSAR = "psar"
     PSAR_CHANGE = "psar_change"
     CCI = "cci"
@@ -78,16 +84,23 @@ class Indicators:
 
         #MACD
         self._add_indicator(self.MACD, self._macd_predict)
+        self._add_indicator(self.MACD_SLOPE, self._macd_slope_predict)
+        self._add_indicator(self.MACD_MAX, self._macd_max_predict)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
+        self._add_indicator(self.MACDSINGALDIFF, self._macd_signal_diff_predict)
 
         #EMA
         self._add_indicator(self.EMA, self._ema_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
 
-        #Others
+        #ADX
         self._add_indicator(self.ADX, self._adx_predict)
+        self._add_indicator(self.ADX_MAX, self._adx_max_predict)
+
+        #Others
+
         self._add_indicator(self.CANDLE, self._candle_predict)
         self._add_indicator(self.CCI, self._cci_predict)
 
@@ -352,6 +365,23 @@ class Indicators:
             if len(period[period.MACD > period.SIGNAL]) > 0:
                 return TradeAction.SELL
 
+    def _macd_signal_diff_predict(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        current_macd = df.MACD.iloc[-1]
+        current_signal = df.SIGNAL.iloc[-1]
+        before_macd = df.MACD.iloc[-2]
+        before_signal = df.SIGNAL.iloc[-2]
+        if current_macd > current_signal and before_macd > before_signal:
+            if (current_macd - current_signal) > (before_macd - before_signal):
+                return TradeAction.BUY
+        elif current_macd < current_signal and before_macd < before_signal:
+            if (current_signal - current_macd) > (before_signal- before_macd):
+                return TradeAction.SELL
+
+        return TradeAction.NONE
+
     def _bb_predict(self, df):
         bb_middle = df.BB_MIDDLE.iloc[-1]
         bb_upper = df.BB_UPPER.iloc[-1]
@@ -398,6 +428,55 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _adx_max_predict(self, df):
+        current_adx = df.ADX.iloc[-1]
+        max_adx = df[(7 * 24) * -1:].ADX.max()
+
+        if current_adx > max_adx * 0.9:
+            return TradeAction.NONE
+
+        return TradeAction.BOTH
+
+    def _macd_max(self, df, days, ratio):
+        current_macd = df.MACD.iloc[-1]
+        max_macd = df[(days * 24) * -1:].MACD.max()
+
+        if current_macd > max_macd * ratio:
+            return TradeAction.NONE
+
+        return TradeAction.BOTH
+
+    def _macd_max_predict(self, df):
+        current_macd = df.MACD.iloc[-1]
+        max_macd = df[(7 * 24) * -1:].MACD.max()
+
+        if current_macd > max_macd * 0.9:
+            return TradeAction.NONE
+
+        return TradeAction.BOTH
+
+    def _macd_max_predict2(self, df):
+        current_macd = df.MACD.iloc[-1]
+        max_macd = df[(14 * 24) * -1:].MACD.max()
+
+        if current_macd > max_macd * 0.8:
+            return TradeAction.NONE
+
+        return TradeAction.BOTH
+
+    def _macd_slope_predict(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        current_macd = df.MACD.iloc[-1]
+        before_macd = df.MACD.iloc[-2]
+
+        if current_macd > before_macd:
+            return TradeAction.BUY
+        else:
+            return TradeAction.SELL
+
+
     def _rsi_smooth_slope_predict(self, df):
         diff = df.RSI_SMOOTH.diff().iloc[-1]
         if diff < 0:
@@ -418,7 +497,6 @@ class Indicators:
 
         actions = []
         actions.append(self._ichimoku_tenkan_kijun_predict(df))
-        actions.append(self._ichimoku_chikou_predict(df))
         actions.append(self._ichimoku_cloud_predict(df))
 
         if actions.count(TradeAction.BUY) == len(actions):
@@ -492,8 +570,12 @@ class Indicators:
                 Returns:
                 TradeAction: Eine Handlungsempfehlung, entweder "BUY", "SELL" oder "NONE".
                 """
-        chikou = df.CHIKOU.iloc[-1]
-        close = df.close.iloc[-1]
+
+        if len(df[-27:]) < 27:
+            return TradeAction.NONE
+
+        chikou = df.CHIKOU.iloc[-27]
+        close = df.close.iloc[-27]
 
         if chikou > close:
             return TradeAction.BUY

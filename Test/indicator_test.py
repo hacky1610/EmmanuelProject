@@ -270,6 +270,21 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._macd_crossing_predict(data)
         self.assertEqual(action, TradeAction.SELL)
 
+    def test_macd_signal_diff_predict(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['MACD'] = [80, 83]
+        data['SIGNAL'] = [70, 70]
+        data = self.indicators._macd_signal_diff_predict(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['MACD'] = [60, 55]
+        data['SIGNAL'] = [70, 70]
+        data = self.indicators._macd_signal_diff_predict(data)
+        self.assertEqual(data, TradeAction.SELL)
+
     def test_candle(self):
         # Teste Buy-Pfad
         data = DataFrame()
@@ -304,20 +319,7 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._macd_crossing_predict(data)
         self.assertEqual(action, TradeAction.SELL)
 
-    def test_ichimoku_chikou(self):
-        # Teste Buy-Pfad
-        data = DataFrame()
-        data['CHIKOU'] = [80]
-        data['close'] = [70]
-        data = self.indicators._ichimoku_chikou_predict(data)
-        self.assertEqual(data, TradeAction.BUY)
 
-        # Teste Sell-Pfad
-        data = DataFrame()
-        data['CHIKOU'] = [80]
-        data['close'] = [90]
-        action = self.indicators._ichimoku_chikou_predict(data)
-        self.assertEqual(action, TradeAction.SELL)
 
     def test_tenkan_kijun_chikou(self):
         # Teste Buy-Pfad
@@ -441,6 +443,38 @@ class TestIndicators(unittest.TestCase):
         data['ADX'] = [10]
         action = self.indicators._adx_predict(data)
         self.assertEqual(action, TradeAction.NONE)
+
+    def test_max_adx(self):
+        # Teste Both-Pfad
+        data_both = DataFrame()
+        data_both['ADX'] = [40,40,30]
+        data = self.indicators._adx_max_predict(data_both)
+        self.assertEqual(data, TradeAction.BOTH)
+
+        # Teste Both-Pfad
+        data_both = DataFrame()
+        data_both['ADX'] = [29, 31, 30]
+        data = self.indicators._adx_max_predict(data_both)
+        self.assertEqual(data, TradeAction.NONE)
+
+    def test_macd_slope(self):
+        # Teste Buy-Pfad
+        data_both = DataFrame()
+        data_both['MACD'] = [100,100,101]
+        data = self.indicators._macd_slope_predict(data_both)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Buy-Pfad
+        data_both = DataFrame()
+        data_both['MACD'] = [100, 100, 90]
+        data = self.indicators._macd_slope_predict(data_both)
+        self.assertEqual(data, TradeAction.SELL)
+
+        # Teste None-Pfad
+        data_both = DataFrame()
+        data_both['MACD'] = [90]
+        data = self.indicators._macd_slope_predict(data_both)
+        self.assertEqual(data, TradeAction.NONE)
 
     def test_ema_10_50(self):
         # Teste Buy-Pfad

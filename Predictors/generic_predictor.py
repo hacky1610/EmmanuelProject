@@ -65,39 +65,25 @@ class GenericPredictor(BasePredictor):
         return list(set(l))
 
     @staticmethod
-    def _indicator_names_sets(version: str):
+    def _indicator_names_sets(version: str, best_indicators:List):
 
         json_objs = []
-        to_skip = [Indicators.BB,
-                   Indicators.CANDLE,
-                   Indicators.MACDCROSSING,
-                   Indicators.MACD_CONVERGENCE,
-                   Indicators.RSI30_70]
+        to_skip = [Indicators.RSI30_70]
 
-        for i in range(2):
-            r = random.choices([Indicators.RSI,
-                                Indicators.RSI_LIMIT,
-                                Indicators.MACD,
-                                Indicators.EMA,
-                                Indicators.ICHIMOKU_KIJUN_CONFIRM],
-                               k=random.randint(2, 3))
-            r.append(Indicators.ICHIMOKU)
-            json_objs.append({
-                "_indicator_names": r,
-                "version": version
-            })
+        json_objs.append({
+            "_indicator_names": best_indicators,
+            "version": version
+        })
+
+        json_objs.append({
+            "_indicator_names": random.choices(best_indicators,k=5),
+            "version": version
+        })
 
         for i in range(4):
             r = Indicators().get_random_indicator_names(min=1, max=1, skip=to_skip)
             json_objs.append({
                 "_additional_indicators": r,
-                "version": version
-            })
-
-        for i in range(4):
-            names = Indicators().get_random_indicator_names(must=Indicators.ICHIMOKU, skip=to_skip)
-            json_objs.append({
-                "_indicator_names": names,
                 "version": version
             })
 
@@ -110,7 +96,7 @@ class GenericPredictor(BasePredictor):
         return json_objs
 
     @staticmethod
-    def get_training_sets(version: str):
-        return GenericPredictor._indicator_names_sets(version)
+    def get_training_sets(version: str, best_indicators:List):
+        return GenericPredictor._indicator_names_sets(version,best_indicators)
 
         # return ChartPatternPredictor._indicator_set(version)

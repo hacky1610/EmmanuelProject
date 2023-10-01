@@ -2,8 +2,8 @@ import copy
 import unittest
 from unittest.mock import MagicMock, call
 from BL.trader import Trader, TradeConfig, TradeResult
-from BL import Analytics
-from Connectors import TradeType
+from BL.analytics import Analytics
+from Connectors.tiingo import TradeType
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame, Series
 from BL.data_processor import DataProcessor

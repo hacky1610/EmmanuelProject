@@ -97,7 +97,7 @@ class PivotScanner:
 
     def scan(self, df):
         df['pivot_point'] = self.get_pivot_ids(df)
-        df['pointpos'] = df.apply(lambda row: self.pointpos(row), axis=1)
+        #df['pointpos'] = df[self._lookback * -1:].apply(lambda row: self.pointpos(row), axis=1)
 
     def _is_ascending_triangle(self, slope_min_line, slope_max_line, max_pivot_points, atr):
         """

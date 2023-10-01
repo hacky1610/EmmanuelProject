@@ -1,9 +1,12 @@
+from BL.analytics import Analytics
 from BL.indicators import Indicators
+from Connectors.dropbox_cache import DropBoxCache
+from Connectors.dropboxservice import DropBoxService
+from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
 from Tracing.LogglyTracer import LogglyTracer
-from Connectors import Tiingo, TradeType,DropBoxCache, DropBoxService
 from Connectors.IG import IG
-from BL import Analytics, EnvReader, DataProcessor
+from BL import EnvReader, DataProcessor
 from BL.trader import Trader
 import dropbox
 

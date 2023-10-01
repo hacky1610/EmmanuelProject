@@ -42,11 +42,9 @@ class DataProcessor:
         df["STOCHD_21"] = TA.STOCH(df, period=21)
         df["STOCHD_30"] = TA.STOCH(df, period=21)
         df["ADX"] = TA.ADX(df, period=9)
-        try:
-            psar = TA.PSAR(df)
-            df["PSAR"] = psar["psar"]
-        except Exception as e:
-            print(f"Failed to psar {e}")
+        psar = TA.PSAR(df)
+        df["PSAR"] = psar["psar"]
+
 
         df["ATR"] = TA.ATR(df)
 
@@ -55,10 +53,6 @@ class DataProcessor:
         df["KIJUN"] = ichi["KIJUN"]
         df["SENKOU_A"] = ichi["senkou_span_a"]
         df["SENKOU_B"] = ichi["SENKOU"]
-        df["CHIKOU"] = ichi["CHIKOU"]
-
-
-
 
 
 

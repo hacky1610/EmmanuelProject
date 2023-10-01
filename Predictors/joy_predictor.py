@@ -23,6 +23,7 @@ class JoyPredictor(BasePredictor):
         self._limit_factor: float = 2
         self._confirm_ratio = 0.7
         self._viewer = viewer
+        self._indicator_names = ""
         if config is None:
             config = {}
 
@@ -62,15 +63,17 @@ class JoyPredictor(BasePredictor):
     def _confirm_ratio_sets(version: str):
 
         json_objs = []
-        for ratio in [.6,.7,.8,.9,.95]:
+        for ratio in [.5, .6,.7,.8,.9,.95]:
 
             json_objs.append({
                 "_confirm_ratio": ratio,
                 "version": version
             })
 
+        return json_objs
+
 
     @staticmethod
-    def get_training_sets(version: str):
+    def get_training_sets(version: str, indicator_names):
         return JoyPredictor._confirm_ratio_sets(version)
 

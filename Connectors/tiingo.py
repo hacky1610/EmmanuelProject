@@ -3,6 +3,8 @@ from BL import DataProcessor, BaseReader
 import requests
 from pandas import DataFrame
 import pandas as pd
+
+from Predictors.utils import TimeUtils
 from Tracing.Tracer import Tracer
 from enum import Enum
 from Connectors.dropbox_cache import DropBoxCache
@@ -75,7 +77,7 @@ class Tiingo:
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
                           clean_data: bool = True, trade_type: TradeType = TradeType.FX,
-                          use_cache: bool = True) -> DataFrame:
+                          use_cache: bool = True, validate:bool = True) -> DataFrame:
         res = DataFrame()
         name = f"{ticker}_{resolution}.csv"
         cached = self._cache.load_cache(name)
@@ -87,7 +89,7 @@ class Tiingo:
             if lastchached.to_pydatetime() == toCompare:
                 res = cached
             else:
-                res = self._send_history_request(ticker, lastchached.strftime("%Y-%m-%d"), end, resolution, trade_type)
+                res = self._send_history_request(ticker, TimeUtils.get_date_string(lastchached), end, resolution, trade_type)
                 res = cached.append(res[res.date > cached[-1:].date.item()])
                 res.reset_index(inplace=True)
                 res.drop(columns=["index"], inplace=True)
@@ -103,11 +105,19 @@ class Tiingo:
             data_processor.addSignals(res)
         if clean_data:
             data_processor.clean_data(res)
+        if validate:
+            self._validate(res)
         return res
+
+    def _validate(self, res):
+        if res.date.iloc[-1] != TimeUtils.get_time_string(datetime.utcnow() - timedelta(hours=1)):
+            raise Exception("Invalid date")
 
     @staticmethod
     def _get_start_time(days: int):
-        return (date.today() - timedelta(days=days)).strftime("%Y-%m-%d")
+        return TimeUtils.get_date_string(date.today() - timedelta(days=days))
+
+
 
     def load_trade_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 30):
 
@@ -166,12 +176,14 @@ class Tiingo:
                                     end=None,
                                     data_processor=dp,
                                     trade_type=trade_type,
-                                    resolution="1hour")
+                                    resolution="1hour",
+                                    validate=False)
         df_eval = self.load_data_by_date(ticker=symbol,
                                          start=start_time,
                                          end=None,
                                          data_processor=dp,
                                          trade_type=trade_type,
                                          resolution="5min",
-                                         add_signals=False)
+                                         add_signals=False,
+                                         validate=False)
         return df, df_eval

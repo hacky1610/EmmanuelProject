@@ -1,4 +1,5 @@
-from BL.eval_result import EvalResult
+from BL.eval_result import EvalResult, TradeResult
+from Predictors.utils import TimeUtils
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame
@@ -45,9 +46,11 @@ class Analytics:
                     df_train, df_eval)
         viewer.print_graph()
 
+        trades = []
+
         for i in range(len(df_train) - 1):
             current_index = i + 1
-            if filter is not None and filter.strftime("%Y-%m-%dT%H:00:00.000Z") != df_train.date[current_index]:
+            if filter is not None and TimeUtils.get_time_string(filter) != df_train.date[current_index]:
                 continue
 
             open_price = df_train.open[current_index]
@@ -58,6 +61,11 @@ class Analytics:
             action, stop, limit = predictor.predict(df_train[:current_index])
             if action == TradeAction.NONE:
                 continue
+
+            trade:TradeResult = TradeResult()
+            trade.action = action
+            trade.last_df_time = df_train.date[current_index]
+            trades.append(trade)
 
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
@@ -83,6 +91,7 @@ class Analytics:
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
+                        trade.result = "won"
                         break
                     elif low < open_price - stop:
                         # Loss
@@ -90,6 +99,7 @@ class Analytics:
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]
+                        trade.result = "lost"
                         break
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
@@ -108,16 +118,18 @@ class Analytics:
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
+                        trade.result = "won"
                         break
                     elif high > open_price + stop:
                         viewer.print_lost(train_index, future.close[j])
                         reward -= stop
                         losses += 1
+                        trade.result = "lost"
                         last_exit = future.date[j]
                         break
 
         predictor._tracer = old_tracer
-        ev_res = EvalResult(reward, wins + losses, len(df_train), trading_minutes, wins)
+        ev_res = EvalResult(trades, reward, wins + losses, len(df_train), trading_minutes, wins)
         viewer.update_title(f"{ev_res}")
         viewer.show()
 
