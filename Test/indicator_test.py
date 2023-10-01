@@ -304,6 +304,26 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._candle_predict(data)
         self.assertEqual(action, TradeAction.SELL)
 
+    def test_candle_pattern(self):
+        # Teste None-Pfad
+        data = DataFrame()
+        data['close'] = [80]
+        data['open'] = [60]
+        data['high'] = [66]
+        data['low'] = [66]
+        data = self.indicators._candle_pattern_predict(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+        data = DataFrame()
+        data['close'] = [80,90,90,90]
+        data['open'] = [80,90,90,90]
+        data['high'] = [80,90,90,90]
+        data['low'] = [80,90,90,90]
+        data = self.indicators._candle_pattern_predict(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+
+
     def test_macd_cross_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()

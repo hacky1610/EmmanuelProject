@@ -1,13 +1,10 @@
 import dropbox
-
 from BL.analytics import Analytics
 from BL.indicators import Indicators
 from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
-from Connectors.tiingo import Tiingo
-from Predictors.chart_pattern_rectangle import RectanglePredictor
-from Predictors.chart_pattern_triangle import TrianglePredictor
+from Connectors.tiingo import Tiingo, TradeType
 from Predictors.generic_predictor import GenericPredictor
 from Tracing.LogglyTracer import LogglyTracer
 from BL import ConfigReader, DataProcessor

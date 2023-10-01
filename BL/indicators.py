@@ -1,6 +1,6 @@
 from typing import List
 
-from BL.candle import Candle, Direction
+from BL.candle import Candle, Direction, MultiCandle, MultiCandleType
 from BL.datatypes import TradeAction
 import random
 
@@ -16,9 +16,8 @@ class Indicator:
 
 
 class Indicators:
-
-    #region Static Members
-    #region RSI
+    # region Static Members
+    # region RSI
     RSI = "rsi"
     RSI_LIMIT = "rsi_limit"
     RSI_BREAK = "rsi_break"
@@ -28,12 +27,12 @@ class Indicators:
     RSI_CONVERGENCE = "rsi_convergence"
     RSI_CONVERGENCE5 = "rsi_convergence5"
     RSI_CONVERGENCE7 = "rsi_convergence7"
-    #endregion
-    #region Williams
+    # endregion
+    # region Williams
     WILLIAMS_LIMIT = "williams_limit"
     WILLIAMS_BREAK = "williams_break"
-    #endregion
-    #MACD
+    # endregion
+    # MACD
     MACD = "macd"
     MACD_ZERO = "macd_zero"
     MACDCROSSING = "macd_crossing"
@@ -41,33 +40,35 @@ class Indicators:
     MACD_CONVERGENCE = "macd_convergence"
     MACD_MAX = "macd_max"
     MACD_SLOPE = "macd_slope"
-    #EMA
+    # EMA
     EMA = "ema"
     EMA10_50 = "ema_10_50"
-    #Others
+    # Others
     ADX = "adx"
     ADX_MAX = "adx_max"
     PSAR = "psar"
     PSAR_CHANGE = "psar_change"
     CCI = "cci"
     CANDLE = "candle"
-    #Bollinger
+    CANDLEPATTERN = "candle_pattern"
+    # Bollinger
     BB = "bb"
     BB_MIDDLE_CROSS = "bb_middle_crossing"
     BB_BORDER_CROSS = "bb_border_crossing"
-    #ICHIMOKU
+    # ICHIMOKU
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
     ICHIMOKU_KIJUN_CROSS_CONFIRM = "ichi_kijun_cross_confirm"
     ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
     ICHIMOKU_CLOUD_THICKNESS = "ichi_cloud_thickness"
-    #endregion
 
-    #region Constructor
+    # endregion
+
+    # region Constructor
     def __init__(self, tracer: Tracer = ConsoleTracer()):
         self._indicators = []
         self._indicator_confirm_factor = 0.7
-        #RSI
+        # RSI
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
@@ -78,11 +79,11 @@ class Indicators:
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
 
-        #Williams
+        # Williams
         self._add_indicator(self.WILLIAMS_BREAK, self._williams_break_predict)
         self._add_indicator(self.WILLIAMS_LIMIT, self._williams_limit_predict)
 
-        #MACD
+        # MACD
         self._add_indicator(self.MACD, self._macd_predict)
         self._add_indicator(self.MACD_SLOPE, self._macd_slope_predict)
         self._add_indicator(self.MACD_MAX, self._macd_max_predict)
@@ -91,29 +92,30 @@ class Indicators:
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
         self._add_indicator(self.MACDSINGALDIFF, self._macd_signal_diff_predict)
 
-        #EMA
+        # EMA
         self._add_indicator(self.EMA, self._ema_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
 
-        #ADX
+        # ADX
         self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.ADX_MAX, self._adx_max_predict)
 
-        #Others
+        # Others
 
         self._add_indicator(self.CANDLE, self._candle_predict)
+        self._add_indicator(self.CANDLEPATTERN, self._candle_pattern_predict)
         self._add_indicator(self.CCI, self._cci_predict)
 
-        #PSAR
+        # PSAR
         self._add_indicator(self.PSAR, self._psar_predict)
         self._add_indicator(self.PSAR_CHANGE, self._psar_change_predict)
 
-        #Bollinger
+        # Bollinger
         self._add_indicator(self.BB, self._bb_predict)
         self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
         self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict)
 
-        #ICHIMOKU
+        # ICHIMOKU
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CROSS_CONFIRM, self._ichimoku_kijun_close_cross_predict)
@@ -121,9 +123,10 @@ class Indicators:
         self._add_indicator(self.ICHIMOKU_CLOUD_THICKNESS, self._ichimoku_cloud_thickness_predict)
 
         self._tracer: Tracer = tracer
-    #endregion
 
-    #region Get/Add Indicators
+    # endregion
+
+    # region Get/Add Indicators
     def _add_indicator(self, name, function):
         self._indicators.append(Indicator(name, function))
 
@@ -134,9 +137,7 @@ class Indicators:
 
         return None
 
-    def get_random_indicator_names(self, must: str = None, skip:List = None,  min: int = 3, max: int = 6):
-
-
+    def get_random_indicator_names(self, must: str = None, skip: List = None, min: int = 3, max: int = 6):
 
         all_indicator_names = [indikator.name for indikator in self._indicators]
 
@@ -146,8 +147,6 @@ class Indicators:
         r = random.choices(all_indicator_names, k=random.randint(min, max))
         if must is not None:
             r.append(must)
-
-
 
         return list(set(r))
 
@@ -159,9 +158,10 @@ class Indicators:
                 indicators.append(i)
 
         return indicators
-    #endregion
 
-    #region Predict
+    # endregion
+
+    # region Predict
     def _predict(self, predict_values, factor=0.7):
         self._tracer.debug(f"Predict for multiple values {predict_values} and factor {factor}")
         if (predict_values.count(TradeAction.BUY) + predict_values.count(TradeAction.BOTH)) >= len(
@@ -180,16 +180,17 @@ class Indicators:
 
         return self._predict(predict_values, 1.0)
 
-    def predict_all(self, df, factor: float = 0.7, exclude:list = []):
+    def predict_all(self, df, factor: float = 0.7, exclude: list = []):
         predict_values = []
         for indicator in self._indicators:
             if indicator.name not in exclude:
                 predict_values.append(indicator.function(df))
 
         return self._predict(predict_values, factor)
-    #endregion
 
-    #region BL
+    # endregion
+
+    # region BL
     def _ema_predict(self, df):
         current_ema_10 = df.EMA_10.iloc[-1]
         current_ema_20 = df.EMA_20.iloc[-1]
@@ -240,7 +241,7 @@ class Indicators:
         return self._oscillator_break(df, "WILLIAMS", -50, -50)
 
     @staticmethod
-    def _oscillator_break(df, name: str, upper_line: int, lower_line:int):
+    def _oscillator_break(df, name: str, upper_line: int, lower_line: int):
         period = df[-3:-1]
         current_rsi = df[name].iloc[-1]
         if current_rsi >= lower_line and len(period[period[name] < lower_line]) > 0:
@@ -251,7 +252,7 @@ class Indicators:
         return TradeAction.NONE
 
     @staticmethod
-    def _oscillator_limit(df, name: str, middle_line: int, upper_limit: int, lower_limit:int):
+    def _oscillator_limit(df, name: str, middle_line: int, upper_limit: int, lower_limit: int):
         current_rsi = df[name].iloc[-1]
         if middle_line > current_rsi > lower_limit:
             return TradeAction.SELL
@@ -289,7 +290,6 @@ class Indicators:
 
     def _rsi_convergence_predict3(self, df):
         return self._convergence_predict(df, "RSI")
-
 
     def _cci_predict(self, df):
         cci = df.CCI.iloc[-1]
@@ -332,6 +332,20 @@ class Indicators:
             return TradeAction.BUY
         else:
             return TradeAction.SELL
+
+    def _candle_pattern_predict(self, df):
+        if len(df) < 3:
+            return TradeAction.NONE
+
+        c = MultiCandle(df)
+        t = c.get_type()
+
+        if t == MultiCandleType.MorningStart or t == MultiCandleType.BullishEngulfing:
+            return TradeAction.BUY
+        elif t == MultiCandleType.EveningStar or t == MultiCandleType.BearishEngulfing:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
 
     def _macd_predict(self, df):
         current_macd = df.MACD.iloc[-1]
@@ -377,7 +391,7 @@ class Indicators:
             if (current_macd - current_signal) > (before_macd - before_signal):
                 return TradeAction.BUY
         elif current_macd < current_signal and before_macd < before_signal:
-            if (current_signal - current_macd) > (before_signal- before_macd):
+            if (current_signal - current_macd) > (before_signal - before_macd):
                 return TradeAction.SELL
 
         return TradeAction.NONE
@@ -475,7 +489,6 @@ class Indicators:
             return TradeAction.BUY
         else:
             return TradeAction.SELL
-
 
     def _rsi_smooth_slope_predict(self, df):
         diff = df.RSI_SMOOTH.diff().iloc[-1]
@@ -603,4 +616,4 @@ class Indicators:
                 return TradeAction.SELL
 
         return TradeAction.NONE
-    #endregion
+    # endregion
