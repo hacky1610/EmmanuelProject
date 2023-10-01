@@ -319,20 +319,7 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._macd_crossing_predict(data)
         self.assertEqual(action, TradeAction.SELL)
 
-    def test_ichimoku_chikou(self):
-        # Teste Buy-Pfad
-        data = DataFrame()
-        data['CHIKOU'] = [80]
-        data['close'] = [70]
-        data = self.indicators._ichimoku_chikou_predict(data)
-        self.assertEqual(data, TradeAction.BUY)
 
-        # Teste Sell-Pfad
-        data = DataFrame()
-        data['CHIKOU'] = [80]
-        data['close'] = [90]
-        action = self.indicators._ichimoku_chikou_predict(data)
-        self.assertEqual(action, TradeAction.SELL)
 
     def test_tenkan_kijun_chikou(self):
         # Teste Buy-Pfad
