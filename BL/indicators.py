@@ -568,11 +568,14 @@ class Indicators:
         return TradeAction.NONE
 
     def _tii_20_80(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
         current_tii = df.TII.iloc[-1]
         before_tii = df.TII.iloc[-2]
-        if current_tii > 20 and before_tii < 20:
+        if current_tii > 20 > before_tii:
             return TradeAction.BUY
-        elif current_tii < 80 and before_tii > 80:
+        elif current_tii < 80 < before_tii:
             return TradeAction.SELL
 
         return TradeAction.NONE
