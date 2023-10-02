@@ -558,6 +558,9 @@ class Indicators:
         return TradeAction.NONE
 
     def _tii_50(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
         current_tii = df.TII.iloc[-1]
         before_tii = df.TII.iloc[-2]
         if current_tii > 50 and before_tii < 50:

@@ -38,6 +38,7 @@ class Trainer:
     def train(self, symbol: str, df, df_eval, version: str, predictor_class, indicators, best_indicators:List):
         print(f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best_win_loss = 0
+        best_reward = 0
         best_predictor = None
         predictor = None
         startzeit = time()
@@ -51,8 +52,8 @@ class Trainer:
 
             res: EvalResult = predictor.step(df, df_eval, self._analytics)
 
-            if res.get_win_loss() >= best_win_loss and res.get_trades() >= 15:
-                best_win_loss = res.get_win_loss()
+            if res.get_reward() > best_reward and res.get_win_loss() >= 0.66 and res.get_trades() >= 15:
+                best_reward = res.get_reward()
                 best_predictor = predictor
                 best_predictor.save(symbol)
                 print(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")

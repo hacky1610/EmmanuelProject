@@ -80,6 +80,12 @@ class GenericPredictor(BasePredictor):
             "version": version
         })
 
+        for limit in [1.5,2,2.3,2.7]:
+            json_objs.append({
+                "_limit_factor": limit,
+                "version": version
+            })
+
         for i in range(4):
             r = Indicators().get_random_indicator_names(min=1, max=1, skip=to_skip)
             json_objs.append({
