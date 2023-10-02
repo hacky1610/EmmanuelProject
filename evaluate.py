@@ -1,9 +1,13 @@
 # region import
 import random
-from BL import DataProcessor, Analytics, ConfigReader
+from BL import DataProcessor,  ConfigReader
+from BL.analytics import Analytics
 from BL.eval_result import  EvalResultCollection
-from Connectors import Tiingo, TradeType, DropBoxCache, DropBoxService
+
 from Connectors.IG import IG
+from Connectors.dropbox_cache import DropBoxCache
+from Connectors.dropboxservice import DropBoxService
+from Connectors.tiingo import Tiingo, TradeType
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor

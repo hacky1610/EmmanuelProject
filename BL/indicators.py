@@ -32,6 +32,10 @@ class Indicators:
     WILLIAMS_LIMIT = "williams_limit"
     WILLIAMS_BREAK = "williams_break"
     # endregion
+    #region TII
+    TII_50 = "tii_50"
+    TII_20_80 = "tii_20_80"
+    #endregion
     # MACD
     MACD = "macd"
     MACD_ZERO = "macd_zero"
@@ -81,6 +85,9 @@ class Indicators:
         self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
+
+        self._add_indicator(self.TII_50, self._tii_50)
+        self._add_indicator(self.TII_20_80, self._tii_20_80)
 
         # Williams
         self._add_indicator(self.WILLIAMS_BREAK, self._williams_break_predict)
@@ -546,6 +553,26 @@ class Indicators:
         if rsi_smooth > 70:
             return TradeAction.BUY
         elif rsi_smooth < 30:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _tii_50(self, df):
+        current_tii = df.TII.iloc[-1]
+        before_tii = df.TII.iloc[-2]
+        if current_tii > 50 and before_tii < 50:
+            return TradeAction.BUY
+        elif current_tii < 50 and before_tii > 50:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _tii_20_80(self, df):
+        current_tii = df.TII.iloc[-1]
+        before_tii = df.TII.iloc[-2]
+        if current_tii > 20 and before_tii < 20:
+            return TradeAction.BUY
+        elif current_tii < 80 and before_tii > 80:
             return TradeAction.SELL
 
         return TradeAction.NONE

@@ -57,6 +57,9 @@ class DataProcessor:
         df["SENKOU_A"] = ichi["senkou_span_a"]
         df["SENKOU_B"] = ichi["SENKOU"]
 
+        df["TII"] = DataProcessor._tii(df,10)
+        return
+
 
 
     @staticmethod
@@ -73,3 +76,27 @@ class DataProcessor:
     def drop_column(df: DataFrame, name: str):
         if name in df.columns:
             df.drop(columns=[name], inplace=True)
+
+    @staticmethod
+    def _tii(df, P):
+        # Define the parameters
+        n = 60  # Period for SMA
+        m = n // 2  # Period for sum of deviations (half of SMA period)
+        k = 10  # Period for EMA of TII
+
+        # Calculate SMA of the closing prices
+        df['SMA'] = df['close'].rolling(n).mean()
+
+        # Calculate Positive and Negative deviations
+        df['Dev'] = df['close'] - df['SMA']
+        df['posDev'] = df['Dev'].apply(lambda x: x if x > 0 else 0)
+        df['negDev'] = df['Dev'].apply(lambda x: abs(x) if x < 0 else 0)
+
+        # Calculate sum of Positive and Negative deviations for the shorter period
+        df['SDpos'] = df['posDev'].rolling(m).sum()
+        df['SDneg'] = df['negDev'].rolling(m).sum()
+
+        # Calculate Trend Intensity Index (TII)
+        df['TII'] = 100 * df['SDpos'] / (df['SDpos'] + df['SDneg'])
+        return df["TII"]
+
