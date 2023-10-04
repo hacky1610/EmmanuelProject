@@ -20,6 +20,11 @@ class Reporting:
 
     def __init__(self, cache):
         self._cache = cache
+        self.results:EvalResultCollection = None
+        self.reports:DataFrame = DataFrame()
+        self._wl_limit = 0.8
+    def create(self, markets, predictor_class, verbose=True):
+        self.results, self.reports = self.report_predictors(markets, predictor_class, verbose)
 
     def report_predictor(self,symbol,  predictor_class:Type, verbose:bool):
         predictor = predictor_class(cache=self._cache, indicators=Indicators())
@@ -30,11 +35,13 @@ class Reporting:
                        predictor._limit_factor,
                        predictor._indicator_names,
                        predictor.get_last_result().get_win_loss(),
+                       predictor.get_last_result().get_trades(),
                        predictor.get_last_result().get_trade_frequency()],
                       index=["symbol",
                              "_limit_factor",
                              "_indicator_names",
                              "win_los",
+                             "trades",
                              "frequence"])
 
     def report_predictors(self,markets, predictor_class:Type, verbose:bool = True) -> (EvalResultCollection, DataFrame):
@@ -45,20 +52,45 @@ class Reporting:
             results.add(result)
             df = df.append(data, ignore_index=True)
 
+        df.fillna(0, inplace=True)
         return results, df
 
-    def get_best_indicators(self,markets, predictor_class:Type):
-        results, df = self.report_predictors(markets,predictor_class, verbose=False)
+    def get_best_indicators(self):
 
-        best_df = df[df.win_los > 0.66]
+        best_df = self.reports[self.reports.win_los > self._wl_limit]
         indicators = []
         for r in best_df.iterrows():
             indicators = indicators + r[1]._indicator_names
         string_counts = Counter(indicators)
-        most_common_strings = string_counts.most_common()
+        #most_common_strings = string_counts.most_common()
 
-        best_indicators = []
-        for indicator, c in most_common_strings[:7]:
-            best_indicators.append(indicator)
+        return string_counts
 
-        return best_indicators
+    def get_best_indicator_names(self, n:int = 7):
+
+        best_df = self.reports[self.reports.win_los > self._wl_limit]
+        indicators = []
+        for r in best_df.iterrows():
+            indicators = indicators + r[1]._indicator_names
+        string_counts = Counter(indicators)
+        most_common_strings = string_counts.most_common(n)
+
+        indicators = []
+        for i in most_common_strings:
+            indicators.append(i[0])
+
+        return indicators
+
+
+
+
+    def get_all_indicators(self):
+        indicators = []
+        for r in self.reports.iterrows():
+            indicators = indicators + r[1]._indicator_names
+
+        string_counts = Counter(indicators)
+        #most_common_strings = string_counts.most_common()
+
+        return string_counts
+

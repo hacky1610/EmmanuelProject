@@ -280,6 +280,33 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._macd_crossing_predict(data)
         self.assertEqual(action, TradeAction.SELL)
 
+    def test_macd_max_predict(self):
+        # Teste None-Pfad
+        data = DataFrame()
+        data['MACD'] = [80, 60, 60, 75]
+        data = self.indicators._macd_max_predict(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+        # Teste None-Pfad
+        data = DataFrame()
+        data['MACD'] = [-80, -60, -60, -75]
+        data = self.indicators._macd_max_predict(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+        # Teste Both-Pfad
+        data = DataFrame()
+        data['MACD'] = [80, 60, 60, 61]
+        data = self.indicators._macd_max_predict(data)
+        self.assertEqual(data, TradeAction.BOTH)
+
+        # Teste None-Pfad
+        data = DataFrame()
+        data['MACD'] = [80, 60, 60, 90]
+        data = self.indicators._macd_max_predict(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+
+
     def test_macd_signal_diff_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()

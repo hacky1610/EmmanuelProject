@@ -53,6 +53,7 @@ class Indicators:
     # Others
     ADX = "adx"
     ADX_MAX = "adx_max"
+    ADX_MAX2 = "adx_max2"
     PSAR = "psar"
     PSAR_CHANGE = "psar_change"
     CCI = "cci"
@@ -112,6 +113,7 @@ class Indicators:
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.ADX_MAX, self._adx_max_predict)
+        self._add_indicator(self.ADX_MAX2, self._adx_max_predict2)
 
         # Others
 
@@ -493,41 +495,39 @@ class Indicators:
 
         return TradeAction.NONE
 
-    def _adx_max_predict(self, df):
-        current_adx = df.ADX.iloc[-1]
-        max_adx = df[(7 * 24) * -1:].ADX.max()
 
-        if current_adx > max_adx * 0.9:
+    def _adx_max_predict(self, df):
+        return self._oszi_max(df, "ADX", 7, 0.9)
+
+    def _adx_max_predict2(self, df):
+        return self._oszi_max(df, "ADX", 14, 0.8)
+
+    def _oszi_max(self, df,indicator_name,  days, ratio):
+        current = df[indicator_name].iloc[-1]
+        max = df[(days * 24) * -1:][indicator_name].max()
+
+        if current > max * ratio:
             return TradeAction.NONE
 
         return TradeAction.BOTH
 
-    def _macd_max(self, df, days, ratio):
-        current_macd = df.MACD.iloc[-1]
-        max_macd = df[(days * 24) * -1:].MACD.max()
+    def _oszi_min_max(self, df,indicator_name,  days, ratio):
+        current = df[indicator_name].iloc[-1]
+        max = df[(days * 24) * -1:][indicator_name].max()
+        min  = df[(days * 24) * -1:][indicator_name].min()
 
-        if current_macd > max_macd * ratio:
+        if current > max * ratio:
+            return TradeAction.NONE
+        elif current < min * ratio:
             return TradeAction.NONE
 
         return TradeAction.BOTH
 
     def _macd_max_predict(self, df):
-        current_macd = df.MACD.iloc[-1]
-        max_macd = df[(7 * 24) * -1:].MACD.max()
-
-        if current_macd > max_macd * 0.9:
-            return TradeAction.NONE
-
-        return TradeAction.BOTH
+        return self._oszi_min_max(df,"MACD", 7, 0.9)
 
     def _macd_max_predict2(self, df):
-        current_macd = df.MACD.iloc[-1]
-        max_macd = df[(14 * 24) * -1:].MACD.max()
-
-        if current_macd > max_macd * 0.8:
-            return TradeAction.NONE
-
-        return TradeAction.BOTH
+        return self._oszi_min_max(df,"MACD", 14, 0.8)
 
     def _macd_slope_predict(self, df):
         if len(df) < 2:

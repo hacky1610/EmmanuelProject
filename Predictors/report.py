@@ -1,4 +1,8 @@
+from typing import List
+
 import dropbox
+from pandas import DataFrame
+
 from Connectors.dropbox_cache import DropBoxService, DropBoxCache
 from Connectors.IG import IG
 from BL import  ConfigReader
@@ -15,29 +19,19 @@ dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
 df_cache = DropBoxCache(ds)
 ig = IG(ConfigReader())
-indicators = []
 #endregion
 
-currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
-
-r = Reporting(df_cache)
-results, df = r.report_predictors(currency_markets,GenericPredictor)
-
-for r in df.iterrows():
-    indicators = indicators + r[1]._indicator_names
-
-print(results)
-
-def shop_pie(name:str):
-    fig = px.pie(df, values=name, names=name, title=name)
+#region functions
+def shop_pie(name:str, reports:DataFrame):
+    fig = px.pie(reports, values=name, names=name, title=name)
     fig.show()
 
-def shop_pie_bool(name:str):
-    true_count = df[name].sum()
-    false_count = len(df) - true_count
+def shop_pie_bool(name:str, reports:DataFrame ):
+    true_count = reports[name].sum()
+    false_count = len(reports) - true_count
 
-    true_percentage = (true_count / len(df)) * 100
-    false_percentage = (false_count / len(df)) * 100
+    true_percentage = (true_count / len(reports)) * 100
+    false_percentage = (false_count / len(reports)) * 100
 
     percentage_df = pd.DataFrame({
         'Label': ['True', 'False'],
@@ -53,29 +47,39 @@ def shop_pie_bool(name:str):
                  title=name)
     fig.show()
 
-df.fillna(0,inplace=True)
+def show_indicators(indicators):
+    # Vorbereiten der Daten für das Balkendiagramm
+    x_werte = list(indicators.keys())
+    y_werte = list(indicators.values())
+    sortierte_daten = sorted(zip(x_werte, y_werte), key=lambda x: x[1], reverse=True)
+    x_werte_sortiert, y_werte_sortiert = zip(*sortierte_daten)
+    # Erstellen Sie das Balkendiagramm
+    fig = px.bar(x=x_werte_sortiert, y=y_werte_sortiert, labels={'x': 'Elemente', 'y': 'Häufigkeit'})
+    # Diagramm anzeigen
+    fig.show()
+
+#endregion
+
+_currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
+
+_reporting = Reporting(df_cache)
+_reporting.create(_currency_markets, GenericPredictor)
 
 
-fig = px.bar(df, x='symbol', y='frequence')
+print(_reporting.results)
+
+
+fig = px.bar(_reporting.reports, x='symbol', y='frequence')
 fig.show()
-fig = px.bar(df.sort_values(by=["win_los"]), x='symbol', y='win_los')
+fig = px.bar(_reporting.reports.sort_values(by=["win_los"]), x='symbol', y='win_los')
 fig.show()
 
-# Zählen Sie die Häufigkeit der Elemente
-elemente_häufigkeit = Counter(indicators)
 
-# Vorbereiten der Daten für das Balkendiagramm
-x_werte = list(elemente_häufigkeit.keys())
-y_werte = list(elemente_häufigkeit.values())
+show_indicators(_reporting.get_all_indicators())
+show_indicators(_reporting.get_best_indicators())
 
-sortierte_daten = sorted(zip(x_werte, y_werte), key=lambda x: x[1], reverse=True)
-x_werte_sortiert, y_werte_sortiert = zip(*sortierte_daten)
 
-# Erstellen Sie das Balkendiagramm
-fig = px.bar(x=x_werte_sortiert, y=y_werte_sortiert, labels={'x': 'Elemente', 'y': 'Häufigkeit'})
 
-# Diagramm anzeigen
-fig.show()
 
 
 
