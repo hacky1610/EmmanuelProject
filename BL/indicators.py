@@ -52,6 +52,7 @@ class Indicators:
     EMA10_50 = "ema_10_50"
     # Others
     ADX = "adx"
+    ADX_BREAK = "adx_break"
     ADX_MAX = "adx_max"
     ADX_MAX2 = "adx_max2"
     PSAR = "psar"
@@ -114,6 +115,7 @@ class Indicators:
         self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.ADX_MAX, self._adx_max_predict)
         self._add_indicator(self.ADX_MAX2, self._adx_max_predict2)
+        self._add_indicator(self.ADX_BREAK, self._adx__break_predict)
 
         # Others
 
@@ -495,6 +497,18 @@ class Indicators:
         adx = df.ADX.iloc[-1]
 
         if adx > 25:
+            return TradeAction.BOTH
+
+        return TradeAction.NONE
+
+    def _adx__break_predict(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        current_adx = df.ADX.iloc[-1]
+        before_adx = df.ADX.iloc[-1]
+
+        if current_adx > 23 and before_adx < current_adx:
             return TradeAction.BOTH
 
         return TradeAction.NONE
