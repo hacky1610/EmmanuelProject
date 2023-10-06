@@ -1,4 +1,6 @@
 import os.path
+import time
+
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from BL import DataProcessor, timedelta, BaseReader
@@ -80,6 +82,7 @@ class IG:
             res = self.ig_service.fetch_sub_nodes_by_node(id)
         except Exception:
             self._tracer.error("Error while fetching nodes")
+            time.sleep(10)
             return DataFrame()
 
         if len(res["nodes"]) > 0:
