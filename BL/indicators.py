@@ -152,12 +152,16 @@ class Indicators:
 
         return None
 
-    def get_random_indicator_names(self, must: str = None, skip: List = None, min: int = 3, max: int = 6):
-
-        all_indicator_names = [indikator.name for indikator in self._indicators]
+    def get_all_indicator_names(self, skip: List = None):
+        all_indicator_names =  [indikator.name for indikator in self._indicators]
 
         if skip is not None:
             all_indicator_names = [element for element in all_indicator_names if element not in skip]
+
+        return  all_indicator_names
+
+    def get_random_indicator_names(self, must: str = None, skip: List = None, min: int = 3, max: int = 6):
+        all_indicator_names = self.get_all_indicator_names(skip)
 
         r = random.choices(all_indicator_names, k=random.randint(min, max))
         if must is not None:
