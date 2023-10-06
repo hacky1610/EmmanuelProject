@@ -323,7 +323,8 @@ class IG:
         df_history = ti.load_data_by_date(ticker,
                                           TimeUtils.get_date_string(start_time_hours),
                                           None,
-                                          DataProcessor())
+                                          DataProcessor(),
+                                          validate=False)
 
         df_hour = df_history[df_history["date"] > start_time_str]
 
@@ -349,22 +350,16 @@ class IG:
                 open_data["ticker"] = ticker
                 if row.profitAndLoss > 0:
                     open_data["wl"] = "won"
-                    if row["closeLevel"] >= row["openLevel"]:
-                        open_data["sl"] = "long"
-                    else:
-                        open_data["sl"] = "short"
                 else:
                     open_data["wl"] = "lost"
-                    if row["closeLevel"] >= row["openLevel"]:
-                        open_data["sl"] = "short"
-                    else:
-                        open_data["sl"] = "long"
+                open_data["action"] = deal_info["direction"].lower()
 
                 df_results = df_results.append(open_data)
                 res = analytics.evaluate(predictor, df, df_eval, name, PlotlyViewer(cache), filter=filter)
-                if (r[1]["profitAndLoss"] < 0 and res.get_win_loss() > 0) or (
-                        r[1]["profitAndLoss"] > 0 and res.get_win_loss() < 0):
-                    print("ERROR")
+                for trade in res._trade_results:
+                    if TimeUtils.get_time_string(filter) == trade.last_df_time:
+                        df_results.loc[df_results.date == trade.last_df_time, "eval_result"] = trade.result
+                        df_results.loc[df_results.date == trade.last_df_time, "eval_action"] = trade.action
             else:
                 add_text += "Error"
 
@@ -401,6 +396,12 @@ class IG:
             legend_title="Legend Title",
         )
         fig.show()
+
+        if len(df_results[df_results.action != df_results.eval_action]) > 0:
+            print("ERROR")
+
+        if len(df_results[df_results.wl != df_results.eval_result]) > 0:
+            print("ERROR")
         return df_results
 
     def report_last_day(self, ti, cache, dp, analytics, days: int = 7):
@@ -483,4 +484,4 @@ class IG:
                             dp_service=dp_service,
                             delta=timedelta(days=7),
                             name="lastweek")
-        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics)
+        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics, days=3)

@@ -58,7 +58,7 @@ class Analytics:
             if only_one_position and df_train.date[i] < last_exit:
                 continue
 
-            action, stop, limit = predictor.predict(df_train[:current_index])
+            action, stop, limit = predictor.predict(df_train[:current_index + 1])
             if action == TradeAction.NONE:
                 continue
 
@@ -70,9 +70,9 @@ class Analytics:
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
 
-            additonal_text = self._create_additional_info(df_train.iloc[current_index - 1],
+            additonal_text = self._create_additional_info(df_train.iloc[current_index],
                                                           "RSI", "CCI", "MACD", "SIGNAL", "PSAR")
-            additonal_text += df_train.iloc[current_index - 1].date
+            additonal_text += df_train.iloc[current_index].date
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread

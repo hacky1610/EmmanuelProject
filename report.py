@@ -1,7 +1,8 @@
-from BL import DataProcessor, Analytics
+from BL import DataProcessor
+from BL.analytics import Analytics
 from BL.indicators import Indicators
-from Connectors import DropBoxCache
 from Connectors.IG import IG
+from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import Tiingo
 from BL.utils import ConfigReader
 import dropbox

@@ -36,19 +36,19 @@ class PlotlyViewer(BaseViewer):
                            low=self.df['low'],
                            close=self.df['close']))
 
-        self.fig.add_trace(self._print_line("EMA_10", "Red"))
-        self.fig.add_trace(self._print_line("EMA_20", "Orange"))
-        self.fig.add_trace(self._print_line("EMA_30", "Blue"))
-        self.fig.add_trace(go.Line(x=self.df.index,
-                                   y=self.df["MACD"],
-                                   line=dict(shape='linear', color="Blue")),
-                                    secondary_y=True)
-        self.fig.add_trace(go.Line(x=self.df.index,
-                                   y=self.df["SIGNAL"],
-                                   line=dict(shape='linear', color="Red")),
-                           secondary_y=True)
-
-        self.fig.update_yaxes(range=[self.df["MACD"].min(), self.df["MACD"].max() * 4], secondary_y=True)
+        # self.fig.add_trace(self._print_line("EMA_10", "Red"))
+        # self.fig.add_trace(self._print_line("EMA_20", "Orange"))
+        # self.fig.add_trace(self._print_line("EMA_30", "Blue"))
+        # self.fig.add_trace(go.Line(x=self.df.index,
+        #                            y=self.df["MACD"],
+        #                            line=dict(shape='linear', color="Blue")),
+        #                             secondary_y=True)
+        # self.fig.add_trace(go.Line(x=self.df.index,
+        #                            y=self.df["SIGNAL"],
+        #                            line=dict(shape='linear', color="Red")),
+        #                    secondary_y=True)
+        #
+        # self.fig.update_yaxes(range=[self.df["MACD"].min(), self.df["MACD"].max() * 4], secondary_y=True)
 
         self.fig.update_layout(
             title=self.title,
