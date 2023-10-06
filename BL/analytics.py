@@ -58,7 +58,7 @@ class Analytics:
             if only_one_position and df_train.date[i] < last_exit:
                 continue
 
-            action, stop, limit = predictor.predict(df_train[:current_index + 1])
+            action, stop, limit = predictor.predict(df_train[:current_index])
             if action == TradeAction.NONE:
                 continue
 

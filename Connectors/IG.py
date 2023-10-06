@@ -355,11 +355,11 @@ class IG:
                 open_data["action"] = deal_info["direction"].lower()
 
                 df_results = df_results.append(open_data)
-                res = analytics.evaluate(predictor, df, df_eval, name, PlotlyViewer(cache), filter=filter)
+                res = analytics.evaluate(predictor, df, df_eval, name, PlotlyViewer(cache), filter=datetime(dt.year, dt.month, dt.day, dt.hour) )
                 for trade in res._trade_results:
-                    if TimeUtils.get_time_string(filter) == trade.last_df_time:
-                        df_results.loc[df_results.date == trade.last_df_time, "eval_result"] = trade.result
-                        df_results.loc[df_results.date == trade.last_df_time, "eval_action"] = trade.action
+                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour) ) == trade.last_df_time:
+                        df_results.loc[df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
+                        df_results.loc[df_results.date == TimeUtils.get_time_string(filter), "eval_action"] = trade.action
             else:
                 add_text += "Error"
 
@@ -398,10 +398,10 @@ class IG:
         fig.show()
 
         if len(df_results[df_results.action != df_results.eval_action]) > 0:
-            print("ERROR")
+            print(f"{ticker} ERROR- action mismatch")
 
         if len(df_results[df_results.wl != df_results.eval_result]) > 0:
-            print("ERROR")
+            print(f"{ticker} ERROR - evaluation mismatch")
         return df_results
 
     def report_last_day(self, ti, cache, dp, analytics, days: int = 7):
@@ -484,4 +484,4 @@ class IG:
                             dp_service=dp_service,
                             delta=timedelta(days=7),
                             name="lastweek")
-        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics, days=3)
+        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics, days=4)

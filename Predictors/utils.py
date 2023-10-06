@@ -23,7 +23,7 @@ class Reporting:
         self.results:EvalResultCollection = None
         self.reports:DataFrame = DataFrame()
         self._wl_limit = 0.8
-    def create(self, markets, predictor_class, verbose=True):
+    def create(self, markets, predictor_class, verbose=False):
         self.results, self.reports = self.report_predictors(markets, predictor_class, verbose)
 
     def report_predictor(self,symbol,  predictor_class:Type, verbose:bool):
