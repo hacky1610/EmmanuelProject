@@ -558,3 +558,65 @@ class TestIndicators(unittest.TestCase):
         data['EMA_50'] = [70, 70, 70, 70]
         data = self.indicators._ema_10_50_diff(data)
         self.assertEqual(data, TradeAction.NONE)
+
+    def test_ema_20_close(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['EMA_20'] = [60, 75, 80, 90]
+        data['close'] = [70, 70, 90, 100]
+        data = self.indicators._ema_20_close(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['EMA_20'] = [60, 75, 80, 90]
+        data['close'] = [70, 70, 50, 50]
+        data = self.indicators._ema_20_close(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+        # Teste None Pfad
+        data = DataFrame()
+        data['EMA_20'] = [60, 75, 80, 90]
+        data['close'] = [70, 70, 50, 100]
+        data = self.indicators._ema_20_close(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+    def test_smma_20_close(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['SMMA_20'] = [60, 75, 80, 90]
+        data['close'] = [70, 70, 90, 100]
+        data = self.indicators._smma_20_close(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        # Teste Sell-Pfad
+        data = DataFrame()
+        data['SMMA_20'] = [60, 75, 80, 90]
+        data['close'] = [70, 70, 50, 50]
+        data = self.indicators._smma_20_close(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+        # Teste None Pfad
+        data = DataFrame()
+        data['SMMA_20'] = [60, 75, 80, 90]
+        data['close'] = [70, 70, 50, 100]
+        data = self.indicators._smma_20_close(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+
+    def test_ema_20_smma_20(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['SMMA_20'] = [60, 75, 80, 90]
+        data['EMA_20'] = [70, 70, 100, 100]
+        data = self.indicators._ema_20_smma_20(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+
+
+
+
+
+
+
+

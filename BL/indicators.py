@@ -50,8 +50,12 @@ class Indicators:
     EMA_ALLIGATOR = "ema_alligator"
     EMA_ALLIGATOR_HIST = "ema_alligator_hist"
     EMA10_50 = "ema_10_50"
+    EMA20_CLOSE = "ema_20_close"
+    SMMA20_CLOSE = "smma_20_close"
+    EMA20_SMMA20 = "ema_20_smma_20"
     # Others
     ADX = "adx"
+    ADX_SLOPE = "adx_slope"
     ADX_BREAK = "adx_break"
     ADX_MAX = "adx_max"
     ADX_MAX2 = "adx_max2"
@@ -110,9 +114,13 @@ class Indicators:
         self._add_indicator(self.EMA_HIST, self._ema_hist_predict)
         self._add_indicator(self.EMA_ALLIGATOR_HIST, self._ema_alligator_hist_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
+        self._add_indicator(self.EMA20_CLOSE, self._ema_20_close)
+        self._add_indicator(self.SMMA20_CLOSE, self._smma_20_close)
+        self._add_indicator(self.EMA20_SMMA20, self._ema_20_smma_20)
 
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
+        self._add_indicator(self.ADX_SLOPE, self._adx_slope_predict)
         self._add_indicator(self.ADX_MAX, self._adx_max_predict)
         self._add_indicator(self.ADX_MAX2, self._adx_max_predict2)
         self._add_indicator(self.ADX_BREAK, self._adx__break_predict)
@@ -272,6 +280,46 @@ class Indicators:
         else:
             if ema_diff.iloc[-1] < ema_diff[-3:-1].min():
                 return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _ema_20_close(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        period = df[-2:]
+
+        if len(period[period.EMA_20 < period.close]) == len(period):
+            return TradeAction.BUY
+        elif len(period[period.EMA_20 > period.close]) == len(period):
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _smma_20_close(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        period = df[-2:]
+
+        if len(period[period.SMMA_20 < period.close]) == len(period):
+            return TradeAction.BUY
+        elif len(period[period.SMMA_20 > period.close]) == len(period):
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _ema_20_smma_20(self, df):
+
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        period = df[-2:]
+
+        if len(period[period.EMA_20 > period.SMMA_20]) == len(period):
+            return TradeAction.BUY
+        elif len(period[period.EMA_20 < period.SMMA_20]) == len(period):
+            return TradeAction.SELL
 
         return TradeAction.NONE
 
@@ -501,12 +549,24 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _adx_slope_predict(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        current_adx = df.ADX.iloc[-1]
+        before_adx = df.ADX.iloc[-2]
+
+        if current_adx > 20 and before_adx < current_adx:
+            return TradeAction.BOTH
+
+        return TradeAction.NONE
+
     def _adx__break_predict(self, df):
         if len(df) < 2:
             return TradeAction.NONE
 
         current_adx = df.ADX.iloc[-1]
-        before_adx = df.ADX.iloc[-1]
+        before_adx = df.ADX.iloc[-2]
 
         if current_adx > 23 and before_adx < current_adx:
             return TradeAction.BOTH

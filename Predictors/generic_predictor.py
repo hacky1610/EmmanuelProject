@@ -56,8 +56,7 @@ class GenericPredictor(BasePredictor):
         return parent_c.append(my_conf)
 
     def predict(self, df: DataFrame) -> (str, float, float):
-        # action = self._indicators.predict_all(df, 1.0)
-        all = self._indicator_names + [Indicators.ADX]
+        all = self._indicator_names + []
         action = self._indicators.predict_some(df, all)
         stop = limit = df.ATR.mean() * self._limit_factor
         return action, stop, limit

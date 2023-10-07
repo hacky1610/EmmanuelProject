@@ -356,6 +356,8 @@ class IG:
                 else:
                     open_data["wl"] = "lost"
                 open_data["action"] = deal_info["direction"].lower()
+                open_data["eval_result"] = "none"
+                open_data["eval_action"] = "none"
 
                 df_results = df_results.append(open_data)
                 res = analytics.evaluate(predictor, df, df_eval, name, PlotlyViewer(cache), filter=datetime(dt.year, dt.month, dt.day, dt.hour) )

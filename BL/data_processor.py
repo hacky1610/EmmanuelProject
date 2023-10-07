@@ -19,6 +19,8 @@ class DataProcessor:
         df['EMA_30'] = TA.EMA(df, 30)
         df['EMA_50'] = TA.EMA(df, 50)
 
+        df['SMMA_20'] = TA.SMMA(df, 20)
+
         bb = TA.BBANDS(df)
         df['BB_UPPER'] = bb['BB_UPPER']
         df['BB_MIDDLE'] = bb['BB_MIDDLE']
