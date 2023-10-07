@@ -57,6 +57,20 @@ class Trainer:
                 best_predictor = predictor
                 best_predictor.save(symbol)
                 print(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
+                continue
+            if res.get_reward() > best_reward and res.get_win_loss() >= 0.66 and res.get_trades() >= 20:
+                best_reward = res.get_reward()
+                best_predictor = predictor
+                best_predictor.save(symbol)
+                print(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
+                continue
+
+            if res.get_reward() > best_reward and res.get_win_loss() >= 0.66 and res.get_trades() >= 15:
+                best_reward = res.get_reward()
+                best_predictor = predictor
+                best_predictor.save(symbol)
+                print(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
+                continue
 
         if best_predictor is not None:
             print(f"{symbol} Overwrite result.")
