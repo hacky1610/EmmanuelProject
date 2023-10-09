@@ -1,5 +1,7 @@
 # region import
 import random
+from typing import Dict
+
 from BL import DataProcessor,  ConfigReader
 from BL.analytics import Analytics
 from BL.eval_result import  EvalResultCollection
@@ -39,7 +41,7 @@ only_one_position = False
 
 # region functions
 def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, only_one_position: bool = True,
-                       only_test=False):
+                       only_test=False, predictor_settings:Dict = {}):
     global symbol
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     # for m in random.choices(markets,k=30):
@@ -51,6 +53,7 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
         if len(df) > 0:
             predictor = predictor_class(indicators=indicators, cache=df_cache, viewer=viewer)
             predictor.load(symbol)
+            predictor.setup(predictor_settings)
             ev_result = analytics.evaluate(predictor=predictor,
                                            df_train=df,
                                            df_eval=df_eval,
@@ -73,4 +76,16 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
 #evaluate_predictor(indicators, ig, ti, RectanglePredictor, viewer, only_test=False, only_one_position=only_one_position)
 #evaluate_predictor(indicators, ig, ti, TrianglePredictor, viewer, only_test=False, only_one_position=only_one_position)
 #evaluate_predictor(indicators, ig, ti, IchimokuPredictor, viewer, only_test=False, only_one_position=only_one_position)
-evaluate_predictor(indicators, ig, ti, GenericPredictor, viewer, only_test=False, only_one_position=only_one_position)
+
+for i in [Indicators.RSI_CONVERGENCE, Indicators.RSI_CONVERGENCE5, Indicators.RSI_CONVERGENCE7,Indicators.TII_50, Indicators.TII_20_80,
+          Indicators.MACD_CONVERGENCE, Indicators.MACDSINGALDIFF, Indicators.RSI_BREAK, Indicators.ADX, Indicators.CANDLEPATTERN,
+          Indicators.BB_MIDDLE_CROSS, Indicators.BB_BORDER_CROSS, Indicators.ICHIMOKU]:
+    print(f"Indicator {i}")
+    evaluate_predictor(indicators,
+                       ig,
+                       ti,
+                       GenericPredictor,
+                       viewer,
+                       only_test=True,
+                       only_one_position=only_one_position,
+                       predictor_settings={"_additional_indicators":[i]})

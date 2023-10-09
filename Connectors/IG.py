@@ -1,5 +1,6 @@
 import os.path
 import time
+from typing import List, Dict
 
 from trading_ig import IGService
 from trading_ig.rest import IGException
@@ -17,6 +18,7 @@ import re
 import tempfile
 from datetime import datetime
 from Connectors.tiingo import TradeType
+from UI.base_viewer import BaseViewer
 from UI.plotly_viewer import PlotlyViewer
 
 
@@ -321,7 +323,7 @@ class IG:
         #                      color="#00ff00", label="Limit")
 
     @staticmethod
-    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics: Analytics):
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics: Analytics, viewer:BaseViewer, predictor_settings:Dict):
         df_results = DataFrame()
         df_history = ti.load_data_by_date(ticker,
                                           TimeUtils.get_date_string(start_time_hours),
@@ -345,6 +347,7 @@ class IG:
                 add_text += f"{deal_info['Type']}: WL: {win_lost} - Trades: {deal_info['_trades']}"
                 predictor = GenericPredictor(indicators=Indicators())
                 predictor.setup(deal_info)
+                predictor.setup(predictor_settings)
                 df, df_eval = ti.load_train_data(n, dp, TradeType.FX)
                 dt = datetime.fromisoformat(str(row.openDateUtc))
                 filter = datetime(dt.year, dt.month, dt.day, dt.hour) - timedelta(hours=1)
@@ -360,7 +363,7 @@ class IG:
                 open_data["eval_action"] = "none"
 
                 df_results = df_results.append(open_data)
-                res = analytics.evaluate(predictor, df, df_eval, name, PlotlyViewer(cache), filter=datetime(dt.year, dt.month, dt.day, dt.hour) )
+                res = analytics.evaluate(predictor, df, df_eval, name, viewer, filter=datetime(dt.year, dt.month, dt.day, dt.hour) )
                 for trade in res._trade_results:
                     if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour) ) == trade.last_df_time:
                         df_results.loc[df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
@@ -400,16 +403,16 @@ class IG:
             title=f"Live trade of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a> {add_text}",
             legend_title="Legend Title",
         )
-        fig.show()
+        # fig.show()
 
-        if len(df_results[df_results.action != df_results.eval_action]) > 0:
-            print(f"{ticker} ERROR- action mismatch")
-
-        if len(df_results[df_results.wl != df_results.eval_result]) > 0:
-            print(f"{ticker} ERROR - evaluation mismatch")
+        # if len(df_results[df_results.action != df_results.eval_action]) > 0:
+        #     print(f"{ticker} ERROR- action mismatch")
+        #
+        # if len(df_results[df_results.wl != df_results.eval_result]) > 0:
+        #     print(f"{ticker} ERROR - evaluation mismatch")
         return df_results
 
-    def report_last_day(self, ti, cache, dp, analytics, days: int = 7):
+    def report_last_day(self, ti, cache, dp, analytics, viewer:BaseViewer, days: int = 7):
         start_time = (datetime.now() - timedelta(hours=days * 24))
         start_time_hours = (datetime.now() - timedelta(days=days * 2))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -429,19 +432,25 @@ class IG:
 
         hist = self.fix_hist(hist)
 
-        df_results = DataFrame()
-        for ticker in hist['name'].unique():
-            df_res = self.report_symbol(ti=ti,
-                                        ticker=ticker,
-                                        start_time_hours=start_time_hours,
-                                        start_time_str=start_time_str,
-                                        hist=hist,
-                                        cache=cache,
-                                        dp=dp,
-                                        analytics=analytics)
-            df_results = df_results.append(df_res)
 
-        print(df_results)
+        for i in Indicators().get_all_indicator_names():
+            print(f"Indicator {i}")
+            df_results = DataFrame()
+            for ticker in hist['name'].unique():
+                df_res = self.report_symbol(ti=ti,
+                                            ticker=ticker,
+                                            start_time_hours=start_time_hours,
+                                            start_time_str=start_time_str,
+                                            hist=hist,
+                                            cache=cache,
+                                            dp=dp,
+                                            analytics=analytics,
+                                            viewer=viewer,
+                                            predictor_settings={"_additional_indicators":[i]})
+                df_results = df_results.append(df_res)
+
+            #print(df_results)
+            print(f"WL Ratio {len(df_results[df_results.wl == 'lost'])} - {len(df_results[df_results.eval_result == 'lost'])}")
 
     def report_summary(self,
                        ti,
@@ -483,10 +492,10 @@ class IG:
 
         return
 
-    def create_report(self, ti, dp_service, predictor, cache, dp, analytics):
+    def create_report(self, ti, dp_service, predictor, cache, dp, analytics, viewer:BaseViewer):
         # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
-        self.report_summary(ti=ti,
-                            dp_service=dp_service,
-                            delta=timedelta(days=7),
-                            name="lastweek")
-        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics, days=4)
+        # self.report_summary(ti=ti,
+        #                     dp_service=dp_service,
+        #                     delta=timedelta(days=7),
+        #                     name="lastweek")
+        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics, viewer=viewer, days=4)
