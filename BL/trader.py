@@ -229,13 +229,10 @@ class Trader:
         if signal == TradeAction.NONE:
             return TradeResult.NOACTION
 
-        opened_position = self._ig.get_opened_positions_by_epic(config.epic)
-        if opened_position is not None and (
-                (signal == TradeAction.BUY and opened_position.direction == "BUY") or
-                (signal == TradeAction.SELL and opened_position.direction == "SELL")
-        ):
+        opened_positions = self._ig.get_opened_positions_by_epic(config.epic)
+        if len(opened_positions) > 2:
             self._tracer.write(
-                f"There is already an opened position of {config.symbol} with direction {opened_position.direction}")
+                f"There are already {len(opened_positions)} opened position of {config.symbol}")
             return TradeResult.NOACTION
 
         if signal == TradeAction.BUY:

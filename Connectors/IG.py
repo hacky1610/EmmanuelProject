@@ -238,7 +238,7 @@ class IG:
         positions = self.get_opened_positions()
         epics = positions[positions.epic == epic]
         if len(epics) == 1:
-            return epics.loc[0]
+            return epics
         else:
             return None
 
@@ -369,7 +369,7 @@ class IG:
                         df_results.loc[df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
                         df_results.loc[df_results.date == TimeUtils.get_time_string(filter), "eval_action"] = trade.action
             else:
-                add_text += "Error"
+                raise Exception()
 
         winner = temp_hist[temp_hist["profitAndLoss"] >= 0]
         looser = temp_hist[temp_hist["profitAndLoss"] < 0]
@@ -449,8 +449,14 @@ class IG:
                                             predictor_settings={"_additional_indicators":[i]})
                 df_results = df_results.append(df_res)
 
-            #print(df_results)
-            print(f"WL Ratio {len(df_results[df_results.wl == 'lost'])} - {len(df_results[df_results.eval_result == 'lost'])}")
+            #print(df_results.filter(["date","ticker", "wl", "eval_result"]))
+            try:
+                wl_eval = len(df_results[df_results.eval_result == 'won']) / (len(df_results[df_results.eval_result == 'won']) + len(df_results[df_results.eval_result == 'lost']))
+                wl_original = len(df_results[df_results.wl == 'won']) / (len(df_results[df_results.wl == 'won']) + len(df_results[df_results.wl == 'lost']))
+                print(f"WL   Original: {wl_original} Eval: {wl_eval}")
+                print(f"Lost Original: {len(df_results[df_results.wl == 'lost'])} Eval: {len(df_results[df_results.eval_result == 'lost'])}")
+            except:
+                print("Division by Zero")
 
     def report_summary(self,
                        ti,
@@ -498,4 +504,4 @@ class IG:
         #                     dp_service=dp_service,
         #                     delta=timedelta(days=7),
         #                     name="lastweek")
-        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics, viewer=viewer, days=4)
+        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics, viewer=viewer, days=8)
