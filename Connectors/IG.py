@@ -231,16 +231,12 @@ class IG:
         positions = self.ig_service.fetch_open_positions()
         return positions.loc[positions["direction"] == direction]
 
-    def get_opened_positions(self):
+    def get_opened_positions(self) -> DataFrame:
         return self.ig_service.fetch_open_positions()
 
-    def get_opened_positions_by_epic(self, epic: str):
+    def get_opened_positions_by_epic(self, epic: str) -> DataFrame:
         positions = self.get_opened_positions()
-        epics = positions[positions.epic == epic]
-        if len(epics) == 1:
-            return epics
-        else:
-            return None
+        return positions[positions.epic == epic]
 
     def get_transaction_history(self, start_time: str):
         return self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", from_date=start_time,
