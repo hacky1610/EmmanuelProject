@@ -229,6 +229,8 @@ class Trader:
         if signal == TradeAction.NONE:
             return TradeResult.NOACTION
 
+        self._tracer.info(f"Trade {signal} ")
+
         opened_positions = self._ig.get_opened_positions_by_epic(config.epic)
         if len(opened_positions) > 2:
             self._tracer.write(
