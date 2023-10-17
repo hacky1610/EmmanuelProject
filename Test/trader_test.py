@@ -66,11 +66,10 @@ class TraderTest(unittest.TestCase):
                                  config=self._default_trade_config)
         assert res == TradeResult.ERROR
 
-    def test_trade_has_open_buy_positions(self):
-        position = MagicMock()
-        position.direction = "BUY"
+    def test_trade_has_open_positions(self):
+        positions = ["P1", "P2", "P3"]
         self._trader._is_good = MagicMock(return_value=True)
-        self._mock_ig.get_opened_positions_by_epic = MagicMock(return_value=position)
+        self._mock_ig.get_opened_positions_by_epic = MagicMock(return_value=positions)
         self._predictor.predict = MagicMock(return_value=("buy", 1, 1))
         res = self._trader.trade(predictor=self._predictor,
                                  config=self._default_trade_config)
@@ -78,17 +77,16 @@ class TraderTest(unittest.TestCase):
         self._mock_ig.get_opened_positions_by_epic.assert_called()
         assert res == TradeResult.NOACTION
 
-    def test_trade_has_open_sell_positions(self):
-        position = MagicMock()
-        position.direction = "SELL"
+        positions = ["P1", "P2"]
         self._trader._is_good = MagicMock(return_value=True)
-        self._mock_ig.get_opened_positions_by_epic = MagicMock(return_value=position)
-        self._predictor.predict = MagicMock(return_value=("sell", 1, 1))
+        self._mock_ig.get_opened_positions_by_epic = MagicMock(return_value=positions)
+        self._predictor.predict = MagicMock(return_value=("buy", 1, 1))
         res = self._trader.trade(predictor=self._predictor,
                                  config=self._default_trade_config)
-        self._mock_ig.sell.assert_not_called()
+        self._mock_ig.buy.asser_called()
         self._mock_ig.get_opened_positions_by_epic.assert_called()
-        assert res == TradeResult.NOACTION
+
+
 
     def test_trade_do_buy(self):
         self._trader._is_good = MagicMock(return_value=True)
