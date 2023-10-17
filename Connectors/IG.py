@@ -403,7 +403,7 @@ class IG:
             title=f"Live trade of  <a href='https://de.tradingview.com/chart/?symbol={ticker}'>{ticker}</a> {add_text}",
             legend_title="Legend Title",
         )
-        # fig.show()
+        fig.show()
 
         # if len(df_results[df_results.action != df_results.eval_action]) > 0:
         #     print(f"{ticker} ERROR- action mismatch")
@@ -433,7 +433,7 @@ class IG:
         hist = self.fix_hist(hist)
 
 
-        for i in Indicators().get_all_indicator_names():
+        for i in [""] + Indicators().get_all_indicator_names():
             print(f"Indicator {i}")
             df_results = DataFrame()
             for ticker in hist['name'].unique():

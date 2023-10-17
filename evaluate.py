@@ -32,7 +32,7 @@ ti = Tiingo(conf_reader=conf_reader, cache=df_cache)
 indicators = Indicators()
 analytics = Analytics()
 trade_type = TradeType.FX
-results = EvalResultCollection()
+
 viewer = BaseViewer()
 only_one_position = False
 
@@ -43,6 +43,7 @@ only_one_position = False
 def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, only_one_position: bool = True,
                        only_test=False, predictor_settings:Dict = {}):
     global symbol
+    results = EvalResultCollection()
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     # for m in random.choices(markets,k=30):
     for m in markets:
@@ -81,6 +82,7 @@ for i in [Indicators.RSI_CONVERGENCE, Indicators.RSI_CONVERGENCE5, Indicators.RS
           Indicators.MACD_CONVERGENCE, Indicators.MACDSINGALDIFF, Indicators.RSI_BREAK, Indicators.ADX, Indicators.CANDLEPATTERN,
           Indicators.BB_MIDDLE_CROSS, Indicators.BB_BORDER_CROSS, Indicators.ICHIMOKU]:
     print(f"Indicator {i}")
+
     evaluate_predictor(indicators,
                        ig,
                        ti,

@@ -75,7 +75,10 @@ class EvalResult:
 
 
 class EvalResultCollection:
-    _items = []
+
+    def __init__(self):
+        self._items = []
+
 
     def add(self, r: EvalResult):
         self._items.append(r)

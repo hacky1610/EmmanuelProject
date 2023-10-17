@@ -20,7 +20,7 @@ tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
 predictor = GenericPredictor(indicators=Indicators())
 viewer = PlotlyViewer(cache)
-viewer = BaseViewer()
+#viewer = BaseViewer()
 
 ig.create_report(ti=tiingo,
                  dp_service=ds,
