@@ -232,7 +232,7 @@ class Trader:
         self._tracer.info(f"Trade {signal} ")
 
         opened_positions = self._ig.get_opened_positions_by_epic(config.epic)
-        if len(opened_positions) > 2:
+        if len(opened_positions) >= 1:
             self._tracer.write(
                 f"There are already {len(opened_positions)} opened position of {config.symbol}")
             return TradeResult.NOACTION

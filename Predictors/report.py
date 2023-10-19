@@ -78,6 +78,9 @@ fig.show()
 show_indicators(_reporting.get_all_indicators())
 show_indicators(_reporting.get_best_indicators())
 
+reps = _reporting.reports[_reporting.reports.trades < 200]
+(px.scatter(y=reps.win_los, x=reps.trades)).show()
+
 
 
 
