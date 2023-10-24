@@ -16,6 +16,8 @@ class DataProcessor:
         df['EMA_13'] = TA.EMA(df, 13)
         df['EMA_14'] = TA.EMA(df, 14)
         df['EMA_20'] = TA.EMA(df, 20)
+        df['EMA_20_HIGH'] = TA.EMA(df, 20,"high")
+        df['EMA_20_LOW'] = TA.EMA(df, 20, "low")
         df['EMA_30'] = TA.EMA(df, 30)
         df['EMA_50'] = TA.EMA(df, 50)
 

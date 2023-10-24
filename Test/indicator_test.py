@@ -559,6 +559,33 @@ class TestIndicators(unittest.TestCase):
         data = self.indicators._ema_10_50_diff(data)
         self.assertEqual(data, TradeAction.NONE)
 
+    def test_ema_20_channel(self):
+        data = DataFrame()
+        data['EMA_20_HIGH'] = [100, 100, 100, 100]
+        data['EMA_20_LOW'] = [80, 80, 80, 80]
+        data = self.indicators._ema_20_channel(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+        data = DataFrame()
+        data['EMA_20_HIGH'] = [100, 100, 100, 100, 100]
+        data['high'] = [100, 100, 100, 110, 100]
+        data['close'] = [100, 100, 100, 100, 100]
+        data['low'] = [100, 100, 100, 60, 100]
+        data['EMA_20_LOW'] = [80, 80, 80, 80, 80]
+        data = self.indicators._ema_20_channel(data)
+        self.assertEqual(data, TradeAction.BUY)
+
+        data = DataFrame()
+        data['EMA_20_HIGH'] = [100, 100, 100, 100, 100]
+        data['high'] = [90, 90, 90, 110, 100]
+        data['close'] = [60, 60, 60, 100, 60]
+        data['low'] = [100, 100, 100, 100, 100]
+        data['EMA_20_LOW'] = [80, 80, 80, 80, 80]
+        data = self.indicators._ema_20_channel(data)
+        self.assertEqual(data, TradeAction.SELL)
+
+
+
     def test_ema_20_close(self):
         # Teste Buy-Pfad
         data = DataFrame()

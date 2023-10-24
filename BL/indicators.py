@@ -53,6 +53,7 @@ class Indicators:
     EMA20_CLOSE = "ema_20_close"
     SMMA20_CLOSE = "smma_20_close"
     EMA20_SMMA20 = "ema_20_smma_20"
+    EMA_20_CHANNEL = "ema_20_channel"
     # Others
     ADX = "adx"
     ADX_SLOPE = "adx_slope"
@@ -117,6 +118,7 @@ class Indicators:
         self._add_indicator(self.EMA20_CLOSE, self._ema_20_close)
         self._add_indicator(self.SMMA20_CLOSE, self._smma_20_close)
         self._add_indicator(self.EMA20_SMMA20, self._ema_20_smma_20)
+        self._add_indicator(self.EMA_20_CHANNEL, self._ema_20_channel)
 
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
@@ -319,6 +321,28 @@ class Indicators:
         if len(period[period.EMA_20 > period.SMMA_20]) == len(period):
             return TradeAction.BUY
         elif len(period[period.EMA_20 < period.SMMA_20]) == len(period):
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _ema_20_channel(self, df):
+        period_len = 5
+        if len(df) < period_len:
+            return TradeAction.NONE
+
+        period = df[-1 * period_len:-2]
+
+        current_close = df.close.iloc[-1]
+        before_low = df.low.iloc[-2]
+        before_high = df.high.iloc[-2]
+        current_ema_high = df.EMA_20_HIGH.iloc[-1]
+        before_ema_high = df.EMA_20_HIGH.iloc[-2]
+        current_ema_low = df.EMA_20_LOW.iloc[-1]
+        before_ema_low = df.EMA_20_LOW.iloc[-2]
+
+        if current_close > current_ema_low and before_low < before_ema_low and len(period[period.close > period.EMA_20_LOW]):
+            return TradeAction.BUY
+        elif current_close < current_ema_high and before_high > before_ema_high and len(period[period.close < period.EMA_20_HIGH]):
             return TradeAction.SELL
 
         return TradeAction.NONE

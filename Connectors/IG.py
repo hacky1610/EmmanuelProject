@@ -357,6 +357,8 @@ class IG:
                 open_data["action"] = deal_info["direction"].lower()
                 open_data["eval_result"] = "none"
                 open_data["eval_action"] = "none"
+                open_data["trades"] = deal_info["_trades"]
+                open_data["wl_ration"] = win_lost
 
                 df_results = df_results.append(open_data)
                 res = analytics.evaluate(predictor, df, df_eval, name, viewer, filter=datetime(dt.year, dt.month, dt.day, dt.hour) )
@@ -444,6 +446,7 @@ class IG:
                                             viewer=viewer,
                                             predictor_settings={"_additional_indicators":[i]})
                 df_results = df_results.append(df_res)
+            print(df_results)
 
             #print(df_results.filter(["date","ticker", "wl", "eval_result"]))
             try:
