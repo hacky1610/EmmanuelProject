@@ -25,7 +25,7 @@ from UI.plotly_viewer import PlotlyViewer
 class IG:
 
     def __init__(self, conf_reader: BaseReader, tracer: Tracer = ConsoleTracer(), live: bool = False):
-        self.ig_service = None
+        self.ig_service: IGService = None
         self.user = conf_reader.get("ig_demo_user")
         self.password = conf_reader.get("ig_demo_pass")
         self.key = conf_reader.get("ig_demo_key")
@@ -223,6 +223,43 @@ class IG:
 
         return result, deal_response
 
+    def close(self,
+              epic: str,
+              direction: str,
+              deal_id: str,
+              size: float = 1.0, ) -> (bool, dict):
+
+        deal_response: dict = {}
+        result = False
+        try:
+            response = self.ig_service.close_open_position(
+                direction=direction,
+                epic=epic,
+                expiry="-",
+                order_type="MARKET",
+                size=size,
+                level=None,
+                quote_id=None,
+                deal_id=deal_id
+            )
+            if response["dealStatus"] != "ACCEPTED":
+                self._tracer.error(f"could not close trade: {response['reason']} for {epic}")
+            else:
+                self._tracer.write(f"Close successfull {epic}. Deal details {response}")
+                result = True
+            deal_response = response
+        except IGException as ex:
+            self._tracer.error(f"Error during close a position. {ex} for {epic}")
+
+        return result, deal_response
+
+    @staticmethod
+    def get_inverse(direction: str) -> str:
+        if direction == "SELL":
+            return "BUY"
+        else:
+            return "SELL"
+
     def has_opened_positions(self):
         positions = self.ig_service.fetch_open_positions()
         return len(positions) > 0
@@ -319,7 +356,8 @@ class IG:
         #                      color="#00ff00", label="Limit")
 
     @staticmethod
-    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics: Analytics, viewer:BaseViewer, predictor_settings:Dict):
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics: Analytics,
+                      viewer: BaseViewer, predictor_settings: Dict):
         df_results = DataFrame()
         df_history = ti.load_data_by_date(ticker,
                                           TimeUtils.get_date_string(start_time_hours),
@@ -361,11 +399,14 @@ class IG:
                 open_data["wl_ration"] = win_lost
 
                 df_results = df_results.append(open_data)
-                res = analytics.evaluate(predictor, df, df_eval, name, viewer, filter=datetime(dt.year, dt.month, dt.day, dt.hour) )
+                res = analytics.evaluate(predictor, df, df_eval, name, viewer,
+                                         filter=datetime(dt.year, dt.month, dt.day, dt.hour))
                 for trade in res._trade_results:
-                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour) ) == trade.last_df_time:
-                        df_results.loc[df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
-                        df_results.loc[df_results.date == TimeUtils.get_time_string(filter), "eval_action"] = trade.action
+                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour)) == trade.last_df_time:
+                        df_results.loc[
+                            df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
+                        df_results.loc[
+                            df_results.date == TimeUtils.get_time_string(filter), "eval_action"] = trade.action
             else:
                 raise Exception()
 
@@ -410,7 +451,7 @@ class IG:
         #     print(f"{ticker} ERROR - evaluation mismatch")
         return df_results
 
-    def report_last_day(self, ti, cache, dp, analytics, viewer:BaseViewer, days: int = 7):
+    def report_last_day(self, ti, cache, dp, analytics, viewer: BaseViewer, days: int = 7):
         start_time = (datetime.now() - timedelta(hours=days * 24))
         start_time_hours = (datetime.now() - timedelta(days=days * 2))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -430,7 +471,6 @@ class IG:
 
         hist = self.fix_hist(hist)
 
-
         for i in [""] + Indicators().get_all_indicator_names():
             print(f"Indicator {i}")
             df_results = DataFrame()
@@ -444,16 +484,20 @@ class IG:
                                             dp=dp,
                                             analytics=analytics,
                                             viewer=viewer,
-                                            predictor_settings={"_additional_indicators":[i]})
+                                            predictor_settings={"_additional_indicators": [i]})
                 df_results = df_results.append(df_res)
             print(df_results)
 
-            #print(df_results.filter(["date","ticker", "wl", "eval_result"]))
+            # print(df_results.filter(["date","ticker", "wl", "eval_result"]))
             try:
-                wl_eval = len(df_results[df_results.eval_result == 'won']) / (len(df_results[df_results.eval_result == 'won']) + len(df_results[df_results.eval_result == 'lost']))
-                wl_original = len(df_results[df_results.wl == 'won']) / (len(df_results[df_results.wl == 'won']) + len(df_results[df_results.wl == 'lost']))
+                wl_eval = len(df_results[df_results.eval_result == 'won']) / (
+                            len(df_results[df_results.eval_result == 'won']) + len(
+                        df_results[df_results.eval_result == 'lost']))
+                wl_original = len(df_results[df_results.wl == 'won']) / (
+                            len(df_results[df_results.wl == 'won']) + len(df_results[df_results.wl == 'lost']))
                 print(f"WL   Original: {wl_original} Eval: {wl_eval}")
-                print(f"Lost Original: {len(df_results[df_results.wl == 'lost'])} Eval: {len(df_results[df_results.eval_result == 'lost'])}")
+                print(
+                    f"Lost Original: {len(df_results[df_results.wl == 'lost'])} Eval: {len(df_results[df_results.eval_result == 'lost'])}")
             except:
                 print("Division by Zero")
 
@@ -497,7 +541,7 @@ class IG:
 
         return
 
-    def create_report(self, ti, dp_service, predictor, cache, dp, analytics, viewer:BaseViewer):
+    def create_report(self, ti, dp_service, predictor, cache, dp, analytics, viewer: BaseViewer):
         # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
         # self.report_summary(ti=ti,
         #                     dp_service=dp_service,
