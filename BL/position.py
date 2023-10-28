@@ -19,3 +19,6 @@ class Position:
 
     def get_id(self):
         return f"{self._data['trader_id']}_{self._data['dateTime']}"
+
+    def __str__(self):
+        return f"{self.get_ticker()} by {self._data['trader_name']} opened {self.get_open_time()}"

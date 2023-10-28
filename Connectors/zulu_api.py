@@ -1,3 +1,5 @@
+from typing import List
+
 import requests
 
 from BL.position import Position
@@ -16,8 +18,8 @@ class ZuluApi:
         else:
             return TraderHistory([])
 
-    def get_opened_positions(self,id, name):
-        positions = []
+    def get_opened_positions(self,id:str, name:str ) -> List[Position]:
+        positions:List[Position] = []
         resp = requests.get(f"{self._base_uri}/{id}/trades/open/all?timeframe=10000&calculateProfit=true")
         if resp.status_code == 200:
             for p in resp.json():

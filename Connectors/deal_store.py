@@ -7,14 +7,16 @@ from BL.trader_history import TraderHistory
 
 class Deal:
 
-    def __init__(self, zulu_id:str,  ticker:str,
+    def __init__(self, zulu_id:str, ticker:str,
                  dealReference:str, dealId:str,
-                 trader_id:str,  epic:str,
+                 trader_id:str, epic:str,
+                 direction:str,
                  status:str = "open"):
         self.ticker = ticker
         self.id = zulu_id
         self.status = status
         self.dealId = dealId
+        self.direction = direction
         self.dealReference = dealReference
         self.trader_id = trader_id
         self.epic = epic
@@ -27,7 +29,8 @@ class Deal:
                 "dealReference":self.dealReference,
                 "dealId": self.dealId,
                 "trader_id": self.trader_id,
-                "epic": self.epic}
+                "epic": self.epic,
+                "direction": self.direction}
 
 class DealStore:
 
@@ -45,8 +48,7 @@ class DealStore:
             self._collection.insert_one(deal.to_dict())
 
     def update_state(self, id:str, state:str):
-        element =  self._collection.find_one({"id": id})
-        if element:
+        if self.has_id(id):
             self._collection.update_one({"id": id}, {"$set": {"status": state}})
             print("Attribut 'Foo' wurde erfolgreich geändert.")
         else:
@@ -60,3 +62,7 @@ class DealStore:
 
     def get_open_deals(self):
         return self._collection.find({"status": "open"})
+
+    def has_id(self, id:str):
+        return self._collection.find_one({"id": id})
+
