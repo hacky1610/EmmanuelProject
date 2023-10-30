@@ -65,7 +65,7 @@ class ZuluTrader:
     def _is_new_position(self,position: Position):
         diff = datetime.utcnow() - position.get_open_time()
         if diff.seconds / 60 > self._max_minutes:
-            self._tracer.warning(f"Position {position} is to old. Older than {self._max_minutes} minites")
+            self._tracer.debug(f"Position {position} is to old. Older than {self._max_minutes} minites")
             return False
         self._tracer.write(f"Position {position} is new")
         return True
@@ -73,9 +73,11 @@ class ZuluTrader:
     def _trade_position(self, markets: DataFrame, position: Position):
         if self._deal_storage.has_id(position.get_id()):
             self._tracer.write(f"Position {position} is already open")
+            return
 
         if self._deal_storage.position_of_same_trader(position.get_ticker(), position.get_trader_id()):
             self._tracer.write(f"There is already an open position of {position.get_ticker()} from trader {position.get_trader_id()}")
+            return
 
         if not self._is_new_position(position):
             return
