@@ -1,3 +1,4 @@
+from pandas import DataFrame, Series
 from pymongo.database import Database
 
 from BL.trader_history import TraderHistory
@@ -41,4 +42,17 @@ class TraderStore:
         return trader
 
     def get_all_traders(self):
-        return  self._collection.find()
+        return self._collection.find()
+
+    def get_all_trades_df(self) -> DataFrame:
+        df = DataFrame()
+        for trader in self.get_all_traders():
+            hist = TraderHistory(trader["history"])
+            s = Series(data=[trader["id"],trader["name"], hist.get_result(), hist.get_wl_ratio(), hist.get_wl_ratio_100(), hist.get_wl_ratio_20(), hist.get_avg_seconds()],
+                       index=["id", "name", "profit", "wl_ratio", "wl_ratio_100", "wl_ratio_20", "avg_open_time"])
+            df = df.append(s, ignore_index=True)
+
+        df = df.sort_values(by=["wl_ratio"], ascending=False)
+        best =  df[df.wl_ratio > 0.75]
+
+        return best

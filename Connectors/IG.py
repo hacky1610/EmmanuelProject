@@ -224,7 +224,6 @@ class IG:
         return result, deal_response
 
     def close(self,
-              epic: str,
               direction: str,
               deal_id: str,
               size: float = 1.0, ) -> (bool, dict):
@@ -234,7 +233,7 @@ class IG:
         try:
             response = self.ig_service.close_open_position(
                 direction=direction,
-                epic=epic,
+                epic=None,
                 expiry="-",
                 order_type="MARKET",
                 size=size,
@@ -245,11 +244,11 @@ class IG:
             if response["dealStatus"] != "ACCEPTED":
                 self._tracer.error(f"could not close trade: {response['reason']} for {epic}")
             else:
-                self._tracer.write(f"Close successfull {epic}. Deal details {response}")
+                self._tracer.write(f"Close successfull {deal_id}. Deal details {response}")
                 result = True
             deal_response = response
         except IGException as ex:
-            self._tracer.error(f"Error during close a position. {ex} for {epic}")
+            self._tracer.error(f"Error during close a position. {ex} for {deal_id}")
 
         return result, deal_response
 
