@@ -1,29 +1,46 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
+import time
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from BL.position import Position
+from BL.trader_history import TraderHistory
 from Connectors.IG import IG
 from Connectors.deal_store import Deal, DealStore
 from Connectors.tiingo import TradeType
+from Connectors.trader_store import TraderStore, Trader
 from Connectors.zulu_api import ZuluApi
 from Tracing.Tracer import Tracer
+from UI.zulutrade import ZuluTradeUI
 
 
 class ZuluTrader:
 
-    def __init__(self, deal_storage: DealStore, zulu_api: ZuluApi, ig:IG, trader_store, tracer: Tracer):
+    def __init__(self, deal_storage: DealStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
+                 ig: IG, trader_store: TraderStore, tracer: Tracer):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
         self._max_minutes = 10
         self._trader_store = trader_store
         self._tracer = tracer
+        self._zulu_ui = zulu_ui
+        self._min_wl_ration = 0.67
 
     def trade(self):
         self._close_open_positions()
         self._open_new_positions()
+
+    def update_trader_history(self):
+        self._tracer.write("Update History")
+        for f in self._trader_store.get_all_traders():
+            time.sleep(10)
+            trader = Trader(f["id"], f["name"])
+            trader.hist = self._zulu_api.get_history(trader.id)
+            print(f"{trader.name} -> {trader.hist}")
+            self._trader_store.save(trader)
+
 
     def _is_still_open(self, trader_id: str, position_id: str):
         for op in self._zulu_api.get_opened_positions(trader_id, ""):
@@ -35,8 +52,10 @@ class ZuluTrader:
 
     def _close_open_positions(self):
         self._tracer.write("Close positions")
+        open_positons = self._zulu_ui.get_my_open_positions()
         for open_deal in self._deal_storage.get_open_deals():
-            if not self._is_still_open(open_deal["trader_id"], open_deal["id"]):
+            if len(open_positons[open_positons.position_id == open_deal["id"]]) == 0:
+                self._tracer.write(f"Position {open_deal['id']} is closed")
                 result, _ = self._ig.close(direction=self._ig.get_inverse(open_deal["direction"]),
                                            deal_id=open_deal["dealId"])
                 if result:
@@ -44,6 +63,8 @@ class ZuluTrader:
                     self._deal_storage.update_state(open_deal["id"], "Closed")
                 else:
                     self._tracer.error(f"Position {open_deal['id']} could not be closed")
+            else:
+                self._tracer.write(f"Position {open_deal['id']} is still open")
 
     def _get_market_by_ticker_or_none(self, markets: DataFrame, ticker: str) -> Optional[dict]:
         for m in markets:
@@ -59,51 +80,79 @@ class ZuluTrader:
             self._tracer.write("market closed")
             return
 
-        for p in self._get_positions():
-            self._trade_position(markets, p)
+        for p in self._get_positions().iterrows():
+            self._trade_position(markets=markets,position_id=p[1].position_id,
+                                 trader_id=p[1].trader_id, direction=p[1].direction, ticker=p[1].ticker)
 
-    def _is_new_position(self,position: Position):
-        diff = datetime.utcnow() - position.get_open_time()
-        if diff.seconds / 60 > self._max_minutes:
-            self._tracer.debug(f"Position {position} is to old. Older than {self._max_minutes} minites")
-            return False
-        self._tracer.write(f"Position {position} is new")
-        return True
 
-    def _trade_position(self, markets: DataFrame, position: Position):
-        if self._deal_storage.has_id(position.get_id()):
-            self._tracer.write(f"Position {position} is already open")
+    def _trade_position(self, markets: DataFrame, position_id:str, ticker:str, trader_id:str, direction:str):
+        if self._deal_storage.has_id(position_id):
+            self._tracer.write(f"Position {position_id} - {ticker} by {trader_id} is already open")
             return
 
-        if self._deal_storage.position_of_same_trader(position.get_ticker(), position.get_trader_id()):
-            self._tracer.write(f"There is already an open position of {position.get_ticker()} from trader {position.get_trader_id()}")
+        if self._deal_storage.position_of_same_trader(ticker, trader_id):
+            self._tracer.write(
+                f"There is already an open position of {ticker} from trader {trader_id}")
             return
 
-        if not self._is_new_position(position):
-            return
 
-        m = self._get_market_by_ticker_or_none(markets, position.get_ticker())
+        m = self._get_market_by_ticker_or_none(markets, ticker)
         if m is None:
-            self._tracer.warning(f"Could not find market for {position.get_ticker()}")
+            self._tracer.warning(f"Could not find market for {ticker}")
             return
 
-        self._tracer.write(f"Try to open position {position}")
-        result, deal_respons = self._ig.open(epic=m["epic"], direction=position.get_direction(),
+        self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
+        result, deal_respons = self._ig.open(epic=m["epic"], direction=direction,
                                              currency=m["currency"], limit=None, stop=None)
         if result:
-            d = Deal(zulu_id=position.get_id(), ticker=position.get_ticker(),
+            d = Deal(zulu_id=position_id, ticker=ticker,
                      dealReference=deal_respons["dealReference"],
-                     dealId=deal_respons["dealId"], trader_id=position.get_trader_id(),
-                     epic=m["epic"], direction=position.get_direction())
+                     dealId=deal_respons["dealId"], trader_id=trader_id,
+                     epic=m["epic"], direction=direction)
             self._deal_storage.save(d)
         else:
-            self._tracer.error(f"Error while open position {position}")
+            self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")
 
-    def _get_positions(self) -> List[Position]:
-        positions = []
-        best_traders = self._trader_store.get_all_trades_df()
+    def _calc_hist(self,row):
+        trader = self._trader_store.get_trader_by_name(row.trader_name)
+        if trader != None:
+            hist = TraderHistory(trader["history"])
+            return hist.get_wl_ratio()
+        else:
+            self._tracer.error(f"Trader {row.trader_name} unknown")
+            return 0
 
-        self._tracer.write(best_traders.filter(["name", "wl_ratio"]))
-        for trader in best_traders.iterrows():
-            positions = positions + self._zulu_api.get_opened_positions(trader[1]["id"], trader[1]["name"])
-        return positions
+
+    def _get_trader_id(self, row):
+        trader = self._trader_store.get_trader_by_name(row.trader_name)
+        if trader != None:
+            return trader["id"]
+        else:
+            self._tracer.error(f"Trader {row.trader_name} unknown")
+            return "Unknown"
+
+    def _get_positions(self) -> DataFrame:
+        positions = self._zulu_ui.get_my_open_positions()
+        if len(positions) == 0:
+            self._tracer.write("No open positions")
+            return positions
+
+        #Filter for time
+        positions = positions[positions.time >= datetime.now() - timedelta(minutes=45)]
+        if len(positions) == 0:
+            self._tracer.write("All postions are to old")
+            return positions
+
+        positions["wl_ratio"] = positions.apply(self._calc_hist, axis=1)
+        positions["trader_id"] = positions.apply(self._get_trader_id, axis=1)
+
+        #Filter for quality
+        good_positions = positions[positions.wl_ratio > self._min_wl_ration]
+        if len(good_positions) == 0:
+            self._tracer.write(f"All postions are from bad traders. This postions are bad: \n {positions[positions.wl_ratio <= self._min_wl_ration]}")
+            return good_positions
+
+        good_positions = good_positions.sort_values(by=["wl_ratio"], ascending=False)
+
+        self._tracer.write(f"new positions: {good_positions.filter(['time','ticker', 'wl_ratio', 'trader_id', 'trader_name', 'direction'])}")
+        return good_positions

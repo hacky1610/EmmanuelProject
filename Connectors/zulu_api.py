@@ -27,6 +27,9 @@ class ZuluApi:
         positions: List[Position] = []
         resp = requests.get(f"{self._base_uri}/{trader_id}/trades/open/all?timeframe=10000&calculateProfit=true")
         if resp.status_code == 200:
+            if len(resp.json()) == 0:
+                self._tracer.write(f"No open positions from trader {trader_id}")
+                return positions
             for p in resp.json():
                 p["trader_id"] = trader_id
                 p["trader_name"] = name
@@ -36,3 +39,9 @@ class ZuluApi:
             raise Exception("Could not read open positions")
 
         return positions
+
+
+
+
+
+

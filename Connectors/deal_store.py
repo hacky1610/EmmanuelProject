@@ -50,7 +50,7 @@ class DealStore:
     def update_state(self, id:str, state:str):
         if self.has_id(id):
             self._collection.update_one({"id": id}, {"$set": {"status": state}})
-            print("Attribut 'Foo' wurde erfolgreich geändert.")
+            print("Attribut state wurde erfolgreich geändert.")
         else:
             print("Element mit ID {} wurde nicht gefunden.".format(id))
 
@@ -65,6 +65,9 @@ class DealStore:
 
     def has_id(self, id: str):
         return self._collection.find_one({"id": id})
+
+    def clear(self):
+        self._collection.delete_many({})
 
     def position_of_same_trader(self, ticker: str, trader_id):
         return self._collection.find_one({"ticker": ticker, "trader_id":trader_id})

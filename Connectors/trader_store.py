@@ -9,17 +9,21 @@ class Trader:
     def __init__(self, id, name):
         self.id = id
         self.name = name
-        self.hist:TraderHistory
+        self.hist: TraderHistory = TraderHistory({})
 
     def to_dict(self):
-        return {"id":self.id, "name":self.name, "history": self.hist._hist}
+        return {"id": self.id, "name": self.name, "history": self.hist._hist}
 
-
+    def get_statistic(self):
+        s = self.hist.get_series()
+        s["name"] = self.name
+        s["id"] = self.id
+        return s
 
 
 class TraderStore:
 
-    def __init__(self, db:Database):
+    def __init__(self, db: Database):
 
         self._collection = db["TraderStore"]
 
@@ -27,8 +31,9 @@ class TraderStore:
         if not self._collection.find_one({"id": trader.id}):
             # Wenn die ID nicht existiert, fügen wir einen neuen Datensatz hinzu
             self._collection.insert_one(trader.to_dict())
+            print(f"Added new trader {trader.name}")
 
-    def save(self, trader:Trader):
+    def save(self, trader: Trader):
         existing_trader = self._collection.find_one({"id": trader.id})
         if existing_trader:
             # Wenn die ID bereits existiert, aktualisieren wir den Datensatz
@@ -41,6 +46,9 @@ class TraderStore:
         trader = self._collection.find_one({"id": trader_id})
         return trader
 
+    def get_trader_by_name(self, name):
+        return self._collection.find_one({"name": name})
+
     def get_all_traders(self):
         return self._collection.find()
 
@@ -48,11 +56,13 @@ class TraderStore:
         df = DataFrame()
         for trader in self.get_all_traders():
             hist = TraderHistory(trader["history"])
-            s = Series(data=[trader["id"],trader["name"], hist.get_result(), hist.get_wl_ratio(), hist.get_wl_ratio_100(), hist.get_wl_ratio_20(), hist.get_avg_seconds()],
-                       index=["id", "name", "profit", "wl_ratio", "wl_ratio_100", "wl_ratio_20", "avg_open_time"])
+            s = Series(
+                data=[trader["id"], trader["name"], hist.get_result(), hist.get_wl_ratio(), hist.get_wl_ratio_100(),
+                      hist.get_wl_ratio_20(), hist.get_avg_seconds()],
+                index=["id", "name", "profit", "wl_ratio", "wl_ratio_100", "wl_ratio_20", "avg_open_time"])
             df = df.append(s, ignore_index=True)
 
         df = df.sort_values(by=["wl_ratio"], ascending=False)
-        best =  df[df.wl_ratio > 0.75]
+        best = df[df.wl_ratio > 0.75]
 
         return best

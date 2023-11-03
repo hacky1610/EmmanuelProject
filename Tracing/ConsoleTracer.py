@@ -2,7 +2,7 @@ from datetime import datetime
 
 from Tracing.Tracer import Tracer
 import inspect
-class ConsoleTracer(Tracer, ):
+class ConsoleTracer(Tracer):
 
     def __init__(self, show_debug:bool = False):
         self._show_debug = show_debug
