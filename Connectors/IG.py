@@ -1,6 +1,6 @@
 import os.path
 import time
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from trading_ig import IGService
 from trading_ig.rest import IGException
@@ -186,8 +186,8 @@ class IG:
     def open(self,
              epic: str,
              direction: str,
-             stop: int = 25,
-             limit: int = 25,
+             stop: Optional[int] = 25,
+             limit: Optional[int] = 25,
              size: float = 1.0,
              currency: str = "USD") -> (bool, dict):
 

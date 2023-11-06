@@ -132,21 +132,35 @@ class ZuluTradeUI:
 
 
     def get_my_open_positions(self) -> DataFrame:
-        self._driver.get(f"https://www.zulutrade.com/dashboard")
+        self._driver.get("https://www.zulutrade.com/dashboard")
         time.sleep(4)
         table = self._driver.find_element(By.ID, "example")
-        list = table.find_elements(By.TAG_NAME, "tr")
+        rows = table.find_elements(By.TAG_NAME, "tr")
 
         df = DataFrame()
-        for row in list[1:]:
+        for row in rows[1:]:
             cols = row.find_elements(By.TAG_NAME, "td")
             r = re.search("([A-Z]{3}\/[A-Z]{3})\s(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s(\w{3,4})",
                           cols[0].text)
             ticker = r.groups()[0].replace("/", "")
             opentime = datetime.strptime(r.groups()[1], '%d %b %Y, %I:%M %p')
             direction = r.groups()[2]
-            id = f"{ticker}_{direction}_{cols[1].text}_{opentime.isoformat()}"
-            df = df.append(Series(data=[id, ticker, opentime, direction, cols[1].text],
-                                  index=["position_id", "ticker", "time", "direction", "trader_name"]),
+            position_id = f"{ticker}_{direction}_{cols[1].text}_{opentime.isoformat()}"
+            df = df.append(Series(data=[position_id,
+                                        ticker,
+                                        opentime,
+                                        direction,
+                                        cols[1].text,
+                                        cols[2].text,
+                                        cols[3].text,
+                                        cols[4].text],
+                                  index=["position_id",
+                                         "ticker",
+                                         "time",
+                                         "direction",
+                                         "trader_name",
+                                         "lots",
+                                         "units",
+                                         "open_price"]),
                            ignore_index=True)
         return df

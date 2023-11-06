@@ -35,7 +35,7 @@ tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), type_), Co
 zuluApi = ZuluApi(tracer)
 ig = IG(tracer=tracer, conf_reader=conf_reader, live=live)
 options= Options()
-options.headless = True
+options.add_argument('--headless')
 
 
 while True:

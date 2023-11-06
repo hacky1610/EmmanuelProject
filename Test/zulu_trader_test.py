@@ -18,7 +18,13 @@ class TestZuluTrader(unittest.TestCase):
         self.ig = MagicMock()
         self.trader_store = MagicMock()
         self.tracer = MagicMock()
-        self.trader = ZuluTrader(self.deal_storage, self.zulu_api, self.ig, self.trader_store, self.tracer)
+        self.zulu_ui = MagicMock()
+        self.trader = ZuluTrader(deal_storage=self.deal_storage,
+                                 zulu_api=self.zulu_api,
+                                 ig=self.ig,
+                                 trader_store=self.trader_store,
+                                 tracer=self.tracer,
+                                 zulu_ui=self.zulu_ui)
 
     def test_is_still_open(self):
         # Mock-Daten für get_opened_positions
@@ -31,7 +37,8 @@ class TestZuluTrader(unittest.TestCase):
 
     def test_close_open_positions(self):
         # Mock-Daten für get_open_deals und close
-        open_deal = {"trader_id": "trader_id", "id": "1", "epic": "AAPL", "direction": "Buy", "deal_id": "deal_id"}
+        open_deal = Deal(zulu_id="zID",dealReference="df", trader_id="tid",dealId="did",
+                         direction="SELL", status="open", ticker="AAPL", epic="AAPL.de")
         self.deal_storage.get_open_deals.return_value = [open_deal]
         self.ig.close.return_value = (True, None)
 

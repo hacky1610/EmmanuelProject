@@ -51,7 +51,7 @@ class TraderHistory:
 
         return self._hist_df.netPnl[-10:].median()
 
-    def get_wl_ratio(self):
+    def get_wl_ratio(self) -> float:
         return (self.get_wl_ratio_100() + self.get_wl_ratio_20()) / 2
 
     def get_avg_trades_per_week(self):

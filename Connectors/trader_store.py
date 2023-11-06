@@ -52,9 +52,9 @@ class TraderStore:
             # Wenn die ID nicht existiert, fügen wir einen neuen Datensatz hinzu
             self._collection.insert_one(trader.to_dict())
 
-    def get_trader_by_id(self, trader_id):
-        trader = self._collection.find_one({"id": trader_id})
-        return trader
+    def get_trader_by_id(self, trader_id) -> Trader:
+        return Trader.Create(self._collection.find_one({"id": trader_id}))
+
 
     def get_trader_by_name(self, name) -> Trader:
         return Trader.Create(self._collection.find_one({"name": name}))
