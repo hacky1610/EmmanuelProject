@@ -34,9 +34,8 @@ class ZuluTrader:
 
     def update_trader_history(self):
         self._tracer.write("Update History")
-        for f in self._trader_store.get_all_traders():
+        for trader in self._trader_store.get_all_traders():
             time.sleep(10)
-            trader = Trader(f["id"], f["name"])
             trader.hist = self._zulu_api.get_history(trader.id)
             print(f"{trader.name} -> {trader.hist}")
             self._trader_store.save(trader)
@@ -115,21 +114,14 @@ class ZuluTrader:
 
     def _calc_hist(self,row):
         trader = self._trader_store.get_trader_by_name(row.trader_name)
-        if trader != None:
-            hist = TraderHistory(trader["history"])
-            return hist.get_wl_ratio()
-        else:
-            self._tracer.error(f"Trader {row.trader_name} unknown")
-            return 0
+        return trader.hist.get_wl_ratio()
+
 
 
     def _get_trader_id(self, row):
         trader = self._trader_store.get_trader_by_name(row.trader_name)
-        if trader != None:
-            return trader["id"]
-        else:
-            self._tracer.error(f"Trader {row.trader_name} unknown")
-            return "Unknown"
+        return trader.id
+
 
     def _get_positions(self) -> DataFrame:
         positions = self._zulu_ui.get_my_open_positions()

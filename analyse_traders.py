@@ -18,10 +18,7 @@ db = client["ZuluDB"]
 ts = TraderStore(db)
 df = DataFrame()
 
-for f in ts.get_all_traders():
-    trader = Trader(f["id"],f["name"])
-    trader.hist = TraderHistory(f["history"])
-    #trader.hist.show()
+for trader in ts.get_all_traders():
     df = df.append(trader.get_statistic(), ignore_index=True)
 
 

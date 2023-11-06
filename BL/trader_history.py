@@ -12,6 +12,8 @@ class TraderHistory:
         if len(hist) > 0:
             self._hist_df = self._hist_df.sort_values(by=["dateClosed"])
             self._hist_df = self._hist_df.reset_index()
+            self._hist_df["dateOpen_datetime_utc"] = self._hist_df.dateOpen.apply(self._unix_timestamp_to_datetime)
+            self._hist_df["dateClosed_datetime_utc"] = self._hist_df.dateClosed.apply(self._unix_timestamp_to_datetime)
 
     def _create_df(self, hist):
         df = DataFrame()
@@ -20,6 +22,9 @@ class TraderHistory:
             df = df.append(Series(t), ignore_index=True)
 
         return df
+
+    def _unix_timestamp_to_datetime(self,timestamp):
+        return datetime.utcfromtimestamp(timestamp / 1000)
 
     def get_result(self):
         if len(self._hist_df) == 0:

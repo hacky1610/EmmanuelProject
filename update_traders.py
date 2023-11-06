@@ -13,14 +13,10 @@ db = client["ZuluDB"]
 zuluApi = ZuluApi(ConsoleTracer())
 
 ts = TraderStore(db)
-trader_list = []
-for f in ts.get_all_traders():
-    trader_list.append(f)
-
+trader_list = ts.get_all_traders()
 random.shuffle(trader_list)
 
-for f in trader_list:
-    trader = Trader(f["id"],f["name"])
+for trader in trader_list:
     trader.hist = zuluApi.get_history(trader.id)
     print(f"{trader.name} -> {trader.hist}" )
     ts.save(trader)

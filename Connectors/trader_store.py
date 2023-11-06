@@ -1,3 +1,5 @@
+from typing import List
+
 from pandas import DataFrame, Series
 from pymongo.database import Database
 
@@ -10,6 +12,14 @@ class Trader:
         self.id = id
         self.name = name
         self.hist: TraderHistory = TraderHistory({})
+
+    @staticmethod
+    def Create(data:dict):
+        trader =  Trader(id=data["id"],
+                      name=data["name"],
+                      )
+        trader.hist = TraderHistory(data.get("history", {}))
+        return trader
 
     def to_dict(self):
         return {"id": self.id, "name": self.name, "history": self.hist._hist}
@@ -46,19 +56,26 @@ class TraderStore:
         trader = self._collection.find_one({"id": trader_id})
         return trader
 
-    def get_trader_by_name(self, name):
-        return self._collection.find_one({"name": name})
+    def get_trader_by_name(self, name) -> Trader:
+        return Trader.Create(self._collection.find_one({"name": name}))
 
-    def get_all_traders(self):
-        return self._collection.find()
+    def get_all_traders(self) -> List[Trader]:
+        traders:List[Trader] = []
+        for f in self._collection.find():
+            traders.append(Trader.Create(f))
+
+        return traders
 
     def get_all_trades_df(self) -> DataFrame:
         df = DataFrame()
         for trader in self.get_all_traders():
-            hist = TraderHistory(trader["history"])
             s = Series(
-                data=[trader["id"], trader["name"], hist.get_result(), hist.get_wl_ratio(), hist.get_wl_ratio_100(),
-                      hist.get_wl_ratio_20(), hist.get_avg_seconds()],
+                data=[trader.id, trader.name,
+                      trader.hist.get_result(),
+                      trader.hist.get_wl_ratio(),
+                      trader.hist.get_wl_ratio_100(),
+                      trader.hist.get_wl_ratio_20(),
+                      trader.hist.get_avg_seconds()],
                 index=["id", "name", "profit", "wl_ratio", "wl_ratio_100", "wl_ratio_20", "avg_open_time"])
             df = df.append(s, ignore_index=True)
 
