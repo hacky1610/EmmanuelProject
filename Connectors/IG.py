@@ -105,7 +105,7 @@ class IG:
 
         return markets
 
-    def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> DataFrame:
+    def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> List:
         if trade_type == TradeType.FX:
             return self._get_markets(self._fx_id, tradeable)
         elif trade_type == TradeType.CRYPTO:
@@ -116,7 +116,7 @@ class IG:
             silver = self._get_markets(self._silver_id, tradeable)
             return self._set_symbol(gold + silver)
 
-        return DataFrame()
+        return []
 
     def _get_spread(self, market_object):
         offer = market_object.offer
@@ -128,12 +128,13 @@ class IG:
 
         return 0
 
-    def _get_markets(self, id: int, tradebale: bool = True):
+    def _get_markets(self, id: int, tradebale: bool = True) -> List:
         market_df = self._get_markets_by_id(id)
-        if len(market_df) == 0:
-            return DataFrame()
-
         markets = []
+
+        if len(market_df) == 0:
+            return markets
+
         if tradebale:
             market_df = market_df[market_df.marketStatus == "TRADEABLE"]
         for market in market_df.iterrows():

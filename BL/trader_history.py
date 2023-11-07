@@ -121,11 +121,35 @@ class TraderHistory:
         plt.grid(True)
         plt.show()
 
+    def _rate_trader(self) -> (str, str):
+        trade = "TRADE"
+        skip = "SKIP"
+
+        if self.get_wl_ratio() < 0.7:
+            return (skip, "Bad WL Ratio")
+
+        if self.get_avg_trades_per_week() > 50:
+            return (skip, "To much trades")
+
+        if self.get_max_loses() > 100:
+            return (skip, "To big looses")
+
+        d = (datetime.now() - self._hist_df.iloc[-1].dateOpen_datetime_utc)
+        days = d.total_seconds() / 60 / 60 /24
+
+        if days > 5:
+            return (skip, "Last Trade older than 5 days")
+
+        return (trade,"")
+
+
+
 
     def __str__(self):
         return f"{self.get_wl_ratio()} - {self.get_result()}"
 
     def get_series(self):
+        rating, text = self._rate_trader()
         return Series(data=[self.get_wl_ratio(),
                             self.get_wl_ratio_20(),
                             self.get_wl_ratio_100(),
@@ -135,7 +159,9 @@ class TraderHistory:
                             self.get_avg_trades_per_week(),
                             self.amount_of_peaks(),
                             self.get_max_win(),
-                            self.get_max_loses()],
+                            self.get_max_loses(),
+                            rating,
+                            text],
                       index=["wl_ratio",
                              "wl_ratio_20",
                              "wl_ratio_100",
@@ -145,7 +171,9 @@ class TraderHistory:
                              "trades_per_week",
                              "amount_of_peaks",
                              "max_win",
-                             "max_looses"])
+                             "max_looses",
+                             "rating",
+                             "comment"])
 
 
 

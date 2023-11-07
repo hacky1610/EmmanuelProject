@@ -71,7 +71,7 @@ class ZuluTrader:
             else:
                 self._tracer.error(f"Position {open_deal} could not be closed")
 
-    def _get_market_by_ticker_or_none(self, markets: DataFrame, ticker: str) -> Optional[dict]:
+    def _get_market_by_ticker_or_none(self, markets: List, ticker: str) -> Optional[dict]:
         for m in markets:
             if m["symbol"] == ticker:
                 return m
@@ -90,7 +90,7 @@ class ZuluTrader:
             self._trade_position(markets=markets, position_id=position.position_id,
                                  trader_id=position.trader_id, direction=position.direction, ticker=position.ticker)
 
-    def _trade_position(self, markets: DataFrame, position_id: str,
+    def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
         if self._deal_storage.has_id(position_id):
             self._tracer.write(f"Position {position_id} - {ticker} by {trader_id} is already open")
@@ -125,6 +125,9 @@ class ZuluTrader:
         trader = self._trader_store.get_trader_by_name(row.trader_name)
         return trader.id
 
+    def _get_newest_positions(self, positions: DataFrame) -> DataFrame:
+        return positions[positions.time >= datetime.now() - timedelta(minutes=45)]
+
     def _get_positions(self) -> DataFrame:
         positions = self._zulu_ui.get_my_open_positions()
         if len(positions) == 0:
@@ -132,7 +135,7 @@ class ZuluTrader:
             return positions
 
         # Filter for time
-        positions = positions[positions.time >= datetime.now() - timedelta(minutes=45)]
+        positions = self._get_newest_positions(positions)
         if len(positions) == 0:
             self._tracer.write("All postions are to old")
             return positions
