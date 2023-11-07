@@ -137,16 +137,16 @@ class IG:
 
         if tradebale:
             market_df = market_df[market_df.marketStatus == "TRADEABLE"]
-        for market in market_df.iterrows():
-            symbol = (market[1].instrumentName.replace("/", "").replace(" Mini", "")).strip()
+        for _, market in market_df.iterrows():
+            symbol = (market.instrumentName.replace("/", "").replace(" Mini", "")).strip()
             if symbol not in self._excludedMarkets:
                 markets.append({
                     "symbol": symbol,
-                    "epic": market[1].epic,
-                    "spread": self._get_spread(market[1]),
-                    "scaling": market[1].scalingFactor,
+                    "epic": market.epic,
+                    "spread": self._get_spread(market),
+                    "scaling": market.scalingFactor,
                     "size": 1.0,
-                    "currency": self.get_currency(market[1].epic)
+                    "currency": self.get_currency(market.epic)
                 })
 
         return markets

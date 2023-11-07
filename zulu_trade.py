@@ -1,11 +1,15 @@
 import time
 
+import dropbox
 from selenium.webdriver.chrome.options import Options
 
 from BL import ConfigReader
 from BL.zulu_trader import ZuluTrader
 from Connectors.IG import IG
 from Connectors.deal_store import DealStore
+from Connectors.dropbox_cache import DropBoxCache
+from Connectors.dropboxservice import DropBoxService
+from Connectors.tiingo import Tiingo
 from Connectors.trader_store import TraderStore
 from Connectors.zulu_api import ZuluApi
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -34,6 +38,10 @@ conf_reader = ConfigReader(live_config=live)
 tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), type_), ConsoleTracer()])
 zuluApi = ZuluApi(tracer)
 ig = IG(tracer=tracer, conf_reader=conf_reader, live=live)
+dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
+dropbox_service = DropBoxService(dbx, type_)
+cache = DropBoxCache(dropbox_service)
+tiingo = Tiingo(conf_reader,cache)
 options= Options()
 options.add_argument('--headless')
 
@@ -43,7 +51,8 @@ while True:
         zuluUI = ZuluTradeUI(webdriver.Chrome(options=options))
 
         zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zuluApi, ig=ig,
-                                 trader_store=ts, tracer=tracer, zulu_ui=zuluUI)
+                                 trader_store=ts, tracer=tracer, zulu_ui=zuluUI,
+                                 tiingo=tiingo)
 
         zuluUI.login()
 

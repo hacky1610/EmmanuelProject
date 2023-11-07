@@ -5,11 +5,12 @@ import time
 from pandas import DataFrame, Series
 from pandas._libs.hashtable import HashTable
 
+from BL import DataProcessor
 from BL.position import Position
 from BL.trader_history import TraderHistory
 from Connectors.IG import IG
 from Connectors.deal_store import Deal, DealStore
-from Connectors.tiingo import TradeType
+from Connectors.tiingo import TradeType, Tiingo
 from Connectors.trader_store import TraderStore, Trader
 from Connectors.zulu_api import ZuluApi
 from Tracing.Tracer import Tracer
@@ -19,7 +20,7 @@ from UI.zulutrade import ZuluTradeUI
 class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
-                 ig: IG, trader_store: TraderStore, tracer: Tracer):
+                 ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo:Tiingo):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -28,6 +29,7 @@ class ZuluTrader:
         self._tracer = tracer
         self._zulu_ui = zulu_ui
         self._min_wl_ration = 0.67
+        self._tiingo = tiingo
 
     def trade(self):
         self._close_open_positions()
@@ -85,13 +87,21 @@ class ZuluTrader:
             self._tracer.write("market closed")
             return
 
+        self._calc_stop_loss("AUDUSD")
+
         for _, position in self._get_positions().iterrows():
             self._tracer.write(f"try to trade {position}")
             self._trade_position(markets=markets, position_id=position.position_id,
                                  trader_id=position.trader_id, direction=position.direction, ticker=position.ticker)
 
+    def _calc_stop_loss(self, symbol):
+        data = self._tiingo.load_trade_data(symbol, DataProcessor(), trade_type=TradeType.FX,days=10)
+        atr = data.iloc[-1].ATR
+        return atr * 4
+
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
+
         if self._deal_storage.has_id(position_id):
             self._tracer.write(f"Position {position_id} - {ticker} by {trader_id} is already open")
             return
@@ -107,8 +117,9 @@ class ZuluTrader:
             return
 
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
+        sl = self._calc_stop_loss(ticker) * m["scaling"]
         result, deal_respons = self._ig.open(epic=m["epic"], direction=direction,
-                                             currency=m["currency"], limit=None, stop=None)
+                                             currency=m["currency"], limit=None, stop=sl)
         if result:
             self._deal_storage.save(Deal(zulu_id=position_id, ticker=ticker,
                      dealReference=deal_respons["dealReference"],
