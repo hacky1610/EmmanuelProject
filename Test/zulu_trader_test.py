@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from unittest.mock import MagicMock, patch
 
 from BL.position import Position
@@ -35,18 +35,34 @@ class TestZuluTrader(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def test_close_open_positions(self):
+    def test_close_open_positions_pos_is_still_open(self):
         # Mock-Daten für get_open_deals und close
         open_deal = Deal(zulu_id="zID",dealReference="df", trader_id="tid",dealId="did",
                          direction="SELL", status="open", ticker="AAPL", epic="AAPL.de")
+        df = DataFrame()
+        df = df.append(Series(data=["zID"], index=["position_id"]), ignore_index=True)
+
         self.deal_storage.get_open_deals.return_value = [open_deal]
+        self.zulu_ui.get_my_open_positions.return_value = df
+
+        self.trader._close_open_positions()
+
+        self.ig.close.assert_not_called()
+
+    def test_close_open_positions_pos_is_closed(self):
+        # Mock-Daten für get_open_deals und close
+        open_deal = Deal(zulu_id="zID",dealReference="df", trader_id="tid",dealId="did",
+                         direction="SELL", status="open", ticker="AAPL", epic="AAPL.de")
+        df = DataFrame()
+
+        self.deal_storage.get_open_deals.return_value = [open_deal]
+        self.zulu_ui.get_my_open_positions.return_value = df
         self.ig.close.return_value = (True, None)
 
         self.trader._close_open_positions()
 
-        self.tracer.write.assert_called_with("Close positions")
-        self.tracer.write.assert_called_with("Position closed")
-        self.deal_storage.update_state.assert_called_with("1", "Closed")
+        self.ig.close.assert_called()
+
 
     def test_get_market_by_ticker(self):
         # Mock-Daten für get_markets

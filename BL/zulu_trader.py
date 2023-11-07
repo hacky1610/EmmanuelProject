@@ -49,21 +49,27 @@ class ZuluTrader:
         self._tracer.write(f"Position with id {position_id} is closed")
         return False
 
-    def _close_open_positions(self):
-        self._tracer.write("Close positions")
+    def  _get_deals_to_close(self):
+        deals_to_close = []
         open_positons = self._zulu_ui.get_my_open_positions()
         for open_deal in self._deal_storage.get_open_deals():
-            if len(open_positons[open_positons.position_id == open_deal.id]) == 0:
+            if len(open_positons) == 0 or len(open_positons[open_positons.position_id == open_deal.id]) == 0:
                 self._tracer.write(f"Position {open_deal} is closed")
-                result, _ = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
-                                           deal_id=open_deal.dealId)
-                if result:
-                    self._tracer.write(f"Position {open_deal} closed")
-                    self._deal_storage.update_state(open_deal.id, "Closed")
-                else:
-                    self._tracer.error(f"Position {open_deal} could not be closed")
+                deals_to_close.append(open_deal)
             else:
                 self._tracer.write(f"Position {open_deal} is still open")
+        return deals_to_close
+
+    def _close_open_positions(self):
+        self._tracer.write("Close positions")
+        for open_deal in self._get_deals_to_close():
+            result, _ = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
+                                       deal_id=open_deal.dealId)
+            if result:
+                self._tracer.write(f"Position {open_deal} closed")
+                self._deal_storage.update_state(open_deal.id, "Closed")
+            else:
+                self._tracer.error(f"Position {open_deal} could not be closed")
 
     def _get_market_by_ticker_or_none(self, markets: DataFrame, ticker: str) -> Optional[dict]:
         for m in markets:
