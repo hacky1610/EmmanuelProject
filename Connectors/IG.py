@@ -243,7 +243,7 @@ class IG:
                 deal_id=deal_id
             )
             if response["dealStatus"] != "ACCEPTED":
-                self._tracer.error(f"could not close trade: {response['reason']} for {epic}")
+                self._tracer.error(f"could not close trade: {response['reason']}")
             else:
                 self._tracer.write(f"Close successfull {deal_id}. Deal details {response}")
                 result = True

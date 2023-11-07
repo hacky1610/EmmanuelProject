@@ -131,14 +131,14 @@ class TraderHistory:
         if self.get_avg_trades_per_week() > 50:
             return (skip, "To much trades")
 
-        if self.get_max_loses() > 100:
+        if self.get_max_loses() < -100:
             return (skip, "To big looses")
 
         d = (datetime.now() - self._hist_df.iloc[-1].dateOpen_datetime_utc)
         days = d.total_seconds() / 60 / 60 /24
 
-        if days > 5:
-            return (skip, "Last Trade older than 5 days")
+        if days > 7:
+            return (skip, "Last Trade older than 7 days")
 
         return (trade,"")
 
