@@ -5,7 +5,6 @@ from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.tiingo import Tiingo, TradeType
-from Predictors.generic_predictor import GenericPredictor
 from Tracing.LogglyTracer import LogglyTracer
 from BL import ConfigReader, DataProcessor
 from BL.trader import Trader
@@ -28,7 +27,7 @@ cache = DropBoxCache(ds)
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
 ig = IG(tracer=tracer, conf_reader=conf_reader, live=live)
 analytics = Analytics(tracer)
-predictor_class_list = [GenericPredictor]
+predictor_class_list = []
 indicators = Indicators()
 #endregion
 

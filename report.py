@@ -7,8 +7,6 @@ from Connectors.tiingo import Tiingo
 from BL.utils import ConfigReader
 import dropbox
 from Connectors.dropboxservice import DropBoxService
-from Predictors.chart_pattern_rectangle import RectanglePredictor
-from Predictors.generic_predictor import GenericPredictor
 from UI.base_viewer import BaseViewer
 from UI.plotly_viewer import PlotlyViewer
 
@@ -18,13 +16,11 @@ ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
 tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
-predictor = GenericPredictor(indicators=Indicators())
 viewer = PlotlyViewer(cache)
 #viewer = BaseViewer()
 
 ig.create_report(ti=tiingo,
                  dp_service=ds,
-                 predictor=predictor,
                  cache=cache,
                  dp=DataProcessor(),
                  analytics=Analytics(),
