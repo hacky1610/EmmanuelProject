@@ -65,13 +65,21 @@ class ZuluTrader:
     def _close_open_positions(self):
         self._tracer.write("Close positions")
         for open_deal in self._get_deals_to_close():
-            result, _ = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
+            result, deal_response = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
                                        deal_id=open_deal.dealId)
             if result:
                 self._tracer.write(f"Position {open_deal} closed")
-                self._deal_storage.update_state(open_deal.id, "Closed")
+                open_deal.close()
+                open_deal.profit = deal_response["profit"]
+                self._deal_storage.save(open_deal)
             else:
-                self._tracer.error(f"Position {open_deal} could not be closed")
+                deals = self._ig.get_deals()
+                if len(deals[deals.dealId == open_deal.dealId]) == 0:
+                    self._tracer.write("There was en error during close. But the deal is not open anymore")
+                    open_deal.close()
+                    self._deal_storage.save(open_deal)
+                else:
+                    self._tracer.error(f"Position {open_deal} could not be closed")
 
     def _get_market_by_ticker_or_none(self, markets: List, ticker: str) -> Optional[dict]:
         for m in markets:
@@ -87,17 +95,15 @@ class ZuluTrader:
             self._tracer.write("market closed")
             return
 
-        self._calc_stop_loss("AUDUSD")
-
         for _, position in self._get_positions().iterrows():
             self._tracer.write(f"try to trade {position}")
             self._trade_position(markets=markets, position_id=position.position_id,
                                  trader_id=position.trader_id, direction=position.direction, ticker=position.ticker)
 
-    def _calc_stop_loss(self, symbol):
+    def _calc_limit_stop(self, symbol) -> (float, float):
         data = self._tiingo.load_trade_data(symbol, DataProcessor(), trade_type=TradeType.FX,days=10)
         atr = data.iloc[-1].ATR
-        return atr * 4
+        return atr * 2, atr * 3
 
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
@@ -117,9 +123,9 @@ class ZuluTrader:
             return
 
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
-        sl = self._calc_stop_loss(ticker) * m["scaling"]
+        limit, stop = self._calc_limit_stop(ticker)
         result, deal_respons = self._ig.open(epic=m["epic"], direction=direction,
-                                             currency=m["currency"], limit=None, stop=sl)
+                                             currency=m["currency"], limit=limit * m["scaling"], stop=stop * m["scaling"])
         if result:
             self._deal_storage.save(Deal(zulu_id=position_id, ticker=ticker,
                      dealReference=deal_respons["dealReference"],

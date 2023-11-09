@@ -66,6 +66,8 @@ class TraderStore:
 
         return traders
 
+
+
     def get_all_trades_df(self) -> DataFrame:
         df = DataFrame()
         for trader in self.get_all_traders():

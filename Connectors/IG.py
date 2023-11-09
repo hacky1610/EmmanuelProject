@@ -224,6 +224,7 @@ class IG:
 
         return result, deal_response
 
+
     def close(self,
               direction: str,
               deal_id: str,
@@ -252,6 +253,18 @@ class IG:
             self._tracer.error(f"Error during close a position. {ex} for {deal_id}")
 
         return result, deal_response
+
+    def get_deals(self) -> DataFrame:
+
+        try:
+            response = self.ig_service.fetch_open_positions(
+            )
+            return response
+        except IGException as ex:
+            self._tracer.error(f"Error during getting Deal Ids {ex}")
+        return DataFrame()
+
+
 
     @staticmethod
     def get_inverse(direction: str) -> str:

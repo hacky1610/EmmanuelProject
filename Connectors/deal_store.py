@@ -11,7 +11,8 @@ class Deal:
                  dealReference: str, dealId: str,
                  trader_id: str, epic: str,
                  direction: str,
-                 status: str = "open"):
+                 status: str = "open",
+                 profit: float = 0.0):
         self.ticker = ticker
         self.id = zulu_id
         self.status = status
@@ -20,6 +21,7 @@ class Deal:
         self.dealReference = dealReference
         self.trader_id = trader_id
         self.epic = epic
+        self.profit = profit
 
     @staticmethod
     def Create(data: dict):
@@ -30,10 +32,14 @@ class Deal:
                     ticker=data["ticker"],
                     dealReference=data["dealReference"],
                     epic=data["epic"],
-                    status=data["status"])
+                    status=data["status"],
+                    profit=data.get("profit", 0.0))
 
     def __str__(self):
         return f"{self.id} - {self.epic} {self.direction} Trader ID: {self.trader_id}"
+
+    def close(self):
+        self.status = "Closed"
 
     def to_dict(self):
         return {"id": self.id,
@@ -43,7 +49,8 @@ class Deal:
                 "dealId": self.dealId,
                 "trader_id": self.trader_id,
                 "epic": self.epic,
-                "direction": self.direction}
+                "direction": self.direction,
+                "profit": self.profit }
 
 
 class DealStore:

@@ -21,7 +21,8 @@ from Tracing.multi_tracer import MultiTracer
 from UI.zulutrade import ZuluTradeUI
 
 # Verbindung zur MongoDB-Datenbank herstellen
-client = pymongo.MongoClient("mongodb://localhost:27017")
+#client = pymongo.MongoClient("mongodb://localhost:27017")
+client = pymongo.MongoClient("mongodb+srv://emmanuel:roCLAuQ6vHtWISk9@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ts = TraderStore(db)
 ds = DealStore(db)
