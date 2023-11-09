@@ -4,11 +4,8 @@ from typing import List, Dict, Optional
 
 from trading_ig import IGService
 from trading_ig.rest import IGException
-from BL import DataProcessor, timedelta, BaseReader
+from BL import DataProcessor, timedelta, BaseReader, TimeUtils
 from BL.analytics import Analytics
-from BL.indicators import Indicators
-from Predictors.generic_predictor import GenericPredictor
-from Predictors.utils import TimeUtils
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
@@ -392,9 +389,6 @@ class IG:
             if deal_info != None:
                 win_lost = deal_info["_wins"] / deal_info["_trades"]
                 add_text += f"{deal_info['Type']}: WL: {win_lost} - Trades: {deal_info['_trades']}"
-                predictor = GenericPredictor(indicators=Indicators())
-                predictor.setup(deal_info)
-                predictor.setup(predictor_settings)
                 df, df_eval = ti.load_train_data(n, dp, TradeType.FX)
                 dt = datetime.fromisoformat(str(row.openDateUtc))
                 filter = datetime(dt.year, dt.month, dt.day, dt.hour) - timedelta(hours=1)
@@ -412,14 +406,8 @@ class IG:
                 open_data["wl_ration"] = win_lost
 
                 df_results = df_results.append(open_data)
-                res = analytics.evaluate(predictor, df, df_eval, name, viewer,
-                                         filter=datetime(dt.year, dt.month, dt.day, dt.hour))
-                for trade in res._trade_results:
-                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour)) == trade.last_df_time:
-                        df_results.loc[
-                            df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
-                        df_results.loc[
-                            df_results.date == TimeUtils.get_time_string(filter), "eval_action"] = trade.action
+
+
             else:
                 raise Exception()
 
@@ -484,21 +472,19 @@ class IG:
 
         hist = self.fix_hist(hist)
 
-        for i in [""] + Indicators().get_all_indicator_names():
-            print(f"Indicator {i}")
-            df_results = DataFrame()
-            for ticker in hist['name'].unique():
-                df_res = self.report_symbol(ti=ti,
-                                            ticker=ticker,
-                                            start_time_hours=start_time_hours,
-                                            start_time_str=start_time_str,
-                                            hist=hist,
-                                            cache=cache,
-                                            dp=dp,
-                                            analytics=analytics,
-                                            viewer=viewer,
-                                            predictor_settings={"_additional_indicators": [i]})
-                df_results = df_results.append(df_res)
+        df_results = DataFrame()
+        for ticker in hist['name'].unique():
+            df_res = self.report_symbol(ti=ti,
+                                        ticker=ticker,
+                                        start_time_hours=start_time_hours,
+                                        start_time_str=start_time_str,
+                                        hist=hist,
+                                        cache=cache,
+                                        dp=dp,
+                                        analytics=analytics,
+                                        viewer=viewer,
+                                        predictor_settings={})
+            df_results = df_results.append(df_res)
             print(df_results)
 
             # print(df_results.filter(["date","ticker", "wl", "eval_result"]))
@@ -554,10 +540,6 @@ class IG:
 
         return
 
-    def create_report(self, ti, dp_service, predictor, cache, dp, analytics, viewer: BaseViewer):
-        # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
-        # self.report_summary(ti=ti,
-        #                     dp_service=dp_service,
-        #                     delta=timedelta(days=7),
-        #                     name="lastweek")
+    def create_report(self, ti, dp_service, cache, dp, analytics, viewer: BaseViewer):
+
         self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics, viewer=viewer, days=8)

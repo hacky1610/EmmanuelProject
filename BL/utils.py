@@ -1,7 +1,8 @@
 from pathlib import Path
 import os
 import json
-from datetime import timedelta,date
+from datetime import timedelta, date, datetime
+
 
 def get_project_dir():
     return Path(__file__).parent.parent
@@ -42,6 +43,16 @@ def load_train_data(symbol:str,ti,dp,trade_type):
 
     df.to_csv(f"Data/{symbol}_1hour.csv")
     df_complete.to_csv(f"Data/{symbol}_5min.csv")
+
+class TimeUtils:
+
+    @staticmethod
+    def get_time_string(da: datetime):
+        return da.strftime("%Y-%m-%dT%H:00:00.000Z")
+
+    @staticmethod
+    def get_date_string(da: date):
+        return da.strftime("%Y-%m-%d")
 
 
 
