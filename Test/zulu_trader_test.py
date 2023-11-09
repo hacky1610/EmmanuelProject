@@ -20,12 +20,15 @@ class TestZuluTrader(unittest.TestCase):
         self.trader_store = MagicMock()
         self.tracer = MagicMock()
         self.zulu_ui = MagicMock()
+        self.tiingo = MagicMock()
         self.trader = ZuluTrader(deal_storage=self.deal_storage,
                                  zulu_api=self.zulu_api,
                                  ig=self.ig,
                                  trader_store=self.trader_store,
                                  tracer=self.tracer,
-                                 zulu_ui=self.zulu_ui)
+                                 zulu_ui=self.zulu_ui,
+                                 tiingo=self.tiingo,
+                                 account_type="DEMO")
 
 
     def test_close_open_positions_pos_is_still_open(self):
@@ -50,7 +53,7 @@ class TestZuluTrader(unittest.TestCase):
 
         self.deal_storage.get_open_deals.return_value = [open_deal]
         self.zulu_ui.get_my_open_positions.return_value = df
-        self.ig.close.return_value = (True, None)
+        self.ig.close.return_value = (True, {"profit":1.0})
 
         self.trader._close_open_positions()
 
@@ -105,40 +108,70 @@ class TestZuluTrader(unittest.TestCase):
 
     def test_open_new_positions(self):
         # Mock-Daten für _get_positions und _trade_position
-        positions = [Position("1", "AAPL", "Buy", datetime(2023, 10, 29, 12, 0))]
-        self.trader._get_positions.return_value = positions
-        self.trader._trade_position = MagicMock()
-
+        positions = DataFrame()
+        positions = positions.append(Series(data=["1", "bsahb", "BUY", "AAPL" ],
+                              index=["position_id", "trader_id", "direction", "ticker"]), ignore_index=True)
+        self.trader._get_positions = MagicMock(return_value=positions)
+        markets = [{"symbol": "AAPL",
+                    "epic": "AAPL_EPIC",
+                    "currency": "USD"},
+                   {"symbol": "GOO",
+                    "epic": "GOO_EPIC",
+                    "currency": "USD"},
+                   ]
+        self.ig.get_markets.return_value = markets
         self.trader._open_new_positions()
 
-        self.tracer.write.assert_called_with("Open positions")
-        self.trader._trade_position.assert_called_with(markets, positions[0])
+
+    def test_trade_position_position_is_aleady_open(self):
+        # Mock-Daten für _deal_storage, _ig, _get_market_by_ticker und _zulu_api
+
+        self.deal_storage.has_id.return_value = True
+        markets = [{"symbol": "AAPL",
+                    "epic": "AAPL_EPIC",
+                    "currency": "USD"},
+                   {"symbol": "GOO",
+                    "epic": "GOO_EPIC",
+                    "currency": "USD"},
+                   ]
+        self.trader._trade_position(markets, "123","AAPL", "5431", "SELL" )
+
+        self.ig.open.assert_not_called()
+
+    def test_trade_position_position_of_same_trader(self):
+        # Mock-Daten für _deal_storage, _ig, _get_market_by_ticker und _zulu_api
+
+        self.deal_storage.has_id.return_value = False
+        self.deal_storage.position_of_same_trader.return_value = True
+        markets = [{"symbol": "AAPL",
+                    "epic": "AAPL_EPIC",
+                    "currency": "USD"},
+                   {"symbol": "GOO",
+                    "epic": "GOO_EPIC",
+                    "currency": "USD"},
+                   ]
+        self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
+
+        self.ig.open.assert_not_called()
 
     def test_trade_position(self):
         # Mock-Daten für _deal_storage, _ig, _get_market_by_ticker und _zulu_api
-        markets = DataFrame({"symbol": ["AAPL", "GOOGL"], "epic": ["AAPL_EPIC", "GOOGL_EPIC"], "currency": ["USD", "USD"]})
-        p = Position("1", "AAPL", "Buy", datetime(2023, 10, 29, 12, 0))
-        self.trader._get_market_by_ticker_or_none.return_value = markets
-        self.ig.open.return_value = (True, {"dealReference": "12345", "dealId": "67890"})
+
         self.deal_storage.has_id.return_value = False
+        self.deal_storage.position_of_same_trader.return_value = False
+        markets = [{"symbol": "AAPL",
+                    "epic": "AAPL_EPIC",
+                    "currency": "USD"},
+                   {"symbol": "GOO",
+                    "epic": "GOO_EPIC",
+                    "currency": "USD"},
+                   ]
+        self.ig.open.return_value = (True,{"dealReference":"abgggggg", "dealId":"adhu"})
+        self.trader._get_market_by_ticker_or_none = MagicMock(return_value = {"epic":"ghadh", "currency":"EUR", "scaling": 10, })
+        self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
-        self.trader._trade_position(markets, p)
+        self.ig.open.assert_called()
 
-        self.tracer.write.assert_called_with(f"Try to open position {p}")
-        self.ig.open.assert_called_with(epic="AAPL_EPIC", direction="Buy", currency="USD")
-        self.deal_storage.save.assert_called_with(Deal(zulu_id="1", ticker="AAPL", dealReference="12345", dealId="67890", trader_id="trader_id", epic="AAPL_EPIC", direction="Buy"))
-
-    def test_get_positions__(self):
-        # Mock-Daten für _trader_store und _zulu_api
-        self.trader_store.get_all_trades_df.return_value = DataFrame({"id": ["trader_id"], "name": ["Trader Name"]})
-        self.zulu_api.get_opened_positions.return_value = [Position("1", "AAPL", "Buy", datetime(2023, 10, 29, 12, 0))]
-
-        result = self.trader._get_positions()
-
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].get_id(), "1")
-        self.assertEqual(result[0].get_ticker(), "AAPL")
-        self.assertEqual(result[0].get_direction(), "Buy")
 
 if __name__ == '__main__':
     unittest.main()

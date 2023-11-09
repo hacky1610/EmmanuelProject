@@ -1,9 +1,8 @@
 import time
-
+import socket
 import dropbox
 from selenium.webdriver.chrome.options import Options
-
-from BL import ConfigReader
+from BL import ConfigReader, EnvReader
 from BL.zulu_trader import ZuluTrader
 from Connectors.IG import IG
 from Connectors.deal_store import DealStore
@@ -20,28 +19,25 @@ import pymongo
 from Tracing.multi_tracer import MultiTracer
 from UI.zulutrade import ZuluTradeUI
 
-
-
-
-type_ = "DEMO"
-if type_ == "DEMO":
-
-    live = False
+if socket.gethostname() == "acer":
+    account_type = "DEMO"
+    is_docker = False
+    conf_reader = ConfigReader(account_type)
 else:
-    live = True
-
-conf_reader = ConfigReader(live_config=live)
+    conf_reader = EnvReader()
+    is_docker = True
+    account_type = conf_reader.get("Type")
 
 client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ts = TraderStore(db)
 ds = DealStore(db)
 
-tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), type_), ConsoleTracer()])
+tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), account_type), ConsoleTracer()])
 zuluApi = ZuluApi(tracer)
-ig = IG(tracer=tracer, conf_reader=conf_reader, live=live)
+ig = IG(tracer=tracer, conf_reader=conf_reader, acount_type=account_type)
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
-dropbox_service = DropBoxService(dbx, type_)
+dropbox_service = DropBoxService(dbx, account_type)
 cache = DropBoxCache(dropbox_service)
 tiingo = Tiingo(conf_reader,cache)
 options= Options()
@@ -54,13 +50,16 @@ while True:
 
         zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zuluApi, ig=ig,
                                  trader_store=ts, tracer=tracer, zulu_ui=zuluUI,
-                                 tiingo=tiingo)
+                                 tiingo=tiingo, account_type=account_type)
 
         zuluUI.login()
 
         zulu_trader.trade()
         time.sleep(60 * 4)
         zuluUI.close()
+
+        if is_docker:
+            exit(0)
 
     except Exception as e:
         tracer.error(f"Error: {e}")

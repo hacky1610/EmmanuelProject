@@ -16,7 +16,6 @@ cache = DropBoxCache(ds)
 tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
 viewer = PlotlyViewer(cache)
-#viewer = BaseViewer()
 
 ig.create_report(ti=tiingo,
                  dp_service=ds,

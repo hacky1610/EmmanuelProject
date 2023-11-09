@@ -21,24 +21,23 @@ from UI.plotly_viewer import PlotlyViewer
 
 class IG:
 
-    def __init__(self, conf_reader: BaseReader, tracer: Tracer = ConsoleTracer(), live: bool = False):
+    def __init__(self, conf_reader: BaseReader, tracer: Tracer = ConsoleTracer(), acount_type: str = "DEMO"):
         self.ig_service: IGService = None
         self.user = conf_reader.get("ig_demo_user")
         self.password = conf_reader.get("ig_demo_pass")
         self.key = conf_reader.get("ig_demo_key")
         self.accNr = conf_reader.get("ig_demo_acc_nr")
-        if live:
-            self.type = "LIVE"
-            self._fx_id = 342535
-            self._crypto_id = None
-            self._gold_id = None
-            self._silver_id = None
-        else:
-            self.type = "DEMO"
+        self.type = acount_type
+        if self.type == "DEMO":
             self._fx_id = 264139
             self._crypto_id = 1002200
             self._gold_id = 104139
             self._silver_id = 264211
+        else:
+            self._fx_id = 342535
+            self._crypto_id = None
+            self._gold_id = None
+            self._silver_id = None
         self._tracer: Tracer = tracer
         self.connect()
         self._excludedMarkets = ["CHFHUF", "EMFX USDTWD ($1 Contract)", "EMFX USDPHP ($1 Contract)",

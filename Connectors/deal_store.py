@@ -12,7 +12,8 @@ class Deal:
                  trader_id: str, epic: str,
                  direction: str,
                  status: str = "open",
-                 profit: float = 0.0):
+                 profit: float = 0.0,
+                 account_type: str = "DEMO"):
         self.ticker = ticker
         self.id = zulu_id
         self.status = status
@@ -22,6 +23,7 @@ class Deal:
         self.trader_id = trader_id
         self.epic = epic
         self.profit = profit
+        self.account_type = account_type
 
     @staticmethod
     def Create(data: dict):
@@ -33,6 +35,7 @@ class Deal:
                     dealReference=data["dealReference"],
                     epic=data["epic"],
                     status=data["status"],
+                    account_type=data.get("account_type", "DEMO"),
                     profit=data.get("profit", 0.0))
 
     def __str__(self):
@@ -50,7 +53,8 @@ class Deal:
                 "trader_id": self.trader_id,
                 "epic": self.epic,
                 "direction": self.direction,
-                "profit": self.profit }
+                "profit": self.profit,
+                "account_type": self.account_type}
 
 
 class DealStore:

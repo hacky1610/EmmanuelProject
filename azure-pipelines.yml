@@ -21,8 +21,6 @@ steps:
 
 - script: |
     python -m pip install --upgrade pip
-    pip install Cython
-    pip install ZigZag==0.2.2
     pip install -r requirements.txt
   displayName: 'Install dependencies'
 

@@ -20,7 +20,7 @@ from UI.zulutrade import ZuluTradeUI
 class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
-                 ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo:Tiingo):
+                 ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo:Tiingo, account_type: str):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -30,6 +30,7 @@ class ZuluTrader:
         self._zulu_ui = zulu_ui
         self._min_wl_ration = 0.67
         self._tiingo = tiingo
+        self._account_type = account_type
 
     def trade(self):
         self._close_open_positions()
@@ -130,7 +131,7 @@ class ZuluTrader:
             self._deal_storage.save(Deal(zulu_id=position_id, ticker=ticker,
                      dealReference=deal_respons["dealReference"],
                      dealId=deal_respons["dealId"], trader_id=trader_id,
-                     epic=m["epic"], direction=direction))
+                     epic=m["epic"], direction=direction, account_type=self._account_type))
         else:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")
 
