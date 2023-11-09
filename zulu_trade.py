@@ -20,12 +20,7 @@ import pymongo
 from Tracing.multi_tracer import MultiTracer
 from UI.zulutrade import ZuluTradeUI
 
-# Verbindung zur MongoDB-Datenbank herstellen
-#client = pymongo.MongoClient("mongodb://localhost:27017")
-client = pymongo.MongoClient("mongodb+srv://emmanuel:roCLAuQ6vHtWISk9@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
-db = client["ZuluDB"]
-ts = TraderStore(db)
-ds = DealStore(db)
+
 
 
 type_ = "DEMO"
@@ -36,6 +31,12 @@ else:
     live = True
 
 conf_reader = ConfigReader(live_config=live)
+
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+db = client["ZuluDB"]
+ts = TraderStore(db)
+ds = DealStore(db)
+
 tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), type_), ConsoleTracer()])
 zuluApi = ZuluApi(tracer)
 ig = IG(tracer=tracer, conf_reader=conf_reader, live=live)
