@@ -1,6 +1,5 @@
 from BL import DataProcessor
 from BL.analytics import Analytics
-from BL.indicators import Indicators
 from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import Tiingo

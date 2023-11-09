@@ -4,7 +4,7 @@ from typing import List, Dict, Optional
 
 from trading_ig import IGService
 from trading_ig.rest import IGException
-from BL import DataProcessor, timedelta, BaseReader
+from BL import DataProcessor, timedelta, BaseReader, TimeUtils
 from BL.analytics import Analytics
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
