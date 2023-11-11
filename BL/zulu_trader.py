@@ -54,17 +54,26 @@ class ZuluTrader:
 
     def  _get_deals_to_close(self):
         deals_to_close = []
-        open_positons = self._zulu_ui.get_my_open_positions()
+        open_positons_zulu = self._zulu_ui.get_my_open_positions()
+        open_ig_deals = self._ig.get_opened_positions()
+
         for open_deal in self._deal_storage.get_open_deals():
-            if len(open_positons) == 0 or len(open_positons[open_positons.position_id == open_deal.id]) == 0:
+            if len(open_ig_deals[open_ig_deals.dealId == open_deal.dealId]) == 0:
+                self._tracer.warning(f"StopLoss: The deal {open_deal} seems to be already closed in IG" )
+                open_deal.close()
+                self._deal_storage.save(open_deal)
+                continue
+
+            if len(open_positons_zulu) == 0 or len(open_positons_zulu[open_positons_zulu.position_id == open_deal.id]) == 0:
                 self._tracer.write(f"Position {open_deal} is closed")
                 deals_to_close.append(open_deal)
             else:
-                self._tracer.write(f"Position {open_deal} is still open")
+                self._tracer.debug(f"Position {open_deal} is still open")
         return deals_to_close
 
     def _close_open_positions(self):
         self._tracer.write("Close positions")
+
         for open_deal in self._get_deals_to_close():
             result, deal_response = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
                                        deal_id=open_deal.dealId)
@@ -76,7 +85,7 @@ class ZuluTrader:
             else:
                 deals = self._ig.get_deals()
                 if len(deals[deals.dealId == open_deal.dealId]) == 0:
-                    self._tracer.write("There was en error during close. But the deal is not open anymore")
+                    self._tracer.warning("There was en error during close. But the deal is not open anymore")
                     open_deal.close()
                     self._deal_storage.save(open_deal)
                 else:

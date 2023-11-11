@@ -42,6 +42,7 @@ cache = DropBoxCache(dropbox_service)
 tiingo = Tiingo(conf_reader,cache)
 options= Options()
 options.add_argument('--headless')
+#options.add_argument('--disable-dev-shm-usage')
 
 
 while True:
