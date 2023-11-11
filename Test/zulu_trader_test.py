@@ -54,6 +54,9 @@ class TestZuluTrader(unittest.TestCase):
         self.deal_storage.get_open_deals.return_value = [open_deal]
         self.zulu_ui.get_my_open_positions.return_value = df
         self.ig.close.return_value = (True, {"profit":1.0})
+        open_ig_deals = DataFrame()
+        open_ig_deals = open_ig_deals.append(Series(data=["did"], index=["dealId"]), ignore_index=True)
+        self.ig.get_opened_positions.return_value = open_ig_deals
 
         self.trader._close_open_positions()
 
