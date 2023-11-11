@@ -57,6 +57,9 @@ class ZuluTrader:
         open_positons_zulu = self._zulu_ui.get_my_open_positions()
         open_ig_deals = self._ig.get_opened_positions()
 
+        self._tracer.write(f"Open Zulu Positions {open_positons_zulu}")
+        self._tracer.write(f"Open Ig Positions {open_ig_deals}")
+
         for open_deal in self._deal_storage.get_open_deals():
             if len(open_ig_deals[open_ig_deals.dealId == open_deal.dealId]) == 0:
                 self._tracer.warning(f"StopLoss: The deal {open_deal} seems to be already closed in IG" )
