@@ -45,24 +45,19 @@ options.add_argument('--headless')
 #options.add_argument('--disable-dev-shm-usage')
 
 
-while True:
-    try:
-        zuluUI = ZuluTradeUI(webdriver.Chrome(options=options))
+try:
+    zuluUI = ZuluTradeUI(webdriver.Chrome(options=options))
 
-        zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zuluApi, ig=ig,
-                                 trader_store=ts, tracer=tracer, zulu_ui=zuluUI,
-                                 tiingo=tiingo, account_type=account_type)
+    zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zuluApi, ig=ig,
+                             trader_store=ts, tracer=tracer, zulu_ui=zuluUI,
+                             tiingo=tiingo, account_type=account_type)
 
-        zuluUI.login()
+    zuluUI.login()
 
-        zulu_trader.trade()
-        time.sleep(60 * 4)
-        zuluUI.close()
+    zulu_trader.trade()
+    zuluUI.close()
 
-        if is_docker:
-            exit(0)
-
-    except Exception as e:
-        tracer.error(f"Error: {e}")
+except Exception as e:
+    tracer.error(f"Error: {e}")
 
 

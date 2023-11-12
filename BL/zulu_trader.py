@@ -116,7 +116,7 @@ class ZuluTrader:
     def _calc_limit_stop(self, symbol) -> (float, float):
         data = self._tiingo.load_trade_data(symbol, DataProcessor(), trade_type=TradeType.FX,days=10)
         atr = data.iloc[-1].ATR
-        return atr * 2, atr * 3
+        return atr * 3.5, atr * 4.5
 
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
