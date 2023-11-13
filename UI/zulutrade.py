@@ -133,7 +133,7 @@ class ZuluTradeUI:
 
     def get_my_open_positions(self) -> DataFrame:
         self._driver.get("https://www.zulutrade.com/dashboard")
-        time.sleep(4)
+        #time.sleep(4)
         table = self._driver.find_element(By.ID, "example")
         rows = table.find_elements(By.TAG_NAME, "tr")
 
