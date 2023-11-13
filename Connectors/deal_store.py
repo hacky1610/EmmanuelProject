@@ -10,6 +10,7 @@ class Deal:
     def __init__(self, zulu_id: str, ticker: str,
                  dealReference: str, dealId: str,
                  trader_id: str, epic: str,
+                 open_date_ig_str: str,
                  direction: str,
                  status: str = "open",
                  profit: float = 0.0,
@@ -24,6 +25,7 @@ class Deal:
         self.epic = epic
         self.profit = profit
         self.account_type = account_type
+        self.open_date_ig_str = open_date_ig_str
 
     @staticmethod
     def Create(data: dict):
@@ -36,7 +38,8 @@ class Deal:
                     epic=data["epic"],
                     status=data["status"],
                     account_type=data.get("account_type", "DEMO"),
-                    profit=data.get("profit", 0.0))
+                    profit=data.get("profit", 0.0),
+                    open_date_ig_str=data["open_date_ig_str"])
 
     def __str__(self):
         return f"{self.id} - {self.epic} {self.direction} Trader ID: {self.trader_id}"
@@ -54,7 +57,8 @@ class Deal:
                 "epic": self.epic,
                 "direction": self.direction,
                 "profit": self.profit,
-                "account_type": self.account_type}
+                "account_type": self.account_type,
+                "open_date_ig_str": self.open_date_ig_str}
 
 
 class DealStore:
@@ -76,8 +80,11 @@ class DealStore:
         else:
             print("Element mit ID {} wurde nicht gefunden.".format(id))
 
-    def get_deal_by_id(self, id):
+    def get_deal_by_zulu_id(self, id):
         return self._collection.find_one({"id": id})
+
+    def get_deal_by_ig_id(self, ig_date:str, ticker:str) -> Deal:
+        return Deal.Create(self._collection.find_one({"open_date_ig_str": ig_date, "ticker":ticker}))
 
     def get_all_deals(self):
         return self._collection.find()

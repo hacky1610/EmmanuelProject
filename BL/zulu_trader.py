@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
+import re
 import time
 
 from pandas import DataFrame, Series
@@ -35,6 +36,7 @@ class ZuluTrader:
     def trade(self):
         self._close_open_positions()
         self._open_new_positions()
+        self._update_deals()
 
     def update_trader_history(self):
         self._tracer.write("Update History")
@@ -83,7 +85,6 @@ class ZuluTrader:
             if result:
                 self._tracer.write(f"Position {open_deal} closed")
                 open_deal.close()
-                open_deal.profit = deal_response["profit"]
                 self._deal_storage.save(open_deal)
             else:
                 deals = self._ig.get_deals()
@@ -137,13 +138,17 @@ class ZuluTrader:
 
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
         limit, stop = self._calc_limit_stop(ticker)
-        result, deal_respons = self._ig.open(epic=m["epic"], direction=direction,
+        result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
                                              currency=m["currency"], limit=limit * m["scaling"], stop=stop * m["scaling"])
         if result:
+            date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
+            date_string = date_string.replace(" ", "T")
+
             self._deal_storage.save(Deal(zulu_id=position_id, ticker=ticker,
-                     dealReference=deal_respons["dealReference"],
-                     dealId=deal_respons["dealId"], trader_id=trader_id,
-                     epic=m["epic"], direction=direction, account_type=self._account_type))
+                     dealReference=deal_response["dealReference"],
+                     dealId=deal_response["dealId"], trader_id=trader_id,
+                     epic=m["epic"], direction=direction, account_type=self._account_type,
+                     open_date_ig_str=date_string))
         else:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")
 
@@ -185,3 +190,22 @@ class ZuluTrader:
         self._tracer.write(
             f"new positions: {good_positions.filter(['time', 'ticker', 'wl_ratio', 'trader_id', 'trader_name', 'direction'])}")
         return good_positions
+
+    def _update_deals(self):
+        start_time = (datetime.now() - timedelta(hours=7 * 24))
+        hist = self._ig.get_transaction_history(start_time)
+
+        for _,ig_deal in hist.iterrows():
+            ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/","")
+            deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc,ticker)
+            if deal is not None:
+                if deal.direction == "BUY":
+                    profit = float(ig_deal.closeLevel) - float(ig_deal.openLevel)
+                else:
+                    profit = float(ig_deal.openLevel) - float(ig_deal.closeLevel)
+                deal.profit = profit
+                self._deal_storage.save(deal)
+            else:
+                self._tracer.error(f"No deal for {ig_deal.openDateUtc} and {ticker}")
+
+
