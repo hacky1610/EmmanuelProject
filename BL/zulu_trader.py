@@ -35,7 +35,8 @@ class ZuluTrader:
 
     def trade(self):
         self._close_open_positions()
-        self._open_new_positions()
+        if not self._is_crash():
+            self._open_new_positions()
         self._update_deals()
 
     def update_trader_history(self):
@@ -204,6 +205,19 @@ class ZuluTrader:
         self._tracer.write(
             f"new positions: {good_positions.filter(['time', 'ticker', 'wl_ratio', 'trader_id', 'trader_name', 'direction'])}")
         return good_positions
+
+    def _get_ig_hist(self):
+        start_time = (datetime.now() - timedelta(hours=7 * 24))
+        hist = self._ig.get_transaction_history(start_time)
+        hist['profit_float'] = hist['profitAndLoss'].str.replace('E', '').astype(float)
+        return hist
+
+    def _is_crash(self):
+        hist = self._get_ig_hist()
+        if hist[:3].profit_float.sum() < -50:
+            self._tracer.error(f"CRASH CRASH CRASH {hist[:3]}")
+            return True
+        return False
 
     def _update_deals(self):
         start_time = (datetime.now() - timedelta(hours=7 * 24))
