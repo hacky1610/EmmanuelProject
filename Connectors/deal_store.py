@@ -14,6 +14,7 @@ class Deal:
                  direction: str,
                  status: str = "open",
                  profit: float = 0.0,
+                 result: int = 0,
                  account_type: str = "DEMO"):
         self.ticker = ticker
         self.id = zulu_id
@@ -26,6 +27,7 @@ class Deal:
         self.profit = profit
         self.account_type = account_type
         self.open_date_ig_str = open_date_ig_str
+        self.result = result
 
     @staticmethod
     def Create(data: dict):
@@ -39,6 +41,7 @@ class Deal:
                     status=data["status"],
                     account_type=data.get("account_type", "DEMO"),
                     profit=data.get("profit", 0.0),
+                    result=data.get("result", 0),
                     open_date_ig_str=data["open_date_ig_str"])
 
     def __str__(self):
@@ -58,7 +61,8 @@ class Deal:
                 "direction": self.direction,
                 "profit": self.profit,
                 "account_type": self.account_type,
-                "open_date_ig_str": self.open_date_ig_str}
+                "open_date_ig_str": self.open_date_ig_str,
+                "result": self.result}
 
 
 class DealStore:
@@ -84,7 +88,10 @@ class DealStore:
         return self._collection.find_one({"id": id})
 
     def get_deal_by_ig_id(self, ig_date:str, ticker:str) -> Deal:
-        return Deal.Create(self._collection.find_one({"open_date_ig_str": ig_date, "ticker":ticker}))
+        res = self._collection.find_one({"open_date_ig_str": ig_date, "ticker":ticker})
+        if res is not None:
+            return Deal.Create(res)
+        return None
 
     def get_all_deals(self):
         return self._collection.find()

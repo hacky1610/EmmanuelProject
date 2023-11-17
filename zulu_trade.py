@@ -1,3 +1,5 @@
+import signal
+import sys
 import time
 import socket
 import dropbox
@@ -15,7 +17,8 @@ from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
 from selenium import webdriver
 import pymongo
-
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from Tracing.multi_tracer import MultiTracer
 from UI.zulutrade import ZuluTradeUI
 
@@ -33,7 +36,7 @@ db = client["ZuluDB"]
 ts = TraderStore(db)
 ds = DealStore(db)
 
-tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), account_type), ConsoleTracer()])
+tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), account_type), ConsoleTracer(True)])
 zuluApi = ZuluApi(tracer)
 ig = IG(tracer=tracer, conf_reader=conf_reader, acount_type=account_type)
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
@@ -44,21 +47,38 @@ options= Options()
 options.add_argument('--headless')
 #options.add_argument('--disable-dev-shm-usage')
 
+service=Service(ChromeDriverManager().install())
 
-while True:
-    try:
-        zuluUI = ZuluTradeUI(webdriver.Chrome(options=options))
 
-        zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zuluApi, ig=ig,
-                                 trader_store=ts, tracer=tracer, zulu_ui=zuluUI,
-                                 tiingo=tiingo, account_type=account_type)
+# Funktion, die die Timeout-Behandlung durchführt
+def timeout_handler(signum, frame):
+    raise TimeoutError("Die Funktion hat zu lange gedauert")
 
-        zuluUI.login()
+def set_timeout():
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(240)  #
 
-        zulu_trader.trade()
-        zuluUI.close()
+try:
+    tracer.write("Start")
+    set_timeout()
 
-    except Exception as e:
-        tracer.error(f"Error: {e}")
+    zuluUI = ZuluTradeUI(webdriver.Chrome(options=options, service=service))
+
+    zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zuluApi, ig=ig,
+                             trader_store=ts, tracer=tracer, zulu_ui=zuluUI,
+                             tiingo=tiingo, account_type=account_type)
+
+    zuluUI.login()
+
+    zulu_trader.trade()
+    zuluUI.close()
+    tracer.write("End")
+
+except TimeoutError as e:
+    tracer.error(f"Timeout Error: {e} ")
+except Exception as e:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    tracer.error(f"Error: {e} File:{exc_traceback.tb_frame.f_code.co_filename} - {exc_traceback.tb_lineno}")
+
 
 

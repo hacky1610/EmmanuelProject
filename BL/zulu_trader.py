@@ -56,29 +56,43 @@ class ZuluTrader:
 
     def  _get_deals_to_close(self):
         deals_to_close = []
-        open_positons_zulu = self._zulu_ui.get_my_open_positions()
+        start = time.time()
+        open_positions_zulu = self._zulu_ui.get_my_open_positions()
+        self._tracer.debug(f"Open Zulu Positions {open_positions_zulu}. Needed time {time.time() - start}")
+        start = time.time()
         open_ig_deals = self._ig.get_opened_positions()
+        self._tracer.debug(f"Open Ig Positions {open_ig_deals} Needed time {time.time() - start}")
+        start = time.time()
+        closed_positions_zulu = self._zulu_ui.get_my_closed_positions()
+        self._tracer.debug(f"Closed Zulu Positions {closed_positions_zulu} Needed time {time.time() - start}")
+        start = time.time()
+        open_deals_db = self._deal_storage.get_open_deals()
+        self._tracer.debug(f"Open Deals drom DB {open_deals_db} Needed time {time.time() - start}")
 
-        self._tracer.write(f"Open Zulu Positions {open_positons_zulu}")
-        self._tracer.write(f"Open Ig Positions {open_ig_deals}")
 
-        for open_deal in self._deal_storage.get_open_deals():
+        if len(open_deals_db) == 0 and len(open_ig_deals) > 0:
+            self._tracer.error("Something is wrong")
+
+        for open_deal in open_deals_db:
             if len(open_ig_deals[open_ig_deals.dealId == open_deal.dealId]) == 0:
                 self._tracer.warning(f"StopLoss: The deal {open_deal} seems to be already closed in IG" )
                 open_deal.close()
                 self._deal_storage.save(open_deal)
                 continue
 
-            if len(open_positons_zulu) == 0 or len(open_positons_zulu[open_positons_zulu.position_id == open_deal.id]) == 0:
-                self._tracer.write(f"Position {open_deal} is closed")
-                deals_to_close.append(open_deal)
+            if (len(open_positions_zulu) == 0 or
+                    len(open_positions_zulu[open_positions_zulu.position_id == open_deal.id]) == 0):
+                self._tracer.write(f"Position {open_deal} is not listed as open")
+                if len(closed_positions_zulu[closed_positions_zulu.position_id == open_deal.id]) == 1:
+                    deals_to_close.append(open_deal)
+                else:
+                    self._tracer.error(f"Cant find position {open_deal} in open nor in closed positions")
             else:
                 self._tracer.debug(f"Position {open_deal} is still open")
         return deals_to_close
 
     def _close_open_positions(self):
-        self._tracer.write("Close positions")
-
+        self._tracer.debug("Close positions")
         for open_deal in self._get_deals_to_close():
             result, deal_response = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
                                        deal_id=open_deal.dealId)
@@ -102,11 +116,11 @@ class ZuluTrader:
         return None
 
     def _open_new_positions(self):
-        self._tracer.write("Open positions")
+        self._tracer.debug("Open positions")
 
         markets = self._ig.get_markets(trade_type=TradeType.FX, tradeable=True)
         if len(markets) == 0:
-            self._tracer.write("market closed")
+            self._tracer.warning("market closed")
             return
 
         for _, position in self._get_positions().iterrows():
@@ -117,13 +131,13 @@ class ZuluTrader:
     def _calc_limit_stop(self, symbol) -> (float, float):
         data = self._tiingo.load_trade_data(symbol, DataProcessor(), trade_type=TradeType.FX,days=10)
         atr = data.iloc[-1].ATR
-        return atr * 3.5, atr * 4.5
+        return atr * 3.5, atr * 8.0
 
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
 
         if self._deal_storage.has_id(position_id):
-            self._tracer.write(f"Position {position_id} - {ticker} by {trader_id} is already open")
+            self._tracer.debug(f"Position {position_id} - {ticker} by {trader_id} is already open")
             return
 
         if self._deal_storage.position_of_same_trader(ticker, trader_id):
@@ -142,7 +156,7 @@ class ZuluTrader:
                                              currency=m["currency"], limit=limit * m["scaling"], stop=stop * m["scaling"])
         if result:
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
-            date_string = date_string.replace(" ", "T")
+            date_string = date_string.group().replace(" ", "T")
 
             self._deal_storage.save(Deal(zulu_id=position_id, ticker=ticker,
                      dealReference=deal_response["dealReference"],
@@ -161,7 +175,7 @@ class ZuluTrader:
         return trader.id
 
     def _get_newest_positions(self, positions: DataFrame) -> DataFrame:
-        return positions[positions.time >= datetime.now() - timedelta(minutes=45)]
+        return positions[positions.time >= datetime.now() - timedelta(minutes=20)]
 
     def _get_positions(self) -> DataFrame:
         positions = self._zulu_ui.get_my_open_positions()
@@ -172,7 +186,7 @@ class ZuluTrader:
         # Filter for time
         positions = self._get_newest_positions(positions)
         if len(positions) == 0:
-            self._tracer.write("All postions are to old")
+            self._tracer.debug("All postions are to old")
             return positions
 
         positions["wl_ratio"] = positions.apply(self._calc_hist, axis=1)
@@ -181,7 +195,7 @@ class ZuluTrader:
         # Filter for quality
         good_positions = positions[positions.wl_ratio > self._min_wl_ration]
         if len(good_positions) == 0:
-            self._tracer.write(
+            self._tracer.debug(
                 f"All postions are from bad traders. This postions are bad: \n {positions[positions.wl_ratio <= self._min_wl_ration]}")
             return good_positions
 
@@ -199,13 +213,13 @@ class ZuluTrader:
             ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/","")
             deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc,ticker)
             if deal is not None:
-                if deal.direction == "BUY":
-                    profit = float(ig_deal.closeLevel) - float(ig_deal.openLevel)
+                deal.profit = float(ig_deal.profitAndLoss[1:])
+                if deal.profit > 0:
+                    deal.result = 1
                 else:
-                    profit = float(ig_deal.openLevel) - float(ig_deal.closeLevel)
-                deal.profit = profit
+                    deal.result = -1
                 self._deal_storage.save(deal)
             else:
-                self._tracer.error(f"No deal for {ig_deal.openDateUtc} and {ticker}")
+                self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
 
 
