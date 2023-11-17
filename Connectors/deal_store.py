@@ -109,4 +109,4 @@ class DealStore:
         self._collection.delete_many({})
 
     def position_of_same_trader(self, ticker: str, trader_id):
-        return self._collection.find_one({"ticker": ticker, "trader_id": trader_id})
+        return self._collection.find_one({"ticker": ticker, "trader_id": trader_id, "status": "open"})
