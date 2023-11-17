@@ -11,6 +11,7 @@ from Connectors.tiingo import TradeType
 from Connectors.zulu_api import ZuluApi
 from Tracing.Tracer import Tracer
 
+
 class TestZuluTrader(unittest.TestCase):
 
     def setUp(self):
@@ -30,11 +31,11 @@ class TestZuluTrader(unittest.TestCase):
                                  tiingo=self.tiingo,
                                  account_type="DEMO")
 
-
     def test_close_open_positions_pos_is_still_open(self):
         # Mock-Daten für get_open_deals und close
-        open_deal = Deal(zulu_id="zID",dealReference="df", trader_id="tid",dealId="did",
-                         direction="SELL", status="open", ticker="AAPL", epic="AAPL.de")
+        open_deal = Deal(zulu_id="zID", dealReference="df", trader_id="tid", dealId="did",
+                         direction="SELL", status="open", ticker="AAPL",
+                         epic="AAPL.de", open_date_ig_str="", open_date_ig_datetime=None)
         df = DataFrame()
         df = df.append(Series(data=["zID"], index=["position_id"]), ignore_index=True)
 
@@ -47,13 +48,17 @@ class TestZuluTrader(unittest.TestCase):
 
     def test_close_open_positions_pos_is_closed(self):
         # Mock-Daten für get_open_deals und close
-        open_deal = Deal(zulu_id="zID",dealReference="df", trader_id="tid",dealId="did",
-                         direction="SELL", status="open", ticker="AAPL", epic="AAPL.de")
-        df = DataFrame()
+        open_deal = Deal(zulu_id="zID", dealReference="df", trader_id="tid", dealId="did",
+                         direction="SELL", status="open", ticker="AAPL", epic="AAPL.de",
+                         open_date_ig_str="", open_date_ig_datetime=None)
+        df_open_pos = DataFrame()
+        df_closed_pos = DataFrame()
+        df_closed_pos = df_closed_pos.append(Series(data=["zID"], index=["position_id"]), ignore_index=True)
 
         self.deal_storage.get_open_deals.return_value = [open_deal]
-        self.zulu_ui.get_my_open_positions.return_value = df
-        self.ig.close.return_value = (True, {"profit":1.0})
+        self.zulu_ui.get_my_open_positions.return_value = df_open_pos
+        self.zulu_ui.get_my_closed_positions.return_value = df_closed_pos
+        self.ig.close.return_value = (True, {"profit": 1.0})
         open_ig_deals = DataFrame()
         open_ig_deals = open_ig_deals.append(Series(data=["did"], index=["dealId"]), ignore_index=True)
         self.ig.get_opened_positions.return_value = open_ig_deals
@@ -61,7 +66,6 @@ class TestZuluTrader(unittest.TestCase):
         self.trader._close_open_positions()
 
         self.ig.close.assert_called()
-
 
     def test_get_market_by_ticker_market_exist(self):
         # Mock-Daten für get_markets
@@ -86,7 +90,7 @@ class TestZuluTrader(unittest.TestCase):
         df = df.append(Series(data=["1", "foo"],
                               index=["id", "trader_name"]), ignore_index=True)
         self.trader._get_newest_positions = MagicMock(return_value=df)
-        self.trader_store.get_trader_by_name.return_value = Trader(id="id",name="name")
+        self.trader_store.get_trader_by_name.return_value = Trader(id="id", name="name")
         self.zulu_ui.get_my_open_positions.return_value = df
 
         positions = self.trader._get_positions()
@@ -107,13 +111,12 @@ class TestZuluTrader(unittest.TestCase):
         positions = self.trader._get_positions()
         assert len(positions) == 1
 
-
-
     def test_open_new_positions(self):
         # Mock-Daten für _get_positions und _trade_position
         positions = DataFrame()
-        positions = positions.append(Series(data=["1", "bsahb", "BUY", "AAPL" ],
-                              index=["position_id", "trader_id", "direction", "ticker"]), ignore_index=True)
+        positions = positions.append(Series(data=["1", "bsahb", "BUY", "AAPL"],
+                                            index=["position_id", "trader_id", "direction", "ticker"]),
+                                     ignore_index=True)
         self.trader._get_positions = MagicMock(return_value=positions)
         markets = [{"symbol": "AAPL",
                     "epic": "AAPL_EPIC",
@@ -124,7 +127,6 @@ class TestZuluTrader(unittest.TestCase):
                    ]
         self.ig.get_markets.return_value = markets
         self.trader._open_new_positions()
-
 
     def test_trade_position_position_is_aleady_open(self):
         # Mock-Daten für _deal_storage, _ig, _get_market_by_ticker und _zulu_api
@@ -137,7 +139,7 @@ class TestZuluTrader(unittest.TestCase):
                     "epic": "GOO_EPIC",
                     "currency": "USD"},
                    ]
-        self.trader._trade_position(markets, "123","AAPL", "5431", "SELL" )
+        self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
         self.ig.open.assert_not_called()
 
@@ -169,8 +171,10 @@ class TestZuluTrader(unittest.TestCase):
                     "epic": "GOO_EPIC",
                     "currency": "USD"},
                    ]
-        self.ig.open.return_value = (True,{"dealReference":"abgggggg", "dealId":"adhu"})
-        self.trader._get_market_by_ticker_or_none = MagicMock(return_value = {"epic":"ghadh", "currency":"EUR", "scaling": 10, })
+        self.ig.open.return_value = (
+        True, {"dealReference": "abgggggg", "dealId": "adhu", "date": "2021-01-01T20:20:00"})
+        self.trader._get_market_by_ticker_or_none = MagicMock(
+            return_value={"epic": "ghadh", "currency": "EUR", "scaling": 10, })
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
         self.ig.open.assert_called()

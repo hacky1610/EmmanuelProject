@@ -163,7 +163,8 @@ class ZuluTrader:
                      dealReference=deal_response["dealReference"],
                      dealId=deal_response["dealId"], trader_id=trader_id,
                      epic=m["epic"], direction=direction, account_type=self._account_type,
-                     open_date_ig_str=date_string))
+                     open_date_ig_str=date_string,
+                     open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S')))
         else:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")
 

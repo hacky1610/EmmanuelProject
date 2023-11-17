@@ -1,3 +1,4 @@
+import datetime
 from typing import List
 
 from pymongo.database import Database
@@ -11,6 +12,7 @@ class Deal:
                  dealReference: str, dealId: str,
                  trader_id: str, epic: str,
                  open_date_ig_str: str,
+                 open_date_ig_datetime: datetime,
                  direction: str,
                  status: str = "open",
                  profit: float = 0.0,
@@ -27,6 +29,7 @@ class Deal:
         self.profit = profit
         self.account_type = account_type
         self.open_date_ig_str = open_date_ig_str
+        self.open_date_ig_datetime = open_date_ig_datetime
         self.result = result
 
     @staticmethod
@@ -42,7 +45,8 @@ class Deal:
                     account_type=data.get("account_type", "DEMO"),
                     profit=data.get("profit", 0.0),
                     result=data.get("result", 0),
-                    open_date_ig_str=data["open_date_ig_str"])
+                    open_date_ig_str=data["open_date_ig_str"],
+                    open_date_ig_datetime=data.get("open_date_ig_datetime",None))
 
     def __str__(self):
         return f"{self.id} - {self.epic} {self.direction} Trader ID: {self.trader_id}"
@@ -62,6 +66,7 @@ class Deal:
                 "profit": self.profit,
                 "account_type": self.account_type,
                 "open_date_ig_str": self.open_date_ig_str,
+                "open_date_ig_datetime": self.open_date_ig_datetime,
                 "result": self.result}
 
 

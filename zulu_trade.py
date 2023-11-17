@@ -50,19 +50,11 @@ options.add_argument('--headless')
 service=Service(ChromeDriverManager().install())
 
 
-# Funktion, die die Timeout-Behandlung durchführt
-def timeout_handler(signum, frame):
-    raise TimeoutError("Die Funktion hat zu lange gedauert")
-
-def set_timeout():
-    signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(240)  #
-
 try:
     tracer.write("Start")
-    set_timeout()
-
-    zuluUI = ZuluTradeUI(webdriver.Chrome(options=options, service=service))
+    driver = webdriver.Chrome(options=options, service=service)
+    driver.implicitly_wait(15)
+    zuluUI = ZuluTradeUI(driver)
 
     zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zuluApi, ig=ig,
                              trader_store=ts, tracer=tracer, zulu_ui=zuluUI,
@@ -74,8 +66,6 @@ try:
     zuluUI.close()
     tracer.write("End")
 
-except TimeoutError as e:
-    tracer.error(f"Timeout Error: {e} ")
 except Exception as e:
     exc_type, exc_value, exc_traceback = sys.exc_info()
     tracer.error(f"Error: {e} File:{exc_traceback.tb_frame.f_code.co_filename} - {exc_traceback.tb_lineno}")
