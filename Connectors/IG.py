@@ -5,7 +5,6 @@ from typing import List, Dict, Optional
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from BL import DataProcessor, timedelta, BaseReader, TimeUtils
-from BL.analytics import Analytics
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
@@ -16,7 +15,6 @@ import tempfile
 from datetime import datetime
 from Connectors.tiingo import TradeType
 from UI.base_viewer import BaseViewer
-from UI.plotly_viewer import PlotlyViewer
 
 
 class IG:
@@ -284,7 +282,7 @@ class IG:
         positions = self.get_opened_positions()
         return positions[positions.epic == epic]
 
-    def get_transaction_history(self, start_time: str):
+    def get_transaction_history(self, start_time: datetime):
         return self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", from_date=start_time,
                                                          max_span_seconds=60 * 50)
 
@@ -365,8 +363,7 @@ class IG:
         #                      color="#00ff00", label="Limit")
 
     @staticmethod
-    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics: Analytics,
-                      viewer: BaseViewer, predictor_settings: Dict):
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp):
         df_results = DataFrame()
         df_history = ti.load_data_by_date(ticker,
                                           TimeUtils.get_date_string(start_time_hours),
@@ -451,7 +448,7 @@ class IG:
         #     print(f"{ticker} ERROR - evaluation mismatch")
         return df_results
 
-    def report_last_day(self, ti, cache, dp, analytics, viewer: BaseViewer, days: int = 7):
+    def report_last_day(self, ti, cache, dp, days: int = 7):
         start_time = (datetime.now() - timedelta(hours=days * 24))
         start_time_hours = (datetime.now() - timedelta(days=days * 2))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -479,10 +476,7 @@ class IG:
                                         start_time_str=start_time_str,
                                         hist=hist,
                                         cache=cache,
-                                        dp=dp,
-                                        analytics=analytics,
-                                        viewer=viewer,
-                                        predictor_settings={})
+                                        dp=dp)
             df_results = df_results.append(df_res)
             print(df_results)
 
@@ -539,6 +533,6 @@ class IG:
 
         return
 
-    def create_report(self, ti, dp_service, cache, dp, analytics, viewer: BaseViewer):
+    def create_report(self, ti, cache, dp):
 
-        self.report_last_day(ti=ti, cache=cache, dp=dp, analytics=analytics, viewer=viewer, days=8)
+        self.report_last_day(ti=ti, cache=cache, dp=dp, days=8)

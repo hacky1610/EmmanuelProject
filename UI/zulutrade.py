@@ -7,8 +7,6 @@ from pandas import DataFrame, Series
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
-
-from BL.datatypes import OpenPosition
 from Connectors.trader_store import Trader
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -49,27 +47,6 @@ class ZuluTradeUI:
                 print("Foo")
 
         return favs
-
-    def get_open_positions(self, id: str):
-        self._open_portfolio(id)
-
-        overview = self._driver.find_element(By.CLASS_NAME, "overViewInvestors")
-        nav = overview.find_element(By.ID, "tabs-nav")
-        nav.find_elements(By.TAG_NAME, "li")[1].click()
-
-        table = overview.find_element(By.CLASS_NAME, "currencyTable")
-        rows = table.find_elements(By.TAG_NAME, "tr")
-
-        open_positions = []
-        for i in range(1, len(rows)):
-            p = OpenPosition()
-            columns = rows[i].find_elements(By.TAG_NAME, "td")
-            p.TICKER = columns[0].text.replace("/", "")
-            p.TYPE = columns[1].text
-            p.DATE_OPEN = columns[3].text
-            open_positions.append(p)
-
-        return open_positions
 
     def _open_portfolio(self, id: str):
         self._driver.get(f"https://www.zulutrade.com/trader/{id}/trading?t=30&m=1")

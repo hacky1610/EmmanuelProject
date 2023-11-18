@@ -3,16 +3,13 @@ from typing import List, Optional
 import re
 import time
 
-from pandas import DataFrame, Series
-from pandas._libs.hashtable import HashTable
+from pandas import DataFrame
 
 from BL import DataProcessor
-from BL.position import Position
-from BL.trader_history import TraderHistory
 from Connectors.IG import IG
 from Connectors.deal_store import Deal, DealStore
 from Connectors.tiingo import TradeType, Tiingo
-from Connectors.trader_store import TraderStore, Trader
+from Connectors.trader_store import TraderStore
 from Connectors.zulu_api import ZuluApi
 from Tracing.Tracer import Tracer
 from UI.zulutrade import ZuluTradeUI
@@ -21,7 +18,7 @@ from UI.zulutrade import ZuluTradeUI
 class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
-                 ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo:Tiingo, account_type: str):
+                 ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo, account_type: str):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -39,7 +36,7 @@ class ZuluTrader:
             self._open_new_positions()
         self._update_deals()
 
-    def  _get_deals_to_close(self):
+    def _get_deals_to_close(self):
         deals_to_close = []
         start = time.time()
         open_positions_zulu = self._zulu_ui.get_my_open_positions()
@@ -54,13 +51,12 @@ class ZuluTrader:
         open_deals_db = self._deal_storage.get_open_deals()
         self._tracer.debug(f"Open Deals drom DB {open_deals_db} Needed time {time.time() - start}")
 
-
         if len(open_deals_db) == 0 and len(open_ig_deals) > 0:
             self._tracer.error("Something is wrong")
 
         for open_deal in open_deals_db:
             if len(open_ig_deals[open_ig_deals.dealId == open_deal.dealId]) == 0:
-                self._tracer.warning(f"StopLoss: The deal {open_deal} seems to be already closed in IG" )
+                self._tracer.warning(f"StopLoss: The deal {open_deal} seems to be already closed in IG")
                 open_deal.close()
                 self._deal_storage.save(open_deal)
                 continue
@@ -79,7 +75,7 @@ class ZuluTrader:
     def _close_open_positions(self):
         self._tracer.debug("Close positions")
         for open_deal in self._get_deals_to_close():
-            result, deal_response = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
+            result, _ = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
                                        deal_id=open_deal.dealId)
             if result:
                 self._tracer.write(f"Position {open_deal} closed")
@@ -114,7 +110,7 @@ class ZuluTrader:
                                  trader_id=position.trader_id, direction=position.direction, ticker=position.ticker)
 
     def _calc_limit_stop(self, symbol) -> (float, float):
-        data = self._tiingo.load_trade_data(symbol, DataProcessor(), trade_type=TradeType.FX,days=10)
+        data = self._tiingo.load_trade_data(symbol, DataProcessor(), trade_type=TradeType.FX, days=10)
         atr = data.iloc[-1].ATR
         return atr * 3.5, atr * 8.0
 
@@ -138,17 +134,18 @@ class ZuluTrader:
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
         limit, stop = self._calc_limit_stop(ticker)
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
-                                             currency=m["currency"], limit=limit * m["scaling"], stop=stop * m["scaling"])
+                                              currency=m["currency"], limit=limit * m["scaling"],
+                                              stop=stop * m["scaling"])
         if result:
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
             date_string = date_string.group().replace(" ", "T")
 
             self._deal_storage.save(Deal(zulu_id=position_id, ticker=ticker,
-                     dealReference=deal_response["dealReference"],
-                     dealId=deal_response["dealId"], trader_id=trader_id,
-                     epic=m["epic"], direction=direction, account_type=self._account_type,
-                     open_date_ig_str=date_string,
-                     open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S')))
+                                         dealReference=deal_response["dealReference"],
+                                         dealId=deal_response["dealId"], trader_id=trader_id,
+                                         epic=m["epic"], direction=direction, account_type=self._account_type,
+                                         open_date_ig_str=date_string,
+                                         open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S')))
         else:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")
 
@@ -208,9 +205,9 @@ class ZuluTrader:
         start_time = (datetime.now() - timedelta(hours=7 * 24))
         hist = self._ig.get_transaction_history(start_time)
 
-        for _,ig_deal in hist.iterrows():
-            ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/","")
-            deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc,ticker)
+        for _, ig_deal in hist.iterrows():
+            ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/", "")
+            deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
             if deal is not None:
                 deal.profit = float(ig_deal.profitAndLoss[1:])
                 if deal.profit > 0:
@@ -220,5 +217,3 @@ class ZuluTrader:
                 self._deal_storage.save(deal)
             else:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
-
-

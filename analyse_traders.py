@@ -17,7 +17,5 @@ for trader in ts.get_all_traders():
 df = df.sort_values(by=["wl_ratio"], ascending=False)
 df.to_html("/home/daniel/trader_stats.html")
 
-for _, good_trader in df[:7].iterrows():
-    trader = ts.get_trader_by_id(good_trader.id)
-    trader.hist.show(trader.name)
+
 

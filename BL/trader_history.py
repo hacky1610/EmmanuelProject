@@ -6,7 +6,7 @@ from pandas import DataFrame, Series
 
 class TraderHistory:
 
-    def __init__(self,hist):
+    def __init__(self, hist):
         self._hist_df = self._create_df(hist)
         self._hist = hist
         if len(hist) > 0:
@@ -15,7 +15,8 @@ class TraderHistory:
             self._hist_df["dateOpen_datetime_utc"] = self._hist_df.dateOpen.apply(self._unix_timestamp_to_datetime)
             self._hist_df["dateClosed_datetime_utc"] = self._hist_df.dateClosed.apply(self._unix_timestamp_to_datetime)
 
-    def _create_df(self, hist):
+    @staticmethod
+    def _create_df(hist):
         df = DataFrame()
 
         for t in hist:
@@ -23,7 +24,8 @@ class TraderHistory:
 
         return df
 
-    def _unix_timestamp_to_datetime(self,timestamp):
+    @staticmethod
+    def _unix_timestamp_to_datetime(timestamp):
         return datetime.utcfromtimestamp(timestamp / 1000)
 
     def get_result(self):
@@ -37,7 +39,6 @@ class TraderHistory:
             return 0
 
         return self._hist_df.netPnl.median()
-
 
     def amount_of_peaks(self):
         if len(self._hist_df) == 0:
@@ -57,7 +58,6 @@ class TraderHistory:
     def get_avg_trades_per_week(self):
         if len(self._hist_df) == 0 or len(self._hist_df) < 100:
             return 0
-
 
         s = datetime.utcfromtimestamp(self._hist_df.iloc[-99].dateOpen / 1000)
         e = datetime.utcfromtimestamp(self._hist_df.iloc[-1].dateOpen / 1000)
@@ -99,51 +99,26 @@ class TraderHistory:
 
         return numpy.median(open_times)
 
-    def show(self, name):
-        if len(self._hist_df) == 0:
-            return
-
-        import matplotlib.pyplot as plt
-        # Erstelle eine Figur mit zwei Subplots (eine Zeile, zwei Spalten)
-        plt.figure(figsize=(12, 6))
-
-        # Linie für den Umsatz (blau)
-        plt.plot(self._hist_df.index, self._hist_df.netPnl.cumsum(), label=f'Umsatz {name}', color='blue')
-
-        # Linie für die Umsatzänderung (rot, gestrichelt)
-        plt.plot(self._hist_df.index, self._hist_df.netPnl.cumsum().diff(), label=f'Umsatzänderung {name}', color='red',
-                 linestyle='--')
-
-        plt.title('Umsatz und Umsatzänderung')
-        plt.xlabel('Zeit')
-        plt.ylabel('Werte')
-        plt.legend()  # Fügt eine Legende hinzu, um die beiden Linien zu kennzeichnen
-        plt.grid(True)
-        plt.show()
-
     def _rate_trader(self) -> (str, str):
         trade = "TRADE"
         skip = "SKIP"
 
         if self.get_wl_ratio() < 0.7:
-            return (skip, "Bad WL Ratio")
+            return skip, "Bad WL Ratio"
 
         if self.get_avg_trades_per_week() > 50:
-            return (skip, "To much trades")
+            return skip, "To much trades"
 
         if self.get_max_loses() < -100:
-            return (skip, "To big looses")
+            return skip, "To big looses"
 
         d = (datetime.now() - self._hist_df.iloc[-1].dateOpen_datetime_utc)
-        days = d.total_seconds() / 60 / 60 /24
+        days = d.total_seconds() / 60 / 60 / 24
 
         if days > 7:
-            return (skip, "Last Trade older than 7 days")
+            return skip, "Last Trade older than 7 days"
 
-        return (trade,"")
-
-
-
+        return trade, ""
 
     def __str__(self):
         return f"{self.get_wl_ratio()} - {self.get_result()}"
@@ -174,6 +149,3 @@ class TraderHistory:
                              "max_looses",
                              "rating",
                              "comment"])
-
-
-
