@@ -1,5 +1,5 @@
 import datetime
-from typing import List
+from typing import List, Optional
 
 from pymongo.database import Database
 
@@ -92,7 +92,7 @@ class DealStore:
     def get_deal_by_zulu_id(self, id):
         return self._collection.find_one({"id": id})
 
-    def get_deal_by_ig_id(self, ig_date:str, ticker:str) -> Deal:
+    def get_deal_by_ig_id(self, ig_date:str, ticker:str) -> Optional[Deal]:
         res = self._collection.find_one({"open_date_ig_str": ig_date, "ticker":ticker})
         if res is not None:
             return Deal.Create(res)

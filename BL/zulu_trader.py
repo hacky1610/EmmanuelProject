@@ -39,22 +39,6 @@ class ZuluTrader:
             self._open_new_positions()
         self._update_deals()
 
-    def update_trader_history(self):
-        self._tracer.write("Update History")
-        for trader in self._trader_store.get_all_traders():
-            time.sleep(10)
-            trader.hist = self._zulu_api.get_history(trader.id)
-            print(f"{trader.name} -> {trader.hist}")
-            self._trader_store.save(trader)
-
-    def _is_still_open(self, trader_id: str, position_id: str) -> bool:
-        for op in self._zulu_api.get_opened_positions(trader_id, ""):
-            if position_id == op.get_id():
-                self._tracer.write(f"Position {op} is still open")
-                return True
-        self._tracer.write(f"Position with id {position_id} is closed")
-        return False
-
     def  _get_deals_to_close(self):
         deals_to_close = []
         start = time.time()
