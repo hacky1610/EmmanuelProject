@@ -64,7 +64,7 @@ class ZuluTrader:
             if (len(open_positions_zulu) == 0 or
                     len(open_positions_zulu[open_positions_zulu.position_id == open_deal.id]) == 0):
                 self._tracer.write(f"Position {open_deal} is not listed as open")
-                if len(closed_positions_zulu[closed_positions_zulu.position_id == open_deal.id]) == 1:
+                if len(closed_positions_zulu[closed_positions_zulu.position_id == open_deal.id]) >= 1:
                     deals_to_close.append(open_deal)
                 else:
                     self._tracer.error(f"Cant find position {open_deal} in open nor in closed positions")
