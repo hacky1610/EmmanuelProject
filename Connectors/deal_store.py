@@ -72,9 +72,10 @@ class Deal:
 
 class DealStore:
 
-    def __init__(self, db: Database):
+    def __init__(self, db: Database, account_type:str):
 
         self._collection = db["Deals"]
+        self._account_type = account_type
 
     def save(self, deal: Deal):
         if self._collection.find_one({"id": deal.id}):
@@ -90,28 +91,28 @@ class DealStore:
             print("Element mit ID {} wurde nicht gefunden.".format(id))
 
     def get_deal_by_zulu_id(self, id):
-        return self._collection.find_one({"id": id})
+        return self._collection.find_one({"id": id, "account_type":self._account_type})
 
     def get_deal_by_ig_id(self, ig_date:str, ticker:str) -> Optional[Deal]:
-        res = self._collection.find_one({"open_date_ig_str": ig_date, "ticker":ticker})
+        res = self._collection.find_one({"open_date_ig_str": ig_date, "ticker":ticker, "account_type":self._account_type})
         if res is not None:
             return Deal.Create(res)
         return None
 
     def get_all_deals(self):
-        return self._collection.find()
+        return self._collection.find({ "account_type":self._account_type})
 
     def get_open_deals(self) -> List[Deal]:
         deals = []
-        for d in self._collection.find({"status": "open"}):
+        for d in self._collection.find({"status": "open", "account_type":self._account_type}):
             deals.append(Deal.Create(d))
         return deals
 
     def has_id(self, id: str):
-        return self._collection.find_one({"id": id})
+        return self._collection.find_one({"id": id,"account_type":self._account_type})
 
     def clear(self):
         self._collection.delete_many({})
 
     def position_of_same_trader(self, ticker: str, trader_id):
-        return self._collection.find_one({"ticker": ticker, "trader_id": trader_id, "status": "open"})
+        return self._collection.find_one({"ticker": ticker, "trader_id": trader_id, "status": "open", "account_type":self._account_type})

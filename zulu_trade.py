@@ -25,7 +25,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
         f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
     db = client["ZuluDB"]
     ts = TraderStore(db)
-    ds = DealStore(db)
+    ds = DealStore(db, account_type)
     tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), account_type), ConsoleTracer(True)])
     zulu_api = ZuluApi(tracer)
     ig = IG(tracer=tracer, conf_reader=conf_reader, acount_type=account_type)
