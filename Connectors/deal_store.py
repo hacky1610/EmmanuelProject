@@ -79,7 +79,7 @@ class DealStore:
         self._account_type = account_type
 
     def save(self, deal: Deal):
-        if self._collection.find_one({"id": deal.id}):
+        if self._collection.find_one({"id": deal.id, "account_type":self._account_type}):
             self._collection.update_one({"id": deal.id}, {"$set": deal.to_dict()})
         else:
             result = self._collection.insert_one(deal.to_dict())
