@@ -2,6 +2,7 @@ import datetime
 from typing import List, Optional
 
 from pymongo.database import Database
+from pymongo.results import UpdateResult
 
 from BL.trader_history import TraderHistory
 
@@ -81,7 +82,9 @@ class DealStore:
         if self._collection.find_one({"id": deal.id}):
             self._collection.update_one({"id": deal.id}, {"$set": deal.to_dict()})
         else:
-            self._collection.insert_one(deal.to_dict())
+            result = self._collection.insert_one(deal.to_dict())
+            if not result.inserted_id:
+                raise Exception(f"{deal} could not be inserted")
 
     def update_state(self, id: str, state: str):
         if self.has_id(id):
