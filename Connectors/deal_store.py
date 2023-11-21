@@ -80,20 +80,11 @@ class DealStore:
 
     def save(self, deal: Deal):
         if self._collection.find_one({"id": deal.id, "account_type":self._account_type}):
-            self._collection.update_one({"id": deal.id}, {"$set": deal.to_dict()})
+            self._collection.update_one({"id": deal.id,
+                                         "account_type":self._account_type}, {"$set": deal.to_dict()})
         else:
             result = self._collection.insert_one(deal.to_dict())
-            if not result.inserted_id:
-                raise Exception(f"{deal} could not be inserted")
-            if not self._collection.find_one({"id": deal.id}):
-                raise Exception(f"{deal} could not be inserted2")
 
-    def update_state(self, id: str, state: str):
-        if self.has_id(id):
-            self._collection.update_one({"id": id}, {"$set": {"status": state}})
-            print("Attribut state wurde erfolgreich geändert.")
-        else:
-            print("Element mit ID {} wurde nicht gefunden.".format(id))
 
     def get_deal_by_zulu_id(self, id):
         return self._collection.find_one({"id": id, "account_type":self._account_type})
