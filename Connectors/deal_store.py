@@ -85,6 +85,8 @@ class DealStore:
             result = self._collection.insert_one(deal.to_dict())
             if not result.inserted_id:
                 raise Exception(f"{deal} could not be inserted")
+            if not self._collection.find_one({"id": deal.id}):
+                raise Exception(f"{deal} could not be inserted2")
 
     def update_state(self, id: str, state: str):
         if self.has_id(id):
