@@ -31,6 +31,7 @@ class ZuluTrader:
         self._account_type = account_type
 
     def trade(self):
+        raise Exception
         self._close_open_positions()
         if not self._is_crash():
             self._open_new_positions()

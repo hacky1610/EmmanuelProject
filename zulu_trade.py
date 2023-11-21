@@ -1,4 +1,6 @@
 import sys
+import traceback
+
 import dropbox
 from selenium.webdriver.chrome.options import Options
 from BL import BaseReader
@@ -54,5 +56,6 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
         tracer.write("End")
 
     except Exception as e:
-        _, _, exc_traceback = sys.exc_info()
-        tracer.error(f"Error: {e} File:{exc_traceback.tb_frame.f_code.co_filename} - {exc_traceback.tb_lineno}")
+        traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+        tracer.error(f"Error: {e} File:{traceback_str}")
+
