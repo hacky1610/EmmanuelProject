@@ -7,6 +7,7 @@ trading_ig~=0.0.20
 dropbox==11.26.0
 pymongo==4.5.0
 selenium==4.11.2
+webdriver_manager
 
 
 

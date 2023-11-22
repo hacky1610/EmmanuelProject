@@ -121,9 +121,9 @@ class ZuluTrader:
             self._tracer.debug(f"Position {position_id} - {ticker} by {trader_id} is already open")
             return
 
-        if self._deal_storage.position_of_same_trader(ticker, trader_id):
+        if self._deal_storage.position_is_open(ticker):
             self._tracer.write(
-                f"There is already an open position of {ticker} from trader {trader_id}")
+                f"There is already an open position of {ticker}")
             return
 
         m = self._get_market_by_ticker_or_none(markets, ticker)

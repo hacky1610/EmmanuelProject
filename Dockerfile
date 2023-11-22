@@ -11,4 +11,4 @@ ENV TZ="Europe/Berlin"
 
 COPY . /emmanuel/
 RUN pip install -r /emmanuel/requirements.txt
-ENTRYPOINT python3 /emmanuel/zulu_trade.py
+ENTRYPOINT python3 /emmanuel/main.py DEMO
