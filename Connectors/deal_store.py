@@ -83,7 +83,7 @@ class DealStore:
             self._collection.update_one({"id": deal.id,
                                          "account_type":self._account_type}, {"$set": deal.to_dict()})
         else:
-            result = self._collection.insert_one(deal.to_dict())
+            self._collection.insert_one(deal.to_dict())
 
 
     def get_deal_by_zulu_id(self, id):
