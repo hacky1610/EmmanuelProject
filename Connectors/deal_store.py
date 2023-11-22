@@ -113,6 +113,6 @@ class DealStore:
     def position_of_same_trader(self, ticker: str, trader_id):
         return self._collection.find_one({"ticker": ticker, "trader_id": trader_id, "status": "open", "account_type":self._account_type})
 
-      def position_is_open(self, ticker: str):
+    def position_is_open(self, ticker: str):
         return self._collection.find_one({"ticker": ticker, "status": "open", "account_type":self._account_type})
 
