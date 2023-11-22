@@ -163,7 +163,7 @@ class TestZuluTrader(unittest.TestCase):
         # Mock-Daten für _deal_storage, _ig, _get_market_by_ticker und _zulu_api
 
         self.deal_storage.has_id.return_value = False
-        self.deal_storage.position_of_same_trader.return_value = False
+        self.deal_storage.position_is_open.return_value = False
         markets = [{"symbol": "AAPL",
                     "epic": "AAPL_EPIC",
                     "currency": "USD"},
