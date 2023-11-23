@@ -14,16 +14,15 @@ def check_config_folder():
 def main():
     # Zugriff auf die Befehlszeilenargumente
     arguments = sys.argv
-
-    if len(arguments) <= 1:
-        account_type = "DEMO"
-    else:
-        account_type = arguments[1]
+    account_type = "DEMO"
 
     if check_config_folder():
+        if len(arguments) == 2:
+            account_type = arguments[1]
         conf_reader = ConfigReader(account_type)
     else:
         conf_reader = EnvReader()
+        account_type = conf_reader.get("Type")
 
     print(f"Trade {account_type} account")
     trade(conf_reader, account_type)
