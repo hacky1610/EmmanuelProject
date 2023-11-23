@@ -13,6 +13,9 @@ class BaseReader:
     def get(self, key: str):
         raise NotImplementedError
 
+    def get_bool(self, key: str) -> bool:
+        raise NotImplementedError
+
 
 class ConfigReader(BaseReader):
     _config = {}
@@ -29,11 +32,17 @@ class ConfigReader(BaseReader):
     def get(self, key: str):
         return self._config[key]
 
+    def get_bool(self, key: str) -> bool:
+        return self.get(key)
+
 
 class EnvReader(BaseReader):
 
     def get(self, key: str):
         return os.getenv(key)
+
+    def get_bool(self, key: str) -> bool:
+        return self.get(key).lower() == 'true'
 
 
 def load_train_data(symbol: str, ti, dp, trade_type):
