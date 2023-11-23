@@ -20,12 +20,13 @@ class ZuluTradeUI:
     def login(self):
         self._driver.get("https://www.zulutrade.com/login")
         wait = WebDriverWait(self._driver, 4)
-        wait.until(EC.presence_of_element_located((By.NAME, "username")))
 
-        elem = self._driver.find_element(By.NAME, "username")
-        elem.send_keys("daniel.hackbarth@siemens.com")
-        elem = self._driver.find_element(By.NAME, "password")
-        elem.send_keys("Daytona1610!")
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "login-content")))
+
+        login_form = self._driver.find_element(By.CLASS_NAME, "login-content")
+        inputs = login_form.find_elements(By.TAG_NAME,"input")
+        inputs[0].send_keys("daniel.hackbarth@siemens.com")
+        inputs[1].send_keys("Daytona1610!")
         login = self._driver.find_element(By.CLASS_NAME, "fillBtn")
         login.click()
         time.sleep(5)

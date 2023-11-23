@@ -1,3 +1,3 @@
-docker build . -t "hacky1610/emmanuelbase:v1.2"
-docker push hacky1610/emmanuelbase:v1.2
+docker build . -f DockerfileBase -t "hacky1610/emmanuelbase:v2.0"
+docker push hacky1610/emmanuelbase:v2.0
 

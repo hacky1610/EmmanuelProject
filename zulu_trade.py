@@ -36,7 +36,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     cache = DropBoxCache(dropbox_service)
     tiingo = Tiingo(conf_reader, cache)
     options = Options()
-    options.add_argument('--headless')
+    #options.add_argument('--headless')
     # options.add_argument('--disable-dev-shm-usage')
     service = Service(ChromeDriverManager().install())
     try:
