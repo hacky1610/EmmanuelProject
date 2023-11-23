@@ -15,6 +15,7 @@ class Deal:
                  open_date_ig_str: str,
                  open_date_ig_datetime: datetime,
                  direction: str,
+                 close_reason: str = "Unknown",
                  status: str = "open",
                  profit: float = 0.0,
                  result: int = 0,
@@ -32,6 +33,7 @@ class Deal:
         self.open_date_ig_str = open_date_ig_str
         self.open_date_ig_datetime = open_date_ig_datetime
         self.result = result
+        self.close_reason = close_reason
 
     @staticmethod
     def Create(data: dict):
@@ -46,14 +48,16 @@ class Deal:
                     account_type=data.get("account_type", "DEMO"),
                     profit=data.get("profit", 0.0),
                     result=data.get("result", 0),
+                    close_reason=data.get("close_reason", "Unknown"),
                     open_date_ig_str=data["open_date_ig_str"],
                     open_date_ig_datetime=data.get("open_date_ig_datetime",None))
 
     def __str__(self):
         return f"{self.id} - {self.epic} {self.direction} Trader ID: {self.trader_id}"
 
-    def close(self):
+    def close(self, close_reason:str= "Unknown"):
         self.status = "Closed"
+        self.close_reason = close_reason
 
     def to_dict(self):
         return {"id": self.id,
@@ -68,7 +72,8 @@ class Deal:
                 "account_type": self.account_type,
                 "open_date_ig_str": self.open_date_ig_str,
                 "open_date_ig_datetime": self.open_date_ig_datetime,
-                "result": self.result}
+                "result": self.result,
+                "close_reason": self.close_reason}
 
 
 class DealStore:

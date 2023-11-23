@@ -60,7 +60,7 @@ class ZuluTrader:
         for open_deal in open_deals_db:
             if len(open_ig_deals[open_ig_deals.dealId == open_deal.dealId]) == 0:
                 self._tracer.warning(f"StopLoss: The deal {open_deal} seems to be already closed in IG")
-                open_deal.close()
+                open_deal.close("ByIG")
                 self._deal_storage.save(open_deal)
                 continue
 
@@ -82,13 +82,13 @@ class ZuluTrader:
                                        deal_id=open_deal.dealId)
             if result:
                 self._tracer.write(f"Position {open_deal} closed")
-                open_deal.close()
+                open_deal.close("ByApp")
                 self._deal_storage.save(open_deal)
             else:
                 deals = self._ig.get_deals()
                 if len(deals[deals.dealId == open_deal.dealId]) == 0:
                     self._tracer.warning("There was en error during close. But the deal is not open anymore")
-                    open_deal.close()
+                    open_deal.close("ByIG")
                     self._deal_storage.save(open_deal)
                 else:
                     self._tracer.error(f"Position {open_deal} could not be closed")
