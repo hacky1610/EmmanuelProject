@@ -18,7 +18,8 @@ from UI.zulutrade import ZuluTradeUI
 class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
-                 ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo, account_type: str):
+                 ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo,
+                 account_type: str, check_for_crash: bool = True):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -29,6 +30,7 @@ class ZuluTrader:
         self._min_wl_ration = 0.67
         self._tiingo = tiingo
         self._account_type = account_type
+        self._check_for_crash = check_for_crash
 
     def trade(self):
         self._close_open_positions()
@@ -197,10 +199,11 @@ class ZuluTrader:
         return hist
 
     def _is_crash(self):
-        hist = self._get_ig_hist()
-        if hist[:3].profit_float.sum() < -50:
-            self._tracer.error(f"CRASH CRASH CRASH {hist[:3]}")
-            return True
+        if self._check_for_crash:
+            hist = self._get_ig_hist()
+            if hist[:3].profit_float.sum() < -50:
+                self._tracer.error(f"CRASH CRASH CRASH {hist[:3]}")
+                return True
         return False
 
     def _update_deals(self):

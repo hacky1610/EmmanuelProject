@@ -37,7 +37,6 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     tiingo = Tiingo(conf_reader, cache)
     options = Options()
     options.add_argument('--headless')
-    # options.add_argument('--disable-dev-shm-usage')
     service = Service(ChromeDriverManager().install())
     try:
         tracer.write("Start")
@@ -47,7 +46,8 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
 
         zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zulu_api, ig=ig,
                                  trader_store=ts, tracer=tracer, zulu_ui=zulu_ui,
-                                 tiingo=tiingo, account_type=account_type)
+                                 tiingo=tiingo, account_type=account_type,
+                                 check_for_crash=conf_reader.get("check_crash"))
 
         zulu_ui.login()
 
