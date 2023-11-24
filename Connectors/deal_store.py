@@ -15,6 +15,8 @@ class Deal:
                  open_date_ig_str: str,
                  open_date_ig_datetime: datetime,
                  direction: str,
+                 stop_ratio: float,
+                 limit_ratio: float,
                  close_reason: str = "Unknown",
                  close_date_ig_datetime: datetime = None,
                  status: str = "open",
@@ -36,6 +38,8 @@ class Deal:
         self.close_date_ig_datetime = close_date_ig_datetime
         self.result = result
         self.close_reason = close_reason
+        self.stop_ratio = stop_ratio
+        self.limit_ratio = limit_ratio
 
     @staticmethod
     def Create(data: dict):
@@ -53,7 +57,9 @@ class Deal:
                     close_reason=data.get("close_reason", "Unknown"),
                     open_date_ig_str=data["open_date_ig_str"],
                     open_date_ig_datetime=data.get("open_date_ig_datetime",None),
-                    close_date_ig_datetime=data.get("close_date_ig_datetime",None))
+                    close_date_ig_datetime=data.get("close_date_ig_datetime",None),
+                    stop_ratio=data.get("stop_ratio",8.0),
+                    limit_ratio=data.get("limit_ratio",3.5))
 
     def __str__(self):
         return f"{self.id} - {self.epic} {self.direction} Trader ID: {self.trader_id}"
@@ -77,7 +83,9 @@ class Deal:
                 "open_date_ig_datetime": self.open_date_ig_datetime,
                 "close_date_ig_datetime": self.close_date_ig_datetime,
                 "result": self.result,
-                "close_reason": self.close_reason}
+                "close_reason": self.close_reason,
+                "stop_ratio": self.stop_ratio,
+                "limit_ratio": self.limit_ratio}
 
 
 class DealStore:

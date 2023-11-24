@@ -150,7 +150,8 @@ class ZuluTrader:
                                          dealId=deal_response["dealId"], trader_id=trader_id,
                                          epic=m["epic"], direction=direction, account_type=self._account_type,
                                          open_date_ig_str=date_string,
-                                         open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S')))
+                                         open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
+                                         stop_ratio=self._stop_ratio,limit_ratio=self._limit_ratio))
             self._tracer.debug("Deal was saved")
         else:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")
