@@ -16,6 +16,8 @@ class BaseReader:
     def get_bool(self, key: str) -> bool:
         raise NotImplementedError
 
+    def get_float(self, key:str, default:float):
+        raise NotImplementedError
 
 class ConfigReader(BaseReader):
     _config = {}
@@ -35,6 +37,9 @@ class ConfigReader(BaseReader):
     def get_bool(self, key: str) -> bool:
         return self.get(key)
 
+    def get_float(self, key: str, default: float) -> float:
+        return self.get(key)
+
 
 class EnvReader(BaseReader):
 
@@ -43,6 +48,10 @@ class EnvReader(BaseReader):
 
     def get_bool(self, key: str) -> bool:
         return self.get(key).lower() == 'true'
+
+    def get_float(self, key:str, default:float) -> float:
+        return float(os.getenv(key,default))
+
 
 
 def load_train_data(symbol: str, ti, dp, trade_type):

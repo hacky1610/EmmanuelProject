@@ -14,6 +14,7 @@ class Deal:
                  trader_id: str, epic: str,
                  open_date_ig_str: str,
                  open_date_ig_datetime: datetime,
+                 close_date_ig_datetime: datetime,
                  direction: str,
                  close_reason: str = "Unknown",
                  status: str = "open",
@@ -32,6 +33,7 @@ class Deal:
         self.account_type = account_type
         self.open_date_ig_str = open_date_ig_str
         self.open_date_ig_datetime = open_date_ig_datetime
+        self.close_date_ig_datetime = close_date_ig_datetime
         self.result = result
         self.close_reason = close_reason
 
@@ -50,7 +52,8 @@ class Deal:
                     result=data.get("result", 0),
                     close_reason=data.get("close_reason", "Unknown"),
                     open_date_ig_str=data["open_date_ig_str"],
-                    open_date_ig_datetime=data.get("open_date_ig_datetime",None))
+                    open_date_ig_datetime=data.get("open_date_ig_datetime",None),
+                    close_date_ig_datetime=data.get("close_date_ig_datetime",None))
 
     def __str__(self):
         return f"{self.id} - {self.epic} {self.direction} Trader ID: {self.trader_id}"
@@ -72,6 +75,7 @@ class Deal:
                 "account_type": self.account_type,
                 "open_date_ig_str": self.open_date_ig_str,
                 "open_date_ig_datetime": self.open_date_ig_datetime,
+                "close_date_ig_datetime": self.close_date_ig_datetime,
                 "result": self.result,
                 "close_reason": self.close_reason}
 

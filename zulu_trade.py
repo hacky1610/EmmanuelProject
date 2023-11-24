@@ -38,8 +38,13 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     options = Options()
     options.add_argument('--headless')
     service = Service(ChromeDriverManager().install())
+
+    check_crash = conf_reader.get_bool("check_crash")
+    limit_ratio = conf_reader.get_float("limit_ratio",4)
+    stop_ratio = conf_reader.get_float("stop_ratio", 7)
+
     try:
-        tracer.write("Start")
+        tracer.write(f"Start - Check Crash {check_crash} Limit Ratio {limit_ratio}  Stop Ration {stop_ratio}")
         driver = webdriver.Chrome(options=options, service=service)
         driver.implicitly_wait(15)
         zulu_ui = ZuluTradeUI(driver)
@@ -47,7 +52,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
         zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zulu_api, ig=ig,
                                  trader_store=ts, tracer=tracer, zulu_ui=zulu_ui,
                                  tiingo=tiingo, account_type=account_type,
-                                 check_for_crash=conf_reader.get_bool("check_crash"))
+                                 check_for_crash=check_crash, limit_ratio=limit_ratio, stop_ratio=stop_ratio)
 
         zulu_ui.login()
 

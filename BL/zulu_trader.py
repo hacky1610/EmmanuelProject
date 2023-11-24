@@ -19,7 +19,7 @@ class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo,
-                 account_type: str, check_for_crash: bool = True):
+                 account_type: str, check_for_crash: bool = True, stop_ratio: float = 8.0, limit_ratio:float = 4.0):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -31,6 +31,8 @@ class ZuluTrader:
         self._tiingo = tiingo
         self._account_type = account_type
         self._check_for_crash = check_for_crash
+        self._limit_ratio = limit_ratio
+        self._stop_ratio = stop_ratio
 
     def trade(self):
         self._tracer.debug(f"Check crash: {self._check_for_crash }")
@@ -67,10 +69,9 @@ class ZuluTrader:
             if (len(open_positions_zulu) == 0 or
                     len(open_positions_zulu[open_positions_zulu.position_id == open_deal.id]) == 0):
                 self._tracer.write(f"Position {open_deal} is not listed as open")
-                if len(closed_positions_zulu[closed_positions_zulu.position_id == open_deal.id]) >= 1:
-                    deals_to_close.append(open_deal)
-                else:
+                if len(closed_positions_zulu[closed_positions_zulu.position_id == open_deal.id]) == 0:
                     self._tracer.error(f"Cant find position {open_deal} in open nor in closed positions")
+                deals_to_close.append(open_deal)
             else:
                 self._tracer.debug(f"Position {open_deal} is still open")
         return deals_to_close
@@ -115,7 +116,7 @@ class ZuluTrader:
     def _calc_limit_stop(self, symbol) -> (float, float):
         data = self._tiingo.load_trade_data(symbol, DataProcessor(), trade_type=TradeType.FX, days=10)
         atr = data.iloc[-1].ATR
-        return atr * 3.5, atr * 8.0
+        return atr * self._limit_ratio, atr * self._stop_ratio
 
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
@@ -194,8 +195,7 @@ class ZuluTrader:
         return good_positions
 
     def _get_ig_hist(self):
-        start_time = (datetime.now() - timedelta(hours=7 * 24))
-        hist = self._ig.get_transaction_history(start_time)
+        hist = self._ig.get_transaction_history(5)
         hist['profit_float'] = hist['profitAndLoss'].str.replace('E', '').astype(float)
         return hist
 
@@ -208,14 +208,14 @@ class ZuluTrader:
         return False
 
     def _update_deals(self):
-        start_time = (datetime.now() - timedelta(hours=7 * 24))
-        hist = self._ig.get_transaction_history(start_time)
+        hist = self._ig.get_transaction_history(3)
 
         for _, ig_deal in hist.iterrows():
             ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/", "")
             deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
             if deal is not None:
                 deal.profit = float(ig_deal.profitAndLoss[1:])
+                deal.close_date_ig_datetime = datetime.strptime(ig_deal.dateUtc, '%Y-%m-%dT%H:%M:%S')
                 if deal.profit > 0:
                     deal.result = 1
                 else:

@@ -282,9 +282,13 @@ class IG:
         positions = self.get_opened_positions()
         return positions[positions.epic == epic]
 
-    def get_transaction_history(self, start_time: datetime):
-        return self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", from_date=start_time,
-                                                         max_span_seconds=60 * 50)
+    def get_transaction_history(self, days: int):
+        df = DataFrame()
+        for i in range(days):
+            df = df.append(self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", page_size=50,
+                                                  max_span_seconds=60 * 60 * 24 * days, page_number=i))
+        return df.reset_index()
+
 
     def get_current_balance(self):
         balance = self.ig_service.fetch_accounts().loc[0].balance
@@ -453,7 +457,7 @@ class IG:
         start_time_hours = (datetime.now() - timedelta(days=days * 2))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
 
-        hist = self.get_transaction_history(start_time)
+        hist = self.get_transaction_history(5)
         if len(hist) == 0:
             return
 
@@ -500,7 +504,7 @@ class IG:
                        name: str = "lastday"):
         start_time = (datetime.now() - delta)
 
-        hist = self.get_transaction_history(start_time)
+        hist = self.get_transaction_history(5)
         if len(hist) == 0:
             return
 
