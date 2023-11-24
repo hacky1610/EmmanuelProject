@@ -50,7 +50,7 @@ class TestZuluTrader(unittest.TestCase):
         # Mock-Daten für get_open_deals und close
         open_deal = Deal(zulu_id="zID", dealReference="df", trader_id="tid", dealId="did",
                          direction="SELL", status="open", ticker="AAPL", epic="AAPL.de",
-                         open_date_ig_str="", open_date_ig_datetime=None)
+                         open_date_ig_str="", open_date_ig_datetime=None, close_date_ig_datetime=None)
         df_open_pos = DataFrame()
         df_closed_pos = DataFrame()
         df_closed_pos = df_closed_pos.append(Series(data=["zID"], index=["position_id"]), ignore_index=True)
