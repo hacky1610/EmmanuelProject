@@ -1,6 +1,7 @@
 import datetime
 from typing import List, Optional
 
+from pandas import DataFrame
 from pymongo.database import Database
 from pymongo.results import UpdateResult
 
@@ -132,4 +133,14 @@ class DealStore:
 
     def position_is_open(self, ticker: str):
         return self._collection.find_one({"ticker": ticker, "status": "open", "account_type":self._account_type})
+
+    def get_deals_of_trader_as_df(self, trader_id: str, consider_account_type:bool = True) -> DataFrame:
+        query = {"trader_id": trader_id}
+        if consider_account_type:
+            query.update({"account_type":self._account_type})
+        deals = self._collection.find(query)
+        df = DataFrame(list(deals))
+
+        return df
+
 

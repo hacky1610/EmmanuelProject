@@ -41,6 +41,20 @@ class ZuluTrader:
             self._open_new_positions()
         self._update_deals()
 
+    def _is_good_trader(self, trader_id: str):
+        deals = self._deal_storage.get_deals_of_trader_as_df(trader_id, consider_account_type=False)
+
+        if len(deals) < 3:
+            self._tracer.debug(f"Trader {trader_id} had less than 3 trades")
+            return False
+
+        if deals.profit.sum() < 0:
+            self._tracer.debug(f"Trader {trader_id} had bad profit {deals.profit.sum()}€")
+            return False
+
+        return True
+
+
     def _get_deals_to_close(self):
         deals_to_close = []
         start = time.time()
@@ -120,6 +134,10 @@ class ZuluTrader:
 
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
+
+        if self._is_good_trader(trader_id):
+            self._tracer.debug(f"Trader {trader_id} is a bad trader")
+            return
 
         if self._deal_storage.has_id(position_id):
             self._tracer.debug(f"Position {position_id} - {ticker} by {trader_id} is already open")
