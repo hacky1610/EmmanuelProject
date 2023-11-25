@@ -19,7 +19,8 @@ class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo,
-                 account_type: str, check_for_crash: bool = True, stop_ratio: float = 8.0, limit_ratio:float = 4.0):
+                 account_type: str, check_for_crash: bool = True, stop_ratio: float = 8.0,
+                 limit_ratio:float = 4.0, check_trader_quality:bool = False):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -33,6 +34,7 @@ class ZuluTrader:
         self._check_for_crash = check_for_crash
         self._limit_ratio = limit_ratio
         self._stop_ratio = stop_ratio
+        self._check_trader_quality = check_trader_quality
 
     def trade(self):
         self._tracer.debug(f"Check crash: {self._check_for_crash }")
@@ -42,6 +44,9 @@ class ZuluTrader:
         self._update_deals()
 
     def _is_good_trader(self, trader_id: str):
+        if not self._check_trader_quality:
+            return True
+
         deals = self._deal_storage.get_deals_of_trader_as_df(trader_id, consider_account_type=False)
 
         if len(deals) < 3:
