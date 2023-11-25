@@ -57,6 +57,8 @@ class ZuluTrader:
             self._tracer.debug(f"Trader {trader_id} had bad profit {deals.profit.sum()}€")
             return False
 
+        self._tracer.debug(f"Trader {trader_id} is a good trader")
+
         return True
 
 
@@ -140,7 +142,7 @@ class ZuluTrader:
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
 
-        if self._is_good_trader(trader_id):
+        if not self._is_good_trader(trader_id):
             self._tracer.debug(f"Trader {trader_id} is a bad trader")
             return
 
