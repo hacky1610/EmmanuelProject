@@ -45,6 +45,7 @@ class ZuluTrader:
 
     def _is_good_trader(self, trader_id: str):
         if not self._check_trader_quality:
+            self._tracer.debug("Ignore Trader check")
             return True
 
         deals = self._deal_storage.get_deals_of_trader_as_df(trader_id, consider_account_type=False)
@@ -55,6 +56,10 @@ class ZuluTrader:
 
         if deals.profit.sum() < 0:
             self._tracer.debug(f"Trader {trader_id} had bad profit {deals.profit.sum()}€")
+            return False
+
+        if deals.profit.min() < -50:
+            self._tracer.debug(f"Trader {trader_id} had really bad lose of  {deals.profit.min()}€")
             return False
 
         self._tracer.debug(f"Trader {trader_id} is a good trader")

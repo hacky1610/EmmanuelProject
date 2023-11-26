@@ -137,7 +137,7 @@ class DealStore:
     def get_deals_of_trader_as_df(self, trader_id: str, consider_account_type:bool = True) -> DataFrame:
         query = {"trader_id": trader_id}
         if consider_account_type:
-            query.update({"account_type":self._account_type})
+            query.update({"account_type": self._account_type})
         deals = self._collection.find(query)
         df = DataFrame(list(deals))
 
