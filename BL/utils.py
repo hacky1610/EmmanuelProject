@@ -65,6 +65,16 @@ def load_train_data(symbol: str, ti, dp, trade_type):
     df.to_csv(f"Data/{symbol}_1hour.csv")
     df_complete.to_csv(f"Data/{symbol}_5min.csv")
 
+def get_docker_file_info():
+    try:
+        import yaml
+        with open('deploy.yml', 'r') as file:
+            data = yaml.safe_load(file)
+
+        return data['steps'][-1]['inputs']['tags']
+    except:
+        return "no version found"
+
 
 class TimeUtils:
 

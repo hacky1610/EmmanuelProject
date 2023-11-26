@@ -2,7 +2,7 @@ import traceback
 
 import dropbox
 from selenium.webdriver.chrome.options import Options
-from BL import BaseReader
+from BL import BaseReader, get_docker_file_info
 from BL.zulu_trader import ZuluTrader
 from Connectors.IG import IG
 from Connectors.deal_store import DealStore
@@ -42,9 +42,11 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     limit_ratio = conf_reader.get_float("limit_ratio",4)
     stop_ratio = conf_reader.get_float("stop_ratio", 7)
     check_trader = conf_reader.get_bool("check_trader")
+    docker_version = get_docker_file_info()
 
     try:
-        tracer.write(f"Start - Check Crash {check_crash} Limit Ratio {limit_ratio}  Stop Ration {stop_ratio} Check Trader {check_trader}")
+        tracer.write(f"Version {docker_version} - Check Crash {check_crash} Limit Ratio {limit_ratio}  "
+                     f"Stop Ration {stop_ratio} Check Trader {check_trader}")
         driver = webdriver.Chrome(options=options, service=service)
         driver.implicitly_wait(15)
         zulu_ui = ZuluTradeUI(driver)
