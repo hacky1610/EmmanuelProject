@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 import time
 
+import pandas as pd
 from bs4 import BeautifulSoup
 from pandas import DataFrame, Series
 from selenium.common import StaleElementReferenceException
@@ -26,7 +27,7 @@ class ZuluTradeUI:
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, "login-content")))
 
         login_form = self._driver.find_element(By.CLASS_NAME, "login-content")
-        inputs = login_form.find_elements(By.TAG_NAME,"input")
+        inputs = login_form.find_elements(By.TAG_NAME, "input")
         inputs[0].send_keys("daniel.hackbarth@siemens.com")
         inputs[1].send_keys("Daytona1610!")
         login = self._driver.find_element(By.CLASS_NAME, "fillBtn")
@@ -42,7 +43,7 @@ class ZuluTradeUI:
         for fav_container in self._driver.find_elements(By.CLASS_NAME, "watchlist-col"):
 
             link = fav_container.find_element(By.CLASS_NAME, "rounded-circle").get_attribute("src")
-            f = re.search("id=(\d+)",
+            f = re.search(r"id=(\d+)",
                           link)
             if f != None:
                 favs.append(Trader(id=f.groups()[0],
@@ -72,10 +73,10 @@ class ZuluTradeUI:
 
         result = 0
         for el in success:
-            result += float(re.search("\d+\.\d+", el.text)[0])
+            result += float(re.search(r"\d+\.\d+", el.text)[0])
 
         for el in fails:
-            result -= float(re.search("\d+\.\d+", el.text)[0])
+            result -= float(re.search(r"\d+\.\d+", el.text)[0])
 
         return result
 
@@ -83,7 +84,7 @@ class ZuluTradeUI:
 
         self._driver.get("https://www.zulutrade.com/traders/list/75932")
         tabs = self._driver.find_element(By.CLASS_NAME, "zuluTabs")
-        links = tabs.find_elements(By.TAG_NAME,"a")
+        links = tabs.find_elements(By.TAG_NAME, "a")
 
         leaders = []
 
@@ -99,18 +100,17 @@ class ZuluTradeUI:
         leaders = []
 
         for leader_card in leader_cards:
-            id = ""
-            links = leader_card.find_elements(By.TAG_NAME,"a")
+            _id = ""
+            links = leader_card.find_elements(By.TAG_NAME, "a")
             for l in links:
-                r = re.search("https:\/\/www\.zulutrade\.com\/trader\/(\d+)\/trading", l.get_attribute("href"))
+                r = re.search(r"https:\/\/www\.zulutrade\.com\/trader\/(\d+)\/trading", l.get_attribute("href"))
                 if r is not None:
-                    id = r.groups()[0]
-            if id != "":
-                name =  a = leader_card.find_element(By.TAG_NAME,"h6")
-                leaders.append({"id":id, "name":name.text})
+                    _id = r.groups()[0]
+            if _id != "":
+                name = leader_card.find_element(By.TAG_NAME, "h6")
+                leaders.append({"id": _id, "name": name.text})
 
         return leaders
-
 
     def get_my_open_positions(self) -> DataFrame:
         self._driver.get("https://www.zulutrade.com/dashboard")
@@ -123,7 +123,7 @@ class ZuluTradeUI:
             rows = table.findAll("tr")
             for row in rows[1:]:
                 cols = row.findAll("td")
-                r = re.search("([A-Z]{3}\/[A-Z]{3})\s*(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s*(\w{3,4})",
+                r = re.search(r"([A-Z]{3}\/[A-Z]{3})\s*(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s*(\w{3,4})",
                               cols[0].text)
                 ticker = r.groups()[0].replace("/", "")
                 opentime = datetime.strptime(r.groups()[1], '%d %b %Y, %I:%M %p')
@@ -147,14 +147,14 @@ class ZuluTradeUI:
                                              "open_price"]),
                                ignore_index=True)
             return df
-        except Exception:
-            raise Exception(f"Error while reading open pos table")
+        except Exception as ex:
+            raise Exception(f"Error while reading open pos table {ex}")
 
     def get_my_closed_positions(self) -> DataFrame:
         self._driver.get("https://www.zulutrade.com/dashboard")
         time.sleep(7)
-        tabs_nav = self._driver.find_elements(By.ID,"tabs-nav")[1]
-        tabs = tabs_nav.find_elements(By.TAG_NAME,"li")
+        tabs_nav = self._driver.find_elements(By.ID, "tabs-nav")[1]
+        tabs = tabs_nav.find_elements(By.TAG_NAME, "li")
 
         btn_close = self._driver.find_element(By.CLASS_NAME, "btn-close")
         if btn_close is not None:
@@ -165,36 +165,31 @@ class ZuluTradeUI:
             try:
                 tabs[2].click()
                 break
-            except:
-                pass
+            except Exception as ex:
+                print(ex)
 
         time.sleep(5)
         rows = self._driver.find_elements(By.CLASS_NAME, "megaDropInnerTable")
 
-        df = DataFrame()
+        data = []
         for row in rows:
             cols = row.find_elements(By.TAG_NAME, "td")
-            r = re.search("([A-Z]{3}\/[A-Z]{3})\s(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s(\w{3,4})",
+            r = re.search(r"([A-Z]{3}\/[A-Z]{3})\s(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s(\w{3,4})",
                           cols[0].text)
-            ticker = r.groups()[0].replace("/", "")
-            opentime = datetime.strptime(r.groups()[1], '%d %b %Y, %I:%M %p')
-            direction = r.groups()[2]
-            position_id = f"{ticker}_{direction}_{cols[1].text}_{opentime.isoformat()}"
-            df = df.append(Series(data=[position_id,
-                                        ticker,
-                                        opentime,
-                                        direction,
-                                        cols[1].text,
-                                        cols[2].text,
-                                        cols[3].text,
-                                        cols[4].text],
-                                  index=["position_id",
-                                         "ticker",
-                                         "time",
-                                         "direction",
-                                         "trader_name",
-                                         "profit",
-                                         "open_date",
-                                         "close_date"]),
-                           ignore_index=True)
+            ticker, open_time, direction = r.groups()
+            ticker = ticker.replace("/", "")
+            open_time = datetime.strptime(open_time, '%d %b %Y, %I:%M %p')
+            position_id = f"{ticker}_{direction}_{cols[1].text}_{open_time.isoformat()}"
+
+            data.append([position_id,
+                         ticker,
+                         open_time,
+                         direction,
+                         cols[1].text,
+                         cols[2].text,
+                         cols[3].text,
+                         cols[4].text])
+
+        columns = ["position_id", "ticker", "time", "direction", "trader_name", "profit", "open_date", "close_date"]
+        df = pd.DataFrame(data, columns=columns)
         return df
