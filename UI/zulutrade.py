@@ -118,37 +118,33 @@ class ZuluTradeUI:
         page_source = self._driver.page_source
         soup = BeautifulSoup(page_source, "html.parser")
         table = soup.find("table", {"id": "example"})
-        try:
-            df = DataFrame()
-            rows = table.findAll("tr")
-            for row in rows[1:]:
-                cols = row.findAll("td")
-                r = re.search(r"([A-Z]{3}\/[A-Z]{3})\s*(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s*(\w{3,4})",
-                              cols[0].text)
-                ticker = r.groups()[0].replace("/", "")
-                opentime = datetime.strptime(r.groups()[1], '%d %b %Y, %I:%M %p')
-                direction = r.groups()[2]
-                position_id = f"{ticker}_{direction}_{cols[1].text}_{opentime.isoformat()}"
-                df = df.append(Series(data=[position_id,
-                                            ticker,
-                                            opentime,
-                                            direction,
-                                            cols[1].text,
-                                            cols[2].text,
-                                            cols[3].text,
-                                            cols[4].text],
-                                      index=["position_id",
-                                             "ticker",
-                                             "time",
-                                             "direction",
-                                             "trader_name",
-                                             "lots",
-                                             "units",
-                                             "open_price"]),
-                               ignore_index=True)
-            return df
-        except Exception as ex:
-            raise Exception(f"Error while reading open pos table {ex}")
+        rows = table.findAll("tr")[1:]
+
+        data = []
+        for row in rows:
+            cols = row.findAll("td")
+            position_text = cols[0].text.strip()
+
+            r = re.search(r"([A-Z]{3}\/[A-Z]{3})\s*(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s*(\w{3,4})", position_text)
+            if r:
+                ticker, open_time_str, direction = r.groups()
+                ticker = ticker.replace("/", "")
+                open_time = datetime.strptime(open_time_str, '%d %b %Y, %I:%M %p')
+
+                position_id = f"{ticker}_{direction}_{cols[1].text}_{open_time.isoformat()}"
+                data.append({
+                    "position_id": position_id,
+                    "ticker": ticker,
+                    "time": open_time,
+                    "direction": direction,
+                    "trader_name": cols[1].text,
+                    "lots": cols[2].text,
+                    "units": cols[3].text,
+                    "open_price": cols[4].text
+                })
+
+        df = pd.DataFrame(data)
+        return df
 
     def get_my_closed_positions(self) -> DataFrame:
         self._driver.get("https://www.zulutrade.com/dashboard")
