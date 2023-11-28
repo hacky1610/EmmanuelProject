@@ -41,6 +41,11 @@ class TraderHistory:
 
         return self._hist_df.netPnl.median()
 
+    def profit_loss_ratio(self):
+        wins = self._hist_df[self._hist_df.netPnl > 0]
+        loss = self._hist_df[self._hist_df.netPnl < 0]
+        return abs(loss.netPnl.median() / abs(wins.netPnl.median()))
+
     def amount_of_peaks(self):
         if len(self._hist_df) == 0:
             return 0
@@ -155,6 +160,7 @@ class TraderHistory:
                             self.amount_of_peaks(),
                             self.get_max_win(),
                             self.get_max_loses(),
+                            self.profit_loss_ratio(),
                             rating,
                             text],
                       index=["wl_ratio",
@@ -167,5 +173,6 @@ class TraderHistory:
                              "amount_of_peaks",
                              "max_win",
                              "max_looses",
+                             "profit_loss_ratio",
                              "rating",
                              "comment"])
