@@ -14,6 +14,7 @@ class TraderHistory:
             self._hist_df = self._hist_df.reset_index()
             self._hist_df["dateOpen_datetime_utc"] = self._hist_df.dateOpen.apply(self._unix_timestamp_to_datetime)
             self._hist_df["dateClosed_datetime_utc"] = self._hist_df.dateClosed.apply(self._unix_timestamp_to_datetime)
+            self._hist_df["currency_clean"] = self._hist_df.currency.str.replace("/", "")
 
     @staticmethod
     def _create_df(hist):
@@ -119,6 +120,25 @@ class TraderHistory:
             return skip, "Last Trade older than 7 days"
 
         return trade, ""
+
+    def get_stop_distance(self, ticker:str) -> float:
+        wins = self._hist_df[self._hist_df.netPnl > 0]
+        ticker_df = wins[wins.currency_clean == ticker]
+        return abs(ticker_df.worstDrawdown.median())
+
+    def currency_performance(self, ticker:str) -> (bool,str):
+        currency_df = self._hist_df[self._hist_df.currency_clean == ticker]
+        if currency_df.netPnl.sum() < 0:
+            return False, "Currency profit is less than null"
+
+        if len(currency_df) < 10:
+            return False, "Less than 10 trades"
+
+        median_open_hours = ((currency_df.dateClosed - currency_df.dateOpen) / 1000 /60 / 60 ).median()
+        if median_open_hours > 24:
+            return False, "Open hours is creater than 24 hours"
+
+        return True, "OK"
 
     def __str__(self):
         return f"{self.get_wl_ratio()} - {self.get_result()}"

@@ -139,13 +139,18 @@ class ZuluTrader:
             self._trade_position(markets=markets, position_id=position.position_id,
                                  trader_id=position.trader_id, direction=position.direction, ticker=position.ticker)
 
-    def _calc_limit_stop(self, symbol) -> (float, float):
+    def _calc_limit_stop(self, symbol, scaling:float) -> (float, float):
         data = self._tiingo.load_trade_data(symbol, DataProcessor(), trade_type=TradeType.FX, days=10)
         atr = data.iloc[-1].ATR
-        return atr * self._limit_ratio, atr * self._stop_ratio
+        return atr * self._limit_ratio * scaling, atr * self._stop_ratio * scaling
 
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
+
+        trader_db = self._trader_store.get_trader_by_id(trader_id)
+        trade, message = trader_db.hist.currency_performance(ticker)
+        if not trade:
+            self._tracer.warning(f"Trader {trader_id} has bad performance with {ticker}. {message}")
 
         if not self._is_good_trader(trader_id):
             self._tracer.debug(f"Trader {trader_id} is a bad trader")
@@ -166,10 +171,21 @@ class ZuluTrader:
             return
 
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
-        limit, stop = self._calc_limit_stop(ticker)
+        _, atr_stop = self._calc_limit_stop(ticker, m["scaling"])
+        zulu_stop = trader_db.hist.get_stop_distance(ticker)
+
+        self._tracer.debug(f"ZuluStop {zulu_stop} - Atr Stop {atr_stop}")
+
+        if zulu_stop < atr_stop:
+            stop = zulu_stop
+            limit = zulu_stop
+        else:
+            stop = atr_stop
+            limit = atr_stop
+
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
-                                              currency=m["currency"], limit=limit * m["scaling"],
-                                              stop=stop * m["scaling"])
+                                              currency=m["currency"], limit=limit,
+                                              stop=stop)
         if result:
             self._tracer.debug("Save Deal in db")
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
