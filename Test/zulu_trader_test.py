@@ -127,6 +127,10 @@ class TestZuluTrader(unittest.TestCase):
                     "currency": "USD"},
                    ]
         self.ig.get_markets.return_value = markets
+        trader = Trader(id="id", name="name")
+        trader.hist = MagicMock()
+        trader.hist.currency_performance.return_value = (True,"OK")
+        self.trader_store.get_trader_by_id.return_value = trader
         self.trader._open_new_positions()
 
     def test_trade_position_position_is_aleady_open(self):
@@ -140,6 +144,10 @@ class TestZuluTrader(unittest.TestCase):
                     "epic": "GOO_EPIC",
                     "currency": "USD"},
                    ]
+        trader = Trader(id="id", name="name")
+        trader.hist = MagicMock()
+        trader.hist.currency_performance.return_value = (True, "OK")
+        self.trader_store.get_trader_by_id.return_value = trader
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
         self.ig.open.assert_not_called()
@@ -156,6 +164,10 @@ class TestZuluTrader(unittest.TestCase):
                     "epic": "GOO_EPIC",
                     "currency": "USD"},
                    ]
+        trader = Trader(id="id", name="name")
+        trader.hist = MagicMock()
+        trader.hist.currency_performance.return_value = (True, "OK")
+        self.trader_store.get_trader_by_id.return_value = trader
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
         self.ig.open.assert_not_called()
@@ -177,6 +189,12 @@ class TestZuluTrader(unittest.TestCase):
         self.trader._get_market_by_ticker_or_none = MagicMock(
             return_value={"epic": "ghadh", "currency": "EUR", "scaling": 10, })
         self.trader._is_good_trader = MagicMock(return_value=True)
+        trader = Trader(id="id", name="name")
+        trader.hist = MagicMock()
+        trader.hist.currency_performance.return_value = (True, "OK")
+        trader.hist.get_stop_distance.return_value = 1
+        self.trader_store.get_trader_by_id.return_value = trader
+        self.trader._calc_limit_stop = MagicMock(return_value= (1,1))
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
         self.ig.open.assert_called()
