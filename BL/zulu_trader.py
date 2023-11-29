@@ -151,6 +151,7 @@ class ZuluTrader:
         trade, message = trader_db.hist.currency_performance(ticker)
         if not trade:
             self._tracer.warning(f"Trader {trader_id} has bad performance with {ticker}. {message}")
+            return
 
         if not self._is_good_trader(trader_id):
             self._tracer.debug(f"Trader {trader_id} is a bad trader")

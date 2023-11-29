@@ -147,11 +147,11 @@ class TraderHistory:
 
     def currency_performance(self, ticker:str) -> (bool,str):
         currency_df = self._hist_df[self._hist_df.currency_clean == ticker]
-        if currency_df.netPnl.sum() < 0:
+        if currency_df.netPnl.sum() <= 0:
             return False, "Currency profit is less than null"
 
-        if len(currency_df) < 10:
-            return False, "Less than 10 trades"
+        if len(currency_df) < 5:
+            return False, "Less than 5 trades"
 
         median_open_hours = ((currency_df.dateClosed - currency_df.dateOpen) / 1000 /60 / 60 ).median()
         if median_open_hours > 24:
