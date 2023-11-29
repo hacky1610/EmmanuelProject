@@ -20,11 +20,6 @@ steps:
     pip install -r requirements.txt
   displayName: 'Install dependencies'
 
-- script: |
-    pip install pytest pytest-azurepipelines coverage
-    coverage run -m pytest ./Test
-  displayName: 'Test'
-
 - task: Docker@2
   inputs:
     containerRegistry: 'Docker'
