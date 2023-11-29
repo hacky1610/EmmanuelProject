@@ -127,9 +127,26 @@ class TraderHistory:
         return trade, ""
 
     def get_stop_distance(self, ticker:str) -> float:
-        wins = self._hist_df[self._hist_df.netPnl > 0]
-        ticker_df = wins[wins.currency_clean == ticker]
-        return abs(ticker_df.worstDrawdown.median())
+
+        for _,i in self._hist_df.iterrows():
+            print(i["currency_clean"])
+            pips = self._calc_pip_euro(i)
+            print(pips)
+        return
+
+    def _calc_pip_euro(self, data):
+        netPnl = abs(data["grossPnl"])
+        pips = abs(data.priceOpen - data.priceClosed)
+        pipMultiplier = data["pipMultiplier"]
+
+        # Berechnungen
+        PnL_per_pip = netPnl / pips
+        PnL_per_euro = PnL_per_pip * pipMultiplier
+
+        desired_loss_euro = 20.0
+        stop_loss_euro = desired_loss_euro
+        return stop_loss_euro / PnL_per_euro * data["amount"]
+
 
     def median_open_hours(self) -> float:
         return ((self._hist_df.dateClosed - self._hist_df.dateOpen) / 1000 / 60 / 60).median()

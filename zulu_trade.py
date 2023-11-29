@@ -8,6 +8,7 @@ from Connectors.IG import IG
 from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
+from Connectors.market_store import MarketStore
 from Connectors.tiingo import Tiingo
 from Connectors.trader_store import TraderStore
 from Connectors.zulu_api import ZuluApi
@@ -27,6 +28,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     db = client["ZuluDB"]
     ts = TraderStore(db)
     ds = DealStore(db, account_type)
+    ms = MarketStore(db)
     tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), account_type), ConsoleTracer(True)])
     zulu_api = ZuluApi(tracer)
     ig = IG(tracer=tracer, conf_reader=conf_reader, acount_type=account_type)
@@ -45,6 +47,8 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     docker_version = get_docker_file_info()
 
     try:
+        t = ts.get_trader_by_id("426132")
+        t.hist.get_stop_distance("EURGBP")
         tracer.write(f"Version {docker_version} - Check Crash {check_crash} Limit Ratio {limit_ratio}  "
                      f"Stop Ration {stop_ratio} Check Trader {check_trader}")
         driver = webdriver.Chrome(options=options, service=service)

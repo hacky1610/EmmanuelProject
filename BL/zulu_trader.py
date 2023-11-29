@@ -8,6 +8,7 @@ from pandas import DataFrame
 from BL import DataProcessor
 from Connectors.IG import IG
 from Connectors.deal_store import Deal, DealStore
+from Connectors.market_store import MarketStore
 from Connectors.tiingo import TradeType, Tiingo
 from Connectors.trader_store import TraderStore
 from Connectors.zulu_api import ZuluApi
@@ -17,7 +18,7 @@ from UI.zulutrade import ZuluTradeUI
 
 class ZuluTrader:
 
-    def __init__(self, deal_storage: DealStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
+    def __init__(self, deal_storage: DealStore, market_storage:MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo,
                  account_type: str, check_for_crash: bool = True, stop_ratio: float = 8.0,
                  limit_ratio:float = 4.0, check_trader_quality:bool = False):
@@ -35,6 +36,7 @@ class ZuluTrader:
         self._limit_ratio = limit_ratio
         self._stop_ratio = stop_ratio
         self._check_trader_quality = check_trader_quality
+        self._market_store = market_storage
 
     def trade(self):
         self._tracer.debug(f"Check crash: {self._check_for_crash }")
@@ -173,13 +175,14 @@ class ZuluTrader:
 
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
         _, atr_stop = self._calc_limit_stop(ticker, m["scaling"])
-        zulu_stop = trader_db.hist.get_stop_distance(ticker)
+        market = self._market_store.get_market(ticker)
+        ig_stop = market.pip_euro * 20
 
-        self._tracer.debug(f"ZuluStop {zulu_stop} - Atr Stop {atr_stop}")
+        self._tracer.debug(f"IG {ig_stop} - Atr Stop {atr_stop}")
 
-        if zulu_stop < atr_stop:
-            stop = zulu_stop
-            limit = zulu_stop
+        if ig_stop < atr_stop:
+            stop = ig_stop
+            limit = ig_stop
         else:
             stop = atr_stop
             limit = atr_stop
