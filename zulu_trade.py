@@ -45,8 +45,6 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     docker_version = get_docker_file_info()
 
     try:
-        t = ts.get_trader_by_id("426132")
-        t.hist.get_stop_distance("AUDNZD")
         tracer.write(f"Version {docker_version} - Check Crash {check_crash} Limit Ratio {limit_ratio}  "
                      f"Stop Ration {stop_ratio} Check Trader {check_trader}")
         driver = webdriver.Chrome(options=options, service=service)
