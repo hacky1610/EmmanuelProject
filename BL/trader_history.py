@@ -131,6 +131,20 @@ class TraderHistory:
         ticker_df = wins[wins.currency_clean == ticker]
         return abs(ticker_df.worstDrawdown.median())
 
+    def median_open_hours(self) -> float:
+        return ((self._hist_df.dateClosed - self._hist_df.dateOpen) / 1000 / 60 / 60).median()
+
+    def median_open_hours_wins(self) -> float:
+        wins = self._hist_df[self._hist_df.netPnl > 0]
+        return ((wins.dateClosed - wins.dateOpen) / 1000 / 60 / 60).median()
+
+    def median_open_hours_loss(self) -> float:
+        loss = self._hist_df[self._hist_df.netPnl < 0]
+        return ((loss.dateClosed - loss.dateOpen) / 1000 / 60 / 60).median()
+
+    def open_hours_ratio(self) -> float:
+        return self.median_open_hours_loss() / self.median_open_hours_wins()
+
     def currency_performance(self, ticker:str) -> (bool,str):
         currency_df = self._hist_df[self._hist_df.currency_clean == ticker]
         if currency_df.netPnl.sum() < 0:
@@ -161,6 +175,10 @@ class TraderHistory:
                             self.get_max_win(),
                             self.get_max_loses(),
                             self.profit_loss_ratio(),
+                            self.median_open_hours(),
+                            self.median_open_hours_wins(),
+                            self.median_open_hours_loss(),
+                            self.open_hours_ratio(),
                             rating,
                             text],
                       index=["wl_ratio",
@@ -174,5 +192,9 @@ class TraderHistory:
                              "max_win",
                              "max_looses",
                              "profit_loss_ratio",
+                             "open_hours",
+                             "open_hours_wins",
+                             "open_hours_loss",
+                             "open_hours_ratio",
                              "rating",
                              "comment"])
