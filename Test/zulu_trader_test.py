@@ -4,6 +4,7 @@ from pandas import DataFrame, Series
 from unittest.mock import MagicMock, patch
 
 from BL.position import Position
+from Connectors.market_store import Market
 from Connectors.trader_store import Trader
 from BL.zulu_trader import ZuluTrader
 from Connectors.deal_store import Deal
@@ -22,6 +23,7 @@ class TestZuluTrader(unittest.TestCase):
         self.tracer = MagicMock()
         self.zulu_ui = MagicMock()
         self.tiingo = MagicMock()
+        self.market_storage = MagicMock()
         self.trader = ZuluTrader(deal_storage=self.deal_storage,
                                  zulu_api=self.zulu_api,
                                  ig=self.ig,
@@ -29,7 +31,8 @@ class TestZuluTrader(unittest.TestCase):
                                  tracer=self.tracer,
                                  zulu_ui=self.zulu_ui,
                                  tiingo=self.tiingo,
-                                 account_type="DEMO")
+                                 account_type="DEMO",
+                                 market_storage=self.market_storage)
 
     def test_close_open_positions_pos_is_still_open(self):
         # Mock-Daten für get_open_deals und close
@@ -177,6 +180,7 @@ class TestZuluTrader(unittest.TestCase):
 
         self.deal_storage.has_id.return_value = False
         self.deal_storage.position_is_open.return_value = False
+        self.market_storage.get_market.return_value = Market("Foo",1)
         markets = [{"symbol": "AAPL",
                     "epic": "AAPL_EPIC",
                     "currency": "USD"},
