@@ -20,8 +20,8 @@ class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, market_storage:MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo,
-                 account_type: str, check_for_crash: bool = True, stop_ratio: float = 8.0,
-                 limit_ratio:float = 4.0, check_trader_quality:bool = False):
+                 account_type: str, check_for_crash: bool = True, stop_factor: int = 20,
+                 limit_factor:int = 20, check_trader_quality:bool = False):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -33,8 +33,8 @@ class ZuluTrader:
         self._tiingo = tiingo
         self._account_type = account_type
         self._check_for_crash = check_for_crash
-        self._limit_ratio = limit_ratio
-        self._stop_ratio = stop_ratio
+        self._limit_factor = limit_factor
+        self._stop_factor  = stop_factor
         self._check_trader_quality = check_trader_quality
         self._market_store = market_storage
 
@@ -141,11 +141,6 @@ class ZuluTrader:
             self._trade_position(markets=markets, position_id=position.position_id,
                                  trader_id=position.trader_id, direction=position.direction, ticker=position.ticker)
 
-    def _calc_limit_stop(self, symbol, scaling:float) -> (float, float):
-        data = self._tiingo.load_trade_data(symbol, DataProcessor(), trade_type=TradeType.FX, days=10)
-        atr = data.iloc[-1].ATR
-        return atr * self._limit_ratio * scaling, atr * self._stop_ratio * scaling
-
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):
 
@@ -174,18 +169,11 @@ class ZuluTrader:
             return
 
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
-        _, atr_stop = self._calc_limit_stop(ticker, m["scaling"])
         market = self._market_store.get_market(ticker)
-        ig_stop = market.pip_euro * 20
+        stop = int(market.pip_euro * self._stop_factor)
+        limit = int(market.pip_euro * self._limit_factor)
 
-        self._tracer.debug(f"IG {ig_stop} - Atr Stop {atr_stop}")
-
-        if ig_stop < atr_stop:
-            stop = ig_stop
-            limit = ig_stop
-        else:
-            stop = atr_stop
-            limit = atr_stop
+        self._tracer.debug(f"StopLoss {stop} - Limit {limit} ")
 
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
                                               currency=m["currency"], limit=limit,
@@ -201,7 +189,7 @@ class ZuluTrader:
                                          epic=m["epic"], direction=direction, account_type=self._account_type,
                                          open_date_ig_str=date_string,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
-                                         stop_ratio=self._stop_ratio,limit_ratio=self._limit_ratio))
+                                         stop_factor=self._stop_factor, limit_factor=self._limit_factor))
             self._tracer.debug("Deal was saved")
         else:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")

@@ -157,11 +157,13 @@ class ZuluTradeUI:
             btn_close.click()
         time.sleep(4)
 
-        while True:
+        trial = 0
+        while trial < 5:
             try:
                 tabs[2].click()
                 break
             except Exception as ex:
+                trial += 1
                 print(ex)
 
         time.sleep(5)

@@ -16,8 +16,8 @@ class Deal:
                  open_date_ig_str: str,
                  open_date_ig_datetime: datetime,
                  direction: str,
-                 stop_ratio: float,
-                 limit_ratio: float,
+                 stop_factor: int,
+                 limit_factor: int,
                  close_reason: str = "Unknown",
                  close_date_ig_datetime: datetime = None,
                  status: str = "open",
@@ -39,8 +39,8 @@ class Deal:
         self.close_date_ig_datetime = close_date_ig_datetime
         self.result = result
         self.close_reason = close_reason
-        self.stop_ratio = stop_ratio
-        self.limit_ratio = limit_ratio
+        self.stop_factor = stop_factor
+        self.limit_factor = limit_factor
 
     @staticmethod
     def Create(data: dict):
@@ -57,15 +57,15 @@ class Deal:
                     result=data.get("result", 0),
                     close_reason=data.get("close_reason", "Unknown"),
                     open_date_ig_str=data["open_date_ig_str"],
-                    open_date_ig_datetime=data.get("open_date_ig_datetime",None),
-                    close_date_ig_datetime=data.get("close_date_ig_datetime",None),
-                    stop_ratio=data.get("stop_ratio",8.0),
-                    limit_ratio=data.get("limit_ratio",3.5))
+                    open_date_ig_datetime=data.get("open_date_ig_datetime", None),
+                    close_date_ig_datetime=data.get("close_date_ig_datetime", None),
+                    stop_factor=data.get("stop_factor", 20),
+                    limit_factor=data.get("limit_factor", 20))
 
     def __str__(self):
         return f"{self.id} - {self.epic} {self.direction} Trader ID: {self.trader_id}"
 
-    def close(self, close_reason:str= "Unknown"):
+    def close(self, close_reason: str = "Unknown"):
         self.status = "Closed"
         self.close_reason = close_reason
 
@@ -85,56 +85,57 @@ class Deal:
                 "close_date_ig_datetime": self.close_date_ig_datetime,
                 "result": self.result,
                 "close_reason": self.close_reason,
-                "stop_ratio": self.stop_ratio,
-                "limit_ratio": self.limit_ratio}
+                "stop_factor": self.stop_factor,
+                "limit_factor": self.limit_factor}
 
 
 class DealStore:
 
-    def __init__(self, db: Database, account_type:str):
+    def __init__(self, db: Database, account_type: str):
 
         self._collection = db["Deals"]
         self._account_type = account_type
 
     def save(self, deal: Deal):
-        if self._collection.find_one({"id": deal.id, "account_type":self._account_type}):
+        if self._collection.find_one({"id": deal.id, "account_type": self._account_type}):
             self._collection.update_one({"id": deal.id,
-                                         "account_type":self._account_type}, {"$set": deal.to_dict()})
+                                         "account_type": self._account_type}, {"$set": deal.to_dict()})
         else:
             self._collection.insert_one(deal.to_dict())
 
-
     def get_deal_by_zulu_id(self, id):
-        return self._collection.find_one({"id": id, "account_type":self._account_type})
+        return self._collection.find_one({"id": id, "account_type": self._account_type})
 
-    def get_deal_by_ig_id(self, ig_date:str, ticker:str) -> Optional[Deal]:
-        res = self._collection.find_one({"open_date_ig_str": ig_date, "ticker":ticker, "account_type":self._account_type})
+    def get_deal_by_ig_id(self, ig_date: str, ticker: str) -> Optional[Deal]:
+        res = self._collection.find_one(
+            {"open_date_ig_str": ig_date, "ticker": ticker, "account_type": self._account_type})
         if res is not None:
             return Deal.Create(res)
         return None
 
     def get_all_deals(self):
-        return self._collection.find({ "account_type":self._account_type})
+        return self._collection.find({"account_type": self._account_type})
 
     def get_open_deals(self) -> List[Deal]:
         deals = []
-        for d in self._collection.find({"status": "open", "account_type":self._account_type}):
+        for d in self._collection.find({"status": "open", "account_type": self._account_type}):
             deals.append(Deal.Create(d))
         return deals
 
     def has_id(self, id: str):
-        return self._collection.find_one({"id": id,"account_type":self._account_type})
+        return self._collection.find_one({"id": id, "account_type": self._account_type})
 
     def clear(self):
         self._collection.delete_many({})
 
     def position_of_same_trader(self, ticker: str, trader_id):
-        return self._collection.find_one({"ticker": ticker, "trader_id": trader_id, "status": "open", "account_type":self._account_type})
+        return self._collection.find_one(
+            {"ticker": ticker, "trader_id": trader_id, "status": "open", "account_type": self._account_type})
 
     def position_is_open(self, ticker: str):
-        return self._collection.find_one({"ticker": ticker, "status": "open", "account_type":self._account_type})
+        return self._collection.find_one({"ticker": ticker, "status": "open", "account_type": self._account_type})
 
-    def get_deals_of_trader_as_df(self, trader_id: str, consider_account_type:bool = True) -> DataFrame:
+    def get_deals_of_trader_as_df(self, trader_id: str, consider_account_type: bool = True) -> DataFrame:
         query = {"trader_id": trader_id}
         if consider_account_type:
             query.update({"account_type": self._account_type})
@@ -142,5 +143,3 @@ class DealStore:
         df = DataFrame(list(deals))
 
         return df
-
-
