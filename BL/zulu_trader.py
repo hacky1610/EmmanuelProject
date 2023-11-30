@@ -207,12 +207,20 @@ class ZuluTrader:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")
 
     def _calc_hist(self, row):
-        trader = self._trader_store.get_trader_by_name(row.trader_name)
-        return trader.hist.get_wl_ratio()
+        try:
+            trader = self._trader_store.get_trader_by_name(row.trader_name)
+            return trader.hist.get_wl_ratio()
+        except Exception as e:
+            self._tracer.error(f"Trader {row.trader_name} could not be found {e}")
+            return 0.0
 
     def _get_trader_id(self, row):
-        trader = self._trader_store.get_trader_by_name(row.trader_name)
-        return trader.id
+        try:
+            trader = self._trader_store.get_trader_by_name(row.trader_name)
+            return trader.id
+        except Exception as e:
+            self._tracer.error(f"Trader {row.trader_name} could not be found {e}")
+            return "unknown"
 
     def _get_newest_positions(self, positions: DataFrame) -> DataFrame:
         return positions[positions.time >= datetime.now() - timedelta(minutes=20)]
