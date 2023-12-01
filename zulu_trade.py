@@ -37,7 +37,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     cache = DropBoxCache(dropbox_service)
     tiingo = Tiingo(conf_reader, cache)
     options = Options()
-    options.add_argument('--headless')
+    #options.add_argument('--headless')
     service = Service(ChromeDriverManager().install())
 
     check_crash = conf_reader.get_bool("check_crash")
@@ -51,7 +51,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
                      f"Stop factor {stop_factor} Check Trader {check_trader}")
         driver = webdriver.Chrome(options=options, service=service)
         driver.implicitly_wait(15)
-        zulu_ui = ZuluTradeUI(driver)
+        zulu_ui = ZuluTradeUI(driver, tracer)
 
         zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zulu_api, ig=ig,
                                  trader_store=ts, tracer=tracer, zulu_ui=zulu_ui,

@@ -14,11 +14,14 @@ from selenium.webdriver.support.wait import WebDriverWait
 from Connectors.trader_store import Trader
 from selenium.webdriver.support import expected_conditions as EC
 
+from Tracing.Tracer import Tracer
+
 
 class ZuluTradeUI:
 
-    def __init__(self, driver: WebDriver):
+    def __init__(self, driver: WebDriver, tracer:Tracer):
         self._driver = driver
+        self._tracer = tracer
 
     def login(self):
         self._driver.get("https://www.zulutrade.com/login")
@@ -149,13 +152,15 @@ class ZuluTradeUI:
     def get_my_closed_positions(self) -> DataFrame:
         self._driver.get("https://www.zulutrade.com/dashboard")
         time.sleep(7)
+        self._tracer.debug("opened dashboard")
         tabs_nav = self._driver.find_elements(By.ID, "tabs-nav")[1]
         tabs = tabs_nav.find_elements(By.TAG_NAME, "li")
-
+        self._tracer.debug("Try to close modal")
         btn_close = self._driver.find_element(By.CLASS_NAME, "btn-close")
         if btn_close is not None:
             btn_close.click()
         time.sleep(4)
+        self._tracer.debug("modal closed")
 
         trial = 0
         while trial < 5:
@@ -164,13 +169,15 @@ class ZuluTradeUI:
                 break
             except Exception as ex:
                 trial += 1
-                print(ex)
+                self._tracer.warning(f"Error durng open closed {ex}")
+        self._tracer.debug("switched to closed pos")
 
         time.sleep(5)
         rows = self._driver.find_elements(By.CLASS_NAME, "megaDropInnerTable")
 
         data = []
         for row in rows:
+            self._tracer.debug("iter row start")
             cols = row.find_elements(By.TAG_NAME, "td")
             r = re.search(r"([A-Z]{3}\/[A-Z]{3})\s(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s(\w{3,4})",
                           cols[0].text)
@@ -187,6 +194,7 @@ class ZuluTradeUI:
                          cols[2].text,
                          cols[3].text,
                          cols[4].text])
+            self._tracer.debug("iter row end")
 
         columns = ["position_id", "ticker", "time", "direction", "trader_name", "profit", "open_date", "close_date"]
         df = pd.DataFrame(data, columns=columns)
