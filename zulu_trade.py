@@ -37,7 +37,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     cache = DropBoxCache(dropbox_service)
     tiingo = Tiingo(conf_reader, cache)
     options = Options()
-    #options.add_argument('--headless')
+    options.add_argument('--headless')
     service = Service(ChromeDriverManager().install())
 
     check_crash = conf_reader.get_bool("check_crash")

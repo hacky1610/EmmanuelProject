@@ -173,13 +173,15 @@ class ZuluTradeUI:
         self._tracer.debug("switched to closed pos")
 
         time.sleep(5)
-        rows = self._driver.find_elements(By.CLASS_NAME, "megaDropInnerTable")
+        page_source = self._driver.page_source
+        soup = BeautifulSoup(page_source, "html.parser")
+        rows = soup.findAll("table", {"class":"megaDropInnerTable"})
 
         data = []
         for row in rows:
             self._tracer.debug("iter row start")
-            cols = row.find_elements(By.TAG_NAME, "td")
-            r = re.search(r"([A-Z]{3}\/[A-Z]{3})\s(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s(\w{3,4})",
+            cols = row.findAll("td")
+            r = re.search(r"([A-Z]{3}\/[A-Z]{3})\s*(\d\d \w{3} \d{4}, \d\d:\d\d \w\w)\s*(\w{3,4})",
                           cols[0].text)
             ticker, open_time, direction = r.groups()
             ticker = ticker.replace("/", "")
