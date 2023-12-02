@@ -20,8 +20,8 @@ class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, market_storage:MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo,
-                 account_type: str, check_for_crash: bool = True, stop_factor: int = 20,
-                 limit_factor:int = 20, check_trader_quality:bool = False):
+                 account_type: str, check_for_crash: bool = True,
+                check_trader_quality:bool = False):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -33,8 +33,6 @@ class ZuluTrader:
         self._tiingo = tiingo
         self._account_type = account_type
         self._check_for_crash = check_for_crash
-        self._limit_factor = limit_factor
-        self._stop_factor  = stop_factor
         self._check_trader_quality = check_trader_quality
         self._market_store = market_storage
 
@@ -45,7 +43,7 @@ class ZuluTrader:
             self._open_new_positions()
         self._update_deals()
 
-    def _is_good_trader(self, trader_id: str):
+    def _is_good_ig_trader(self, trader_id: str):
         if not self._check_trader_quality:
             self._tracer.debug("Ignore Trader check")
             return True
@@ -145,13 +143,13 @@ class ZuluTrader:
                         ticker: str, trader_id: str, direction: str):
 
         trader_db = self._trader_store.get_trader_by_id(trader_id)
-        trade, message = trader_db.hist.currency_performance(ticker)
+        trade, message = trader_db.hist.trader_performance(ticker)
         if not trade:
             self._tracer.warning(f"Trader {trader_id} has bad performance with {ticker}. {message}")
             return
 
-        if not self._is_good_trader(trader_id):
-            self._tracer.debug(f"Trader {trader_id} is a bad trader")
+        if not self._is_good_ig_trader(trader_id):
+            self._tracer.warning(f"Trader {trader_id} is a bad trader based of Results of last IG trades")
             return
 
         if self._deal_storage.has_id(position_id):
@@ -170,14 +168,14 @@ class ZuluTrader:
 
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
         market = self._market_store.get_market(ticker)
-        stop = int(market.pip_euro * self._stop_factor)
-        limit = int(market.pip_euro * self._limit_factor)
+        stop_pips = int(market.pip_euro * trader_db.stop)
+        limit_pips = int(market.pip_euro * trader_db.limit)
 
-        self._tracer.debug(f"StopLoss {stop} - Limit {limit} ")
+        self._tracer.debug(f"StopLoss {stop_pips} pips {trader_db.stop}€ - Limit {limit_pips}  pips {trader_db.limit}€")
 
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
-                                              currency=m["currency"], limit=limit,
-                                              stop=stop)
+                                              currency=m["currency"], limit=limit_pips,
+                                              stop=stop_pips)
         if result:
             self._tracer.debug("Save Deal in db")
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
@@ -189,7 +187,7 @@ class ZuluTrader:
                                          epic=m["epic"], direction=direction, account_type=self._account_type,
                                          open_date_ig_str=date_string,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
-                                         stop_factor=self._stop_factor, limit_factor=self._limit_factor))
+                                         stop_factor=trader_db.stop, limit_factor=trader_db.limit))
             self._tracer.debug("Deal was saved")
         else:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")

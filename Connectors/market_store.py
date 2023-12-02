@@ -1,9 +1,4 @@
-from typing import List
-
-from pandas import DataFrame, Series
 from pymongo.database import Database
-
-from BL.trader_history import TraderHistory
 
 class Market:
 

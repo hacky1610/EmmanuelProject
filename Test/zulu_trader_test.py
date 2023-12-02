@@ -192,7 +192,7 @@ class TestZuluTrader(unittest.TestCase):
         True, {"dealReference": "abgggggg", "dealId": "adhu", "date": "2021-01-01T20:20:00"})
         self.trader._get_market_by_ticker_or_none = MagicMock(
             return_value={"epic": "ghadh", "currency": "EUR", "scaling": 10, })
-        self.trader._is_good_trader = MagicMock(return_value=True)
+        self.trader._is_good_ig_trader = MagicMock(return_value=True)
         trader = Trader(id="id", name="name")
         trader.hist = MagicMock()
         trader.hist.currency_performance.return_value = (True, "OK")

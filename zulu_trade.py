@@ -56,8 +56,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
         zulu_trader = ZuluTrader(deal_storage=ds, zulu_api=zulu_api, ig=ig,
                                  trader_store=ts, tracer=tracer, zulu_ui=zulu_ui,
                                  tiingo=tiingo, account_type=account_type,
-                                 check_for_crash=check_crash, limit_factor=limit_factor,
-                                 stop_factor=stop_factor, check_trader_quality=check_trader,
+                                 check_for_crash=check_crash, check_trader_quality=check_trader,
                                  market_storage=ms)
 
         zulu_ui.login()

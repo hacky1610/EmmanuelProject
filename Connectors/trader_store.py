@@ -4,30 +4,45 @@ from pandas import DataFrame, Series
 from pymongo.database import Database
 
 from BL.trader_history import TraderHistory
+from Connectors.market_store import MarketStore
 
 
 class Trader:
 
-    def __init__(self, id, name):
+    def __init__(self, id:str, name:str, stop:int, limit:int):
         self.id = id
         self.name = name
+        self.stop = stop
+        self.limit = limit
         self.hist: TraderHistory = TraderHistory({})
 
     @staticmethod
     def Create(data:dict):
         trader =  Trader(id=data["id"],
                       name=data["name"],
+                      stop=data.get("stop",0),
+                    limit=data.get("limit",0)
                       )
         trader.hist = TraderHistory(data.get("history", {}))
         return trader
 
     def to_dict(self):
-        return {"id": self.id, "name": self.name, "history": self.hist._hist}
+        return {"id": self.id,
+                "name": self.name,
+                "history": self.hist._hist,
+                "stop":self.stop,
+                "limit": self.limit}
+
+
+    def calc_ig(self,market_store:MarketStore):
+        self.stop, self.limit = self.hist.calc_ig_profit(market_store)
+
 
     def get_statistic(self):
         s = self.hist.get_series()
         s["name"] = self.name
         s["id"] = self.id
+
         return s
 
 

@@ -1,3 +1,4 @@
+import time
 from typing import List
 
 import requests
@@ -13,15 +14,16 @@ class ZuluApi:
     def __init__(self, tracer: Tracer):
         self._tracer = tracer
 
-    def get_history(self, trader_id: str):
+    def get_history(self, trader_id: str, pages:int = 1):
 
-        resp = requests.get(
-            f"{self._base_uri}/{trader_id}/trades/history?timeframe=10000&page=0&size=100&sort=dateClosed,desc")
-        if resp.status_code == 200:
-            return TraderHistory(resp.json()["content"])
-        else:
-            self._tracer.error(f"Could not read history {resp.text}")
-            return TraderHistory([])
+        result = []
+        for i in range(0,pages):
+            resp = requests.get(
+                f"{self._base_uri}/{trader_id}/trades/history?timeframe=10000&page={i}&size=100&sort=dateClosed,desc")
+            time.sleep(40)
+            if resp.status_code == 200:
+                result = result + resp.json()["content"]
+        return TraderHistory(result)
 
     def get_opened_positions(self, trader_id: str, name: str) -> List[Position]:
         positions: List[Position] = []
