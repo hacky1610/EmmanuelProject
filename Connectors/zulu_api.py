@@ -1,4 +1,5 @@
 import time
+import random
 from typing import List
 
 import requests
@@ -20,9 +21,9 @@ class ZuluApi:
         for i in range(0,pages):
             resp = requests.get(
                 f"{self._base_uri}/{trader_id}/trades/history?timeframe=10000&page={i}&size=100&sort=dateClosed,desc")
-            time.sleep(40)
             if resp.status_code == 200:
                 result = result + resp.json()["content"]
+            time.sleep(random.randint(44,120))
         return TraderHistory(result)
 
     def get_opened_positions(self, trader_id: str, name: str) -> List[Position]:

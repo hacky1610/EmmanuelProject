@@ -28,11 +28,12 @@ random.shuffle(trader_list)
 for trader in trader_list:
     try:
         trader.hist = zuluApi.get_history(trader.id,3)
-        print(f"{trader.name} -> {trader.hist}" )
         trader.calc_ig(ms)
+        print(f"{trader.name} -> {trader.hist}" )
         ts.save(trader)
         time.sleep(random.randint(44,120))
     except Exception as ex:
+        time.sleep(random.randint(44,120))
         traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
         print(f"Error with {trader.name} {traceback_str}")
 

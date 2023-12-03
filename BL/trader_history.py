@@ -13,7 +13,7 @@ class TraderHistory:
         self._hist = hist
         if len(hist) > 0:
             self._hist_df = self._hist_df.sort_values(by=["dateClosed"])
-            self._hist_df = self._hist_df.reset_index()
+            self._hist_df = self._hist_df.reset_index(drop=True)
             self._hist_df["dateOpen_datetime_utc"] = self._hist_df.dateOpen.apply(self._unix_timestamp_to_datetime)
             self._hist_df["dateClosed_datetime_utc"] = self._hist_df.dateClosed.apply(self._unix_timestamp_to_datetime)
             self._hist_df["currency_clean"] = self._hist_df.currency.str.replace("/", "")
@@ -34,10 +34,10 @@ class TraderHistory:
     def _unix_timestamp_to_datetime(timestamp):
         return datetime.utcfromtimestamp(timestamp / 1000)
 
-    def get_ig_profit(self):
-        return
+    def get_ig_profit(self) -> float:
+        return self._hist_df["ig_custom"].sum()
 
-    def get_result(self):
+    def get_result(self) -> float:
         if len(self._hist_df) == 0:
             return 0
 

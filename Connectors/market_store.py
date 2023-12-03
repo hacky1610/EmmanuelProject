@@ -23,6 +23,7 @@ class MarketStore:
     def __init__(self, db: Database):
 
         self._collection = db["MarketStore"]
+        self._cache = {}
 
     def save(self, market: Market):
         existing_market = self._collection.find_one({"ticker": market.ticker})
@@ -32,5 +33,15 @@ class MarketStore:
             self._collection.insert_one(market.to_dict())
 
     def get_market(self, ticker) -> Market:
-        return Market.Create(self._collection.find_one({"ticker": ticker}))
+        if ticker in self._cache:
+            return self._cache[ticker]
+        else:
+            market_data = self._collection.find_one({"ticker": ticker})
+            if market_data:
+                market = Market.Create(market_data)
+                # Add to cache for future use
+                self._cache[ticker] = market
+                return market
+            else:
+                raise Exception(f"Market {ticker} doesnt exist")
 
