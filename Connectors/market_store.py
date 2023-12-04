@@ -43,5 +43,6 @@ class MarketStore:
                 self._cache[ticker] = market
                 return market
             else:
-                raise Exception(f"Market {ticker} doesnt exist")
+                print(f"ERROR: no market for {ticker}")
+                return None
 

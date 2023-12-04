@@ -180,13 +180,13 @@ class TraderHistory:
 
         median_open_hours = ((currency_df.dateClosed - currency_df.dateOpen) / 1000 /60 / 60 ).median()
         if median_open_hours > 48:
-            return False, "Open hours is creater than 24 hours"
+            return False, "Open hours is creater than 48 hours"
 
         if self._hist_df["ig_custom"].sum() < 400:
             return False, f"IG Profit is bad {self._hist_df.ig_custom.sum()}"
 
-        if self.get_avg_trades_per_week() > 50:
-            return False, f"To much trades {self.get_avg_trades_per_week()} per week"
+        #if self.get_avg_trades_per_week() > 50:
+        #    return False, f"To much trades {self.get_avg_trades_per_week()} per week"
 
         return True, "OK"
 
@@ -199,6 +199,8 @@ class TraderHistory:
             return 0,0
         def no_stop_no_limit(data):
             m  = market_store.get_market(data.currency_clean)
+            if m is None:
+                return 0
             pip_wl = abs(data.priceClosed - data.priceOpen) * data.pipMultiplier
             eur_wl = pip_wl / m.pip_euro
 
@@ -209,6 +211,8 @@ class TraderHistory:
 
         def stop_and_limit(data, stop, limit):
             m = market_store.get_market(data.currency_clean)
+            if m is None:
+                return 0
             pip_wl = abs(data.priceClosed - data.priceOpen) * data.pipMultiplier
             eur_wl = pip_wl / m.pip_euro
 
@@ -224,6 +228,8 @@ class TraderHistory:
 
         def only_stop(data, stop):
             m = market_store.get_market(data.currency_clean)
+            if m is None:
+                return 0
             pip_wl = abs(data.priceClosed - data.priceOpen) * data.pipMultiplier
             eur_wl = pip_wl / m.pip_euro
 
