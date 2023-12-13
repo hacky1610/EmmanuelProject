@@ -40,21 +40,6 @@ class ZuluTradeUI:
     def close(self):
         self._driver.close()
 
-    def get_favorites(self):
-        self._driver.get("https://www.zulutrade.com/watchlist")
-        favs = []
-        for fav_container in self._driver.find_elements(By.CLASS_NAME, "watchlist-col"):
-
-            link = fav_container.find_element(By.CLASS_NAME, "rounded-circle").get_attribute("src")
-            f = re.search(r"id=(\d+)",
-                          link)
-            if f != None:
-                favs.append(Trader(id=f.groups()[0],
-                                   name=fav_container.find_element(By.TAG_NAME, "a").text))
-            else:
-                print("Foo")
-
-        return favs
 
     def _open_portfolio(self, id: str):
         self._driver.get(f"https://www.zulutrade.com/trader/{id}/trading?t=30&m=1")

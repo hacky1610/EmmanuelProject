@@ -241,15 +241,16 @@ class TraderHistory:
             else:
                 return eur_wl * -1
 
-        self._hist_df["ig_profit_no_stop_no_limit"] = self._hist_df.apply(no_stop_no_limit, axis=1)
-        self._hist_df["ig_profit_stop_limit_equal_10"] = self._hist_df.apply(stop_and_limit, axis=1, args=(10,10))
-        self._hist_df["ig_profit_stop_limit_equal_20"] = self._hist_df.apply(stop_and_limit, axis=1, args=(20,20))
-        self._hist_df["ig_profit_stop_limit_equal_30"] = self._hist_df.apply(stop_and_limit, axis=1, args=(30,30))
-        self._hist_df["ig_profit_stop_limit_equal_50"] = self._hist_df.apply(stop_and_limit, axis=1, args=(50, 50))
-        self._hist_df["ig_profit_stop_20"] = self._hist_df.apply(only_stop, axis=1, args=(20,))
-        self._hist_df["ig_profit_stop_50"] = self._hist_df.apply(only_stop, axis=1, args=(50,))
-        self._hist_df["ig_profit_stop_20_limit_10"] = self._hist_df.apply(stop_and_limit, axis=1, args=(20, 10))
-        self._hist_df["ig_profit_stop_50_limit_20"] = self._hist_df.apply(stop_and_limit, axis=1, args=(50, 25))
+        def get_drawdown(data):
+            m = market_store.get_market(data.currency_clean)
+            if m is None:
+                return 0
+            if data.netPnl > 0:
+                return numpy.nan
+            else:
+                return  data.worstDrawdown / m.pip_euro
+
+        self._hist_df["drawdown"] = self._hist_df.apply(get_drawdown, axis=1)
 
         best_col = None
         best_stop = 0
@@ -292,15 +293,8 @@ class TraderHistory:
                             self.median_open_hours_wins(),
                             self.median_open_hours_loss(),
                             self.open_hours_ratio(),
-                            self._hist_df["ig_profit_no_stop_no_limit"].sum(),
-                            self._hist_df["ig_profit_stop_limit_equal_10"].sum(),
-                            self._hist_df["ig_profit_stop_limit_equal_20"].sum(),
-                            self._hist_df["ig_profit_stop_limit_equal_30"].sum(),
-                            self._hist_df["ig_profit_stop_limit_equal_50"].sum(),
-                            self._hist_df["ig_profit_stop_20"].sum(),
-                            self._hist_df["ig_profit_stop_50"].sum(),
-                            self._hist_df["ig_profit_stop_20_limit_10"].sum(),
-                            self._hist_df["ig_profit_stop_50_limit_20"].sum(),
+                            self._hist_df["drawdown"].min(),
+                            self._hist_df["drawdown"].median(),
                             self._hist_df["ig_custom"].sum(),
                             self._hist_df["ig_custom_name"].iloc[0],
                             rating,
@@ -320,15 +314,8 @@ class TraderHistory:
                              "open_hours_wins",
                              "open_hours_loss",
                              "open_hours_ratio",
-                             "ig_profit_no_stop_no_limit",
-                             "ig_profit_stop_limit_equal_10",
-                             "ig_profit_stop_limit_equal_20",
-                             "ig_profit_stop_limit_equal_30",
-                             "ig_profit_stop_limit_equal_50",
-                             "ig_profit_stop_20",
-                             "ig_profit_stop_50",
-                             "ig_profit_stop_20_limit_10",
-                             "ig_profit_stop_50_limit_20",
+                             "drawdown_min",
+                             "drawdown_median",
                              "ig_custom",
                              "ig_custom_name",
                              "rating",

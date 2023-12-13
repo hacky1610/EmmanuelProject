@@ -23,7 +23,7 @@ class ZuluApi:
                 f"{self._base_uri}/{trader_id}/trades/history?timeframe=10000&page={i}&size=100&sort=dateClosed,desc")
             if resp.status_code == 200:
                 result = result + resp.json()["content"]
-            time.sleep(random.randint(44,120))
+            time.sleep(random.randint(120,200))
         return TraderHistory(result)
 
     def get_opened_positions(self, trader_id: str, name: str) -> List[Position]:

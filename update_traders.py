@@ -31,9 +31,9 @@ for trader in trader_list:
         trader.calc_ig(ms)
         print(f"{trader.name} -> {trader.hist}" )
         ts.save(trader)
-        time.sleep(random.randint(44,120))
+        time.sleep(random.randint(120,200))
     except Exception as ex:
-        time.sleep(random.randint(44,120))
+        time.sleep(random.randint(120,200))
         traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
         print(f"Error with {trader.name} {traceback_str}")
 

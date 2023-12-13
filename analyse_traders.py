@@ -12,6 +12,7 @@ ts = TraderStore(db)
 df = DataFrame()
 ms = MarketStore(db)
 
+
 for trader in ts.get_all_traders():
     try:
         print(f"{trader.name}")
@@ -19,6 +20,7 @@ for trader in ts.get_all_traders():
             trader.calc_ig(ms)
             ts.save(trader)
             stat = trader.get_statistic()
+            print(stat)
             df = df.append(stat, ignore_index=True)
     except Exception as ex:
         print(f"Error {ex}")
