@@ -76,9 +76,6 @@ class ZuluTrader:
         open_ig_deals = self._ig.get_opened_positions()
         self._tracer.debug(f"Open Ig Positions {open_ig_deals} Needed time {time.time() - start}")
         start = time.time()
-        closed_positions_zulu = self._zulu_ui.get_my_closed_positions()
-        self._tracer.debug(f"Closed Zulu Positions {closed_positions_zulu} Needed time {time.time() - start}")
-        start = time.time()
         open_deals_db = self._deal_storage.get_open_deals()
         self._tracer.debug(f"Open Deals drom DB {open_deals_db} Needed time {time.time() - start}")
 
@@ -95,8 +92,6 @@ class ZuluTrader:
             if (len(open_positions_zulu) == 0 or
                     len(open_positions_zulu[open_positions_zulu.position_id == open_deal.id]) == 0):
                 self._tracer.write(f"Position {open_deal} is not listed as open")
-                if len(closed_positions_zulu[closed_positions_zulu.position_id == open_deal.id]) == 0:
-                    self._tracer.error(f"Cant find position {open_deal} in open nor in closed positions")
                 deals_to_close.append(open_deal)
             else:
                 self._tracer.debug(f"Position {open_deal} is still open")

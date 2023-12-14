@@ -4,7 +4,8 @@ from Tracing.Tracer import Tracer
 import inspect
 class MultiTracer(Tracer):
 
-    def __init__(self, tracers:List[Tracer]):
+    def __init__(self, tracers: List[Tracer]):
+        super().__init__()
         self._tracers = tracers
         Tracer.depth = 3
 

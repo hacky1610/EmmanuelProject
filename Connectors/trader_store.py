@@ -9,7 +9,7 @@ from Connectors.market_store import MarketStore
 
 class Trader:
 
-    def __init__(self, id:str, name:str, stop:int, limit:int):
+    def __init__(self, id:str, name:str, stop:int = 0, limit:int = 0):
         self.id = id
         self.name = name
         self.stop = stop
