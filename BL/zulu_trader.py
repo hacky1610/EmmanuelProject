@@ -54,12 +54,8 @@ class ZuluTrader:
             self._tracer.debug(f"Trader {trader_id} had less than 3 trades")
             return False
 
-        if deals.profit.sum() < 0:
-            self._tracer.debug(f"Trader {trader_id} had bad profit {deals.profit.sum()}€")
-            return False
-
-        if deals.profit.min() < -50:
-            self._tracer.debug(f"Trader {trader_id} had really bad lose of  {deals.profit.min()}€")
+        if deals.profit.sum() < 80:
+            self._tracer.debug(f"Trader {trader_id} had bad profit {deals.profit.sum()}€ less than 80")
             return False
 
         self._tracer.debug(f"Trader {trader_id} is a good trader")
@@ -127,6 +123,10 @@ class ZuluTrader:
         markets = self._ig.get_markets(trade_type=TradeType.FX, tradeable=True)
         if len(markets) == 0:
             self._tracer.warning("market closed")
+            return
+
+        if len(self._deal_storage.get_open_deals()) >= 4:
+            self._tracer.warning("already 4 deals open")
             return
 
         for _, position in self._get_positions().iterrows():

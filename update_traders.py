@@ -44,6 +44,6 @@ for trader in ts.get_all_traders():
     df = df.append(trader.get_statistic(), ignore_index=True)
 
 
-df = df.sort_values(by=["wl_ratio"], ascending=False)
+df = df.sort_values(by=["ig_custom"], ascending=False)
 df.to_html("/home/daniel/trader_stats.html")
 
