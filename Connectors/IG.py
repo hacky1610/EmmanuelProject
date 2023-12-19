@@ -26,16 +26,16 @@ class IG:
         self.key = conf_reader.get("ig_demo_key")
         self.accNr = conf_reader.get("ig_demo_acc_nr")
         self.type = acount_type
-        #if self.type == "DEMO":
-        self._fx_id = 264139
-        self._crypto_id = 1002200
-        self._gold_id = 104139
-        self._silver_id = 264211
-        #else:
-            #self._fx_id = 342535
-            #self._crypto_id = None
-            #self._gold_id = None
-            #self._silver_id = None
+        if self.type == "DEMO":
+            self._fx_id = 264139
+            self._crypto_id = 1002200
+            self._gold_id = 104139
+            self._silver_id = 264211
+        else:
+            self._fx_id = 342535
+            self._crypto_id = None
+            self._gold_id = None
+            self._silver_id = None
         self._tracer: Tracer = tracer
         self.connect()
         self._excludedMarkets = ["CHFHUF", "EMFX USDTWD ($1 Contract)", "EMFX USDPHP ($1 Contract)",

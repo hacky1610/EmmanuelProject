@@ -31,7 +31,10 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     ms = MarketStore(db)
     tracer = MultiTracer([LogglyTracer(conf_reader.get("loggly_api_key"), account_type), ConsoleTracer(True)])
     zulu_api = ZuluApi(tracer)
-    ig = IG(tracer=tracer, conf_reader=conf_reader, acount_type=account_type)
+    ###############################################################
+    #CHEATttttttttttttttttttttttttttttttttt
+    ############################################################
+    ig = IG(tracer=tracer, conf_reader=conf_reader, acount_type="DEMO")
     dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
     dropbox_service = DropBoxService(dbx, account_type)
     cache = DropBoxCache(dropbox_service)
