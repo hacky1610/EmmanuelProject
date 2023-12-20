@@ -55,7 +55,7 @@ class ZuluTrader:
             return False
 
         if deals.profit.sum() < 80:
-            self._tracer.debug(f"Trader {trader_id} had bad profit {deals.profit.sum()}€ less than 80")
+            self._tracer.debug(f"Trader {trader_id} had bad profit {deals.profit.sum()} Euro less than 80")
             return False
 
         self._tracer.debug(f"Trader {trader_id} is a good trader")
