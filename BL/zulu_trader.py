@@ -125,7 +125,7 @@ class ZuluTrader:
             self._tracer.warning("market closed")
             return
 
-        if len(self._deal_storage.get_open_deals()) >= 4:
+        if self._account_type == "LIVE" and len(self._deal_storage.get_open_deals()) >= 4:
             self._tracer.warning("already 4 deals open")
             return
 
