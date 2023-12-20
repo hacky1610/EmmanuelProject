@@ -50,7 +50,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     docker_version = get_docker_file_info()
 
     try:
-        tracer.write(f"Version {docker_version} - Check Crash {check_crash} Limit factor {limit_factor}  "
+        tracer.debug(f"Version {docker_version} - Check Crash {check_crash} Limit factor {limit_factor}  "
                      f"Stop factor {stop_factor} Check Trader {check_trader}")
         driver = webdriver.Chrome(options=options, service=service)
         driver.implicitly_wait(15)
@@ -66,7 +66,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
 
         zulu_trader.trade()
         zulu_ui.close()
-        tracer.write("End")
+        tracer.debug("End")
 
     except Exception as e:
         traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück

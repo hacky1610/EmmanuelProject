@@ -31,15 +31,23 @@ class Tracer:
     @staticmethod
     def _get_function():
         stack = inspect.stack()
+        func_name = ""
         if len(stack) >= Tracer.depth +1 :
-            return inspect.stack()[ Tracer.depth].function
-        return ""
+            func_name =  inspect.stack()[ Tracer.depth].function
+        return Tracer._set_string_len(func_name)
 
     def _get_random_name(self):
         if self.name == "":
             r = RandomWord()
             self.name = f"{r.word(include_categories=['adjective'])}_{r.word(include_categories=['noun'])}"
-        return self.name
+        return Tracer._set_string_len(self.name)
+
+    @staticmethod
+    def _set_string_len(text, min_len = 20):
+        if len(text) >= min_len:
+            return text
+        else:
+            return text + " " * ((min_len - len(text)) + 1)
 
 
 

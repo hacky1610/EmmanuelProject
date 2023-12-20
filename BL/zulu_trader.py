@@ -51,11 +51,11 @@ class ZuluTrader:
         deals = self._deal_storage.get_deals_of_trader_as_df(trader_id, consider_account_type=False)
 
         if len(deals) < 3:
-            self._tracer.debug(f"Trader {trader_id} had less than 3 trades")
+            self._tracer.warning(f"Trader {trader_id} had less than 3 trades")
             return False
 
         if deals.profit.sum() < 80:
-            self._tracer.debug(f"Trader {trader_id} had bad profit {deals.profit.sum()} Euro less than 80")
+            self._tracer.warning(f"Trader {trader_id} had bad profit {deals.profit.sum()} Euro less than 80")
             return False
 
         self._tracer.debug(f"Trader {trader_id} is a good trader")
@@ -148,11 +148,11 @@ class ZuluTrader:
             return
 
         if self._deal_storage.has_id(position_id):
-            self._tracer.debug(f"Position {position_id} - {ticker} by {trader_id} is already open")
+            self._tracer.warning(f"Position {position_id} - {ticker} by {trader_id} is already open")
             return
 
         if self._deal_storage.position_is_open(ticker):
-            self._tracer.write(
+            self._tracer.warning(
                 f"There is already an open position of {ticker}")
             return
 
@@ -166,7 +166,7 @@ class ZuluTrader:
         stop_pips = int(market.pip_euro * trader_db.stop)
         limit_pips = int(market.pip_euro * trader_db.limit)
 
-        self._tracer.debug(f"StopLoss {stop_pips} pips {trader_db.stop}€ - Limit {limit_pips}  pips {trader_db.limit}€")
+        self._tracer.debug(f"StopLoss {stop_pips} pips {trader_db.stop} Euro - Limit {limit_pips}  pips {trader_db.limit}€")
 
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
                                               currency=m["currency"], limit=limit_pips,
