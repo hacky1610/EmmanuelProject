@@ -88,18 +88,24 @@ class Tiingo:
             toCompare = datetime(now.year, now.month, now.day, now.hour, tzinfo=lastchached.tzinfo) - timedelta(hours=1)
             if lastchached.to_pydatetime() == toCompare:
                 res = cached
-            else:
+            elif end is None:
                 res = self._send_history_request(ticker, TimeUtils.get_date_string(lastchached), end, resolution, trade_type)
                 res = cached.append(res[res.date > cached[-1:].date.item()])
                 res.reset_index(inplace=True)
                 res.drop(columns=["index"], inplace=True)
+            else:
+                start_str = TimeUtils.get_time_string(datetime.strptime(start,"%Y-%m-%d"))
+                end_str = TimeUtils.get_time_string(datetime.strptime(end, "%Y-%m-%d"))
+                res = cached[start_str < cached.date]
+                res = res[res.date < end_str]
         else:
             res = self._send_history_request(ticker, start, end, resolution, trade_type)
 
         if len(res) == 0:
             return res
 
-        self._cache.save_cache(res, name)
+        if end is None:
+            self._cache.save_cache(res, name)
 
         if add_signals:
             data_processor.addSignals(res)
@@ -133,11 +139,12 @@ class Tiingo:
         name = f"{symbol}_{resolution}.csv"
 
         cache = self._cache.load_cache(name)
-        start = datetime.strptime(cache.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")
-        diff = datetime.now() - start
+        if 0 < len(cache):
+            start = datetime.strptime(cache.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            diff = datetime.now() - start
 
-        if diff.days > 200:
-            return
+            if diff.days > 200:
+                return
 
         end_time = datetime.now()
         start_time = end_time - timedelta(days=window)
@@ -168,7 +175,28 @@ class Tiingo:
         self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="1hour")
         self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="5min")
 
-    def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 240):
+    def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days_start: int = 240, days_end:int = 100):
+
+        start_time = self._get_start_time(days=days_start)
+        end_time = self._get_start_time(days=days_end)
+        df = self.load_data_by_date(ticker=symbol,
+                                    start=start_time,
+                                    end=end_time,
+                                    data_processor=dp,
+                                    trade_type=trade_type,
+                                    resolution="1hour",
+                                    validate=False)
+        df_eval = self.load_data_by_date(ticker=symbol,
+                                         start=start_time,
+                                         end=end_time,
+                                         data_processor=dp,
+                                         trade_type=trade_type,
+                                         resolution="5min",
+                                         add_signals=False,
+                                         validate=False)
+        return df, df_eval
+
+    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 100):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,

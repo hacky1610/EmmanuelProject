@@ -1,9 +1,12 @@
 # region import
 import random
-from BL import DataProcessor, Analytics, ConfigReader
+from BL import DataProcessor, ConfigReader
+from BL.analytics import Analytics
 from BL.eval_result import EvalResultCollection
-from Connectors import Tiingo, TradeType, DropBoxCache, DropBoxService
 from Connectors.IG import IG
+from Connectors.dropbox_cache import DropBoxCache
+from Connectors.dropboxservice import DropBoxService
+from Connectors.tiingo import Tiingo, TradeType
 from UI.base_viewer import BaseViewer
 import dropbox
 
@@ -32,7 +35,6 @@ def init_data(ig: IG, ti: Tiingo):
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     for m in markets:
         symbol = m["symbol"]
-        #symbol = "AUDUSD"
         try:
             ti.init_data(symbol, trade_type, days=250)
         except Exception as e:

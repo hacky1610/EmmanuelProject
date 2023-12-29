@@ -1,4 +1,5 @@
 from BL.eval_result import EvalResult, TradeResult
+from Connectors.market_store import MarketStore
 from Predictors.utils import TimeUtils
 from Tracing.Tracer import Tracer
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -11,8 +12,9 @@ from UI.base_viewer import BaseViewer
 
 class Analytics:
 
-    def __init__(self, tracer: Tracer = ConsoleTracer()):
+    def __init__(self, market_store:MarketStore, tracer: Tracer = ConsoleTracer()):
         self._tracer = tracer
+        self._market_store =  market_store
 
     @staticmethod
     def _create_additional_info(row, *args):
@@ -25,7 +27,8 @@ class Analytics:
     def evaluate(self, predictor,
                  df_train: DataFrame,
                  df_eval: DataFrame,
-                 symbol: str = "",
+                 symbol: str,
+                 scaling: int,
                  viewer: BaseViewer = BaseViewer(),
                  only_one_position: bool = True,
                  filter=None) -> EvalResult:
@@ -48,6 +51,9 @@ class Analytics:
 
         trades = []
 
+        market = self._market_store.get_market(symbol)
+
+
         for i in range(len(df_train) - 1):
             current_index = i + 1
             if filter is not None and TimeUtils.get_time_string(filter) != df_train.date[current_index]:
@@ -58,9 +64,12 @@ class Analytics:
             if only_one_position and df_train.date[i] < last_exit:
                 continue
 
-            action, stop, limit = predictor.predict(df_train[:current_index])
+            action = predictor.predict(df_train[:current_index])
             if action == TradeAction.NONE:
                 continue
+
+            stop = market.pip_euro * predictor.stop / scaling
+            limit = market.pip_euro * predictor.limit / scaling
 
             trade:TradeResult = TradeResult()
             trade.action = action
@@ -129,7 +138,8 @@ class Analytics:
                         break
 
         predictor._tracer = old_tracer
-        ev_res = EvalResult(trades, reward, wins + losses, len(df_train), trading_minutes, wins)
+        reward_eur = reward * scaling / market.pip_euro
+        ev_res = EvalResult(trades, reward_eur, wins + losses, len(df_train), trading_minutes, wins)
         viewer.update_title(f"{ev_res}")
         viewer.show()
 

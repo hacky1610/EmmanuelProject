@@ -66,10 +66,10 @@ class EvalResult:
                    ])
 
     def __repr__(self):
-        return f"Reward {self.get_reward()}" + \
-            f"success {self.get_average_reward()} " \
+        return f"Reward {self.get_reward()} E " + \
+            f"Avg. Reqard {self.get_average_reward()} E " \
             f"trade_freq {self.get_trade_frequency()} " \
-            f"win_loss {self.get_win_loss()} " \
+            f"WL {self.get_win_loss()} " \
             f"trades {self.get_trades()} " \
             f"avg_minutes {self.get_average_minutes()} "
 

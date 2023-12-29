@@ -48,7 +48,7 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
     # for m in random.choices(markets,k=30):
     for m in markets:
         symbol = m["symbol"]
-        #symbol = "AUDJPY"
+        symbol = "EURCZK"
         df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
         if len(df) > 0:
@@ -60,7 +60,8 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
                                            df_eval=df_eval,
                                            viewer=viewer,
                                            symbol=symbol,
-                                           only_one_position=only_one_position)
+                                           only_one_position=only_one_position,
+                                           scaling=scaling)
 
             predictor.set_result(ev_result)
             results.add(ev_result)

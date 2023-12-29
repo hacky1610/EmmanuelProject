@@ -14,14 +14,14 @@ class BasePredictor:
                 indicators (Indicators): Indikatoren
             """
 
-    version = "V1.0"
+    version = "V2.0"
     model_version = ""
     fallback_model_version = ""
 
 
     def __init__(self, indicators, config=None , cache: BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
-        self.limit = 2.0
-        self.stop = 2.0
+        self.limit = 15
+        self.stop = 30
         self.last_scan = datetime(1970, 1, 1).isoformat()
         self._last_scan: EvalResult = EvalResult()
 
@@ -47,14 +47,19 @@ class BasePredictor:
     def _set_att(self, config: dict, name: str):
         self.__setattr__(name, config.get(name, self.__getattribute__(name)))
 
-    def predict(self, df: DataFrame) -> (str, float, float):
+    def predict(self, df: DataFrame) -> str:
         raise NotImplementedError
 
     def get_last_scan_time(self):
         return datetime.fromisoformat(self.last_scan)
 
-    def step(self, df_train: DataFrame, df_eval: DataFrame, analytics) -> EvalResult:
-        ev_result: EvalResult = analytics.evaluate(self, df_train, df_eval, only_one_position=False)
+    def train(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol:str, scaling:int) -> EvalResult:
+        ev_result: EvalResult = analytics.evaluate(self, df_train=df_train, df_eval=df_eval, only_one_position=False, symbol=symbol, scaling=scaling)
+        return ev_result
+
+    def eval(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, scaling:int) -> EvalResult:
+        ev_result: EvalResult = analytics.evaluate(self, df_train=df_train, df_eval=df_eval, only_one_position=False,
+                                                   symbol=symbol, scaling=scaling)
         self._last_scan = ev_result
         return ev_result
 
@@ -77,8 +82,8 @@ class BasePredictor:
 
         json_objs = []
         for stop, limit in itertools.product(
-                [1.8, 2.0, 2.3, 2.7, 3.],
-                [1.8, 2.0, 2.3, 2.7, 3.]):
+                [15, 25, 40, 60],
+                [15, 25, 40, 60]):
             json_objs.append({
                 "stop": stop,
                 "limit": limit,
