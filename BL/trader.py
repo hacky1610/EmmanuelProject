@@ -1,11 +1,13 @@
 from enum import Enum
-from typing import List, NamedTuple
+from typing import List, NamedTuple, re
 from datetime import datetime
 from BL import  DataProcessor
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
 from Connectors import IG
+from Connectors.deal_store import Deal, DealStore
 from Connectors.dropbox_cache import DropBoxCache
+from Connectors.market_store import MarketStore
 from Connectors.tiingo import TradeType
 from Tracing import Tracer
 from pandas import DataFrame, Series
@@ -60,7 +62,9 @@ class Trader:
                  predictor_class_list: List[type],
                  dataprocessor: DataProcessor,
                  analytics: Analytics,
-                 cache: DropBoxCache):
+                 cache: DropBoxCache,
+                 deal_storage:DealStore,
+                 market_storage:MarketStore):
         self._ig = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
@@ -70,6 +74,8 @@ class Trader:
         self._min_win_loss = 0.75
         self._min_trades = 16
         self._cache = cache
+        self._deal_storage = deal_storage
+        self._market_store = market_storage
 
     @staticmethod
     def _get_spread(df: DataFrame, scaling: float) -> float:
@@ -203,11 +209,8 @@ class Trader:
             self._tracer.error(f"{config.symbol} Last evaluation too old")
             return TradeResult.ERROR
 
-        if not self._is_good(
-                win_loss=predictor.get_last_result().get_win_loss(),
-                trades=predictor.get_last_result().get_trades(),
-                symbol=config.symbol
-        ):
+        if predictor.get_last_result().get_average_reward() < 5:
+            self._tracer.error(f"{config.symbol} avg rewatd to small {predictor.get_last_result().get_average_reward() }")
             return TradeResult.ERROR
 
         trade_df = self._tiingo.load_trade_data(config.symbol, self._dataprocessor, config.trade_type)
@@ -222,9 +225,10 @@ class Trader:
             return TradeResult.ERROR
 
         self._tracer.info(f"{config.symbol} valid to predict")
-        signal, stop, limit = predictor.predict(trade_df)
-        scaled_stop = stop * config.scaling
-        scaled_limit = limit * config.scaling
+        signal = predictor.predict(trade_df)
+        market = self._market_store.get_market(symbol)
+        stop = int(market.pip_euro * predictor.stop)
+        limit = int(market.pip_euro * predictor.limit)
 
         if signal == TradeAction.NONE:
             return TradeResult.NOACTION
@@ -249,4 +253,15 @@ class Trader:
                                                      self._ig.sell)
         if res == TradeResult.SUCCESS:
             self._save_result(predictor, deal_response, config.symbol)
+            self._tracer.debug("Save Deal in db")
+            date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
+            date_string = date_string.group().replace(" ", "T")
+
+            self._deal_storage.save(Deal(ticker=symbol,
+                                         dealReference=deal_response["dealReference"],
+                                         dealId=deal_response["dealId"],
+                                         epic=config.epic, direction=signal, account_type="DEMO",
+                                         open_date_ig_str=date_string,
+                                         open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
+                                         stop_factor=stop, limit_factor=limit))
         return res

@@ -61,6 +61,7 @@ class Trainer:
                 best_win_loss = res.get_win_loss()
                 best_avg_reward = res.get_average_reward()
                 best_predictor = predictor
+                best_predictor.save(symbol)
 
             #print(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
 

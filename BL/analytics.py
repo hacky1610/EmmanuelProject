@@ -25,7 +25,7 @@ class Analytics:
         return text
 
     def evaluate(self, predictor,
-                 df_train: DataFrame,
+                 df: DataFrame,
                  df_eval: DataFrame,
                  symbol: str,
                  scaling: int,
@@ -33,20 +33,20 @@ class Analytics:
                  only_one_position: bool = True,
                  filter=None) -> EvalResult:
 
-        assert len(df_train) > 0
+        assert len(df) > 0
         assert len(df_eval) > 0
 
         reward = 0
         losses = 0
         wins = 0
         trading_minutes = 0
-        spread = self._calc_spread(df_train)
+        spread = self._calc_spread(df)
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
-        last_exit = df_train.date[0]
+        last_exit = df.date[0]
 
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
-                    df_train, df_eval)
+                    df, df_eval)
         viewer.print_graph()
 
         trades = []
@@ -54,17 +54,17 @@ class Analytics:
         market = self._market_store.get_market(symbol)
 
 
-        for i in range(len(df_train) - 1):
+        for i in range(len(df) - 1):
             current_index = i + 1
-            if filter is not None and TimeUtils.get_time_string(filter) != df_train.date[current_index]:
+            if filter is not None and TimeUtils.get_time_string(filter) != df.date[current_index]:
                 continue
 
-            open_price = df_train.open[current_index]
+            open_price = df.open[current_index]
 
-            if only_one_position and df_train.date[i] < last_exit:
+            if only_one_position and df.date[i] < last_exit:
                 continue
 
-            action = predictor.predict(df_train[:current_index])
+            action = predictor.predict(df[:current_index])
             if action == TradeAction.NONE:
                 continue
 
@@ -73,26 +73,26 @@ class Analytics:
 
             trade:TradeResult = TradeResult()
             trade.action = action
-            trade.last_df_time = df_train.date[current_index]
+            trade.last_df_time = df.date[current_index]
             trades.append(trade)
 
-            future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df_train.date[i]) + timedelta(hours=1)]
+            future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True)
 
-            additonal_text = self._create_additional_info(df_train.iloc[current_index],
+            additonal_text = self._create_additional_info(df.iloc[current_index],
                                                           "RSI", "CCI", "MACD", "SIGNAL", "PSAR")
-            additonal_text += df_train.iloc[current_index].date
+            additonal_text += df.iloc[current_index].date
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread
 
-                viewer.print_buy(df_train[i + 1:i + 2].index.item(), open_price, additonal_text)
+                viewer.print_buy(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
-                    train_index = df_train[df_train.date <= future.date[j]][-1:].index.item()
+                    train_index = df[df.date <= future.date[j]][-1:].index.item()
 
                     if high > open_price + limit:
                         # Won
@@ -113,13 +113,13 @@ class Analytics:
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
 
-                viewer.print_sell(df_train[i + 1:i + 2].index.item(), open_price, additonal_text)
+                viewer.print_sell(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
-                    train_index = df_train[df_train.date <= future.date[j]][-1:].index.item()
+                    train_index = df[df.date <= future.date[j]][-1:].index.item()
 
                     if low < open_price - limit:
                         # Won
@@ -139,7 +139,7 @@ class Analytics:
 
         predictor._tracer = old_tracer
         reward_eur = reward * scaling / market.pip_euro
-        ev_res = EvalResult(trades, reward_eur, wins + losses, len(df_train), trading_minutes, wins)
+        ev_res = EvalResult(trades, reward_eur, wins + losses, len(df), trading_minutes, wins)
         viewer.update_title(f"{ev_res}")
         viewer.show()
 

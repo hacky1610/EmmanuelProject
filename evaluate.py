@@ -2,13 +2,17 @@
 import random
 from typing import Dict
 
+import pymongo
+
 from BL import DataProcessor,  ConfigReader
 from BL.analytics import Analytics
 from BL.eval_result import  EvalResultCollection
 
 from Connectors.IG import IG
+from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
+from Connectors.market_store import MarketStore
 from Connectors.tiingo import Tiingo, TradeType
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
@@ -30,7 +34,11 @@ dp = DataProcessor()
 ig = IG(conf_reader)
 ti = Tiingo(conf_reader=conf_reader, cache=df_cache)
 indicators = Indicators()
-analytics = Analytics()
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:qkcGMAdpjKF1I7Jw@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+db = client["ZuluDB"]
+ms = MarketStore(db)
+ds = DealStore(db, "DEMO")
+analytics = Analytics(ms)
 trade_type = TradeType.FX
 
 viewer = BaseViewer()
@@ -48,20 +56,20 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
     # for m in random.choices(markets,k=30):
     for m in markets:
         symbol = m["symbol"]
-        symbol = "EURCZK"
-        df, df_eval = ti.load_train_data(symbol, dp, trade_type)
+        #symbol = "EURCZK"
+        df, df_eval = ti.load_test_data(symbol, dp, trade_type)
 
         if len(df) > 0:
             predictor = predictor_class(indicators=indicators, cache=df_cache, viewer=viewer)
             predictor.load(symbol)
             predictor.setup(predictor_settings)
             ev_result = analytics.evaluate(predictor=predictor,
-                                           df_train=df,
+                                           df=df,
                                            df_eval=df_eval,
                                            viewer=viewer,
                                            symbol=symbol,
                                            only_one_position=only_one_position,
-                                           scaling=scaling)
+                                           scaling=m["scaling"])
 
             predictor.set_result(ev_result)
             results.add(ev_result)
@@ -75,20 +83,14 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
 # endregion
 
 #viewer = PlotlyViewer(cache=df_cache)
-#evaluate_predictor(indicators, ig, ti, RectanglePredictor, viewer, only_test=False, only_one_position=only_one_position)
-#evaluate_predictor(indicators, ig, ti, TrianglePredictor, viewer, only_test=False, only_one_position=only_one_position)
-#evaluate_predictor(indicators, ig, ti, IchimokuPredictor, viewer, only_test=False, only_one_position=only_one_position)
 
-for i in [Indicators.RSI_CONVERGENCE, Indicators.RSI_CONVERGENCE5, Indicators.RSI_CONVERGENCE7,Indicators.TII_50, Indicators.TII_20_80,
-          Indicators.MACD_CONVERGENCE, Indicators.MACDSINGALDIFF, Indicators.RSI_BREAK, Indicators.ADX, Indicators.CANDLEPATTERN,
-          Indicators.BB_MIDDLE_CROSS, Indicators.BB_BORDER_CROSS, Indicators.ICHIMOKU]:
-    print(f"Indicator {i}")
 
-    evaluate_predictor(indicators,
-                       ig,
-                       ti,
-                       GenericPredictor,
-                       viewer,
-                       only_test=True,
-                       only_one_position=only_one_position,
-                       predictor_settings={"_additional_indicators":[i]})
+
+
+evaluate_predictor(indicators,
+                   ig,
+                   ti,
+                   GenericPredictor,
+                   viewer,
+                   only_test=True,
+                   only_one_position=only_one_position)

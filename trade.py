@@ -1,9 +1,13 @@
 import dropbox
+import pymongo
+
 from BL.analytics import Analytics
 from BL.indicators import Indicators
 from Connectors.IG import IG
+from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
+from Connectors.market_store import MarketStore
 from Connectors.tiingo import Tiingo, TradeType
 from Predictors.generic_predictor import GenericPredictor
 from Tracing.LogglyTracer import LogglyTracer
@@ -27,7 +31,11 @@ ds = DropBoxService(dbx, type_)
 cache = DropBoxCache(ds)
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
 ig = IG(tracer=tracer, conf_reader=conf_reader, live=live)
-analytics = Analytics(tracer)
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:qkcGMAdpjKF1I7Jw@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+db = client["ZuluDB"]
+ms = MarketStore(db)
+ds = DealStore(db, type_)
+analytics = Analytics(ms, tracer)
 predictor_class_list = [GenericPredictor]
 indicators = Indicators()
 #endregion
@@ -39,7 +47,9 @@ trader = Trader(
     predictor_class_list=predictor_class_list,
     dataprocessor=dataProcessor,
     analytics=analytics,
-    cache=cache
+    cache=cache,
+    deal_storage=ds,
+    market_storage=ms
 )
 
 trader.trade_markets(TradeType.FX, indicators)
