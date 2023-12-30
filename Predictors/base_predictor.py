@@ -54,11 +54,11 @@ class BasePredictor:
         return datetime.fromisoformat(self.last_scan)
 
     def train(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol:str, scaling:int) -> EvalResult:
-        ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=False, symbol=symbol, scaling=scaling)
+        ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=True, symbol=symbol, scaling=scaling)
         return ev_result
 
     def eval(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, scaling:int) -> EvalResult:
-        ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=False,
+        ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=True,
                                                    symbol=symbol, scaling=scaling)
         self._last_scan = ev_result
         return ev_result

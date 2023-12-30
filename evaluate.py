@@ -42,7 +42,7 @@ analytics = Analytics(ms)
 trade_type = TradeType.FX
 
 viewer = BaseViewer()
-only_one_position = False
+only_one_position = True
 
 
 # endregion
@@ -55,28 +55,31 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     # for m in random.choices(markets,k=30):
     for m in markets:
-        symbol = m["symbol"]
-        #symbol = "EURCZK"
-        df, df_eval = ti.load_test_data(symbol, dp, trade_type)
+        try:
+            symbol = m["symbol"]
+            #symbol = "EURCZK"
+            df, df_eval = ti.load_test_data(symbol, dp, trade_type)
 
-        if len(df) > 0:
-            predictor = predictor_class(indicators=indicators, cache=df_cache, viewer=viewer)
-            predictor.load(symbol)
-            predictor.setup(predictor_settings)
-            ev_result = analytics.evaluate(predictor=predictor,
-                                           df=df,
-                                           df_eval=df_eval,
-                                           viewer=viewer,
-                                           symbol=symbol,
-                                           only_one_position=only_one_position,
-                                           scaling=m["scaling"])
+            if len(df) > 0:
+                predictor = predictor_class(indicators=indicators, cache=df_cache, viewer=viewer)
+                predictor.load(symbol)
+                predictor.setup(predictor_settings)
+                ev_result = analytics.evaluate(predictor=predictor,
+                                               df=df,
+                                               df_eval=df_eval,
+                                               viewer=viewer,
+                                               symbol=symbol,
+                                               only_one_position=only_one_position,
+                                               scaling=m["scaling"])
 
-            predictor.set_result(ev_result)
-            results.add(ev_result)
-            if not only_test:
-                predictor.save(symbol)
-            viewer.save(symbol)
-            print(f"{symbol} - {ev_result}")
+                predictor.set_result(ev_result)
+                results.add(ev_result)
+                if not only_test:
+                    predictor.save(symbol)
+                viewer.save(symbol)
+                print(f"{symbol} - {ev_result}")
+        except:
+            print("error")
     print(f"{results}")
 
 

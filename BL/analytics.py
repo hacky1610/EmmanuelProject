@@ -53,6 +53,9 @@ class Analytics:
 
         market = self._market_store.get_market(symbol)
 
+        if market is None:
+            print(f"Error with {symbol}")
+
 
         for i in range(len(df) - 1):
             current_index = i + 1
