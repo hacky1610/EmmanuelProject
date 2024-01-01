@@ -49,6 +49,8 @@ class DataProcessor:
         df["STOCHD_21"] = TA.STOCH(df, period=21)
         df["STOCHD_30"] = TA.STOCH(df, period=21)
         df["ADX"] = TA.ADX(df, period=9)
+        df["ADX_21"] = TA.ADX(df, period=21)
+        df["ADX_48"] = TA.ADX(df, period=48)
         psar = TA.PSAR(df)
         df["PSAR"] = psar["psar"]
 

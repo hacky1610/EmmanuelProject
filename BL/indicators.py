@@ -59,9 +59,13 @@ class Indicators:
     # Others
     ADX = "adx"
     ADX_SLOPE = "adx_slope"
+    ADX_SLOPE_21 = "adx_slope_21"
+    ADX_SLOPE_48 = "adx_slope_48"
     ADX_BREAK = "adx_break"
     ADX_MAX = "adx_max"
     ADX_MAX2 = "adx_max2"
+    ADX_MAX_21 = "adx_max_21"
+    ADX_MAX_48 = "adx_max_48"
     PSAR = "psar"
     PSAR_CHANGE = "psar_change"
     CCI = "cci"
@@ -127,7 +131,11 @@ class Indicators:
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.ADX_SLOPE, self._adx_slope_predict)
+        self._add_indicator(self.ADX_SLOPE_21, self._adx_slope_predict_21)
+        self._add_indicator(self.ADX_SLOPE_48, self._adx_slope_predict_48)
         self._add_indicator(self.ADX_MAX, self._adx_max_predict)
+        self._add_indicator(self.ADX_MAX_21, self._adx_max_predict_21)
+        self._add_indicator(self.ADX_MAX_48, self._adx_max_predict_48)
         self._add_indicator(self.ADX_MAX2, self._adx_max_predict2)
         self._add_indicator(self.ADX_BREAK, self._adx__break_predict)
 
@@ -595,6 +603,30 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _adx_slope_predict_21(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        current_adx = df.ADX_21.iloc[-1]
+        before_adx = df.ADX_21.iloc[-2]
+
+        if current_adx > 20 and before_adx < current_adx:
+            return TradeAction.BOTH
+
+        return TradeAction.NONE
+
+    def _adx_slope_predict_48(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        current_adx = df.ADX_48.iloc[-1]
+        before_adx = df.ADX_48.iloc[-2]
+
+        if current_adx > 20 and before_adx < current_adx:
+            return TradeAction.BOTH
+
+        return TradeAction.NONE
+
     def _adx__break_predict(self, df):
         if len(df) < 2:
             return TradeAction.NONE
@@ -610,6 +642,12 @@ class Indicators:
 
     def _adx_max_predict(self, df):
         return self._oszi_max(df, "ADX", 7, 0.9)
+
+    def _adx_max_predict_21(self, df):
+        return self._oszi_max(df, "ADX_21", 7, 0.9)
+
+    def _adx_max_predict_48(self, df):
+        return self._oszi_max(df, "ADX_48", 7, 0.9)
 
     def _adx_max_predict2(self, df):
         return self._oszi_max(df, "ADX", 14, 0.8)

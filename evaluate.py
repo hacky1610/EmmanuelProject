@@ -79,9 +79,9 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
                 viewer.save(symbol)
                 gb = "BAD"
                 if ev_result.is_good():
-                    gb = "GOOD"
+                    gb = f"GOOD {predictor._indicator_names}"
 
-                print(f"{gb} - {symbol} - {ev_result} {predictor.limit} - {predictor.stop}")
+                print(f"{gb} - {symbol} - {ev_result} {predictor.limit} - {predictor.stop} ")
         except:
             print("error")
     print(f"{results}")
