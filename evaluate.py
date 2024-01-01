@@ -34,7 +34,7 @@ dp = DataProcessor()
 ig = IG(conf_reader)
 ti = Tiingo(conf_reader=conf_reader, cache=df_cache)
 indicators = Indicators()
-client = pymongo.MongoClient(f"mongodb+srv://emmanuel:qkcGMAdpjKF1I7Jw@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
 ds = DealStore(db, "DEMO")
@@ -57,7 +57,7 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
     for m in markets:
         try:
             symbol = m["symbol"]
-            #symbol = "EURCZK"
+            #symbol = "USDCHF"
             df, df_eval = ti.load_test_data(symbol, dp, trade_type)
 
             if len(df) > 0:
@@ -77,7 +77,11 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
                 if not only_test:
                     predictor.save(symbol)
                 viewer.save(symbol)
-                print(f"{symbol} - {ev_result}")
+                gb = "BAD"
+                if ev_result.is_good():
+                    gb = "GOOD"
+
+                print(f"{gb} - {symbol} - {ev_result} {predictor.limit} - {predictor.stop}")
         except:
             print("error")
     print(f"{results}")
@@ -95,5 +99,5 @@ evaluate_predictor(indicators,
                    ti,
                    GenericPredictor,
                    viewer,
-                   only_test=True,
+                   only_test=False,
                    only_one_position=only_one_position)

@@ -1,7 +1,11 @@
+import pymongo
+
 from BL.analytics import Analytics
 from BL.indicators import Indicators
+from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
+from Connectors.market_store import MarketStore
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
 from Tracing.LogglyTracer import LogglyTracer
@@ -26,7 +30,11 @@ tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_)
 tiingo = Tiingo(tracer=tracer, conf_reader=env_reader, cache=cache)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
 predictor_class_list = [GenericPredictor]
-analytics = Analytics(tracer)
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{env_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+db = client["ZuluDB"]
+ms = MarketStore(db)
+ds = DealStore(db, type_)
+analytics = Analytics(ms, tracer)
 indicators = Indicators(tracer=tracer)
 
 trader = Trader(
@@ -36,14 +44,11 @@ trader = Trader(
     predictor_class_list=predictor_class_list,
     dataprocessor=dataProcessor,
     analytics=analytics,
-    cache=cache)
+    cache=cache,
+    deal_storage=ds,
+    market_storage=ms
+)
 
-tracer.debug(f"Start trading")
-trader.trade_markets(TradeType.FX, indicators )
+trader.trade_markets(TradeType.FX, indicators)
 
-# report
-# if datetime.now().hour == 18:
-#     tracer.debug("Create report")
-#     dbx = dropbox.Dropbox(env_reader.get("dropbox"))
-#     ds = DropBoxService(dbx, type_)
-#     ig.create_report(tiingo, ds,predictor=predictor())
+

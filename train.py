@@ -38,7 +38,7 @@ conf_reader = ConfigReader(live_config=live)
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, type_)
 cache = DropBoxCache(ds)
-client = pymongo.MongoClient(f"mongodb+srv://emmanuel:qkcGMAdpjKF1I7Jw@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
 _trainer = Trainer(Analytics(market_store=ms), cache=cache, check_trainable=False)

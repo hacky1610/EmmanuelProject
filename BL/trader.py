@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import List, NamedTuple, re
+from typing import List, NamedTuple
+import re
 from datetime import datetime
 from BL import  DataProcessor
 from BL.analytics import Analytics
@@ -90,6 +91,23 @@ class Trader:
           """
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
 
+    def update_deals(self):
+        hist = self._ig.get_transaction_history(3)
+
+        for _, ig_deal in hist.iterrows():
+            ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/", "")
+            deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
+            if deal is not None:
+                deal.profit = float(ig_deal.profitAndLoss[1:])
+                deal.close_date_ig_datetime = datetime.strptime(ig_deal.dateUtc, '%Y-%m-%dT%H:%M:%S')
+                if deal.profit > 0:
+                    deal.result = 1
+                else:
+                    deal.result = -1
+                self._deal_storage.save(deal)
+            else:
+                self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
+
     def trade_markets(self, trade_type: TradeType, indicators):
         """Führt den Handel für alle Märkte eines bestimmten Typs durch.
 
@@ -100,26 +118,30 @@ class Trader:
         currency_markets = self._ig.get_markets(trade_type)
         for market in currency_markets:
             try:
-                symbol = market["symbol"]
-                self._tracer.set_prefix(symbol)
-                for predictor_class in self._predictor_class_list:
-                    self._tracer.debug(f"Try to trade {symbol} with {predictor_class.__name__}")
-                    predictor = predictor_class(tracer=self._tracer, cache=self._cache, indicators=indicators)
-                    predictor.load(symbol)
-                    self.trade(
-                        predictor=predictor,
-                        config=TradeConfig(
-                            symbol=symbol,
-                            epic=market["epic"],
-                            spread=market["spread"],
-                            scaling=market["scaling"],
-                            trade_type=TradeType.FX,
-                            size=market["size"],
-                            currency=market["currency"])
-                    )
-
+                self.trade_market(indicators, market)
             except Exception as EX:
-                self._tracer.error(f"Error while trading {symbol} {EX}")
+                self._tracer.error(f"Error while trading {market['symbol']} {EX}")
+
+        self.update_deals()
+
+    def trade_market(self, indicators, market):
+        symbol_ = market["symbol"]
+        self._tracer.set_prefix(symbol_)
+        for predictor_class in self._predictor_class_list:
+            self._tracer.debug(f"Try to trade {symbol_} with {predictor_class.__name__}")
+            predictor = predictor_class(tracer=self._tracer, cache=self._cache, indicators=indicators)
+            predictor.load(symbol_)
+            self.trade(
+                predictor=predictor,
+                config=TradeConfig(
+                    symbol=symbol_,
+                    epic=market["epic"],
+                    spread=market["spread"],
+                    scaling=market["scaling"],
+                    trade_type=TradeType.FX,
+                    size=market["size"],
+                    currency=market["currency"])
+            )
 
     def _is_good(self, win_loss: float, trades: float, symbol: str):
         """Überprüft, ob das Handelsergebnis gut genug für den Handel ist.
@@ -209,8 +231,8 @@ class Trader:
             self._tracer.error(f"{config.symbol} Last evaluation too old")
             return TradeResult.ERROR
 
-        if predictor.get_last_result().get_average_reward() < 5:
-            self._tracer.error(f"{config.symbol} avg rewatd to small {predictor.get_last_result().get_average_reward() }")
+        if not predictor.get_last_result().is_good():
+            self._tracer.error(f"{config.symbol} has bad result {predictor.get_last_result()}")
             return TradeResult.ERROR
 
         trade_df = self._tiingo.load_trade_data(config.symbol, self._dataprocessor, config.trade_type)

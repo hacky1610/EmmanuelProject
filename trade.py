@@ -31,7 +31,7 @@ ds = DropBoxService(dbx, type_)
 cache = DropBoxCache(ds)
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
 ig = IG(tracer=tracer, conf_reader=conf_reader, live=live)
-client = pymongo.MongoClient(f"mongodb+srv://emmanuel:qkcGMAdpjKF1I7Jw@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
 ds = DealStore(db, type_)

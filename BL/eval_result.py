@@ -27,7 +27,7 @@ class EvalResult:
     def get_reward(self):
         return self._reward
 
-    def get_trades(self):
+    def get_trades(self) -> int:
         return self._trades
 
     def get_average_reward(self):
@@ -64,6 +64,8 @@ class EvalResult:
                    "_len_df",
                    "_trade_minutes",
                    ])
+    def is_good(self):
+        return self.get_average_reward() > 5 and self.get_reward() > 200 and self.get_win_loss() > 0.7 and self.get_trades() >= 10
 
     def __repr__(self):
         return f"Reward {self.get_reward()} E " + \
