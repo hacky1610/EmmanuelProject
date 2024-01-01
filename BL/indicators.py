@@ -26,6 +26,8 @@ class Indicators:
     RSISLOPE = "rsi_slope"
     RSI_CONVERGENCE = "rsi_convergence"
     RSI_CONVERGENCE5 = "rsi_convergence5"
+    RSI_CONVERGENCE5_30 = "rsi_convergence5_30"
+    RSI_CONVERGENCE5_40 = "rsi_convergence5_40"
     RSI_CONVERGENCE7 = "rsi_convergence7"
     # endregion
     # region Williams
@@ -89,6 +91,8 @@ class Indicators:
         self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict)
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
         self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
+        self._add_indicator(self.RSI_CONVERGENCE5_30, self._rsi_convergence_predict5_30)
+        self._add_indicator(self.RSI_CONVERGENCE5_40, self._rsi_convergence_predict5_40)
         self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
@@ -392,8 +396,8 @@ class Indicators:
 
         return TradeAction.NONE
 
-    def _convergence_predict(self, df, indicator_name, b4after: int = 3):
-        pv = PivotScanner(be4after=b4after)
+    def _convergence_predict(self, df, indicator_name, b4after: int = 3, look_back:int = 20):
+        pv = PivotScanner(be4after=b4after, lookback=look_back)
 
         pv.scan(df)
         highs = df[df.pivot_point == 3.0]
@@ -415,6 +419,12 @@ class Indicators:
 
     def _rsi_convergence_predict5(self, df):
         return self._convergence_predict(df, "RSI", 5)
+
+    def _rsi_convergence_predict5_30(self, df):
+        return self._convergence_predict(df, "RSI", 5, look_back=30)
+
+    def _rsi_convergence_predict5_40(self, df):
+        return self._convergence_predict(df, "RSI", 5, look_back=40)
 
     def _rsi_convergence_predict7(self, df):
         return self._convergence_predict(df, "RSI", 7)
