@@ -114,7 +114,7 @@ class Trader:
                Args:
                    trade_type (TradeType): Der Handelstyp.
                """
-        global symbol
+        self._tracer.debug("Start")
         currency_markets = self._ig.get_markets(trade_type)
         for market in currency_markets:
             try:
@@ -123,6 +123,7 @@ class Trader:
                 self._tracer.error(f"Error while trading {market['symbol']} {EX}")
 
         self.update_deals()
+        self._tracer.debug("End")
 
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
