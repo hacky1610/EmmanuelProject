@@ -1,3 +1,4 @@
+import traceback
 from enum import Enum
 from typing import List, NamedTuple
 import re
@@ -121,6 +122,8 @@ class Trader:
                 self.trade_market(indicators, market)
             except Exception as EX:
                 self._tracer.error(f"Error while trading {market['symbol']} {EX}")
+                traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+                self._tracer.error(f"Error: {EX} File:{traceback_str}")
 
         self.update_deals()
         self._tracer.debug("End")
@@ -249,7 +252,7 @@ class Trader:
 
         self._tracer.info(f"{config.symbol} valid to predict")
         signal = predictor.predict(trade_df)
-        market = self._market_store.get_market(symbol)
+        market = self._market_store.get_market(config.symbol)
         stop = int(market.pip_euro * predictor.stop)
         limit = int(market.pip_euro * predictor.limit)
 
@@ -265,12 +268,12 @@ class Trader:
             return TradeResult.NOACTION
 
         if signal == TradeAction.BUY:
-            res, deal_response = self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
+            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit,config.size,
                                                      config.currency, predictor.get_config(),
                                                      predictor.get_last_result().get_data(),
                                                      self._ig.buy)
         else:
-            res, deal_response = self._execute_trade(config.symbol, config.epic, scaled_stop, scaled_limit, config.size,
+            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
                                                      config.currency, predictor.get_config(),
                                                      predictor.get_last_result().get_data(),
                                                      self._ig.sell)
@@ -280,7 +283,7 @@ class Trader:
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
             date_string = date_string.group().replace(" ", "T")
 
-            self._deal_storage.save(Deal(ticker=symbol,
+            self._deal_storage.save(Deal(ticker=config.symbol,
                                          dealReference=deal_response["dealReference"],
                                          dealId=deal_response["dealId"],
                                          epic=config.epic, direction=signal, account_type="DEMO",
