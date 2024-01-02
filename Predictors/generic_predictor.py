@@ -26,6 +26,7 @@ class GenericPredictor(BasePredictor):
         self._limit_factor: float = 2
         self._indicator_names = [Indicators.RSI, Indicators.EMA]
         self._additional_indicators:List = []
+        self._max_nones: int = 0
         self._viewer = viewer
         if config is None:
             config = {}
@@ -37,6 +38,7 @@ class GenericPredictor(BasePredictor):
         self._set_att(config, "_limit_factor")
         self._set_att(config, "_indicator_names")
         self._set_att(config, "_additional_indicators")
+        self._set_att(config, "_max_nones")
 
         if len(self._additional_indicators) > 0:
             self._indicator_names = self._indicator_names + self._additional_indicators
@@ -49,18 +51,20 @@ class GenericPredictor(BasePredictor):
         parent_c = super().get_config()
         my_conf = Series([
             self._limit_factor,
-            self._indicator_names
+            self._indicator_names,
+            self._max_nones,
 
         ],
             index=[
                 "_limit_factor",
                 "_indicator_names",
+                "_max_nones"
             ])
         return parent_c.append(my_conf)
 
     def predict(self, df: DataFrame) -> str:
         all = self._indicator_names + []
-        action = self._indicators.predict_some(df, all)
+        action = self._indicators.predict_some(df, all, self._max_nones)
         return action
 
     def _clean_list(self, l):
@@ -72,10 +76,12 @@ class GenericPredictor(BasePredictor):
         json_objs = []
         to_skip = [Indicators.RSI30_70]
 
-        json_objs.append({
-            "_indicator_names": best_indicators,
-            "version": version
-        })
+        for max_nones in [0, 1]:
+            json_objs.append({
+                "_indicator_names": best_indicators,
+                "version": version,
+                "_max_nones": max_nones
+            })
 
         json_objs.append({
             "_indicator_names": random.choices(best_indicators,k=5),
@@ -89,12 +95,14 @@ class GenericPredictor(BasePredictor):
                 "version": version
             })
 
-        for i in range(4):
-            names = Indicators().get_random_indicator_names(skip=to_skip)
-            json_objs.append({
-                "_indicator_names": names,
-                "version": version
-            })
+        for max_nones in [0,1,2]:
+            for i in range(4):
+                names = Indicators().get_random_indicator_names(skip=to_skip)
+                json_objs.append({
+                    "_indicator_names": names,
+                    "_max_nones": max_nones,
+                    "version": version
+                })
         return json_objs
 
     @staticmethod

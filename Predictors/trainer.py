@@ -63,7 +63,7 @@ class Trainer:
                 best_predictor = predictor
                 best_predictor.save(symbol)
 
-            #print(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
+                print(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
 
         if best_predictor is not None:
             res_test: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
@@ -71,7 +71,7 @@ class Trainer:
 
             print(f"Test:  WL: {res_test.get_win_loss()} - Reward: {res_test.get_reward()} Avg Reward {res_test.get_average_reward()}")
             print(f"Train: WL: {best_win_loss}           - Reward: {best_reward}       Avg Reward {best_avg_reward}")
-            print(f"Stop: {best_predictor.stop} - Limit: {best_predictor.limit}")
+            print(f"Stop: {best_predictor.stop} - Limit: {best_predictor.limit}   Max nones: {best_predictor._max_nones}")
         else:
             print("No Best predictor")
 
@@ -79,7 +79,7 @@ class Trainer:
 
     def _get_sets(self, predictor_class, version, best_indicators: List):
         sets = predictor_class.get_training_sets(version, best_indicators)
-        sets = random.choices(sets, k=5)
+        #sets = random.choices(sets, k=5)
         random.shuffle(sets)
         sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
         return sets

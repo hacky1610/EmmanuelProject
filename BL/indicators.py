@@ -205,23 +205,29 @@ class Indicators:
     # endregion
 
     # region Predict
-    def _predict(self, predict_values, factor=0.7):
-        self._tracer.debug(f"Predict for multiple values {predict_values} and factor {factor}")
-        if (predict_values.count(TradeAction.BUY) + predict_values.count(TradeAction.BOTH)) >= len(
-                predict_values) * factor:
+    def _predict(self, predict_values, max_none=0):
+
+
+        self._tracer.debug(f"Predict for multiple values {predict_values} and max_none {max_none}")
+        nones =  predict_values.count(TradeAction.NONE)
+        if nones > max_none:
+            return TradeAction.NONE
+
+        if (predict_values.count(TradeAction.BUY) + predict_values.count(TradeAction.BOTH) + predict_values.count(TradeAction.NONE)) >= len(
+                predict_values) :
             return TradeAction.BUY
-        elif (predict_values.count(TradeAction.SELL) + predict_values.count(TradeAction.BOTH)) >= len(
-                predict_values) * factor:
+        elif (predict_values.count(TradeAction.SELL) + predict_values.count(TradeAction.BOTH) + predict_values.count(TradeAction.NONE)) >= len(
+                predict_values) :
             return TradeAction.SELL
 
         return TradeAction.NONE
 
-    def predict_some(self, df, indicator_names):
+    def predict_some(self, df, indicator_names, max_none=0):
         predict_values = []
         for indicator in self._get_indicators_by_names(indicator_names):
             predict_values.append(indicator.function(df))
 
-        return self._predict(predict_values, 1.0)
+        return self._predict(predict_values, max_none)
 
     def predict_all(self, df, factor: float = 0.7, exclude: list = []):
         predict_values = []
@@ -527,6 +533,8 @@ class Indicators:
         else:  # SIGNAL größer als MACD
             if len(period[period.MACD > period.SIGNAL]) > 0:
                 return TradeAction.SELL
+
+        return TradeAction.NONE
 
     def _macd_signal_diff_predict(self, df):
         if len(df) < 2:
