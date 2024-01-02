@@ -261,12 +261,6 @@ class Trader:
 
         self._tracer.info(f"Trade {signal} ")
 
-        opened_positions = self._ig.get_opened_positions_by_epic(config.epic)
-        if len(opened_positions) >= 1:
-            self._tracer.write(
-                f"There are already {len(opened_positions)} opened position of {config.symbol}")
-            return TradeResult.NOACTION
-
         if signal == TradeAction.BUY:
             res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit,config.size,
                                                      config.currency, predictor.get_config(),
