@@ -232,11 +232,11 @@ class Trader:
                 """
 
         if not self._evalutaion_up_to_date(predictor.get_last_scan_time()):
-            self._tracer.error(f"{config.symbol} Last evaluation too old")
+            self._tracer.warning(f"{config.symbol} Last evaluation too old")
             return TradeResult.ERROR
 
         if not predictor.get_last_result().is_good():
-            self._tracer.error(f"{config.symbol} has bad result {predictor.get_last_result()}")
+            self._tracer.warning(f"{config.symbol} has bad result {predictor.get_last_result()}")
             return TradeResult.ERROR
 
         trade_df = self._tiingo.load_trade_data(config.symbol, self._dataprocessor, config.trade_type)
