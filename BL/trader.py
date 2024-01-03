@@ -105,6 +105,7 @@ class Trader:
                     deal.result = 1
                 else:
                     deal.result = -1
+                deal.close()
                 self._deal_storage.save(deal)
             else:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")

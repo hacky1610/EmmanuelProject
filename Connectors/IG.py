@@ -80,6 +80,7 @@ class IG:
         }
 
     def _get_markets_by_id(self, id):
+
         try:
             res = self.ig_service.fetch_sub_nodes_by_node(id)
         except Exception:

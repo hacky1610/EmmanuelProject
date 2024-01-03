@@ -76,12 +76,10 @@ class GenericPredictor(BasePredictor):
         json_objs = []
         to_skip = [Indicators.RSI30_70]
 
-        for max_nones in [0, 1]:
-            json_objs.append({
-                "_indicator_names": best_indicators,
-                "version": version,
-                "_max_nones": max_nones
-            })
+        json_objs.append({
+            "_indicator_names": best_indicators,
+            "version": version,
+        })
 
         json_objs.append({
             "_indicator_names": random.choices(best_indicators,k=5),
@@ -95,14 +93,12 @@ class GenericPredictor(BasePredictor):
                 "version": version
             })
 
-        for max_nones in [0,1,2]:
-            for i in range(4):
-                names = Indicators().get_random_indicator_names(skip=to_skip)
-                json_objs.append({
-                    "_indicator_names": names,
-                    "_max_nones": max_nones,
-                    "version": version
-                })
+        for i in range(4):
+            names = Indicators().get_random_indicator_names(skip=to_skip)
+            json_objs.append({
+                "_indicator_names": names,
+                "version": version
+            })
         return json_objs
 
     @staticmethod
