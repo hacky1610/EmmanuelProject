@@ -34,7 +34,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     ###############################################################
     #CHEATttttttttttttttttttttttttttttttttt
     ############################################################
-    ig = IG(tracer=tracer, conf_reader=conf_reader, acount_type="DEMO")
+    ig = IG(tracer=tracer, conf_reader=conf_reader, acount_type=account_type)
     dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
     dropbox_service = DropBoxService(dbx, account_type)
     cache = DropBoxCache(dropbox_service)
