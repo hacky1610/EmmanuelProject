@@ -251,7 +251,7 @@ class Trader:
             self._tracer.debug(f"Spread {config.spread} is greater than {spread_limit} for {config.symbol}")
             return TradeResult.ERROR
 
-        self._tracer.info(f"{config.symbol} valid to predict")
+        self._tracer.debug(f"{config.symbol} valid to predict")
         signal = predictor.predict(trade_df)
         market = self._market_store.get_market(config.symbol)
         stop = int(market.pip_euro * predictor.stop)

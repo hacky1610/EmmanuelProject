@@ -3,7 +3,7 @@ import time
 from typing import List, Dict
 
 from trading_ig import IGService
-from trading_ig.rest import IGException
+from trading_ig.rest import IGException, ApiExceededException
 from BL import DataProcessor, timedelta, BaseReader
 from BL.analytics import Analytics
 from BL.indicators import Indicators
@@ -81,11 +81,22 @@ class IG:
 
     def _get_markets_by_id(self, id):
 
-        try:
-            res = self.ig_service.fetch_sub_nodes_by_node(id)
-        except Exception:
+        counter = 0
+        res = None
+        while counter < 4:
+            try:
+                res = self.ig_service.fetch_sub_nodes_by_node(id)
+                break
+            except ApiExceededException:
+                self._tracer.debug("ApiExceededException")
+                time.sleep(60)
+                counter += 1
+            except Exception:
+                self._tracer.error("Error while fetching nodes")
+                return DataFrame()
+
+        if res is None:
             self._tracer.error("Error while fetching nodes")
-            time.sleep(10)
             return DataFrame()
 
         if len(res["nodes"]) > 0:
