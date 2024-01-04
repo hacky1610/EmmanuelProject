@@ -240,6 +240,12 @@ class Trader:
             self._tracer.warning(f"{config.symbol} has bad result {predictor.get_last_result()}")
             return TradeResult.ERROR
 
+        open_deals = self._deal_storage.get_open_deals_by_ticker(config.symbol)
+        if len(open_deals) > 0:
+            self._tracer.warning(f"there is already an open position of {config.symbol}")
+            return TradeResult.ERROR
+
+
         trade_df = self._tiingo.load_trade_data(config.symbol, self._dataprocessor, config.trade_type)
 
         if len(trade_df) == 0:

@@ -109,6 +109,13 @@ class DealStore:
             deals.append(Deal.Create(d))
         return deals
 
+    def get_open_deals_by_ticker(self, ticker: str) -> List:
+        deals = []
+        for d in  self._collection.find(
+            {"status": "open", "ticker": ticker, "account_type": self._account_type}):
+            deals.append(Deal.Create(d))
+        return deals
+
 
     def clear(self):
         self._collection.delete_many({ "account_type": self._account_type})
