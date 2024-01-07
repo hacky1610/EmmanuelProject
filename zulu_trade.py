@@ -44,14 +44,13 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     service = Service(ChromeDriverManager().install())
 
     check_crash = conf_reader.get_bool("check_crash")
-    limit_factor =  20 #conf_reader.get_float("limit_ratio",4)
-    stop_factor = 20 #conf_reader.get_float("stop_ratio", 7)
+    trading_size = conf_reader.get_float("trading_size",1.0)
     check_trader = conf_reader.get_bool("check_trader")
     docker_version = get_docker_file_info()
 
     try:
-        tracer.debug(f"Version {docker_version} - Check Crash {check_crash} Limit factor {limit_factor}  "
-                     f"Stop factor {stop_factor} Check Trader {check_trader}")
+        tracer.debug(f"Version {docker_version} - Check Crash {check_crash}  Trading Size {trading_size}"
+                     f"Check Trader {check_trader} ")
         driver = webdriver.Chrome(options=options, service=service)
         driver.implicitly_wait(15)
         zulu_ui = ZuluTradeUI(driver, tracer)
@@ -60,7 +59,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
                                  trader_store=ts, tracer=tracer, zulu_ui=zulu_ui,
                                  tiingo=tiingo, account_type=account_type,
                                  check_for_crash=check_crash, check_trader_quality=check_trader,
-                                 market_storage=ms)
+                                 market_storage=ms, trading_size=trading_size)
 
         zulu_ui.login()
 

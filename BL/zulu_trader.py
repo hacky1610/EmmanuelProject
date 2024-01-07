@@ -20,7 +20,7 @@ class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, market_storage:MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo,
-                 account_type: str, check_for_crash: bool = True,
+                 account_type: str,  trading_size:float = 1.0, check_for_crash: bool = True,
                 check_trader_quality:bool = False):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
@@ -30,6 +30,7 @@ class ZuluTrader:
         self._tracer = tracer
         self._zulu_ui = zulu_ui
         self._min_wl_ration = 0.67
+        self._trading_size = trading_size
         self._tiingo = tiingo
         self._account_type = account_type
         self._check_for_crash = check_for_crash
@@ -170,7 +171,7 @@ class ZuluTrader:
 
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
                                               currency=m["currency"], limit=limit_pips,
-                                              stop=stop_pips)
+                                              stop=stop_pips, size=self._trading_size)
         if result:
             self._tracer.debug("Save Deal in db")
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
