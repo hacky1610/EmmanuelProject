@@ -97,8 +97,9 @@ class ZuluTrader:
     def _close_open_positions(self):
         self._tracer.debug("Close positions")
         for open_deal in self._get_deals_to_close():
+            size = self._ig.get_size_of_deal(open_deal.dealId)
             result, _ = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
-                                       deal_id=open_deal.dealId)
+                                       deal_id=open_deal.dealId, size=size)
             if result:
                 self._tracer.write(f"Position {open_deal} closed")
                 open_deal.close("ByApp")
