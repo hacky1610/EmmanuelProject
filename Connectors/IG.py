@@ -261,7 +261,7 @@ class IG:
     def get_size_of_deal(self, dealId:str):
         positions = self.ig_service.fetch_open_positions()
         pos = positions[positions.dealId == dealId]
-        return pos["site"].item()
+        return pos["size"].item()
 
 
     @staticmethod
