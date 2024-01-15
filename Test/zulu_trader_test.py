@@ -34,6 +34,7 @@ class TestZuluTrader(unittest.TestCase):
                                  account_type="DEMO",
                                  market_storage=self.market_storage)
 
+
     def test_close_open_positions_pos_is_still_open(self):
         # Mock-Daten für get_open_deals und close
         open_deal = Deal(zulu_id="zID", dealReference="df", trader_id="tid", dealId="did",
@@ -132,7 +133,7 @@ class TestZuluTrader(unittest.TestCase):
         self.ig.get_markets.return_value = markets
         trader = Trader(id="id", name="name")
         trader.hist = MagicMock()
-        trader.hist.currency_performance.return_value = (True,"OK")
+        trader.hist.trader_performance.return_value = (True,"OK")
         self.trader_store.get_trader_by_id.return_value = trader
         self.trader._open_new_positions()
 
@@ -149,7 +150,7 @@ class TestZuluTrader(unittest.TestCase):
                    ]
         trader = Trader(id="id", name="name")
         trader.hist = MagicMock()
-        trader.hist.currency_performance.return_value = (True, "OK")
+        trader.hist.trader_performance.return_value = (True, "OK")
         self.trader_store.get_trader_by_id.return_value = trader
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
@@ -169,7 +170,7 @@ class TestZuluTrader(unittest.TestCase):
                    ]
         trader = Trader(id="id", name="name")
         trader.hist = MagicMock()
-        trader.hist.currency_performance.return_value = (True, "OK")
+        trader.hist.trader_performance.return_value = (True, "OK")
         self.trader_store.get_trader_by_id.return_value = trader
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
@@ -195,7 +196,7 @@ class TestZuluTrader(unittest.TestCase):
         self.trader._is_good_ig_trader = MagicMock(return_value=True)
         trader = Trader(id="id", name="name")
         trader.hist = MagicMock()
-        trader.hist.currency_performance.return_value = (True, "OK")
+        trader.hist.trader_performance.return_value = (True, "OK")
         trader.hist.get_stop_distance.return_value = 1
         self.trader_store.get_trader_by_id.return_value = trader
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
