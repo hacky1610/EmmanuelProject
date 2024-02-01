@@ -41,7 +41,12 @@ for trader in trader_list:
 df = DataFrame()
 
 for trader in ts.get_all_traders():
-    df = df.append(trader.get_statistic(), ignore_index=True)
+    try:
+        df = df.append(trader.get_statistic(), ignore_index=True)
+    except Exception as ex:
+        time.sleep(random.randint(120, 200))
+        traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+        print(f"Error with {trader.name} {traceback_str}")
 
 
 df = df.sort_values(by=["ig_custom"], ascending=False)
