@@ -256,7 +256,7 @@ class ZuluTrader:
             ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/", "")
             deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
             if deal is not None:
-                deal.profit = self._calc_pnl_with_fees(float(ig_deal.profitAndLoss[1:]))
+                deal.profit = float(ig_deal.profitAndLoss[1:])
                 deal.close_date_ig_datetime = datetime.strptime(ig_deal.dateUtc, '%Y-%m-%dT%H:%M:%S')
                 if deal.profit > 0:
                     deal.result = 1

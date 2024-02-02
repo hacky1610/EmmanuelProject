@@ -32,4 +32,4 @@ steps:
     repository: 'hacky1610/emmanuel'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v15.12'
+    tags: 'v15.13'
