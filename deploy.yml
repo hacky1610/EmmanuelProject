@@ -4,9 +4,6 @@
 # Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
-trigger:
-- main
-
 pool:
   vmImage: ubuntu-latest
 strategy:
@@ -32,4 +29,4 @@ steps:
     repository: 'hacky1610/emmanuel'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v15.13'
+    tags: 'v15.14'

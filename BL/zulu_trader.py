@@ -18,10 +18,10 @@ from UI.zulutrade import ZuluTradeUI
 
 class ZuluTrader:
 
-    def __init__(self, deal_storage: DealStore, market_storage:MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
+    def __init__(self, deal_storage: DealStore, market_storage: MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo,
-                 account_type: str,  trading_size:float = 1.0, check_for_crash: bool = True,
-                check_trader_quality:bool = False):
+                 account_type: str, trading_size: float = 1.0, check_for_crash: bool = True,
+                 check_trader_quality: bool = False):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -38,13 +38,13 @@ class ZuluTrader:
         self._market_store = market_storage
 
     def trade(self):
-        self._tracer.debug(f"Check crash: {self._check_for_crash }")
+        self._tracer.debug(f"Check crash: {self._check_for_crash}")
         self._close_open_positions()
         if not self._is_crash():
             self._open_new_positions()
         self._update_deals()
 
-    def _is_good_ig_trader(self, trader_id: str):
+    def _is_good_ig_trader(self, trader_id: str) -> bool:
         if not self._check_trader_quality:
             self._tracer.debug("Ignore Trader check")
             return True
@@ -62,7 +62,6 @@ class ZuluTrader:
         self._tracer.debug(f"Trader {trader_id} is a good trader")
 
         return True
-
 
     def _get_deals_to_close(self):
         deals_to_close = []
@@ -101,19 +100,20 @@ class ZuluTrader:
             result, _ = self._ig.close(direction=self._ig.get_inverse(open_deal.direction),
                                        deal_id=open_deal.dealId, size=size)
             if result:
-                self._tracer.write(f"Position {open_deal} closed")
+                self._tracer.write(f"Position {open_deal} closed by app")
                 open_deal.close("ByApp")
                 self._deal_storage.save(open_deal)
             else:
                 deals = self._ig.get_deals()
                 if len(deals[deals.dealId == open_deal.dealId]) == 0:
-                    self._tracer.warning("There was en error during close. But the deal is not open anymore")
+                    self._tracer.info("Deal was already closed by IG")
                     open_deal.close("ByIG")
                     self._deal_storage.save(open_deal)
                 else:
                     self._tracer.error(f"Position {open_deal} could not be closed")
 
-    def _get_market_by_ticker_or_none(self, markets: List, ticker: str) -> Optional[dict]:
+    @staticmethod
+    def _get_market_by_ticker_or_none(markets: List, ticker: str) -> Optional[dict]:
         for m in markets:
             if m["symbol"] == ticker:
                 return m
@@ -168,7 +168,8 @@ class ZuluTrader:
         stop_pips = int(market.pip_euro * trader_db.stop)
         limit_pips = int(market.pip_euro * trader_db.limit)
 
-        self._tracer.debug(f"StopLoss {stop_pips} pips {trader_db.stop} Euro - Limit {limit_pips}  pips {trader_db.limit}€")
+        self._tracer.debug(
+            f"StopLoss {stop_pips} pips {trader_db.stop} Euro - Limit {limit_pips}  pips {trader_db.limit}€")
 
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
                                               currency=m["currency"], limit=limit_pips,
@@ -265,14 +266,4 @@ class ZuluTrader:
                 self._deal_storage.save(deal)
             else:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
-
-
-    def _calc_pnl_with_fees(self, pnl:float) -> float:
-
-        if pnl <= 0:
-            return pnl
-
-        return pnl * 0.73625
-
-
 

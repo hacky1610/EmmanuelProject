@@ -34,7 +34,6 @@ class TestZuluTrader(unittest.TestCase):
                                  account_type="DEMO",
                                  market_storage=self.market_storage)
 
-
     def test_close_open_positions_pos_is_still_open(self):
         # Mock-Daten für get_open_deals und close
         open_deal = Deal(zulu_id="zID", dealReference="df", trader_id="tid", dealId="did",
@@ -55,7 +54,7 @@ class TestZuluTrader(unittest.TestCase):
         open_deal = Deal(zulu_id="zID", dealReference="df", trader_id="tid", dealId="did",
                          direction="SELL", status="open", ticker="AAPL", epic="AAPL.de",
                          open_date_ig_str="", open_date_ig_datetime=None, close_date_ig_datetime=None,
-                         stop_factor=1,limit_factor=1)
+                         stop_factor=1, limit_factor=1)
         df_open_pos = DataFrame()
         df_closed_pos = DataFrame()
         df_closed_pos = df_closed_pos.append(Series(data=["zID"], index=["position_id"]), ignore_index=True)
@@ -67,6 +66,29 @@ class TestZuluTrader(unittest.TestCase):
         open_ig_deals = DataFrame()
         open_ig_deals = open_ig_deals.append(Series(data=["did"], index=["dealId"]), ignore_index=True)
         self.ig.get_opened_positions.return_value = open_ig_deals
+
+        self.trader._close_open_positions()
+
+        self.ig.close.assert_called()
+
+    def test_close_open_positions_pos_cant_be_closed(self):
+        # Mock-Daten für get_open_deals und close
+        open_deal = Deal(zulu_id="zID", dealReference="df", trader_id="tid", dealId="did",
+                         direction="SELL", status="open", ticker="AAPL", epic="AAPL.de",
+                         open_date_ig_str="", open_date_ig_datetime=None, close_date_ig_datetime=None,
+                         stop_factor=1, limit_factor=1)
+        df_open_pos = DataFrame()
+        df_closed_pos = DataFrame()
+        df_closed_pos = df_closed_pos.append(Series(data=["zID"], index=["position_id"]), ignore_index=True)
+
+        self.deal_storage.get_open_deals.return_value = [open_deal]
+        self.zulu_ui.get_my_open_positions.return_value = df_open_pos
+        self.zulu_ui.get_my_closed_positions.return_value = df_closed_pos
+        self.ig.close.return_value = (False, {"profit": 1.0})
+        open_ig_deals = DataFrame()
+        open_ig_deals = open_ig_deals.append(Series(data=["did"], index=["dealId"]), ignore_index=True)
+        self.ig.get_opened_positions.return_value = open_ig_deals
+
 
         self.trader._close_open_positions()
 
@@ -133,7 +155,7 @@ class TestZuluTrader(unittest.TestCase):
         self.ig.get_markets.return_value = markets
         trader = Trader(id="id", name="name")
         trader.hist = MagicMock()
-        trader.hist.trader_performance.return_value = (True,"OK")
+        trader.hist.trader_performance.return_value = (True, "OK")
         self.trader_store.get_trader_by_id.return_value = trader
         self.trader._open_new_positions()
 
@@ -181,7 +203,7 @@ class TestZuluTrader(unittest.TestCase):
 
         self.deal_storage.has_id.return_value = False
         self.deal_storage.position_is_open.return_value = False
-        self.market_storage.get_market.return_value = Market("Foo",1)
+        self.market_storage.get_market.return_value = Market("Foo", 1)
         markets = [{"symbol": "AAPL",
                     "epic": "AAPL_EPIC",
                     "currency": "USD"},
@@ -190,7 +212,7 @@ class TestZuluTrader(unittest.TestCase):
                     "currency": "USD"},
                    ]
         self.ig.open.return_value = (
-        True, {"dealReference": "abgggggg", "dealId": "adhu", "date": "2021-01-01T20:20:00"})
+            True, {"dealReference": "abgggggg", "dealId": "adhu", "date": "2021-01-01T20:20:00"})
         self.trader._get_market_by_ticker_or_none = MagicMock(
             return_value={"epic": "ghadh", "currency": "EUR", "scaling": 10, })
         self.trader._is_good_ig_trader = MagicMock(return_value=True)
@@ -202,6 +224,46 @@ class TestZuluTrader(unittest.TestCase):
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
         self.ig.open.assert_called()
+
+    def test_trade(self):
+        self.trader._is_crash = MagicMock(return_value=False)
+
+        self.trader.trade()
+
+    def test_is_good_trader_no_check(self):
+        self._check_trader_quality = False
+        res = self.trader._is_good_ig_trader("124")
+        assert res
+
+    def test_is_good_trader_deals_less_than_3(self):
+        self.trader._check_trader_quality = True
+        deals = DataFrame()
+        self.deal_storage.get_deals_of_trader_as_df = MagicMock(return_value=deals)
+        res = self.trader._is_good_ig_trader("124")
+        assert not res
+
+    def test_is_good_trader_bad_results(self):
+        self.trader._check_trader_quality = True
+        deals = DataFrame()
+        deals = deals.append(Series(data=[10],index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10],index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10],index=["profit"]), ignore_index=True)
+
+        self.deal_storage.get_deals_of_trader_as_df = MagicMock(return_value=deals)
+        res = self.trader._is_good_ig_trader("124")
+        assert not res
+
+    def test_is_good_trader_good_results(self):
+        self.trader._check_trader_quality = True
+        deals = DataFrame()
+        deals = deals.append(Series(data=[80], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+
+        self.deal_storage.get_deals_of_trader_as_df = MagicMock(return_value=deals)
+        res = self.trader._is_good_ig_trader("124")
+        assert  res
+
 
 
 if __name__ == '__main__':

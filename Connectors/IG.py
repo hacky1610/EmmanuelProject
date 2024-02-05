@@ -208,7 +208,11 @@ class IG:
                 trailing_stop_increment=None
             )
             if response["dealStatus"] != "ACCEPTED":
-                self._tracer.error(f"could not open trade: {response['reason']} for {epic}")
+                reason = response['reason']
+                if reason == "INSUFFICIENT_FUNDS":
+                    self._tracer.warning(f"could not open trade: {response['reason']} for {epic}")
+                else:
+                    self._tracer.error(f"could not open trade (Unknown Reason): {response['reason']} for {epic}")
             else:
                 self._tracer.write(f"Opened successfull {epic}. Deal details {response}")
                 result = True
@@ -286,10 +290,12 @@ class IG:
         positions = self.get_opened_positions()
         return positions[positions.epic == epic]
 
-    def get_transaction_history(self, days: int):
+    def get_transaction_history(self, days: int, trans_type="ALL_DEAL") -> DataFrame:
         df = DataFrame()
         for i in range(days):
-            df = df.append(self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", page_size=50,
+            if i % 7 == 0:
+                time.sleep(32)
+            df = df.append(self.ig_service.fetch_transaction_history(trans_type=trans_type, page_size=50,
                                                   max_span_seconds=60 * 60 * 24 * days, page_number=i))
         return df.reset_index()
 
@@ -541,6 +547,27 @@ class IG:
 
         return
 
-    def create_report(self, ti, cache, dp):
+    def create_report(self):
 
-        self.report_last_day(ti=ti, cache=cache, dp=dp, days=8)
+        hist = self.get_transaction_history(100,"ALL")
+        hist['profit_float'] = hist['profitAndLoss'].str.replace('E', '').astype(float)
+
+        trades = hist[hist.transactionType == "TRADE"]
+        fees = hist[hist.transactionType == "WITH"]
+
+        result = trades.profit_float.sum()
+        wins = trades[trades.profit_float > 0].profit_float.sum()
+        losses = trades[trades.profit_float < 0].profit_float.sum()
+
+        ig_payed_taxes = fees.profit_float.sum()
+
+        tax_to_pay = 0
+        if result > 2000:
+            tax_to_pay = result * 0.25
+
+
+        print(f"Result {result}€")
+        print(f"Payed taxes {ig_payed_taxes * -1}€")
+        print(f"To much payed taxes {tax_to_pay + ig_payed_taxes}€")
+
+
