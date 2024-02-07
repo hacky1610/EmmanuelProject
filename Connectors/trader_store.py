@@ -1,28 +1,26 @@
 from typing import List
-
 from pandas import DataFrame, Series
 from pymongo.database import Database
-
 from BL.trader_history import TraderHistory
 from Connectors.market_store import MarketStore
 
 
 class Trader:
 
-    def __init__(self, id:str, name:str, stop:int = 0, limit:int = 0):
-        self.id = id
+    def __init__(self, trader_id: str, name: str, stop: int = 0, limit: int = 0):
+        self.id = trader_id
         self.name = name
         self.stop = stop
         self.limit = limit
         self.hist: TraderHistory = TraderHistory({})
 
     @staticmethod
-    def Create(data:dict):
-        trader =  Trader(id=data["id"],
-                      name=data["name"],
-                      stop=data.get("stop",0),
-                    limit=data.get("limit",0)
-                      )
+    def create(data: dict):
+        trader = Trader(trader_id=data["id"],
+                        name=data["name"],
+                        stop=data.get("stop", 0),
+                        limit=data.get("limit", 0)
+                        )
         trader.hist = TraderHistory(data.get("history", {}))
         return trader
 
@@ -30,13 +28,11 @@ class Trader:
         return {"id": self.id,
                 "name": self.name,
                 "history": self.hist._hist,
-                "stop":self.stop,
+                "stop": self.stop,
                 "limit": self.limit}
 
-
-    def calc_ig(self,market_store:MarketStore):
+    def calc_ig(self, market_store: MarketStore):
         self.stop, self.limit = self.hist.calc_ig_profit(market_store)
-
 
     def get_statistic(self):
         s = self.hist.get_series()
@@ -54,34 +50,28 @@ class TraderStore:
 
     def add(self, trader: Trader):
         if not self._collection.find_one({"id": trader.id}):
-            # Wenn die ID nicht existiert, fügen wir einen neuen Datensatz hinzu
             self._collection.insert_one(trader.to_dict())
             print(f"Added new trader {trader.name}")
 
     def save(self, trader: Trader):
         existing_trader = self._collection.find_one({"id": trader.id})
         if existing_trader:
-            # Wenn die ID bereits existiert, aktualisieren wir den Datensatz
             self._collection.update_one({"id": trader.id}, {"$set": trader.to_dict()})
         else:
-            # Wenn die ID nicht existiert, fügen wir einen neuen Datensatz hinzu
             self._collection.insert_one(trader.to_dict())
 
     def get_trader_by_id(self, trader_id) -> Trader:
-        return Trader.Create(self._collection.find_one({"id": trader_id}))
-
+        return Trader.create(self._collection.find_one({"id": trader_id}))
 
     def get_trader_by_name(self, name) -> Trader:
-        return Trader.Create(self._collection.find_one({"name": name}))
+        return Trader.create(self._collection.find_one({"name": name}))
 
     def get_all_traders(self) -> List[Trader]:
-        traders:List[Trader] = []
+        traders: List[Trader] = []
         for f in self._collection.find():
-            traders.append(Trader.Create(f))
+            traders.append(Trader.create(f))
 
         return traders
-
-
 
     def get_all_trades_df(self) -> DataFrame:
         df = DataFrame()

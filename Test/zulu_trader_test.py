@@ -30,7 +30,6 @@ class TestZuluTrader(unittest.TestCase):
                                  trader_store=self.trader_store,
                                  tracer=self.tracer,
                                  zulu_ui=self.zulu_ui,
-                                 tiingo=self.tiingo,
                                  account_type="DEMO",
                                  market_storage=self.market_storage)
 
@@ -117,7 +116,7 @@ class TestZuluTrader(unittest.TestCase):
         df = df.append(Series(data=["1", "foo"],
                               index=["id", "trader_name"]), ignore_index=True)
         self.trader._get_newest_positions = MagicMock(return_value=df)
-        self.trader_store.get_trader_by_name.return_value = Trader(id="id", name="name")
+        self.trader_store.get_trader_by_name.return_value = Trader(trader_id="id", name="name")
         self.zulu_ui.get_my_open_positions.return_value = df
 
         positions = self.trader._get_positions()
@@ -129,7 +128,7 @@ class TestZuluTrader(unittest.TestCase):
         df = df.append(Series(data=["1", "foo"],
                               index=["id", "trader_name"]), ignore_index=True)
         self.trader._get_newest_positions = MagicMock(return_value=df)
-        trader = Trader(id="id", name="name")
+        trader = Trader(trader_id="id", name="name")
         trader.hist = MagicMock()
         trader.hist.get_wl_ratio.return_value = 1.0
         self.trader_store.get_trader_by_name.return_value = trader
@@ -153,7 +152,7 @@ class TestZuluTrader(unittest.TestCase):
                     "currency": "USD"},
                    ]
         self.ig.get_markets.return_value = markets
-        trader = Trader(id="id", name="name")
+        trader = Trader(trader_id="id", name="name")
         trader.hist = MagicMock()
         trader.hist.trader_performance.return_value = (True, "OK")
         self.trader_store.get_trader_by_id.return_value = trader
@@ -170,7 +169,7 @@ class TestZuluTrader(unittest.TestCase):
                     "epic": "GOO_EPIC",
                     "currency": "USD"},
                    ]
-        trader = Trader(id="id", name="name")
+        trader = Trader(trader_id="id", name="name")
         trader.hist = MagicMock()
         trader.hist.trader_performance.return_value = (True, "OK")
         self.trader_store.get_trader_by_id.return_value = trader
@@ -190,7 +189,7 @@ class TestZuluTrader(unittest.TestCase):
                     "epic": "GOO_EPIC",
                     "currency": "USD"},
                    ]
-        trader = Trader(id="id", name="name")
+        trader = Trader(trader_id="id", name="name")
         trader.hist = MagicMock()
         trader.hist.trader_performance.return_value = (True, "OK")
         self.trader_store.get_trader_by_id.return_value = trader
@@ -216,7 +215,7 @@ class TestZuluTrader(unittest.TestCase):
         self.trader._get_market_by_ticker_or_none = MagicMock(
             return_value={"epic": "ghadh", "currency": "EUR", "scaling": 10, })
         self.trader._is_good_ig_trader = MagicMock(return_value=True)
-        trader = Trader(id="id", name="name")
+        trader = Trader(trader_id="id", name="name")
         trader.hist = MagicMock()
         trader.hist.trader_performance.return_value = (True, "OK")
         trader.hist.get_stop_distance.return_value = 1
@@ -263,6 +262,21 @@ class TestZuluTrader(unittest.TestCase):
         self.deal_storage.get_deals_of_trader_as_df = MagicMock(return_value=deals)
         res = self.trader._is_good_ig_trader("124")
         assert  res
+
+    def test_get_deals_to_close_error_occured(self):
+        # Mock-Daten für get_open_deals und close
+
+        df = DataFrame()
+        df = df.append(Series(data=["zID"], index=["position_id"]), ignore_index=True)
+
+        self.deal_storage.get_open_deals.return_value = []
+        self.ig.get_opened_positions.return_value = df
+
+        self.trader._get_deals_to_close()
+        self.tracer.error.assert_called()
+
+
+
 
 
 

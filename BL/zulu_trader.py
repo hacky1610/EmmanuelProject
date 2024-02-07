@@ -4,12 +4,10 @@ import re
 import time
 
 from pandas import DataFrame
-
-from BL import DataProcessor
 from Connectors.IG import IG
 from Connectors.deal_store import Deal, DealStore
 from Connectors.market_store import MarketStore
-from Connectors.tiingo import TradeType, Tiingo
+from Connectors.tiingo import TradeType
 from Connectors.trader_store import TraderStore
 from Connectors.zulu_api import ZuluApi
 from Tracing.Tracer import Tracer
@@ -19,7 +17,7 @@ from UI.zulutrade import ZuluTradeUI
 class ZuluTrader:
 
     def __init__(self, deal_storage: DealStore, market_storage: MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
-                 ig: IG, trader_store: TraderStore, tracer: Tracer, tiingo: Tiingo,
+                 ig: IG, trader_store: TraderStore, tracer: Tracer,
                  account_type: str, trading_size: float = 1.0, check_for_crash: bool = True,
                  check_trader_quality: bool = False):
         self._deal_storage = deal_storage
@@ -31,7 +29,6 @@ class ZuluTrader:
         self._zulu_ui = zulu_ui
         self._min_wl_ration = 0.67
         self._trading_size = trading_size
-        self._tiingo = tiingo
         self._account_type = account_type
         self._check_for_crash = check_for_crash
         self._check_trader_quality = check_trader_quality

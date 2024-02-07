@@ -13,7 +13,7 @@ db = client["ZuluDB"]
 
 
 ts = TraderStore(db)
-ts.add(Trader(id="424537",
+ts.add(Trader(trader_id="424537",
               name="SwissWay"))
 
 

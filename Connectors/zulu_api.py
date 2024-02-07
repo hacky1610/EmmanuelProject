@@ -15,15 +15,15 @@ class ZuluApi:
     def __init__(self, tracer: Tracer):
         self._tracer = tracer
 
-    def get_history(self, trader_id: str, pages:int = 1):
+    def get_history(self, trader_id: str, pages: int = 1):
 
         result = []
-        for i in range(0,pages):
+        for i in range(0, pages):
             resp = requests.get(
                 f"{self._base_uri}/{trader_id}/trades/history?timeframe=10000&page={i}&size=100&sort=dateClosed,desc")
             if resp.status_code == 200:
                 result = result + resp.json()["content"]
-            time.sleep(random.randint(120,200))
+            time.sleep(random.randint(120, 200))
         return TraderHistory(result)
 
     def get_opened_positions(self, trader_id: str, name: str) -> List[Position]:
@@ -42,9 +42,3 @@ class ZuluApi:
             raise Exception("Could not read open positions")
 
         return positions
-
-
-
-
-
-

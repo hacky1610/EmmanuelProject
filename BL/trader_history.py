@@ -134,28 +134,6 @@ class TraderHistory:
 
         return trade, ""
 
-    def get_stop_distance(self, ticker:str) -> float:
-
-        for _,i in self._hist_df.iterrows():
-            print(i["currency_clean"])
-            pips = self._calc_pip_euro(i)
-            print(pips)
-        return
-
-    def _calc_pip_euro(self, data):
-        netPnl = abs(data["grossPnl"])
-        pips = abs(data.priceOpen - data.priceClosed)
-        pipMultiplier = data["pipMultiplier"]
-
-        # Berechnungen
-        PnL_per_pip = netPnl / pips
-        PnL_per_euro = PnL_per_pip * pipMultiplier
-
-        desired_loss_euro = 20.0
-        stop_loss_euro = desired_loss_euro
-        return stop_loss_euro / PnL_per_euro * data["amount"]
-
-
     def median_open_hours(self) -> float:
         return ((self._hist_df.dateClosed - self._hist_df.dateOpen) / 1000 / 60 / 60).median()
 
@@ -171,6 +149,9 @@ class TraderHistory:
         return self.median_open_hours_loss() / self.median_open_hours_wins()
 
     def trader_performance(self, ticker:str) -> (bool, str):
+        if not self.has_history():
+            return False, "no history"
+
         currency_df = self._hist_df[self._hist_df.currency_clean == ticker]
         if currency_df.netPnl.sum() <= 0:
             return False, "Currency profit is less than null"
@@ -197,17 +178,6 @@ class TraderHistory:
 
         if len(self._hist_df) == 0:
             return 0,0
-        def no_stop_no_limit(data):
-            m  = market_store.get_market(data.currency_clean)
-            if m is None:
-                return 0
-            pip_wl = abs(data.priceClosed - data.priceOpen) * data.pipMultiplier
-            eur_wl = pip_wl / m.pip_euro
-
-            if data.netPnl > 0:
-                return eur_wl
-            else:
-                return eur_wl * -1
 
         def stop_and_limit(data, stop, limit):
             m = market_store.get_market(data.currency_clean)
@@ -220,21 +190,6 @@ class TraderHistory:
                 return stop * -1
             if data.maxProfit / m.pip_euro > limit:
                 return limit
-
-            if data.netPnl > 0:
-                return eur_wl
-            else:
-                return eur_wl * -1
-
-        def only_stop(data, stop):
-            m = market_store.get_market(data.currency_clean)
-            if m is None:
-                return 0
-            pip_wl = abs(data.priceClosed - data.priceOpen) * data.pipMultiplier
-            eur_wl = pip_wl / m.pip_euro
-
-            if data.worstDrawdown / m.pip_euro < stop * -1:
-                return stop * -1
 
             if data.netPnl > 0:
                 return eur_wl
