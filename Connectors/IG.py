@@ -1,5 +1,7 @@
 import time
 from typing import List, Optional
+
+import pandas
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from BL import BaseReader
@@ -258,9 +260,9 @@ class IG:
 
     def get_transaction_history(self, days: int, trans_type="ALL_DEAL") -> DataFrame:
         df = DataFrame()
-        for i in range(days):
-            if i % 7 == 0:
-                time.sleep(32)
+        for i in range(1,days):
+            if i % 5 == 0:
+                time.sleep(42)
             df = df.append(self.ig_service.fetch_transaction_history(trans_type=trans_type, page_size=50,
                                                                      max_span_seconds=60 * 60 * 24 * days,
                                                                      page_number=i))
@@ -272,25 +274,40 @@ class IG:
             return 0
         return balance
 
-
-    def create_report(self):
-
-        hist = self.get_transaction_history(100, "ALL")
-        hist['profit_float'] = hist['profitAndLoss'].str.replace('E', '').astype(float)
-
+    def _calc_report(self, hist:DataFrame):
         trades = hist[hist.transactionType == "TRADE"]
-        fees = hist[hist.transactionType == "WITH"]
+
+        payed_kapital_fees_list = hist[hist.instrumentName == "Kapitalertragssteuer"]
+        return_kapital_ertrag_list = hist[hist.instrumentName == "Verrechnung Kapitalertragsteuer"]
+
+        payed_kapital_fees = payed_kapital_fees_list.profit_float.sum()
+        return_kapital_fees = return_kapital_ertrag_list.profit_float.sum()
+        payed_kapital_fees_netto = int(payed_kapital_fees * -1 - return_kapital_fees)
+
 
         result = trades.profit_float.sum()
         wins = trades[trades.profit_float > 0].profit_float.sum()
         losses = trades[trades.profit_float < 0].profit_float.sum()
 
-        ig_payed_taxes = fees.profit_float.sum()
-
-        tax_to_pay = 0
-        if result > 2000:
-            tax_to_pay = result * 0.25
-
         print(f"Result {result}€")
-        print(f"Payed taxes {ig_payed_taxes * -1}€")
-        print(f"To much payed taxes {tax_to_pay + ig_payed_taxes}€")
+        print(f"Wins {wins}€")
+        print(f"Looses {losses}€")
+        print(f"Payed kapital fees {payed_kapital_fees_netto}€")
+
+
+    def create_report(self, load_live=False):
+
+        if load_live:
+            hist = self.get_transaction_history(100, "ALL")
+            hist['profit_float'] = hist['profitAndLoss'].str.replace('E', '').astype(float)
+        else:
+            hist = pandas.read_csv("./trades.csv")
+
+        y23 = hist[hist.date <= "2023-12-31"]
+        y24 = hist[hist.date > "2023-12-31"]
+
+        print("2023")
+        self._calc_report(y23)
+
+        print("2024")
+        self._calc_report(y24)

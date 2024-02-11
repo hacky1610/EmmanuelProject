@@ -275,7 +275,12 @@ class TestZuluTrader(unittest.TestCase):
         self.trader._get_deals_to_close()
         self.tracer.error.assert_called()
 
-
+    def test_is_crash_crash_occurs(self):
+        self.trader._check_for_crash = True
+        hist = DataFrame({"profit_float": [-30, -20, -10]})
+        self.trader._get_ig_hist = MagicMock(return_value=hist)
+        result = self.trader._is_crash()
+        assert result
 
 
 

@@ -153,7 +153,7 @@ class TraderHistory:
             return False, "no history"
 
         currency_df = self._hist_df[self._hist_df.currency_clean == ticker]
-        if currency_df.netPnl.sum() <= 0:
+        if currency_df.ig_custom.sum() <= 0:
             return False, "Currency profit is less than null"
 
         if len(currency_df) < 5:
