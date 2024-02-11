@@ -124,10 +124,6 @@ class ZuluTrader:
             self._tracer.warning("market closed")
             return
 
-        if self._account_type == "LIVE" and len(self._deal_storage.get_open_deals()) >= 4:
-            self._tracer.warning("already 4 deals open")
-            return
-
         for _, position in self._get_positions().iterrows():
             self._tracer.write(f"try to trade {position}")
             self._trade_position(markets=markets, position_id=position.position_id,
@@ -150,7 +146,7 @@ class ZuluTrader:
             self._tracer.warning(f"Position {position_id} - {ticker} by {trader_id} is already open")
             return
 
-        if self._deal_storage.position_is_open(ticker):
+        if self._deal_storage.position_is_open(ticker) and self._account_type == "LIVE":
             self._tracer.warning(
                 f"There is already an open position of {ticker}")
             return

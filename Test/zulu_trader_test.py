@@ -193,6 +193,7 @@ class TestZuluTrader(unittest.TestCase):
         trader.hist = MagicMock()
         trader.hist.trader_performance.return_value = (True, "OK")
         self.trader_store.get_trader_by_id.return_value = trader
+        self.trader._account_type = "LIVE"
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
         self.ig.open.assert_not_called()
