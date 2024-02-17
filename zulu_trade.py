@@ -61,5 +61,5 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
 
     except Exception as e:
         traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
-        tracer.error(f"Exception: {e} File:{traceback_str}")
+        tracer.error(f"MainException: {e} File:{traceback_str}")
 

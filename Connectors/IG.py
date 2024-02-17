@@ -68,11 +68,11 @@ class IG:
                 }
         }
 
-    def _get_markets_by_id(self, id):
+    def _get_markets_by_id(self, market_id):
         try:
-            res = self.ig_service.fetch_sub_nodes_by_node(id)
-        except Exception:
-            self._tracer.error("Error while fetching nodes")
+            res = self.ig_service.fetch_sub_nodes_by_node(market_id)
+        except Exception as ex:
+            self._tracer.error(f"Error while fetching nodes: {ex}")
             time.sleep(10)
             return DataFrame()
 
