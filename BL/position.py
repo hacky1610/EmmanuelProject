@@ -1,4 +1,5 @@
-from datetime import  datetime
+from datetime import datetime
+
 
 class Position:
 
@@ -9,7 +10,7 @@ class Position:
         return datetime.utcfromtimestamp(int(self._data["dateTime"] / 1000))
 
     def get_ticker(self):
-        return self._data["currencyName"].replace("/","")
+        return self._data["currencyName"].replace("/", "")
 
     def get_direction(self):
         return self._data["tradeType"]

@@ -148,7 +148,7 @@ class TraderHistory:
     def open_hours_ratio(self) -> float:
         return self.median_open_hours_loss() / self.median_open_hours_wins()
 
-    def trader_performance(self, ticker:str) -> (bool, str):
+    def trader_performance(self, ticker: str) -> (bool, str):
         if not self.has_history():
             return False, "no history"
 
@@ -159,14 +159,14 @@ class TraderHistory:
         if len(currency_df) < 5:
             return False, f"Less than 5 trades with {ticker}"
 
-        median_open_hours = ((currency_df.dateClosed - currency_df.dateOpen) / 1000 /60 / 60 ).median()
+        median_open_hours = ((currency_df.dateClosed - currency_df.dateOpen) / 1000 / 60 / 60).median()
         if median_open_hours > 48:
             return False, "Open hours is creater than 48 hours"
 
         if self._hist_df["ig_custom"].sum() < 400:
             return False, f"IG Profit is bad {self._hist_df.ig_custom.sum()}"
 
-        #if self.get_avg_trades_per_week() > 50:
+        # if self.get_avg_trades_per_week() > 50:
         #    return False, f"To much trades {self.get_avg_trades_per_week()} per week"
 
         return True, "OK"
@@ -174,22 +174,22 @@ class TraderHistory:
     def __str__(self):
         return f"{self.get_wl_ratio()} - {self.get_ig_profit()}"
 
-    def calc_ig_profit(self, market_store:MarketStore) -> (int, int):
+    def calc_ig_profit(self, market_store: MarketStore) -> (int, int):
 
         if len(self._hist_df) == 0:
-            return 0,0
+            return 0, 0
 
-        def stop_and_limit(data, stop, limit):
+        def stop_and_limit(data, stop_val, limit_val):
             m = market_store.get_market(data.currency_clean)
             if m is None:
                 return 0
             pip_wl = abs(data.priceClosed - data.priceOpen) * data.pipMultiplier
             eur_wl = pip_wl / m.pip_euro
 
-            if data.worstDrawdown / m.pip_euro < stop * -1:
-                return stop * -1
-            if data.maxProfit / m.pip_euro > limit:
-                return limit
+            if data.worstDrawdown / m.pip_euro < stop_val * -1:
+                return stop_val * -1
+            if data.maxProfit / m.pip_euro > limit_val:
+                return limit_val
 
             if data.netPnl > 0:
                 return eur_wl
@@ -203,14 +203,14 @@ class TraderHistory:
             if data.netPnl > 0:
                 return numpy.nan
             else:
-                return  data.worstDrawdown / m.pip_euro
+                return data.worstDrawdown / m.pip_euro
 
         self._hist_df["drawdown"] = self._hist_df.apply(get_drawdown, axis=1)
 
         best_col = None
         best_stop = 0
         best_limit = 0
-        for stop in range(20,71,10):
+        for stop in range(20, 71, 10):
             for limit in range(20, 71, 10):
                 col = self._hist_df.apply(stop_and_limit, axis=1, args=(stop, limit))
                 if best_col is None:
@@ -226,7 +226,6 @@ class TraderHistory:
         self._hist_df["ig_custom_name"] = f"Stop {best_stop} Limit {best_limit}"
         self._hist = self._hist_df.to_dict("records")
         return best_stop, best_limit
-
 
     def get_ig_profit_no_stop_no_limit(self):
         return self._hist_df["ig_profit_no_stop_no_limit"].sum()
