@@ -231,6 +231,11 @@ class TraderHistory:
     def get_ig_profit_no_stop_no_limit(self):
         return self._hist_df["ig_profit_no_stop_no_limit"].sum()
 
+    def get_diff_to_today(self) -> int:
+        last_d = self._unix_timestamp_to_datetime(self._hist_df[-1:].dateClosed)
+        diff = datetime.now() - last_d
+        return diff.days
+
     def get_series(self):
         rating, text = self._rate_trader()
         return Series(data=[self.get_wl_ratio(),
