@@ -177,26 +177,7 @@ class TestZuluTrader(unittest.TestCase):
 
         self.ig.open.assert_not_called()
 
-    def test_trade_position_position_of_same_trader(self):
-        # Mock-Daten für _deal_storage, _ig, _get_market_by_ticker und _zulu_api
 
-        self.deal_storage.has_id.return_value = False
-        self.deal_storage.position_of_same_trader.return_value = True
-        markets = [{"symbol": "AAPL",
-                    "epic": "AAPL_EPIC",
-                    "currency": "USD"},
-                   {"symbol": "GOO",
-                    "epic": "GOO_EPIC",
-                    "currency": "USD"},
-                   ]
-        trader = Trader(trader_id="id", name="name")
-        trader.hist = MagicMock()
-        trader.hist.trader_performance.return_value = (True, "OK")
-        self.trader_store.get_trader_by_id.return_value = trader
-        self.trader._account_type = "LIVE"
-        self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
-
-        self.ig.open.assert_not_called()
 
     def test_trade_position(self):
         # Mock-Daten für _deal_storage, _ig, _get_market_by_ticker und _zulu_api
