@@ -67,11 +67,9 @@ class TraderStore:
         return Trader.create(self._collection.find_one({"name": name}))
 
     def get_all_traders(self) -> List[Trader]:
-        traders: List[Trader] = []
-        for f in self._collection.find():
-            traders.append(Trader.create(f))
-
-        return traders
+        ids = list(self._collection.find({}, {'id': 1}))
+        for trader_id in ids:
+            yield self.get_trader_by_id(trader_id["id"])
 
     def get_all_trades_df(self) -> DataFrame:
         df = DataFrame()
