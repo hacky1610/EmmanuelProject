@@ -146,10 +146,10 @@ class ZuluTrader:
             self._tracer.warning(f"Position {position_id} - {ticker} by {trader_id} is already open")
             return
 
-        if self._deal_storage.position_is_open(ticker) and self._account_type == "LIVE":
-            self._tracer.warning(
-                f"There is already an open position of {ticker}")
-            return
+        #if self._deal_storage.position_is_open(ticker) and self._account_type == "LIVE":
+        #    self._tracer.warning(
+        #        f"There is already an open position of {ticker}")
+        #    return
 
         m = self._get_market_by_ticker_or_none(markets, ticker)
         if m is None:
