@@ -115,7 +115,7 @@ class IG:
         ticker = pos.instrumentName.replace("/","")
         ticker = ticker.replace(" Mini", "")
 
-        self._tracer.debug(f"{ticker} {direction} {dealId}")
+        self._tracer.debug(f"{ticker} {direction} {dealId} {openPrice} {bidPrice} {offerPrice} {stopLevel} {limitLevel}")
 
         market = ms.get_market(ticker)
         if direction == "BUY":
@@ -129,7 +129,9 @@ class IG:
                     if new_stopLevel > stopLevel:
                         self._tracer.debug(f"Change Stop level")
                         res = self.adapt_stop_level(dealId=dealId, limitLevel=limitLevel, stopLevel=new_stopLevel)
-                        print(res)
+                        self._tracer.debug(res)
+                        if res["dealStatus"] != "ACCEPTED":
+                            self._tracer.error("Stop level cant be adapted")
 
         else:
             self._tracer.debug("Sell")
@@ -142,7 +144,10 @@ class IG:
                     if new_stopLevel < stopLevel:
                         self._tracer.debug(f"Change Stop level")
                         res = self.adapt_stop_level(dealId=dealId, limitLevel=limitLevel, stopLevel=new_stopLevel)
-                        print(res)
+                        self._tracer.debug(res)
+                        if res["dealStatus"] != "ACCEPTED":
+                            self._tracer.error("Stop level cant be adapted")
+
 
 
     def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> List:
