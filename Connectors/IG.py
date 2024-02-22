@@ -5,9 +5,10 @@ import pandas
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from BL import BaseReader
+from Connectors.market_store import MarketStore
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
-from pandas import DataFrame
+from pandas import DataFrame, Series
 import re
 from Connectors.tiingo import TradeType
 
@@ -93,6 +94,56 @@ class IG:
                 m["currency"] = self._symbol_reference[epic]["currency"]
 
         return markets
+
+    def adapt_stop_level(self, dealId:str, limitLevel:float, stopLevel:float):
+
+        return self.ig_service.update_open_position(deal_id=dealId, limit_level=limitLevel,
+                                           stop_level=stopLevel)
+
+    def intelligent_stop_level(self, pos:Series, ms:MarketStore ):
+
+        #wenn Buy -> bid
+        #wenn Sell -> offer
+        openPrice = pos.level
+        bidPrice = pos.bid
+        offerPrice = pos.offer
+        stopLevel = pos.stopLevel
+        limitLevel = pos.limitLevel
+        direction = pos.direction
+        dealId = pos.dealId
+        scalingFactor = pos.scalingFactor
+        ticker = pos.instrumentName.replace("/","")
+        ticker = ticker.replace(" Mini", "")
+
+        self._tracer.debug(f"{ticker} {direction} {dealId}")
+
+        market = ms.get_market(ticker)
+        if direction == "BUY":
+            self._tracer.debug("Buy")
+            if bidPrice > openPrice:
+                self._tracer.debug("bid greater than open")
+                diff = (bidPrice - openPrice) * scalingFactor / market.pip_euro
+                if diff > 10:
+                    self._tracer.debug(f"Diff {diff}")
+                    new_stopLevel = bidPrice - (market.pip_euro * 5 / scalingFactor)
+                    if new_stopLevel > stopLevel:
+                        self._tracer.debug(f"Change Stop level")
+                        res = self.adapt_stop_level(dealId=dealId, limitLevel=limitLevel, stopLevel=new_stopLevel)
+                        print(res)
+
+        else:
+            self._tracer.debug("Sell")
+            if offerPrice < openPrice:
+                self._tracer.debug("offer smaller than open")
+                diff = (openPrice - offerPrice) * scalingFactor / market.pip_euro
+                if diff > 10:
+                    self._tracer.debug(f"Diff {diff}")
+                    new_stopLevel = offerPrice + (market.pip_euro * 5 / scalingFactor)
+                    if new_stopLevel < stopLevel:
+                        self._tracer.debug(f"Change Stop level")
+                        res = self.adapt_stop_level(dealId=dealId, limitLevel=limitLevel, stopLevel=new_stopLevel)
+                        print(res)
+
 
     def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> List:
         if trade_type == TradeType.FX:
