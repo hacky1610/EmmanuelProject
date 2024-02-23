@@ -95,15 +95,15 @@ class IG:
 
         return markets
 
-    def adapt_stop_level(self, dealId:str, limitLevel:float, stopLevel:float):
+    def adapt_stop_level(self, dealId: str, limitLevel: float, stopLevel: float):
 
         return self.ig_service.update_open_position(deal_id=dealId, limit_level=limitLevel,
-                                           stop_level=stopLevel)
+                                                    stop_level=stopLevel)
 
-    def intelligent_stop_level(self, pos:Series, ms:MarketStore ):
+    def intelligent_stop_level(self, pos: Series, ms: MarketStore):
 
-        #wenn Buy -> bid
-        #wenn Sell -> offer
+        # wenn Buy -> bid
+        # wenn Sell -> offer
         openPrice = pos.level
         bidPrice = pos.bid
         offerPrice = pos.offer
@@ -112,17 +112,18 @@ class IG:
         direction = pos.direction
         dealId = pos.dealId
         scalingFactor = pos.scalingFactor
-        ticker = pos.instrumentName.replace("/","")
+        ticker = pos.instrumentName.replace("/", "")
         ticker = ticker.replace(" Mini", "")
 
-        self._tracer.debug(f"{ticker} {direction} {dealId} {openPrice} {bidPrice} {offerPrice} {stopLevel} {limitLevel}")
+        self._tracer.debug(
+            f"{ticker} {direction} {dealId} {openPrice} {bidPrice} {offerPrice} {stopLevel} {limitLevel}")
 
         market = ms.get_market(ticker)
         if direction == "BUY":
             self._tracer.debug("Buy")
             if bidPrice > openPrice:
                 self._tracer.debug("bid greater than open")
-                diff = (bidPrice - openPrice) * scalingFactor / market.pip_euro
+                diff = market.get_euro_value(pips=bidPrice-openPrice, scaling_factor=scalingFactor)
                 if diff > 10:
                     self._tracer.debug(f"Diff {diff}")
                     new_stopLevel = bidPrice - (market.pip_euro * 5 / scalingFactor)
@@ -137,7 +138,7 @@ class IG:
             self._tracer.debug("Sell")
             if offerPrice < openPrice:
                 self._tracer.debug("offer smaller than open")
-                diff = (openPrice - offerPrice) * scalingFactor / market.pip_euro
+                diff = market.get_euro_value(pips=openPrice - offerPrice, scaling_factor=scalingFactor)
                 if diff > 10:
                     self._tracer.debug(f"Diff {diff}")
                     new_stopLevel = offerPrice + (market.pip_euro * 5 / scalingFactor)
@@ -147,8 +148,6 @@ class IG:
                         self._tracer.debug(res)
                         if res["dealStatus"] != "ACCEPTED":
                             self._tracer.error("Stop level cant be adapted")
-
-
 
     def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> List:
         if trade_type == TradeType.FX:
@@ -309,14 +308,12 @@ class IG:
         else:
             return "SELL"
 
-
     def get_opened_positions(self) -> DataFrame:
         return self.ig_service.fetch_open_positions()
 
-
     def get_transaction_history(self, days: int, trans_type="ALL_DEAL") -> DataFrame:
         df = DataFrame()
-        for i in range(1,days):
+        for i in range(1, days):
             if i % 5 == 0:
                 time.sleep(42)
             df = df.append(self.ig_service.fetch_transaction_history(trans_type=trans_type, page_size=50,
@@ -330,7 +327,7 @@ class IG:
             return 0
         return balance
 
-    def _calc_report(self, hist:DataFrame):
+    def _calc_report(self, hist: DataFrame):
         trades = hist[hist.transactionType == "TRADE"]
 
         payed_kapital_fees_list = hist[hist.instrumentName == "Kapitalertragssteuer"]
@@ -340,7 +337,6 @@ class IG:
         return_kapital_fees = return_kapital_ertrag_list.profit_float.sum()
         payed_kapital_fees_netto = int(payed_kapital_fees * -1 - return_kapital_fees)
 
-
         result = trades.profit_float.sum()
         wins = trades[trades.profit_float > 0].profit_float.sum()
         losses = trades[trades.profit_float < 0].profit_float.sum()
@@ -349,7 +345,6 @@ class IG:
         print(f"Wins {wins}€")
         print(f"Looses {losses}€")
         print(f"Payed kapital fees {payed_kapital_fees_netto}€")
-
 
     def create_report(self, load_live=False):
 

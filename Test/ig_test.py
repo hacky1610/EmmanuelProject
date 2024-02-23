@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from Connectors.IG import IG
 from pandas import DataFrame,Series
 
+from Connectors.market_store import Market
 from Connectors.tiingo import TradeType
 
 
@@ -20,6 +21,76 @@ class IgTest(unittest.TestCase):
         })
         res = self.ig.get_markets(TradeType.FX)
         assert len(res) == 0
+
+    def test_intelligent_stop_adapt_stop_level_called_Buy(self):
+        ms = MagicMock()
+        market = Market(ticker="EURUSD", pip_euro=1)
+        ms.get_market = MagicMock(return_value=market)
+        pos = Series(data=[10, 21, 21, 5 , 30, "BUY", "abcd", 1, "EURUSD"], index=["level","bid","offer","stopLevel","limitLevel","direction","dealId","scalingFactor","instrumentName"])
+        self.ig.adapt_stop_level = MagicMock()
+        self.ig.intelligent_stop_level(pos, ms )
+
+        self.ig.adapt_stop_level.assert_called()
+
+    def test_intelligent_stop_price_to_low_Buy(self):
+        ms = MagicMock()
+        market = Market(ticker="EURUSD", pip_euro=1)
+        ms.get_market = MagicMock(return_value=market)
+        pos = Series(data=[10, 11, 11, 5, 30, "BUY", "abcd", 1, "EURUSD"],
+                     index=["level", "bid", "offer", "stopLevel", "limitLevel", "direction", "dealId", "scalingFactor",
+                            "instrumentName"])
+        self.ig.adapt_stop_level = MagicMock()
+        self.ig.intelligent_stop_level(pos, ms)
+
+        self.ig.adapt_stop_level.assert_not_called()
+
+    def test_intelligent_stop_stop_level_already_changed_Buy(self):
+        ms = MagicMock()
+        market = Market(ticker="EURUSD", pip_euro=1)
+        ms.get_market = MagicMock(return_value=market)
+        pos = Series(data=[10, 21, 21, 18, 30, "BUY", "abcd", 1, "EURUSD"],
+                     index=["level", "bid", "offer", "stopLevel", "limitLevel", "direction", "dealId", "scalingFactor",
+                            "instrumentName"])
+        self.ig.adapt_stop_level = MagicMock()
+        self.ig.intelligent_stop_level(pos, ms)
+
+        self.ig.adapt_stop_level.assert_not_called()
+
+    def test_intelligent_stop_adapt_stop_level_called_Sell(self):
+        ms = MagicMock()
+        market = Market(ticker="EURUSD", pip_euro=1)
+        ms.get_market = MagicMock(return_value=market)
+        pos = Series(data=[30, 5, 5, 60 , 0, "SELL", "abcd", 1, "EURUSD"], index=["level","bid","offer","stopLevel","limitLevel","direction","dealId","scalingFactor","instrumentName"])
+        self.ig.adapt_stop_level = MagicMock()
+        self.ig.intelligent_stop_level(pos, ms )
+
+        self.ig.adapt_stop_level.assert_called()
+
+    def test_intelligent_stop_price_to_low_Sell(self):
+        ms = MagicMock()
+        market = Market(ticker="EURUSD", pip_euro=1)
+        ms.get_market = MagicMock(return_value=market)
+        pos = Series(data=[30, 29, 29, 60 , 0, "SELL", "abcd", 1, "EURUSD"],
+                     index=["level", "bid", "offer", "stopLevel", "limitLevel", "direction", "dealId", "scalingFactor",
+                            "instrumentName"])
+        self.ig.adapt_stop_level = MagicMock()
+        self.ig.intelligent_stop_level(pos, ms)
+
+        self.ig.adapt_stop_level.assert_not_called()
+
+    def test_intelligent_stop_stop_level_already_changed_Sell(self):
+        ms = MagicMock()
+        market = Market(ticker="EURUSD", pip_euro=1)
+        ms.get_market = MagicMock(return_value=market)
+        pos = Series(data=[30, 5, 5, 6 , 0, "SELL", "abcd", 1, "EURUSD"],
+                     index=["level", "bid", "offer", "stopLevel", "limitLevel", "direction", "dealId", "scalingFactor",
+                            "instrumentName"])
+        self.ig.adapt_stop_level = MagicMock()
+        self.ig.intelligent_stop_level(pos, ms)
+
+        self.ig.adapt_stop_level.assert_not_called()
+
+
 
     def test_get_markets_some_returns(self):
         df = DataFrame()

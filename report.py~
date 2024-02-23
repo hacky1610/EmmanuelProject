@@ -4,9 +4,4 @@ from BL.utils import ConfigReader
 conf_reader = ConfigReader(account_type="LIVE")
 ig = IG(conf_reader=conf_reader,acount_type="LIVE")
 
-ig.create_report(True
-
-
-
-6,2
-15 13,5
+ig.create_report(True)
