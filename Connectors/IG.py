@@ -22,6 +22,8 @@ class IG:
         self.key = conf_reader.get("ig_demo_key")
         self.accNr = conf_reader.get("ig_demo_acc_nr")
         self.type = acount_type
+        self.intelligent_stop_border = conf_reader.get_float("is_border", 10)
+        self.intelligent_stop_distance = conf_reader.get_float("is_distance", 5)
         if self.type == "DEMO":
             self._fx_id = 264139
             self._crypto_id = 1002200
@@ -95,59 +97,49 @@ class IG:
 
         return markets
 
-    def adapt_stop_level(self, dealId: str, limitLevel: float, stopLevel: float):
+    def adapt_stop_level(self, deal_id: str, limit_level: float, stop_level: float):
 
-        return self.ig_service.update_open_position(deal_id=dealId, limit_level=limitLevel,
-                                                    stop_level=stopLevel)
+        return self.ig_service.update_open_position(deal_id=deal_id, limit_level=limit_level,
+                                                    stop_level=stop_level)
 
-    def intelligent_stop_level(self, pos: Series, ms: MarketStore):
-
-        # wenn Buy -> bid
-        # wenn Sell -> offer
-        openPrice = pos.level
-        bidPrice = pos.bid
-        offerPrice = pos.offer
-        stopLevel = pos.stopLevel
-        limitLevel = pos.limitLevel
-        direction = pos.direction
-        dealId = pos.dealId
-        scalingFactor = pos.scalingFactor
-        ticker = pos.instrumentName.replace("/", "")
-        ticker = ticker.replace(" Mini", "")
+    def intelligent_stop_level(self, position: Series, market_store: MarketStore):
+        open_price = position.level
+        bid_price = position.bid
+        offer_price = position.offer
+        stop_level = position.stopLevel
+        limit_level = position.limitLevel
+        direction = position.direction
+        deal_id = position.dealId
+        scaling_factor = position.scalingFactor
+        ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
 
         self._tracer.debug(
-            f"{ticker} {direction} {dealId} {openPrice} {bidPrice} {offerPrice} {stopLevel} {limitLevel}")
+            f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
 
-        market = ms.get_market(ticker)
+        market = market_store.get_market(ticker)
         if direction == "BUY":
-            self._tracer.debug("Buy")
-            if bidPrice > openPrice:
-                self._tracer.debug("bid greater than open")
-                diff = market.get_euro_value(pips=bidPrice-openPrice, scaling_factor=scalingFactor)
-                if diff > 10:
-                    self._tracer.debug(f"Diff {diff}")
-                    new_stopLevel = bidPrice - (market.pip_euro * 5 / scalingFactor)
-                    if new_stopLevel > stopLevel:
-                        self._tracer.debug(f"Change Stop level")
-                        res = self.adapt_stop_level(dealId=dealId, limitLevel=limitLevel, stopLevel=new_stopLevel)
-                        self._tracer.debug(res)
-                        if res["dealStatus"] != "ACCEPTED":
-                            self._tracer.error("Stop level cant be adapted")
-
+            if bid_price > open_price:
+                diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
+                if diff > self.intelligent_stop_border:
+                    new_stop_level = bid_price - market.get_pip_value(euro=self.intelligent_stop_distance,
+                                                                      scaling_factor=scaling_factor)
+                    if new_stop_level > stop_level:
+                        self._adjust_stop_level(deal_id, limit_level, new_stop_level)
         else:
-            self._tracer.debug("Sell")
-            if offerPrice < openPrice:
-                self._tracer.debug("offer smaller than open")
-                diff = market.get_euro_value(pips=openPrice - offerPrice, scaling_factor=scalingFactor)
-                if diff > 10:
-                    self._tracer.debug(f"Diff {diff}")
-                    new_stopLevel = offerPrice + (market.pip_euro * 5 / scalingFactor)
-                    if new_stopLevel < stopLevel:
-                        self._tracer.debug(f"Change Stop level")
-                        res = self.adapt_stop_level(dealId=dealId, limitLevel=limitLevel, stopLevel=new_stopLevel)
-                        self._tracer.debug(res)
-                        if res["dealStatus"] != "ACCEPTED":
-                            self._tracer.error("Stop level cant be adapted")
+            if offer_price < open_price:
+                diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
+                if diff > self.intelligent_stop_border:
+                    new_stop_level = offer_price + market.get_pip_value(euro=self.intelligent_stop_distance,
+                                                                        scaling_factor=scaling_factor)
+                    if new_stop_level < stop_level:
+                        self._adjust_stop_level(deal_id, limit_level, new_stop_level)
+
+    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float):
+        self._tracer.debug(f"Change Stop level to {new_stop_level}")
+        res = self.adapt_stop_level(deal_id=deal_id, limit_level=limit_level, stop_level=new_stop_level)
+        self._tracer.debug(res)
+        if res["dealStatus"] != "ACCEPTED":
+            self._tracer.error("Stop level cant be adapted")
 
     def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> List:
         if trade_type == TradeType.FX:
@@ -173,8 +165,8 @@ class IG:
 
         return 0
 
-    def _get_markets(self, id: int, tradebale: bool = True) -> List:
-        market_df = self._get_markets_by_id(id)
+    def _get_markets(self, market_id: int, tradebale: bool = True) -> List:
+        market_df = self._get_markets_by_id(market_id)
         markets = []
 
         if len(market_df) == 0:
@@ -289,8 +281,7 @@ class IG:
     def get_deals(self) -> DataFrame:
 
         try:
-            response = self.ig_service.fetch_open_positions(
-            )
+            response = self.ig_service.fetch_open_positions()
             return response
         except IGException as ex:
             self._tracer.error(f"Error during getting Deal Ids {ex}")

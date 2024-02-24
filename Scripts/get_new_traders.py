@@ -1,16 +1,8 @@
-
-
-
-import time
-
 from selenium import webdriver
-
 from BL import ConfigReader
 from Connectors.trader_store import TraderStore, Trader
-from Connectors.zulu_api import ZuluApi
 from Tracing.ConsoleTracer import ConsoleTracer
 import pymongo
-
 from UI.zulutrade import ZuluTradeUI
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager

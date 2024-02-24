@@ -38,16 +38,11 @@ db = client["ZuluDB"]
 zuluApi = ZuluApi(ConsoleTracer())
 ts = TraderStore(db)
 ms = MarketStore(db)
-trader_list = ts.get_all_traders()
-random.shuffle(trader_list)
-
-for trader in trader_list:
-    update_trader(trader)
-
 df = DataFrame()
 
 for trader in ts.get_all_traders():
     try:
+        update_trader(trader)
         df = df.append(trader.get_statistic(), ignore_index=True)
     except Exception as ex:
         time.sleep(random.randint(120, 200))

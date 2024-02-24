@@ -11,8 +11,10 @@ class IgTest(unittest.TestCase):
 
     def setUp(self):
         conf_reader = MagicMock()
-        conf_reader.read_config = MagicMock(return_value={"ti_api_key":"key"})
+        conf_reader.read_config = MagicMock(return_value={"ti_api_key":"key", "is_border":10, "is_distance":5})
         self.ig = IG(conf_reader)
+        self.ig.intelligent_stop_border = 10
+        self.ig.intelligent_stop_distance = 5
 
     def test_get_markets_no_return(self):
         self.ig.ig_service.fetch_sub_nodes_by_node = MagicMock(return_value={
@@ -39,6 +41,7 @@ class IgTest(unittest.TestCase):
         pos = Series(data=[10, 11, 11, 5, 30, "BUY", "abcd", 1, "EURUSD"],
                      index=["level", "bid", "offer", "stopLevel", "limitLevel", "direction", "dealId", "scalingFactor",
                             "instrumentName"])
+
         self.ig.adapt_stop_level = MagicMock()
         self.ig.intelligent_stop_level(pos, ms)
 
@@ -51,6 +54,7 @@ class IgTest(unittest.TestCase):
         pos = Series(data=[10, 21, 21, 18, 30, "BUY", "abcd", 1, "EURUSD"],
                      index=["level", "bid", "offer", "stopLevel", "limitLevel", "direction", "dealId", "scalingFactor",
                             "instrumentName"])
+
         self.ig.adapt_stop_level = MagicMock()
         self.ig.intelligent_stop_level(pos, ms)
 
