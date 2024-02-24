@@ -22,8 +22,8 @@ class IG:
         self.key = conf_reader.get("ig_demo_key")
         self.accNr = conf_reader.get("ig_demo_acc_nr")
         self.type = acount_type
-        self.intelligent_stop_border = conf_reader.get_float("is_border", 10)
-        self.intelligent_stop_distance = conf_reader.get_float("is_distance", 5)
+        self.intelligent_stop_border = conf_reader.get_float("is_border", 13)
+        self.intelligent_stop_distance = conf_reader.get_float("is_distance", 6)
         if self.type == "DEMO":
             self._fx_id = 264139
             self._crypto_id = 1002200
@@ -70,6 +70,7 @@ class IG:
                     "currency": "USD"
                 }
         }
+        self._tracer.debug(f"IG Config: Stop Border {self.intelligent_stop_border} Distance {self.intelligent_stop_distance}")
 
     def _get_markets_by_id(self, market_id):
         try:
