@@ -4,7 +4,7 @@ import re
 import time
 
 from pandas import DataFrame
-from Connectors.IG import IG
+from Connectors.IG import IG, TradeResult
 from Connectors.deal_store import Deal, DealStore
 from Connectors.market_store import MarketStore
 from Connectors.tiingo import TradeType
@@ -173,7 +173,7 @@ class ZuluTrader:
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
                                               currency=m["currency"], limit=limit_pips,
                                               stop=stop_pips, size=self._trading_size)
-        if result:
+        if result == TradeResult.SUCCESSFUL:
             self._tracer.debug("Save Deal in db")
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
             date_string = date_string.group().replace(" ", "T")
@@ -186,6 +186,8 @@ class ZuluTrader:
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
                                          stop_factor=trader_db.stop, limit_factor=trader_db.limit))
             self._tracer.debug("Deal was saved")
+        elif result == TradeResult.NOT_SUCCESSFUL:
+            self._tracer.warning(f"Could not open position {position_id} - {ticker} by {trader_id}")
         else:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")
 

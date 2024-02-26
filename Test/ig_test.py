@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock
-from Connectors.IG import IG
+from Connectors.IG import IG, TradeResult
 from pandas import DataFrame,Series
 
 from Connectors.market_store import Market
@@ -115,5 +115,27 @@ class IgTest(unittest.TestCase):
 
         cur = self.ig._get_currency("CS.D.USDEUR.CFD.IP")
         assert cur == "EUR"
+
+
+    def test_open_pos_is_successfull(self):
+        self.ig.ig_service = MagicMock()
+        self.ig.ig_service.create_open_position = MagicMock(return_value={"dealStatus":"ACCEPTED"})
+        result, _ = self.ig.open("AUDUSD","BUY")
+
+        assert result == TradeResult.SUCCESSFUL
+
+    def test_open_pos_is_not_successfull(self):
+        self.ig.ig_service = MagicMock()
+        self.ig.ig_service.create_open_position = MagicMock(return_value={"dealStatus": "Failed", "reason":"INSUFFICIENT_FUNDS"})
+        result, _ = self.ig.open("AUDUSD", "BUY")
+
+        assert result == TradeResult.NOT_SUCCESSFUL
+
+    def test_open_pos_is_not_successfull_execption(self):
+        self.ig.ig_service = MagicMock()
+        self.ig.ig_service.create_open_position = MagicMock(return_value={"dealStatus": "Failed", "reason":"Exceptipon"})
+        result, _ = self.ig.open("AUDUSD", "BUY")
+
+        assert result == TradeResult.EXCEPTION
 
 

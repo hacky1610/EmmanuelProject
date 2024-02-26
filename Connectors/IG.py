@@ -1,4 +1,5 @@
 import time
+from enum import Enum
 from typing import List, Optional
 
 import pandas
@@ -11,6 +12,13 @@ from Tracing.Tracer import Tracer
 from pandas import DataFrame, Series
 import re
 from Connectors.tiingo import TradeType
+
+
+# Define an enumeration class
+class TradeResult(Enum):
+    SUCCESSFUL = 1
+    NOT_SUCCESSFUL = 2
+    EXCEPTION = 3
 
 
 class IG:
@@ -212,10 +220,9 @@ class IG:
              stop: Optional[int] = 25,
              limit: Optional[int] = 25,
              size: float = 1.0,
-             currency: str = "USD") -> (bool, dict):
+             currency: str = "USD") -> (TradeResult, dict):
 
         deal_response: dict = {}
-        result = False
         try:
             response = self.ig_service.create_open_position(
                 currency_code=currency,
@@ -239,14 +246,17 @@ class IG:
                 reason = response['reason']
                 if reason == "INSUFFICIENT_FUNDS":
                     self._tracer.warning(f"could not open trade: {response['reason']} for {epic}")
+                    result = TradeResult.NOT_SUCCESSFUL
                 else:
+                    result = TradeResult.EXCEPTION
                     self._tracer.error(f"could not open trade (Unknown Reason): {response['reason']} for {epic}")
             else:
                 self._tracer.write(f"Opened successfull {epic}. Deal details {response}")
-                result = True
+                result = TradeResult.SUCCESSFUL
             deal_response = response
         except IGException as ex:
             self._tracer.error(f"Error during open a position. {ex} for {epic}")
+            result = TradeResult.EXCEPTION
 
         return result, deal_response
 
