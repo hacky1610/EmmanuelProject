@@ -184,11 +184,11 @@ class TraderHistory:
             if m is None:
                 return 0
             pip_wl = abs(data.priceClosed - data.priceOpen) * data.pipMultiplier
-            eur_wl = pip_wl / m.pip_euro
+            eur_wl = m.get_euro_value(pips=pip_wl)
 
-            if data.worstDrawdown / m.pip_euro < stop_val * -1:
+            if m.get_euro_value(data.worstDrawdown) < stop_val * -1:
                 return stop_val * -1
-            if data.maxProfit / m.pip_euro > limit_val:
+            if m.get_euro_value(data.maxProfit) > limit_val:
                 return limit_val
 
             if data.netPnl > 0:
@@ -203,7 +203,7 @@ class TraderHistory:
             if data.netPnl > 0:
                 return numpy.nan
             else:
-                return data.worstDrawdown / m.pip_euro
+                return m.get_euro_value(data.worstDrawdown)
 
         self._hist_df["drawdown"] = self._hist_df.apply(get_drawdown, axis=1)
 

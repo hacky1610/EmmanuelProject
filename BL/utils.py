@@ -38,7 +38,7 @@ class ConfigReader(BaseReader):
         return self.get(key)
 
     def get_float(self, key: str, default: float) -> float:
-        return self.get(key)
+        return self._config.get(key, default)
 
 
 class EnvReader(BaseReader):
