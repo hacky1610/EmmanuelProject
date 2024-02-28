@@ -132,6 +132,10 @@ class DealStore:
         return self._collection.find_one(
             {"ticker": ticker, "trader_id": trader_id, "status": "open", "account_type": self._account_type})
 
+    def get_opened_positions(self, ticker: str) -> int:
+        return len(list(self._collection.find(
+            {"ticker": ticker, "status": "open", "account_type": self._account_type})))
+
     def position_is_open(self, ticker: str):
         return self._collection.find_one({"ticker": ticker, "status": "open", "account_type": self._account_type})
 

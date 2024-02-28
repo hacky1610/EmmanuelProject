@@ -19,13 +19,14 @@ class ZuluTrader:
     def __init__(self, deal_storage: DealStore, market_storage: MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer,
                  account_type: str, trading_size: float = 1.0, check_for_crash: bool = True,
-                 check_trader_quality: bool = False):
+                 check_trader_quality: bool = False, max_open_positions = 3):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
         self._max_minutes = 10
         self._trader_store = trader_store
         self._tracer = tracer
+        self._max_open_positions = max_open_positions
         self._zulu_ui = zulu_ui
         self._min_wl_ration = 0.67
         self._trading_size = trading_size
@@ -71,7 +72,7 @@ class ZuluTrader:
         self._tracer.debug(f"Open Ig Positions {open_ig_deals} Needed time {time.time() - start}")
         start = time.time()
         open_deals_db = self._deal_storage.get_open_deals()
-        self._tracer.debug(f"Open Deals drom DB {open_deals_db} Needed time {time.time() - start}")
+        self._tracer.debug(f"Open Deals from DB {open_deals_db} Needed time {time.time() - start}")
 
         if len(open_deals_db) == 0 and len(open_ig_deals) > 0:
             self._tracer.error("Something is wrong")
@@ -126,7 +127,7 @@ class ZuluTrader:
             return
 
         for _, position in self._get_positions().iterrows():
-            self._tracer.write(f"try to trade {position}")
+            self._tracer.debug(f"try to trade {position}")
             self._trade_position(markets=markets, position_id=position.position_id,
                                  trader_id=position.trader_id, direction=position.direction, ticker=position.ticker)
 
@@ -152,10 +153,9 @@ class ZuluTrader:
             self._tracer.warning(f"Position {position_id} - {ticker} by {trader_id} is already open")
             return
 
-        #if self._deal_storage.position_is_open(ticker) and self._account_type == "LIVE":
-        #    self._tracer.warning(
-        #        f"There is already an open position of {ticker}")
-        #    return
+        if self._deal_storage.get_opened_positions(ticker) >= self._max_open_positions:
+            self._tracer.warning(f"More than {self._max_open_positions:} of {ticker} opened")
+            return
 
         m = self._get_market_by_ticker_or_none(markets, ticker)
         if m is None:
@@ -175,8 +175,7 @@ class ZuluTrader:
                                               stop=stop_pips, size=self._trading_size)
         if result == TradeResult.SUCCESSFUL:
             self._tracer.debug("Save Deal in db")
-            date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
-            date_string = date_string.group().replace(" ", "T")
+            date_string = self._create_date_string(deal_response['date'])
 
             self._deal_storage.save(Deal(zulu_id=position_id, ticker=ticker,
                                          dealReference=deal_response["dealReference"],
@@ -190,6 +189,12 @@ class ZuluTrader:
             self._tracer.warning(f"Could not open position {position_id} - {ticker} by {trader_id}")
         else:
             self._tracer.error(f"Error while open position {position_id} - {ticker} by {trader_id}")
+
+    @staticmethod
+    def _create_date_string(date_string_long: str):
+        date_string = re.match(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}', date_string_long)
+        date_string = date_string.group().replace(" ", "T")
+        return date_string
 
     def _calc_hist(self, row):
         try:
@@ -207,7 +212,8 @@ class ZuluTrader:
             self._tracer.error(f"Trader {row.trader_name} could not be found {e}")
             return "unknown"
 
-    def _get_newest_positions(self, positions: DataFrame) -> DataFrame:
+    @staticmethod
+    def _get_newest_positions(positions: DataFrame) -> DataFrame:
         return positions[positions.time >= datetime.now() - timedelta(minutes=20)]
 
     def _get_positions(self) -> DataFrame:
@@ -219,7 +225,7 @@ class ZuluTrader:
         # Filter for time
         positions = self._get_newest_positions(positions)
         if len(positions) == 0:
-            self._tracer.debug("All postions are to old")
+            self._tracer.debug("All positions are to old")
             return positions
 
         positions["wl_ratio"] = positions.apply(self._calc_hist, axis=1)
@@ -229,13 +235,15 @@ class ZuluTrader:
         good_positions = positions[positions.wl_ratio > self._min_wl_ration]
         if len(good_positions) == 0:
             self._tracer.debug(
-                f"All postions are from bad traders. This postions are bad: \n {positions[positions.wl_ratio <= self._min_wl_ration]}")
+                f"All positions are from bad traders. "
+                f"This positions are bad: \n {positions[positions.wl_ratio <= self._min_wl_ration]}")
             return good_positions
 
         good_positions = good_positions.sort_values(by=["wl_ratio"], ascending=False)
 
-        self._tracer.write(
-            f"new positions: {good_positions.filter(['time', 'ticker', 'wl_ratio', 'trader_id', 'trader_name', 'direction'])}")
+        self._tracer.debug(
+            f"new positions: "
+            f"{good_positions.filter(['time', 'ticker', 'wl_ratio', 'trader_id', 'trader_name', 'direction'])}")
         return good_positions
 
     def _get_ig_hist(self):
@@ -255,7 +263,7 @@ class ZuluTrader:
         hist = self._ig.get_transaction_history(3)
 
         for _, ig_deal in hist.iterrows():
-            ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/", "")
+            ticker = self._get_ticker_name(ig_deal.instrumentName)
             deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
             if deal is not None:
                 deal.profit = float(ig_deal.profitAndLoss[1:])
@@ -268,3 +276,6 @@ class ZuluTrader:
             else:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
 
+    @staticmethod
+    def _get_ticker_name(instrument_name: str):
+        return re.match(r"\w{3}/\w{3}", instrument_name).group().replace("/", "")

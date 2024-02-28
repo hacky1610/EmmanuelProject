@@ -166,9 +166,6 @@ class TraderHistory:
         if self._hist_df["ig_custom"].sum() < 400:
             return False, f"IG Profit is bad {self._hist_df.ig_custom.sum()}"
 
-        # if self.get_avg_trades_per_week() > 50:
-        #    return False, f"To much trades {self.get_avg_trades_per_week()} per week"
-
         return True, "OK"
 
     def __str__(self):

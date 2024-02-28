@@ -1,17 +1,12 @@
 import re
-import time
-import uuid
 from datetime import datetime
 import time
-
 import pandas as pd
 from bs4 import BeautifulSoup
-from pandas import DataFrame, Series
-from selenium.common import StaleElementReferenceException
+from pandas import DataFrame
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
-from Connectors.trader_store import Trader
 from selenium.webdriver.support import expected_conditions as EC
 
 from Tracing.Tracer import Tracer
@@ -19,7 +14,7 @@ from Tracing.Tracer import Tracer
 
 class ZuluTradeUI:
 
-    def __init__(self, driver: WebDriver, tracer:Tracer):
+    def __init__(self, driver: WebDriver, tracer: Tracer):
         self._driver = driver
         self._tracer = tracer
 
@@ -40,15 +35,14 @@ class ZuluTradeUI:
     def close(self):
         self._driver.close()
 
-
-    def _open_portfolio(self, id: str):
-        self._driver.get(f"https://www.zulutrade.com/trader/{id}/trading?t=30&m=1")
+    def _open_portfolio(self, trader_id: str):
+        self._driver.get(f"https://www.zulutrade.com/trader/{trader_id}/trading?t=30&m=1")
         tabs = self._driver.find_element(By.ID, "tabs-nav")
         portfolio = tabs.find_elements(By.TAG_NAME, "li")[1]
         portfolio.click()
 
-    def get_user_statistic(self, id: str):
-        self._open_portfolio(id)
+    def get_user_statistic(self, trader_id: str):
+        self._open_portfolio(trader_id)
 
         footer = self._driver.find_element(By.CLASS_NAME, "tableFooter")
         select = footer.find_element(By.TAG_NAME, "select")
@@ -76,8 +70,8 @@ class ZuluTradeUI:
 
         leaders = []
 
-        for l in links:
-            l.click()
+        for link in links:
+            link.click()
             leaders += self._read_leader_grid()
 
         return leaders
@@ -90,8 +84,8 @@ class ZuluTradeUI:
         for leader_card in leader_cards:
             _id = ""
             links = leader_card.find_elements(By.TAG_NAME, "a")
-            for l in links:
-                r = re.search(r"https:\/\/www\.zulutrade\.com\/trader\/(\d+)\/trading", l.get_attribute("href"))
+            for link in links:
+                r = re.search(r"https:\/\/www\.zulutrade\.com\/trader\/(\d+)\/trading", link.get_attribute("href"))
                 if r is not None:
                     _id = r.groups()[0]
             if _id != "":
@@ -154,13 +148,13 @@ class ZuluTradeUI:
                 break
             except Exception as ex:
                 trial += 1
-                self._tracer.warning(f"Error durng open closed {ex}")
+                self._tracer.warning(f"Error during open closed {ex}")
         self._tracer.debug("switched to closed pos")
 
         time.sleep(5)
         page_source = self._driver.page_source
         soup = BeautifulSoup(page_source, "html.parser")
-        rows = soup.findAll("table", {"class":"megaDropInnerTable"})
+        rows = soup.findAll("table", {"class": "megaDropInnerTable"})
 
         data = []
         for row in rows:

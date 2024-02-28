@@ -184,6 +184,7 @@ class TestZuluTrader(unittest.TestCase):
 
         self.deal_storage.has_id.return_value = False
         self.deal_storage.position_is_open.return_value = False
+        self.deal_storage.get_opened_positions = MagicMock(return_value=2)
         self.market_storage.get_market.return_value = Market("Foo", 1)
         markets = [{"symbol": "AAPL",
                     "epic": "AAPL_EPIC",
@@ -263,6 +264,16 @@ class TestZuluTrader(unittest.TestCase):
         self.trader._get_ig_hist = MagicMock(return_value=hist)
         result = self.trader._is_crash()
         assert result
+
+    def test_create_date(self):
+        res = self.trader._create_date_string("2002-10-22T10:02:04Foobar")
+
+        assert res == '2002-10-22T10:02:04'
+
+    def test_get_ticker(self):
+        res = self.trader._get_ticker_name("AUD/USD")
+
+        assert res == 'AUDUSD'
 
 
 
