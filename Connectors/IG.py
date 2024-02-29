@@ -155,6 +155,7 @@ class IG:
         else:
             deal = deal_store.get_deal_by_deal_id(deal_id)
             deal.set_intelligent_stop_level(new_stop_level)
+            deal_store.save(deal)
 
     def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> List:
         if trade_type == TradeType.FX:
