@@ -30,7 +30,7 @@ class IgTest(unittest.TestCase):
         ms.get_market = MagicMock(return_value=market)
         pos = Series(data=[10, 21, 21, 5 , 30, "BUY", "abcd", 1, "EURUSD"], index=["level","bid","offer","stopLevel","limitLevel","direction","dealId","scalingFactor","instrumentName"])
         self.ig.adapt_stop_level = MagicMock()
-        self.ig.intelligent_stop_level(pos, ms )
+        self.ig.intelligent_stop_level(pos, ms , MagicMock())
 
         self.ig.adapt_stop_level.assert_called()
 
@@ -43,7 +43,7 @@ class IgTest(unittest.TestCase):
                             "instrumentName"])
 
         self.ig.adapt_stop_level = MagicMock()
-        self.ig.intelligent_stop_level(pos, ms)
+        self.ig.intelligent_stop_level(pos, ms, MagicMock())
 
         self.ig.adapt_stop_level.assert_not_called()
 
@@ -56,7 +56,7 @@ class IgTest(unittest.TestCase):
                             "instrumentName"])
 
         self.ig.adapt_stop_level = MagicMock()
-        self.ig.intelligent_stop_level(pos, ms)
+        self.ig.intelligent_stop_level(pos, ms, MagicMock())
 
         self.ig.adapt_stop_level.assert_not_called()
 
@@ -66,7 +66,7 @@ class IgTest(unittest.TestCase):
         ms.get_market = MagicMock(return_value=market)
         pos = Series(data=[30, 5, 5, 60 , 0, "SELL", "abcd", 1, "EURUSD"], index=["level","bid","offer","stopLevel","limitLevel","direction","dealId","scalingFactor","instrumentName"])
         self.ig.adapt_stop_level = MagicMock()
-        self.ig.intelligent_stop_level(pos, ms )
+        self.ig.intelligent_stop_level(pos, ms , MagicMock())
 
         self.ig.adapt_stop_level.assert_called()
 
@@ -78,7 +78,7 @@ class IgTest(unittest.TestCase):
                      index=["level", "bid", "offer", "stopLevel", "limitLevel", "direction", "dealId", "scalingFactor",
                             "instrumentName"])
         self.ig.adapt_stop_level = MagicMock()
-        self.ig.intelligent_stop_level(pos, ms)
+        self.ig.intelligent_stop_level(pos, ms, MagicMock())
 
         self.ig.adapt_stop_level.assert_not_called()
 
@@ -90,7 +90,7 @@ class IgTest(unittest.TestCase):
                      index=["level", "bid", "offer", "stopLevel", "limitLevel", "direction", "dealId", "scalingFactor",
                             "instrumentName"])
         self.ig.adapt_stop_level = MagicMock()
-        self.ig.intelligent_stop_level(pos, ms)
+        self.ig.intelligent_stop_level(pos, ms, MagicMock())
 
         self.ig.adapt_stop_level.assert_not_called()
 

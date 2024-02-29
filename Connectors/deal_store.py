@@ -23,7 +23,9 @@ class Deal:
                  status: str = "open",
                  profit: float = 0.0,
                  result: int = 0,
-                 account_type: str = "DEMO"):
+                 account_type: str = "DEMO",
+                 intelligent_stop_used: bool = False,
+                 intelligent_stop_level: float = None):
         self.ticker = ticker
         self.id = zulu_id
         self.status = status
@@ -41,6 +43,8 @@ class Deal:
         self.close_reason = close_reason
         self.stop_factor = stop_factor
         self.limit_factor = limit_factor
+        self.intelligent_stop_used = intelligent_stop_used
+        self.intelligent_stop_level = intelligent_stop_level
 
     @staticmethod
     def Create(data: dict):
@@ -60,7 +64,10 @@ class Deal:
                     open_date_ig_datetime=data.get("open_date_ig_datetime", None),
                     close_date_ig_datetime=data.get("close_date_ig_datetime", None),
                     stop_factor=data.get("stop_factor", 20),
-                    limit_factor=data.get("limit_factor", 20))
+                    limit_factor=data.get("limit_factor", 20),
+                    intelligent_stop_used=data.get("intelligent_stop_used", False),
+                    intelligent_stop_level=data.get("intelligent_stop_level", None)
+                    )
 
     def __str__(self):
         return f"{self.id} - {self.epic} {self.direction} Trader ID: {self.trader_id}"
@@ -68,6 +75,10 @@ class Deal:
     def close(self, close_reason: str = "Unknown"):
         self.status = "Closed"
         self.close_reason = close_reason
+
+    def set_intelligent_stop_level(self, level:float):
+        self.intelligent_stop_used = True
+        self.intelligent_stop_level = level
 
     def to_dict(self):
         return {"id": self.id,
@@ -86,7 +97,9 @@ class Deal:
                 "result": self.result,
                 "close_reason": self.close_reason,
                 "stop_factor": self.stop_factor,
-                "limit_factor": self.limit_factor}
+                "limit_factor": self.limit_factor,
+                "intelligent_stop_used": self.intelligent_stop_used,
+                "intelligent_stop_level": self.intelligent_stop_level}
 
 
 class DealStore:
@@ -109,6 +122,13 @@ class DealStore:
     def get_deal_by_ig_id(self, ig_date: str, ticker: str) -> Optional[Deal]:
         res = self._collection.find_one(
             {"open_date_ig_str": ig_date, "ticker": ticker, "account_type": self._account_type})
+        if res is not None:
+            return Deal.Create(res)
+        return None
+
+    def get_deal_by_deal_id(self, deal_id:str):
+        res = self._collection.find_one(
+            {"dealId": deal_id, "account_type": self._account_type})
         if res is not None:
             return Deal.Create(res)
         return None

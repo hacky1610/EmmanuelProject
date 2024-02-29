@@ -37,10 +37,11 @@ class ZuluTrader:
 
     def trade(self):
         self._tracer.debug(f"Check crash: {self._check_for_crash}")
+        self._intelligent_update()
+
         self._close_open_positions()
         if not self._is_crash():
             self._open_new_positions()
-        self._intelligent_update()
         self._update_deals()
 
     def _is_good_ig_trader(self, trader_id: str) -> bool:
@@ -134,7 +135,7 @@ class ZuluTrader:
     def _intelligent_update(self):
         self._tracer.debug("Intelligent Update")
         for _, item in self._ig.get_opened_positions().iterrows():
-            self._ig.intelligent_stop_level(item, self._market_store)
+            self._ig.intelligent_stop_level(item, self._market_store, self._deal_storage)
 
     def _trade_position(self, markets: List, position_id: str,
                         ticker: str, trader_id: str, direction: str):

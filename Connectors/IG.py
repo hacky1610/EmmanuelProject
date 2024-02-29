@@ -6,6 +6,7 @@ import pandas
 from trading_ig import IGService
 from trading_ig.rest import IGException
 from BL import BaseReader
+from Connectors.deal_store import DealStore
 from Connectors.market_store import MarketStore
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
@@ -111,7 +112,7 @@ class IG:
         return self.ig_service.update_open_position(deal_id=deal_id, limit_level=limit_level,
                                                     stop_level=stop_level)
 
-    def intelligent_stop_level(self, position: Series, market_store: MarketStore):
+    def intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store:DealStore):
         open_price = position.level
         bid_price = position.bid
         offer_price = position.offer
@@ -125,6 +126,8 @@ class IG:
         self._tracer.debug(
             f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
 
+
+
         market = market_store.get_market(ticker)
         if direction == "BUY":
             if bid_price > open_price:
@@ -133,7 +136,7 @@ class IG:
                     new_stop_level = bid_price - market.get_pip_value(euro=self.intelligent_stop_distance,
                                                                       scaling_factor=scaling_factor)
                     if new_stop_level > stop_level:
-                        self._adjust_stop_level(deal_id, limit_level, new_stop_level)
+                        self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
         else:
             if offer_price < open_price:
                 diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
@@ -141,14 +144,17 @@ class IG:
                     new_stop_level = offer_price + market.get_pip_value(euro=self.intelligent_stop_distance,
                                                                         scaling_factor=scaling_factor)
                     if new_stop_level < stop_level:
-                        self._adjust_stop_level(deal_id, limit_level, new_stop_level)
+                        self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
 
-    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float):
+    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")
         res = self.adapt_stop_level(deal_id=deal_id, limit_level=limit_level, stop_level=new_stop_level)
         self._tracer.debug(res)
         if res["dealStatus"] != "ACCEPTED":
             self._tracer.error("Stop level cant be adapted")
+        else:
+            deal = deal_store.get_deal_by_deal_id(deal_id)
+            deal.set_intelligent_stop_level(new_stop_level)
 
     def get_markets(self, trade_type: TradeType, tradeable: bool = True) -> List:
         if trade_type == TradeType.FX:
