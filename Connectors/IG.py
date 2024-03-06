@@ -126,25 +126,26 @@ class IG:
         self._tracer.debug(
             f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
 
-
-
-        market = market_store.get_market(ticker)
-        if direction == "BUY":
-            if bid_price > open_price:
-                diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
-                if diff > self.intelligent_stop_border:
-                    new_stop_level = bid_price - market.get_pip_value(euro=self.intelligent_stop_distance,
-                                                                      scaling_factor=scaling_factor)
-                    if new_stop_level > stop_level:
-                        self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
-        else:
-            if offer_price < open_price:
-                diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
-                if diff > self.intelligent_stop_border:
-                    new_stop_level = offer_price + market.get_pip_value(euro=self.intelligent_stop_distance,
-                                                                        scaling_factor=scaling_factor)
-                    if new_stop_level < stop_level:
-                        self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+        try:
+            market = market_store.get_market(ticker)
+            if direction == "BUY":
+                if bid_price > open_price:
+                    diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
+                    if diff > self.intelligent_stop_border:
+                        new_stop_level = bid_price - market.get_pip_value(euro=self.intelligent_stop_distance,
+                                                                          scaling_factor=scaling_factor)
+                        if new_stop_level > stop_level:
+                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+            else:
+                if offer_price < open_price:
+                    diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
+                    if diff > self.intelligent_stop_border:
+                        new_stop_level = offer_price + market.get_pip_value(euro=self.intelligent_stop_distance,
+                                                                            scaling_factor=scaling_factor)
+                        if new_stop_level < stop_level:
+                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+        except Exception as e:
+            self._tracer.error(f"Bid or offer price is none {position}")
 
     def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")
