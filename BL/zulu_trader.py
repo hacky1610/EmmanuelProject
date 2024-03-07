@@ -50,8 +50,8 @@ class ZuluTrader:
 
         deals = self._deal_storage.get_deals_of_trader_as_df(trader_id, consider_account_type=False)
 
-        if len(deals) < 3:
-            self._tracer.warning(f"Trader {trader_id} had less than 3 trades")
+        if len(deals) < 12:
+            self._tracer.warning(f"Trader {trader_id} had less than 12 trades")
             return False
 
         if deals.profit.sum() < 80:

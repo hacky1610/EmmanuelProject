@@ -24,11 +24,11 @@ class ConfigReader(BaseReader):
 
     def __init__(self, account_type: str = "DEMO"):
         if account_type == "DEMO":
-            path = "Config/demo.json"
+            path = "demo.json"
         else:
-            path = "Config/live.json"
+            path = "live.json"
 
-        with open(os.path.join(get_project_dir(), path)) as f:
+        with open(os.path.join(get_project_dir(), "Config", path )) as f:
             self._config = json.load(f)
 
     def get(self, key: str):
