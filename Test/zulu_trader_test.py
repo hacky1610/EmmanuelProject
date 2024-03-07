@@ -235,7 +235,28 @@ class TestZuluTrader(unittest.TestCase):
         res = self.trader._is_good_ig_trader("124")
         assert not res
 
+    def test_is_good_trader_good_results(self):
+        self.trader._check_trader_quality = True
+        deals = DataFrame()
+        deals = deals.append(Series(data=[80, datetime(2001, 10, 1)], index=["profit", "open_date_ig_datetime"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
 
+
+
+        self.deal_storage.get_deals_of_trader_as_df = MagicMock(return_value=deals)
+        res = self.trader._is_good_ig_trader("124")
+        assert  res
 
     def test_get_deals_to_close_error_occured(self):
         # Mock-Daten für get_open_deals und close

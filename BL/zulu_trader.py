@@ -59,7 +59,7 @@ class ZuluTrader:
             return False
 
         first_deal = deals[:1]
-        diff = first_deal.open_date_ig_datetime.item() - datetime.now()
+        diff = datetime.now() - first_deal.open_date_ig_datetime.item()
         if diff.days < 21:
             self._tracer.warning(f"Trader {trader_id} is known less than 21 days ago")
             return False
