@@ -58,6 +58,13 @@ class ZuluTrader:
             self._tracer.warning(f"Trader {trader_id} had bad profit {deals.profit.sum()} Euro less than 80")
             return False
 
+        first_deal = deals[:1]
+        diff = first_deal.open_date_ig_datetime.item() - datetime.now()
+        if diff.days < 21:
+            self._tracer.warning(f"Trader {trader_id} is known less than 21 days ago")
+            return False
+
+
         self._tracer.debug(f"Trader {trader_id} is a good trader")
 
         return True
