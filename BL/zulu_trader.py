@@ -168,6 +168,11 @@ class ZuluTrader:
             self._tracer.warning(f"More than {self._max_open_positions:} of {ticker} opened")
             return
 
+        open_positions_of_trader = self._deal_storage.positions_of_same_trader(ticker=ticker, trader_id=trader_id)
+        if len(open_positions_of_trader) >= 1:
+            self._tracer.warning(f"This trader {trader_id} has already open positions of {ticker} ")
+            return
+
         m = self._get_market_by_ticker_or_none(markets, ticker)
         if m is None:
             self._tracer.warning(f"Could not find market for {ticker}")
