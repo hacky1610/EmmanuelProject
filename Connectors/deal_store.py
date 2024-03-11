@@ -148,9 +148,9 @@ class DealStore:
     def clear(self):
         self._collection.delete_many({ "account_type": self._account_type})
 
-    def positions_of_same_trader(self, ticker: str, trader_id:str):
-        return self._collection.find(
-            {"ticker": ticker, "trader_id": trader_id, "status": "open", "account_type": self._account_type})
+    def positions_of_same_trader(self, ticker: str, trader_id:str) -> int:
+        return len(list(self._collection.find(
+            {"ticker": ticker, "trader_id": trader_id, "status": "open", "account_type": self._account_type})))
 
     def get_opened_positions(self, ticker: str) -> int:
         return len(list(self._collection.find(

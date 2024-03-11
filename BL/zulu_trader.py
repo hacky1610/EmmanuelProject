@@ -169,7 +169,7 @@ class ZuluTrader:
             return
 
         open_positions_of_trader = self._deal_storage.positions_of_same_trader(ticker=ticker, trader_id=trader_id)
-        if len(open_positions_of_trader) >= 1:
+        if open_positions_of_trader >= 1:
             self._tracer.warning(f"This trader {trader_id} has already open positions of {ticker} ")
             return
 
