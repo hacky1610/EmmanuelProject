@@ -189,6 +189,15 @@ class ZuluTrader:
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
                                               currency=m["currency"], limit=limit_pips,
                                               stop=stop_pips, size=self._trading_size)
+
+        if (result == TradeResult.NOT_SUCCESSFUL and
+                deal_response['reason'] == "INSUFFICIENT_FUNDS" and
+                self._trading_size > 1):
+            self._tracer.debug("INSUFFICIENT_FUNDS -> try to trade a smaller size ")
+            result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
+                                                  currency=m["currency"], limit=limit_pips,
+                                                  stop=stop_pips, size=self._trading_size * 0.5)
+
         if result == TradeResult.SUCCESSFUL:
             self._tracer.debug("Save Deal in db")
             date_string = self._create_date_string(deal_response['date'])

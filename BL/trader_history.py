@@ -228,6 +228,8 @@ class TraderHistory:
         return self._hist_df["ig_profit_no_stop_no_limit"].sum()
 
     def get_diff_to_today(self) -> int:
+        if len(self._hist_df) == 0:
+            return 1000 #TODO
         last_d = self._unix_timestamp_to_datetime(self._hist_df[-1:].dateClosed.item())
         diff = datetime.now() - last_d
         return diff.days

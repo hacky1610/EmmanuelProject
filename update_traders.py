@@ -12,9 +12,12 @@ import pymongo
 import random
 
 
-def update_trader(trader:Trader):
+def update_trader(trader:Trader, only_new = False):
     try:
         diff_days = trader.hist.get_diff_to_today()
+        if only_new and diff_days != 1000:
+            print("Trader known")
+            return
         if diff_days < 100:
             hist = zuluApi.get_history(trader.id, pages=1, size=diff_days+ 10)
         else:
@@ -42,7 +45,7 @@ df = DataFrame()
 
 for trader in ts.get_all_traders():
     try:
-        update_trader(trader)
+        update_trader(trader, True)
         df = df.append(trader.get_statistic(), ignore_index=True)
     except Exception as ex:
         time.sleep(random.randint(120, 200))
