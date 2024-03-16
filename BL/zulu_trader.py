@@ -54,8 +54,8 @@ class ZuluTrader:
             self._tracer.warning(f"Trader {trader_id} had less than 12 trades")
             return False
 
-        if deals.profit.sum() < 80:
-            self._tracer.warning(f"Trader {trader_id} had bad profit {deals.profit.sum()} Euro less than 80")
+        if deals.profit.sum() < 200:
+            self._tracer.warning(f"Trader {trader_id} had bad profit {deals.profit.sum()} Euro less than 200")
             return False
 
         first_deal = deals[:1]
