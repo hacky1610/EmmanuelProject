@@ -152,6 +152,9 @@ class TraderHistory:
         if not self.has_history():
             return False, "no history"
 
+        if self.get_wl_ratio() < 0.7:
+            return False, f"Bad Wl Ratio. Ratio is less than 0.7"
+
         currency_df = self._hist_df[self._hist_df.currency_clean == ticker]
         if currency_df.ig_custom.sum() <= 0:
             return False, "Currency profit is less than null"
@@ -161,7 +164,7 @@ class TraderHistory:
 
         median_open_hours = ((currency_df.dateClosed - currency_df.dateOpen) / 1000 / 60 / 60).median()
         if median_open_hours > 48:
-            return False, "Open hours is creater than 48 hours"
+            return False, "Open hours is greater than 48 hours"
 
         if self._hist_df["ig_custom"].sum() < 400:
             return False, f"IG Profit is bad {self._hist_df.ig_custom.sum()}"
@@ -237,10 +240,7 @@ class TraderHistory:
     def get_series(self):
         rating, text = self._rate_trader()
         return Series(data=[self.get_wl_ratio(),
-                            self.get_wl_ratio_20(),
-                            self.get_wl_ratio_100(),
                             self.get_avg_wl(),
-                            self.get_avg_wl_10(),
                             self.get_result(),
                             self.get_avg_trades_per_week(),
                             self.amount_of_peaks(),
@@ -248,8 +248,6 @@ class TraderHistory:
                             self.get_max_loses(),
                             self.profit_loss_ratio(),
                             self.median_open_hours(),
-                            self.median_open_hours_wins(),
-                            self.median_open_hours_loss(),
                             self.open_hours_ratio(),
                             self._hist_df["drawdown"].min(),
                             self._hist_df["drawdown"].median(),
@@ -258,10 +256,7 @@ class TraderHistory:
                             rating,
                             text],
                       index=["wl_ratio",
-                             "wl_ratio_20",
-                             "wl_ratio_100",
                              "avg_wl",
-                             "avg_wl_10",
                              "result",
                              "trades_per_week",
                              "amount_of_peaks",
@@ -269,8 +264,6 @@ class TraderHistory:
                              "max_looses",
                              "profit_loss_ratio",
                              "open_hours",
-                             "open_hours_wins",
-                             "open_hours_loss",
                              "open_hours_ratio",
                              "drawdown_min",
                              "drawdown_median",
