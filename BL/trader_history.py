@@ -21,6 +21,17 @@ class TraderHistory:
     def has_history(self):
         return len(self._hist_df) > 0
 
+    def clear_df(self):
+        df_new = DataFrame()
+        df_new = df_new.append(self._hist_df[0:1])
+
+        for i in range(1, len(self._hist_df)):
+            if self._hist_df[i:i + 1]["dateOpen_datetime_utc"].item() > df_new[-1:][
+                "dateClosed_datetime_utc"].item():
+                df_new = df_new.append(self._hist_df[i:i + 1])
+
+        return df_new
+
     @staticmethod
     def _create_df(hist):
         df = DataFrame()
