@@ -26,7 +26,6 @@ def update_trader(trader:Trader, only_new = False):
         new_df = trader.hist._hist_df.append(hist._hist_df)
         new_df = new_df.drop_duplicates(subset=['tradeId'])
         trader.hist = TraderHistory(new_df.to_dict("records"))
-        trader.calc_ig(ms)
         print(f"{trader.name} -> {trader.hist}")
         ts.save(trader)
         time.sleep(random.randint(120, 200))
@@ -45,7 +44,7 @@ df = DataFrame()
 
 for trader in ts.get_all_traders():
     try:
-        update_trader(trader, True)
+        update_trader(trader, False)
         df = df.append(trader.get_statistic(), ignore_index=True)
     except Exception as ex:
         time.sleep(random.randint(120, 200))

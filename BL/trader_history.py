@@ -210,8 +210,8 @@ class TraderHistory:
         best_col = None
         best_stop = 0
         best_limit = 0
-        for stop in range(20, 71, 10):
-            for limit in range(20, 71, 10):
+        for stop in [70]:
+            for limit in [50]:
                 col = self._hist_df.apply(stop_and_limit, axis=1, args=(stop, limit))
                 if best_col is None:
                     best_col = col
