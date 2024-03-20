@@ -211,10 +211,7 @@ class TraderHistory:
             m = market_store.get_market(data.currency_clean)
             if m is None:
                 return 0
-            if data.netPnl > 0:
-                return numpy.nan
-            else:
-                return m.get_euro_value(data.worstDrawdown)
+            return m.get_euro_value(data.worstDrawdown)
 
         self._hist_df["drawdown"] = self._hist_df.apply(get_drawdown, axis=1)
 

@@ -38,8 +38,8 @@ class ZuluTrader:
     def trade(self):
         self._tracer.debug(f"Check crash: {self._check_for_crash}")
         self._close_open_positions()
-        if not self._is_crash():
-            self._open_new_positions()
+        #if not self._is_crash():
+        #    self._open_new_positions()
         self._intelligent_update()
         self._update_deals()
 
