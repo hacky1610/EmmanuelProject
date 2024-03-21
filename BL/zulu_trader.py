@@ -38,8 +38,8 @@ class ZuluTrader:
     def trade(self):
         self._tracer.debug(f"Check crash: {self._check_for_crash}")
         self._close_open_positions()
-        #if not self._is_crash():
-        #    self._open_new_positions()
+        if not self._is_crash():
+            self._open_new_positions()
         self._intelligent_update()
         self._update_deals()
 
@@ -54,8 +54,8 @@ class ZuluTrader:
             self._tracer.warning(f"Trader {trader_id} had less than 12 trades")
             return False
 
-        if deals.profit.sum() < 200:
-            self._tracer.warning(f"Trader {trader_id} had bad profit {deals.profit.sum()} Euro less than 200")
+        if deals.profit.sum() < 600:
+            self._tracer.warning(f"Trader {trader_id} had bad profit {deals.profit.sum()} Euro less than 600")
             return False
 
         first_deal = deals[:1]
