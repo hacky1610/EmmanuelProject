@@ -265,7 +265,7 @@ class TestZuluTrader(unittest.TestCase):
         deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
         deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
         deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
-        deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
+        deals = deals.append(Series(data=[700], index=["profit"]), ignore_index=True)
         deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
         deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
         deals = deals.append(Series(data=[10], index=["profit"]), ignore_index=True)
