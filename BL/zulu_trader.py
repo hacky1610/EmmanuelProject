@@ -19,7 +19,7 @@ class ZuluTrader:
     def __init__(self, deal_storage: DealStore, market_storage: MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer,
                  account_type: str, trading_size: float = 1.0, check_for_crash: bool = True,
-                 check_trader_quality: bool = False, max_open_positions = 3):
+                 check_trader_quality: bool = False, max_open_positions = 5):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -169,7 +169,7 @@ class ZuluTrader:
             return
 
         open_positions_of_trader = self._deal_storage.positions_of_same_trader(ticker=ticker, trader_id=trader_id)
-        if open_positions_of_trader >= 1:
+        if open_positions_of_trader >= 2:
             self._tracer.warning(f"This trader {trader_id} has already open positions of {ticker} ")
             return
 

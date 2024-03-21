@@ -100,6 +100,9 @@ class TraderHistory:
     def get_max_win(self):
         return self._hist_df.netPnl.max()
 
+    def get_median_invested_amount(self):
+        return self._hist_df.investedAmount.median()
+
     def get_max_loses(self):
         return self._hist_df.netPnl.min()
 
@@ -257,6 +260,7 @@ class TraderHistory:
                             self.profit_loss_ratio(),
                             self.median_open_hours(),
                             self.open_hours_ratio(),
+                            self.get_median_invested_amount(),
                             self._hist_df["drawdown"].min(),
                             self._hist_df["drawdown"].median(),
                             self._hist_df["ig_custom"].sum(),
@@ -273,6 +277,7 @@ class TraderHistory:
                              "profit_loss_ratio",
                              "open_hours",
                              "open_hours_ratio",
+                             "invested_amount",
                              "drawdown_min",
                              "drawdown_median",
                              "ig_custom",

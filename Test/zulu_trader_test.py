@@ -192,7 +192,7 @@ class TestZuluTrader(unittest.TestCase):
         trader.hist = MagicMock()
         trader.hist.trader_performance.return_value = (True, "OK")
         self.trader_store.get_trader_by_id.return_value = trader
-        self.deal_storage.positions_of_same_trader.return_value = 1
+        self.deal_storage.positions_of_same_trader.return_value = 2
         self.deal_storage.get_opened_positions.return_value = 0
         self.trader._trade_position(markets, "123", "AAPL", "5431", "SELL")
 
