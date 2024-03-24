@@ -32,6 +32,7 @@ class GenericPredictor(BasePredictor):
             config = {}
 
         super().__init__(indicators, config, tracer=tracer, cache=cache)
+        self.model_version = "V3.0"
         self.setup(config)
 
     def setup(self, config: dict):

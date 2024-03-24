@@ -14,8 +14,7 @@ class BasePredictor:
                 indicators (Indicators): Indikatoren
             """
 
-    version = "V3.0"
-    model_version = ""
+    version = "V2.0"
     fallback_model_version = ""
 
 
@@ -32,6 +31,7 @@ class BasePredictor:
         self.lastState = ""
         self._cache = cache
         self._indicators = indicators
+        self.model_version = ""
 
     def setup(self, config):
         self._set_att(config, "limit")

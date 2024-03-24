@@ -117,7 +117,7 @@ class Trader:
                    trade_type (TradeType): Der Handelstyp.
                """
         self._tracer.debug("Start")
-        currency_markets = self._ig.get_markets(trade_type, tradeable=False)
+        currency_markets = self._ig.get_markets(trade_type)
         for market in currency_markets:
             try:
                 self.trade_market(indicators, market)
