@@ -135,11 +135,15 @@ class Tiingo:
                                       trade_type=trade_type,
                                       resolution="1hour")
 
-    def _load_long_period(self, symbol: str, trade_type, days: int = 100, resolution: str = "1hour", window: int = 10):
+    def _load_long_period(self, symbol: str,
+                          trade_type, days: int = 100,
+                          resolution: str = "1hour",
+                          window: int = 10,
+                          use_cache: bool = True):
         name = f"{symbol}_{resolution}.csv"
 
         cache = self._cache.load_cache(name)
-        if 0 < len(cache):
+        if 0 < len(cache) and use_cache:
             start = datetime.strptime(cache.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")
             diff = datetime.now() - start
 
@@ -172,8 +176,10 @@ class Tiingo:
 
     def init_data(self, symbol: str, trade_type, days: int = 100):
 
-        self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="1hour")
-        self._load_long_period(symbol=symbol, trade_type=trade_type, days=days, resolution="5min")
+        self._load_long_period(symbol=symbol, trade_type=trade_type,
+                               days=days, resolution="1hour", use_cache=False)
+        self._load_long_period(symbol=symbol, trade_type=trade_type,
+                               days=days, resolution="5min", use_cache=False)
 
     def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days_start: int = 240, days_end:int = 100):
 

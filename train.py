@@ -1,6 +1,7 @@
 # region import
 import os
 import random
+import traceback
 from multiprocessing import Process
 from typing import Type
 
@@ -88,9 +89,11 @@ def train_predictor(ig: IG,
             else:
                 try:
                     trainer.train(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, train_version, predictor, indicators, best_indicators)
-                except:
-                    print("Error")
-        else:
+                except Exception as e:
+                    traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+                    print(f"MainException: {e} File:{traceback_str}")
+
+    else:
             print(f"No Data in {symbol} ")
 
 

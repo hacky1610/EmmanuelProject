@@ -6,6 +6,12 @@ class Market:
         self.ticker = ticker
         self.pip_euro = pip_euro
 
+    def get_euro_value(self, pips: float, scaling_factor: int = 1):
+        return pips * scaling_factor / self.pip_euro
+
+    def get_pip_value(self, euro: float, scaling_factor: int = 1):
+        return self.pip_euro * euro / scaling_factor
+
     @staticmethod
     def Create(data:dict):
         m = Market(ticker=data["ticker"],

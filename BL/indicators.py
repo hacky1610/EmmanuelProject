@@ -1,5 +1,9 @@
 from typing import List
 
+import pandas as pd
+from pandas import DataFrame
+
+from BL import DataProcessor
 from BL.candle import Candle, Direction, MultiCandle, MultiCandleType
 from BL.datatypes import TradeAction
 import random
@@ -56,6 +60,8 @@ class Indicators:
     SMMA20_CLOSE = "smma_20_close"
     EMA20_SMMA20 = "ema_20_smma_20"
     EMA_20_CHANNEL = "ema_20_channel"
+    EMA_1h_4h = "ema_1h_4h"
+
     # Others
     ADX = "adx"
     ADX_SLOPE = "adx_slope"
@@ -127,6 +133,8 @@ class Indicators:
         self._add_indicator(self.SMMA20_CLOSE, self._smma_20_close)
         self._add_indicator(self.EMA20_SMMA20, self._ema_20_smma_20)
         self._add_indicator(self.EMA_20_CHANNEL, self._ema_20_channel)
+        #self._add_indicator(self.EMA_1h_4h, self._ema_1d_1h)
+
 
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
@@ -164,6 +172,28 @@ class Indicators:
         self._tracer: Tracer = tracer
 
     # endregion
+
+    def convert_1h_to_4h(self, one_h_df:DataFrame):
+        if len(one_h_df) == 0:
+            return DataFrame()
+
+        one_h_df['date_index'] = pd.to_datetime(one_h_df['date'])
+        # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
+        df_4h: DataFrame = one_h_df.groupby(pd.Grouper(key='date_index', freq='4H')).agg({
+            'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
+            'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
+            'low': 'max',  # Höchster Kurs in der 4-Stunden-Periode
+            'close': 'last',  # Höchster Kurs in der 4-Stunden-Periode
+            'date_index': 'first'  # Erstes Zeitstempel in der 4-Stunden-Periode
+        }).reset_index(drop=True)
+        df_4h.dropna(inplace=True)
+        df_4h.reset_index(inplace=True)
+
+        df4h = df_4h.filter(["open", "low", "high", "close"])
+        dp = DataProcessor()
+        dp.addSignals(df4h)
+
+        return df_4h
 
     # region Get/Add Indicators
     def _add_indicator(self, name, function):
@@ -251,6 +281,25 @@ class Indicators:
             return TradeAction.SELL
 
         return TradeAction.NONE
+
+    def _ema_1d_1h(self, df):
+        try:
+            df4h = self.convert_1h_to_4h(df)
+            current_ema_30_1h = df.EMA_30.iloc[-1]
+            current_ema_50_4h = df4h.EMA_50.iloc[-2]
+            current_close = df.close.iloc[-1]
+
+
+            if current_ema_30_1h > current_ema_50_4h and current_close > current_ema_50_4h:
+                return TradeAction.BUY
+            elif current_ema_30_1h < current_ema_50_4h and current_close < current_ema_50_4h:
+                return TradeAction.SELL
+        except Exception as e:
+            print(f"Error during indication {e}")
+
+        return TradeAction.NONE
+
+
 
     def _ema_hist_predict(self, df):
         if len(df) < 4:
@@ -373,6 +422,10 @@ class Indicators:
             return TradeAction.BUY
 
         return TradeAction.NONE
+
+
+
+
 
     def _rsi_limit_predict(self, df):
         return self._oscillator_limit(df, "RSI", 50, 70, 30)

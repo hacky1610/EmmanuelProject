@@ -1,5 +1,6 @@
 import os.path
 import time
+import traceback
 from typing import List, Dict
 
 from trading_ig import IGService
@@ -7,13 +8,15 @@ from trading_ig.rest import IGException, ApiExceededException
 from BL import DataProcessor, timedelta, BaseReader
 from BL.analytics import Analytics
 from BL.indicators import Indicators
+from Connectors.deal_store import DealStore
+from Connectors.market_store import MarketStore
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import TimeUtils
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 import plotly.graph_objects as go
 import pandas as pd
-from pandas import DataFrame
+from pandas import DataFrame, Series
 import re
 import tempfile
 from datetime import datetime
@@ -30,6 +33,8 @@ class IG:
         self.password = conf_reader.get("ig_demo_pass")
         self.key = conf_reader.get("ig_demo_key")
         self.accNr = conf_reader.get("ig_demo_acc_nr")
+        self.intelligent_stop_border = conf_reader.get_float("is_border", 13)
+        self.intelligent_stop_distance = conf_reader.get_float("is_distance", 6)
         if live:
             self.type = "LIVE"
             self._fx_id = 342535
@@ -91,12 +96,14 @@ class IG:
                 self._tracer.debug("ApiExceededException")
                 time.sleep(60)
                 counter += 1
-            except Exception:
-                self._tracer.error("Error while fetching nodes")
+            except Exception as e:
+                traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+                print(f"MainException: {e} File:{traceback_str}")
                 return DataFrame()
 
         if res is None:
-            self._tracer.error("Error while fetching nodes")
+            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+            print(f"MainException:  File:{traceback_str}")
             return DataFrame()
 
         if len(res["nodes"]) > 0:
@@ -245,6 +252,57 @@ class IG:
 
     def get_opened_positions(self) -> DataFrame:
         return self.ig_service.fetch_open_positions()
+
+    def intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore):
+        open_price = position.level
+        bid_price = position.bid
+        offer_price = position.offer
+        stop_level = position.stopLevel
+        limit_level = position.limitLevel
+        direction = position.direction
+        deal_id = position.dealId
+        scaling_factor = position.scalingFactor
+        ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
+
+        self._tracer.debug(
+            f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
+
+        try:
+            market = market_store.get_market(ticker)
+            if direction == "BUY":
+                if bid_price > open_price:
+                    diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
+                    if diff > self.intelligent_stop_border:
+                        new_stop_level = bid_price - market.get_pip_value(euro=self.intelligent_stop_distance,
+                                                                          scaling_factor=scaling_factor)
+                        if new_stop_level > stop_level:
+                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+            else:
+                if offer_price < open_price:
+                    diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
+                    if diff > self.intelligent_stop_border:
+                        new_stop_level = offer_price + market.get_pip_value(euro=self.intelligent_stop_distance,
+                                                                            scaling_factor=scaling_factor)
+                        if new_stop_level < stop_level:
+                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+        except Exception as e:
+            self._tracer.error(f"Bid or offer price is none {position}")
+
+    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store):
+        self._tracer.debug(f"Change Stop level to {new_stop_level}")
+        res = self.adapt_stop_level(deal_id=deal_id, limit_level=limit_level, stop_level=new_stop_level)
+        self._tracer.debug(res)
+        if res["dealStatus"] != "ACCEPTED":
+            self._tracer.error("Stop level cant be adapted")
+        else:
+            deal = deal_store.get_deal_by_deal_id(deal_id)
+            deal.set_intelligent_stop_level(new_stop_level)
+            deal_store.save(deal)
+
+    def adapt_stop_level(self, deal_id: str, limit_level: float, stop_level: float):
+
+        return self.ig_service.update_open_position(deal_id=deal_id, limit_level=limit_level,
+                                                    stop_level=stop_level)
 
     def get_opened_positions_by_epic(self, epic: str) -> DataFrame:
         positions = self.get_opened_positions()

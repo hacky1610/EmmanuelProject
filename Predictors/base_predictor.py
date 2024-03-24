@@ -14,14 +14,14 @@ class BasePredictor:
                 indicators (Indicators): Indikatoren
             """
 
-    version = "V2.0"
+    version = "V3.0"
     model_version = ""
     fallback_model_version = ""
 
 
     def __init__(self, indicators, config=None , cache: BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
-        self.limit = 15
-        self.stop = 30
+        self.limit = 10
+        self.stop = 20
         self.last_scan = datetime(1970, 1, 1).isoformat()
         self._last_scan: EvalResult = EvalResult()
 
@@ -43,6 +43,7 @@ class BasePredictor:
                                      wins=config.get("_wins", 0),
                                      len_df=config.get("_len_df", 0),
                                      trade_minutes=config.get("_trade_minutes", 0))
+
 
     def _set_att(self, config: dict, name: str):
         self.__setattr__(name, config.get(name, self.__getattribute__(name)))
@@ -82,8 +83,8 @@ class BasePredictor:
 
         json_objs = []
         for stop, limit in itertools.product(
-                [15, 25, 40, 60],
-                [15, 25, 40, 60]):
+                [65, 70],
+                [10, 15, 20]):
             json_objs.append({
                 "stop": stop,
                 "limit": limit,

@@ -54,7 +54,8 @@ class Analytics:
         market = self._market_store.get_market(symbol)
 
         if market is None:
-            print(f"Error with {symbol}")
+            print(f"There is no market fot{symbol}")
+            return None
 
 
         for i in range(len(df) - 1):
@@ -71,8 +72,8 @@ class Analytics:
             if action == TradeAction.NONE:
                 continue
 
-            stop = market.pip_euro * predictor.stop / scaling
-            limit = market.pip_euro * predictor.limit / scaling
+            stop = market.get_pip_value(predictor.stop, scaling)
+            limit = market.get_pip_value(predictor.limit, scaling)
 
             trade:TradeResult = TradeResult()
             trade.action = action

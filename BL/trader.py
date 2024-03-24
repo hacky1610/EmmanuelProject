@@ -117,7 +117,7 @@ class Trader:
                    trade_type (TradeType): Der Handelstyp.
                """
         self._tracer.debug("Start")
-        currency_markets = self._ig.get_markets(trade_type)
+        currency_markets = self._ig.get_markets(trade_type, tradeable=False)
         for market in currency_markets:
             try:
                 self.trade_market(indicators, market)
@@ -125,9 +125,14 @@ class Trader:
                 self._tracer.error(f"Error while trading {market['symbol']} {EX}")
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 self._tracer.error(f"Error: {EX} File:{traceback_str}")
-
+        self._intelligent_update()
         self.update_deals()
         self._tracer.debug("End")
+
+    def _intelligent_update(self):
+        self._tracer.debug("Intelligent Update")
+        for _, item in self._ig.get_opened_positions().iterrows():
+            self._ig.intelligent_stop_level(item, self._market_store, self._deal_storage)
 
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
@@ -241,8 +246,8 @@ class Trader:
             return TradeResult.ERROR
 
         open_deals = self._deal_storage.get_open_deals_by_ticker(config.symbol)
-        if len(open_deals) > 0:
-            self._tracer.warning(f"there is already an open position of {config.symbol}")
+        if len(open_deals) > 3:
+            self._tracer.warning(f"there are already 3 open position of {config.symbol}")
             return TradeResult.ERROR
 
 
@@ -260,8 +265,8 @@ class Trader:
         self._tracer.debug(f"{config.symbol} valid to predict")
         signal = predictor.predict(trade_df)
         market = self._market_store.get_market(config.symbol)
-        stop = int(market.pip_euro * predictor.stop)
-        limit = int(market.pip_euro * predictor.limit)
+        stop = market.get_pip_value(predictor.stop)
+        limit = market.get_pip_value(predictor.limit)
 
         if signal == TradeAction.NONE:
             return TradeResult.NOACTION

@@ -55,6 +55,8 @@ class Trainer:
             predictor.setup(training_set)
 
             res: EvalResult = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol, scaling=scaling)
+            if res is None:
+                return
 
             if res.get_reward() > best_reward and res.get_win_loss() >= 0.66 and res.get_trades() >= 15:
                 best_reward = res.get_reward()
