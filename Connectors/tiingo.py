@@ -115,9 +115,12 @@ class Tiingo:
             self._validate(res)
         return res
 
-    def _validate(self, res):
-        if res.date.iloc[-1] != TimeUtils.get_time_string(datetime.utcnow() - timedelta(hours=1)):
-            raise Exception("Invalid date")
+    @staticmethod
+    def _validate(res):
+        last_date = res.date.iloc[-1]
+        current_date = TimeUtils.get_time_string(datetime.utcnow() - timedelta(hours=1))
+        if last_date != current_date:
+            raise Exception(f"Invalid date. Last date {last_date} - Current {current_date} ")
 
     @staticmethod
     def _get_start_time(days: int):
