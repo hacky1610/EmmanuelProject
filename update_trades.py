@@ -18,13 +18,15 @@ import dropbox
 
 def check_config_folder():
 
-    path_to_config = os.path.join(os.path.dirname(__file__), "Config")
-    return os.path.exists(path_to_config) and os.path.isdir(path_to_config)
+    path_to_config = os.path.join(os.path.dirname(__file__), "Config", "demo.json")
+    return os.path.exists(path_to_config)
 
 account_type = "DEMO"
 if check_config_folder():
+    print("Local")
     conf_reader = ConfigReader(False)
 else:
+    print("Server")
     conf_reader = EnvReader()
     account_type = conf_reader.get("Type")
 
