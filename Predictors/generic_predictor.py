@@ -78,6 +78,12 @@ class GenericPredictor(BasePredictor):
         to_skip = [Indicators.RSI30_70]
 
         json_objs.append({
+            "_indicator_names": [Indicators.RSI_BREAK_4H],
+            "version": version,
+        })
+        return json_objs
+
+        json_objs.append({
             "_indicator_names": best_indicators,
             "version": version,
         })

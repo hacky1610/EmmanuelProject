@@ -66,6 +66,15 @@ class DataProcessor:
         df["TII"] = DataProcessor._tii(df,10)
         return
 
+    @staticmethod
+    def addSignals_big_tf(df: DataFrame):
+
+        df['RSI'] = TA.RSI(df)
+        ichi = TA.ICHIMOKU(df)
+        df["KIJUN"] = ichi["KIJUN"]
+
+        return
+
 
 
     @staticmethod

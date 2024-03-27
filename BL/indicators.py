@@ -24,7 +24,9 @@ class Indicators:
     # region RSI
     RSI = "rsi"
     RSI_LIMIT = "rsi_limit"
+    RSI_LIMIT_4H = "rsi_limit_4h"
     RSI_BREAK = "rsi_break"
+    RSI_BREAK_4H = "rsi_break_4h"
     RSI_BREAK3070 = "rsi_break_30_70"
     RSI30_70 = "rsi_30_70"
     RSISLOPE = "rsi_slope"
@@ -60,7 +62,6 @@ class Indicators:
     SMMA20_CLOSE = "smma_20_close"
     EMA20_SMMA20 = "ema_20_smma_20"
     EMA_20_CHANNEL = "ema_20_channel"
-    EMA_1h_4h = "ema_1h_4h"
 
     # Others
     ADX = "adx"
@@ -84,6 +85,7 @@ class Indicators:
     # ICHIMOKU
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
+    ICHIMOKU_KIJUN_CONFIRM_4H = "ichi_kijun_confirm_4h"
     ICHIMOKU_KIJUN_CROSS_CONFIRM = "ichi_kijun_cross_confirm"
     ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
     ICHIMOKU_CLOUD_THICKNESS = "ichi_cloud_thickness"
@@ -97,6 +99,7 @@ class Indicators:
         # RSI
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
+        self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict)
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
@@ -106,6 +109,8 @@ class Indicators:
         self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
+        self._add_indicator(self.RSI_BREAK_4H, self._rsi_break_predict_4h)
+
 
         self._add_indicator(self.TII_50, self._tii_50)
         self._add_indicator(self.TII_20_80, self._tii_20_80)
@@ -133,7 +138,6 @@ class Indicators:
         self._add_indicator(self.SMMA20_CLOSE, self._smma_20_close)
         self._add_indicator(self.EMA20_SMMA20, self._ema_20_smma_20)
         self._add_indicator(self.EMA_20_CHANNEL, self._ema_20_channel)
-        #self._add_indicator(self.EMA_1h_4h, self._ema_1d_1h)
 
 
         # ADX
@@ -165,6 +169,7 @@ class Indicators:
         # ICHIMOKU
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
+        self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_4H, self._ichimoku_kijun_close_predict_4h)
         self._add_indicator(self.ICHIMOKU_KIJUN_CROSS_CONFIRM, self._ichimoku_kijun_close_cross_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_THICKNESS, self._ichimoku_cloud_thickness_predict)
@@ -189,9 +194,9 @@ class Indicators:
         df_4h.dropna(inplace=True)
         df_4h.reset_index(inplace=True)
 
-        df4h = df_4h.filter(["open", "low", "high", "close"])
+        df_4h = df_4h.filter(["open", "low", "high", "close"])
         dp = DataProcessor()
-        dp.addSignals(df4h)
+        dp.addSignals_big_tf(df_4h)
 
         return df_4h
 
@@ -282,20 +287,16 @@ class Indicators:
 
         return TradeAction.NONE
 
-    def _ema_1d_1h(self, df):
+    def _rsi_break_predict_4h(self, df):
         try:
             df4h = self.convert_1h_to_4h(df)
-            current_ema_30_1h = df.EMA_30.iloc[-1]
-            current_ema_50_4h = df4h.EMA_50.iloc[-2]
-            current_close = df.close.iloc[-1]
-
-
-            if current_ema_30_1h > current_ema_50_4h and current_close > current_ema_50_4h:
-                return TradeAction.BUY
-            elif current_ema_30_1h < current_ema_50_4h and current_close < current_ema_50_4h:
-                return TradeAction.SELL
+            return self._oscillator_break(df4h, "RSI", 50, 50)
         except Exception as e:
-            print(f"Error during indication {e}")
+            print(f"Error during indication {e}.")
+            print(f"1h {df}.")
+            print(f"4h {df4h}.")
+
+
 
         return TradeAction.NONE
 
@@ -429,6 +430,10 @@ class Indicators:
 
     def _rsi_limit_predict(self, df):
         return self._oscillator_limit(df, "RSI", 50, 70, 30)
+
+    def _rsi_limit_predict_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+        return self._oscillator_limit(df4h, "RSI", 50, 70, 30)
 
     def _williams_limit_predict(self, df):
         return self._oscillator_limit(df, "WILLIAMS", -50, -20, -80)
@@ -811,6 +816,18 @@ class Indicators:
         # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
         # Linie nur Long-Trades vorgenommen werden sollten, und unterhalb entsprechend nur Short-Trades.
         kijun = df.KIJUN.iloc[-1]
+        close = df.close.iloc[-1]
+
+        if close > kijun:
+            return TradeAction.BUY
+        else:
+            return TradeAction.SELL
+
+    def _ichimoku_kijun_close_predict_4h(self, df):
+        # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
+        # Linie nur Long-Trades vorgenommen werden sollten, und unterhalb entsprechend nur Short-Trades.
+        df4h = self.convert_1h_to_4h(df)
+        kijun = df4h.KIJUN.iloc[-1]
         close = df.close.iloc[-1]
 
         if close > kijun:
