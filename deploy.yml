@@ -5,7 +5,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
-- main
+- TI
 
 pool:
   vmImage: ubuntu-latest
@@ -30,4 +30,4 @@ steps:
     repository: 'hacky1610/emmanuel_ti'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v21.06'
+    tags: 'v21.07'

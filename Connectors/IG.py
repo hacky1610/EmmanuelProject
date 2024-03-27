@@ -137,6 +137,9 @@ class IG:
 
         return DataFrame()
 
+    def get_market_details(self, epic: str):
+        return self.ig_service.fetch_market_by_epic(epic)
+
     def _get_spread(self, market_object):
         offer = market_object.offer
         bid = market_object.bid
@@ -253,6 +256,24 @@ class IG:
     def get_opened_positions(self) -> DataFrame:
         return self.ig_service.fetch_open_positions()
 
+    def get_min_stop_distance(self, epic: str) -> float:
+        ms = self.get_market_details("CS.D.CADCHF.MINI.IP")
+        return ms["dealingRules"]["minNormalStopOrLimitDistance"]["value"]
+
+    def get_stop_distance(self, market, epic: str, scaling_factor: int) -> float:
+        stop_distance = market.get_pip_value(euro=self.intelligent_stop_distance,
+                                             scaling_factor=scaling_factor)
+
+        min_stop_distance = self.get_min_stop_distance(epic)
+
+        if stop_distance <= min_stop_distance:
+            self._tracer.debug(f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")
+            return min_stop_distance
+
+        self._tracer.debug(f"Calculated stop distance is {stop_distance}")
+
+        return stop_distance
+
     def intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore):
         open_price = position.level
         bid_price = position.bid
@@ -273,22 +294,20 @@ class IG:
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
                     if diff > self.intelligent_stop_border:
-                        new_stop_level = bid_price - market.get_pip_value(euro=self.intelligent_stop_distance,
-                                                                          scaling_factor=scaling_factor)
+                        new_stop_level = bid_price - self.get_stop_distance(market, position.epic, scaling_factor)
                         if new_stop_level > stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
             else:
                 if offer_price < open_price:
                     diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
                     if diff > self.intelligent_stop_border:
-                        new_stop_level = offer_price + market.get_pip_value(euro=self.intelligent_stop_distance,
-                                                                            scaling_factor=scaling_factor)
+                        new_stop_level = offer_price + self.get_stop_distance(market, position.epic, scaling_factor)
                         if new_stop_level < stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
         except Exception as e:
             self._tracer.error(f"Bid or offer price is none {position}")
 
-    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store:DealStore):
+    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")
         res = self.adapt_stop_level(deal_id=deal_id, limit_level=limit_level, stop_level=new_stop_level)
         self._tracer.debug(res)
@@ -324,6 +343,35 @@ class IG:
         if balance == None:
             return 0
         return balance
+
+    def close(self,
+              direction: str,
+              deal_id: str,
+              size: float = 1.0, ) -> (bool, dict):
+
+        deal_response: dict = {}
+        result = False
+        try:
+            response = self.ig_service.close_open_position(
+                direction=direction,
+                epic=None,
+                expiry="-",
+                order_type="MARKET",
+                size=size,
+                level=None,
+                quote_id=None,
+                deal_id=deal_id
+            )
+            if response["dealStatus"] != "ACCEPTED":
+                self._tracer.error(f"could not close trade: {response['reason']}")
+            else:
+                self._tracer.write(f"Close successfull {deal_id}. Deal details {response}")
+                result = True
+            deal_response = response
+        except IGException as ex:
+            self._tracer.error(f"Error during close a position. {ex} for {deal_id}")
+
+        return result, deal_response
 
     @staticmethod
     def _get_hours(start_date):
@@ -396,7 +444,8 @@ class IG:
         #                      color="#00ff00", label="Limit")
 
     @staticmethod
-    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics: Analytics, viewer:BaseViewer, predictor_settings:Dict):
+    def report_symbol(ti, ticker, start_time_hours, start_time_str, hist, cache, dp, analytics: Analytics,
+                      viewer: BaseViewer, predictor_settings: Dict):
         df_results = DataFrame()
         df_history = ti.load_data_by_date(ticker,
                                           TimeUtils.get_date_string(start_time_hours),
@@ -438,11 +487,14 @@ class IG:
                 open_data["wl_ration"] = win_lost
 
                 df_results = df_results.append(open_data)
-                res = analytics.evaluate(predictor, df, df_eval, name, viewer, filter=datetime(dt.year, dt.month, dt.day, dt.hour) )
+                res = analytics.evaluate(predictor, df, df_eval, name, viewer,
+                                         filter=datetime(dt.year, dt.month, dt.day, dt.hour))
                 for trade in res._trade_results:
-                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour) ) == trade.last_df_time:
-                        df_results.loc[df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
-                        df_results.loc[df_results.date == TimeUtils.get_time_string(filter), "eval_action"] = trade.action
+                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour)) == trade.last_df_time:
+                        df_results.loc[
+                            df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
+                        df_results.loc[
+                            df_results.date == TimeUtils.get_time_string(filter), "eval_action"] = trade.action
             else:
                 raise Exception()
 
@@ -487,7 +539,7 @@ class IG:
         #     print(f"{ticker} ERROR - evaluation mismatch")
         return df_results
 
-    def report_last_day(self, ti, cache, dp, analytics, viewer:BaseViewer, days: int = 7):
+    def report_last_day(self, ti, cache, dp, analytics, viewer: BaseViewer, days: int = 7):
         start_time = (datetime.now() - timedelta(hours=days * 24))
         start_time_hours = (datetime.now() - timedelta(days=days * 2))
         start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S")
@@ -507,7 +559,6 @@ class IG:
 
         hist = self.fix_hist(hist)
 
-
         for i in [""] + Indicators().get_all_indicator_names():
             print(f"Indicator {i}")
             df_results = DataFrame()
@@ -521,16 +572,20 @@ class IG:
                                             dp=dp,
                                             analytics=analytics,
                                             viewer=viewer,
-                                            predictor_settings={"_additional_indicators":[i]})
+                                            predictor_settings={"_additional_indicators": [i]})
                 df_results = df_results.append(df_res)
             print(df_results)
 
-            #print(df_results.filter(["date","ticker", "wl", "eval_result"]))
+            # print(df_results.filter(["date","ticker", "wl", "eval_result"]))
             try:
-                wl_eval = len(df_results[df_results.eval_result == 'won']) / (len(df_results[df_results.eval_result == 'won']) + len(df_results[df_results.eval_result == 'lost']))
-                wl_original = len(df_results[df_results.wl == 'won']) / (len(df_results[df_results.wl == 'won']) + len(df_results[df_results.wl == 'lost']))
+                wl_eval = len(df_results[df_results.eval_result == 'won']) / (
+                            len(df_results[df_results.eval_result == 'won']) + len(
+                        df_results[df_results.eval_result == 'lost']))
+                wl_original = len(df_results[df_results.wl == 'won']) / (
+                            len(df_results[df_results.wl == 'won']) + len(df_results[df_results.wl == 'lost']))
                 print(f"WL   Original: {wl_original} Eval: {wl_eval}")
-                print(f"Lost Original: {len(df_results[df_results.wl == 'lost'])} Eval: {len(df_results[df_results.eval_result == 'lost'])}")
+                print(
+                    f"Lost Original: {len(df_results[df_results.wl == 'lost'])} Eval: {len(df_results[df_results.eval_result == 'lost'])}")
             except:
                 print("Division by Zero")
 
@@ -574,7 +629,7 @@ class IG:
 
         return
 
-    def create_report(self, ti, dp_service, predictor, cache, dp, analytics, viewer:BaseViewer):
+    def create_report(self, ti, dp_service, predictor, cache, dp, analytics, viewer: BaseViewer):
         # self.report_summary(ti, dp_service, timedelta(hours=24), "lastday")
         # self.report_summary(ti=ti,
         #                     dp_service=dp_service,
