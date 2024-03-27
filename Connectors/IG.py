@@ -288,7 +288,7 @@ class IG:
         except Exception as e:
             self._tracer.error(f"Bid or offer price is none {position}")
 
-    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store):
+    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store:DealStore):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")
         res = self.adapt_stop_level(deal_id=deal_id, limit_level=limit_level, stop_level=new_stop_level)
         self._tracer.debug(res)
@@ -296,8 +296,11 @@ class IG:
             self._tracer.error("Stop level cant be adapted")
         else:
             deal = deal_store.get_deal_by_deal_id(deal_id)
-            deal.set_intelligent_stop_level(new_stop_level)
-            deal_store.save(deal)
+            if deal is not None:
+                deal.set_intelligent_stop_level(new_stop_level)
+                deal_store.save(deal)
+            else:
+                self._tracer.debug(f"deal {deal_id} is not in our db")
 
     def adapt_stop_level(self, deal_id: str, limit_level: float, stop_level: float):
 

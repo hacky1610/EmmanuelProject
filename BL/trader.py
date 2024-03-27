@@ -125,9 +125,12 @@ class Trader:
                 self._tracer.error(f"Error while trading {market['symbol']} {EX}")
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 self._tracer.error(f"Error: {EX} File:{traceback_str}")
+
+        self._tracer.debug("End")
+
+    def update_markets(self):
         self._intelligent_update()
         self.update_deals()
-        self._tracer.debug("End")
 
     def _intelligent_update(self):
         self._tracer.debug("Intelligent Update")
