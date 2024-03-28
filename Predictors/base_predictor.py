@@ -84,7 +84,7 @@ class BasePredictor:
         json_objs = []
         for stop, limit in itertools.product(
                 [65, 70],
-                [10, 15, 20]):
+                [10, 15, 20, 25]):
             json_objs.append({
                 "stop": stop,
                 "limit": limit,

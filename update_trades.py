@@ -17,15 +17,13 @@ from BL import EnvReader, DataProcessor, ConfigReader
 from BL.trader import Trader
 import dropbox
 
-def check_config_folder():
 
-    path_to_config = os.path.join(os.path.dirname(__file__), "Config", "demo.json")
-    return os.path.exists(path_to_config)
-
-account_type = "DEMO"
-conf_reader = ConfigReader(False)
-conf_reader = EnvReader()
-account_type = conf_reader.get("Type")
+if os.uname()[1] == 'daniel-mint':
+    account_type = "DEMO"
+    conf_reader = ConfigReader(False)
+else:
+    conf_reader = EnvReader()
+    account_type = conf_reader.get("Type")
 
 
 if account_type == "DEMO":
