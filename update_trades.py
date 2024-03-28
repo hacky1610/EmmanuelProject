@@ -24,8 +24,8 @@ def check_config_folder():
 
 account_type = "DEMO"
 conf_reader = ConfigReader(False)
-#conf_reader = EnvReader()
-#account_type = conf_reader.get("Type")
+conf_reader = EnvReader()
+account_type = conf_reader.get("Type")
 
 
 if account_type == "DEMO":
