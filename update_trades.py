@@ -1,4 +1,5 @@
 import os
+import time
 
 import pymongo
 
@@ -21,10 +22,10 @@ def check_config_folder():
     path_to_config = os.path.join(os.path.dirname(__file__), "Config", "demo.json")
     return os.path.exists(path_to_config)
 
-#account_type = "DEMO"
-#conf_reader = ConfigReader(False)
-conf_reader = EnvReader()
-account_type = conf_reader.get("Type")
+account_type = "DEMO"
+conf_reader = ConfigReader(False)
+#conf_reader = EnvReader()
+#account_type = conf_reader.get("Type")
 
 
 if account_type == "DEMO":
@@ -59,6 +60,8 @@ trader = Trader(
     market_storage=ms
 )
 tracer.debug(f"Update markets {account_type}")
-trader.update_markets()
+while True:
+    trader.update_markets()
+    time.sleep(60 * 6)
 
 

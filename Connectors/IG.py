@@ -257,14 +257,18 @@ class IG:
         return self.ig_service.fetch_open_positions()
 
     def get_min_stop_distance(self, epic: str) -> float:
-        ms = self.get_market_details("CS.D.CADCHF.MINI.IP")
-        return ms["dealingRules"]["minNormalStopOrLimitDistance"]["value"]
+        try:
+            ms = self.get_market_details(epic)
+            return ms["dealingRules"]["minNormalStopOrLimitDistance"]["value"]
+        except Exception as e:
+            self._tracer.error(f"Error while get limit {e}")
+            return -1
 
     def get_stop_distance(self, market, epic: str, scaling_factor: int) -> float:
         stop_distance = market.get_pip_value(euro=self.intelligent_stop_distance,
                                              scaling_factor=scaling_factor)
 
-        min_stop_distance = self.get_min_stop_distance(epic)
+        min_stop_distance = self.get_min_stop_distance(epic) / scaling_factor
 
         if stop_distance <= min_stop_distance:
             self._tracer.debug(f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")
@@ -306,6 +310,8 @@ class IG:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
         except Exception as e:
             self._tracer.error(f"Bid or offer price is none {position}")
+            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+            print(f"MainException: {e} File:{traceback_str}")
 
     def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")
