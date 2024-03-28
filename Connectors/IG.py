@@ -298,20 +298,24 @@ class IG:
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
                     if diff > self.intelligent_stop_border:
-                        new_stop_level = bid_price - self.get_stop_distance(market, position.epic, scaling_factor)
+                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
+                        new_stop_level = offer_price - distance
+                        new_limit_level = offer_price + distance
                         if new_stop_level > stop_level:
-                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+                            self._adjust_stop_level(deal_id, new_limit_level, new_stop_level, deal_store)
             else:
                 if offer_price < open_price:
                     diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
                     if diff > self.intelligent_stop_border:
-                        new_stop_level = offer_price + self.get_stop_distance(market, position.epic, scaling_factor)
+                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
+                        new_stop_level = offer_price + distance
+                        new_limit_level = offer_price -distance
                         if new_stop_level < stop_level:
-                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+                            self._adjust_stop_level(deal_id, new_limit_level, new_stop_level, deal_store)
         except Exception as e:
             self._tracer.error(f"Bid or offer price is none {position}")
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
-            print(f"MainException: {e} File:{traceback_str}")
+            self._tracer.error(f"MainException: {e} File:{traceback_str}")
 
     def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")

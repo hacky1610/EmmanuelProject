@@ -68,6 +68,10 @@ class Deal:
     def close(self):
         self.status = "Closed"
 
+    def set_intelligent_stop_level(self, level:float):
+        self.intelligent_stop_used = True
+        self.intelligent_stop_level = level
+
     def to_dict(self):
         return {
                 "ticker": self.ticker,
@@ -117,9 +121,7 @@ class DealStore:
             return Deal.Create(res)
         return None
 
-    def set_intelligent_stop_level(self, level:float):
-        self.intelligent_stop_used = True
-        self.intelligent_stop_level = level
+
 
     def get_all_deals(self):
         return self._collection.find({"account_type": self._account_type})
