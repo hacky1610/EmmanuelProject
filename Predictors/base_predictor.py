@@ -105,10 +105,13 @@ class BasePredictor:
     def get_last_result(self) -> EvalResult:
         return self._last_scan
 
-    def save(self, symbol: str):
+    def get_save_data(self) -> Series:
         self.last_scan = datetime.utcnow().isoformat()
-        data = self.get_config().append(self._last_scan.get_data())
-        self._cache.save_settings(data.to_json(), self._get_filename(symbol, self.model_version))
+        return self.get_config().append(self._last_scan.get_data())
+
+    def save(self, symbol: str):
+
+        self._cache.save_settings(self.get_save_data().to_json(), self._get_filename(symbol, self.model_version))
 
     def load(self, symbol: str):
         json = self._cache.load_settings(self._get_filename(symbol,self.model_version))

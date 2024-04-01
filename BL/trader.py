@@ -298,5 +298,5 @@ class Trader:
                                          epic=config.epic, direction=signal, account_type="DEMO",
                                          open_date_ig_str=date_string,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
-                                         stop_factor=stop, limit_factor=limit))
+                                         stop_factor=stop, limit_factor=limit, predictor_data=predictor.get_save_data().to_dict()))
         return res
