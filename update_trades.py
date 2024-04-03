@@ -18,7 +18,7 @@ from BL.trader import Trader
 import dropbox
 
 
-if os.getlogin() == 'adhada7':
+if os.name == 'nt':
     account_type = "DEMO"
     conf_reader = ConfigReader(False)
 else:
