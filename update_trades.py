@@ -18,8 +18,14 @@ from BL.trader import Trader
 import dropbox
 
 
-account_type = "DEMO"
-conf_reader = ConfigReader(False)
+if os.getlogin() == 'adhada7':
+    account_type = "DEMO"
+    conf_reader = ConfigReader(False)
+else:
+    conf_reader = EnvReader()
+    account_type = conf_reader.get("Type")
+
+
 
 
 
