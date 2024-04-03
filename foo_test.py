@@ -18,15 +18,9 @@ from BL.trader import Trader
 import dropbox
 
 
+
 account_type = "DEMO"
 conf_reader = ConfigReader(False)
-
-
-
-if account_type == "DEMO":
-    live = False
-else:
-    live = True
 
 dataProcessor = DataProcessor()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
@@ -34,7 +28,7 @@ ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
 tracer = LogglyTracer(conf_reader.get("loggly_api_key"), account_type)
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
-ig = IG(conf_reader=conf_reader, tracer=tracer, live=live)
+ig = IG(conf_reader=conf_reader, tracer=tracer, live=False)
 predictor_class_list = [GenericPredictor]
 client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
@@ -43,18 +37,15 @@ ds = DealStore(db, account_type)
 analytics = Analytics(ms, tracer)
 indicators = Indicators(tracer=tracer)
 
-trader = Trader(
-    ig=ig,
-    tiingo=tiingo,
-    tracer=tracer,
-    predictor_class_list=predictor_class_list,
-    dataprocessor=dataProcessor,
-    analytics=analytics,
-    cache=cache,
-    deal_storage=ds,
-    market_storage=ms
-)
-tracer.debug(f"Update markets {account_type}")
-trader.update_markets()
+
+hist = ig.get_transaction_history(4)
+
+markets = ig.get_markets(trade_type=TradeType.FX)
+
+for m in markets:
+    market = ms.get_market(m["symbol"])
+    if market is None:
+        print(m["symbol"])
 
 
+print("")

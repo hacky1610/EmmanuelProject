@@ -101,10 +101,26 @@ class Trader:
             if deal is not None:
                 deal.profit = float(ig_deal.profitAndLoss[1:])
                 deal.close_date_ig_datetime = datetime.strptime(ig_deal.dateUtc, '%Y-%m-%dT%H:%M:%S')
+
+                if deal.profit == 0:
+                    ig_m = self._ig.get_market_details(deal.epic)
+                    scaling = int(ig_m["instrument"]["contractSize"])
+                    m = self._market_store.get_market(deal.ticker)
+
+                    if int(ig_deal["size"]) == 1:
+                        profit = float(ig_deal["closeLevel"]) - float(ig_deal["openLevel"])
+                        deal.profit = m.get_euro_value(profit, scaling)
+                    else:
+                        profit = float(ig_deal["openLevel"]) - float(ig_deal["closeLevel"])
+                        deal.profit = m.get_euro_value(profit, scaling)
+
+                    self._tracer.warning(f"Problem with IG Calcululation. Profit is 0 Euro. Real profit is {deal.profit} . Deal {deal.dealId}")
+
                 if deal.profit > 0:
                     deal.result = 1
                 else:
                     deal.result = -1
+
                 deal.close()
                 self._deal_storage.save(deal)
             else:
