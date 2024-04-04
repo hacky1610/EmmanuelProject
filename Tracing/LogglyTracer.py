@@ -3,11 +3,12 @@ from Tracing.Loggly.connection import LogglyConnection
 
 class LogglyTracer(Tracer):
 
-    _prefix: str = ""
 
-    def __init__(self,token:str,type:str):
+    def __init__(self,token:str,type:str, prefix:str= ""):
         self._log = LogglyConnection(token)
         self.type = type
+        self._prefix: str = prefix
+
 
     def write(self, message):
         self._log.create_input(f"[TI {self.type}] | INFO | {self._prefix} | {self._get_function()} | {message}")

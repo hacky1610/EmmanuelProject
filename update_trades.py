@@ -38,7 +38,7 @@ dataProcessor = DataProcessor()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
-tracer = LogglyTracer(conf_reader.get("loggly_api_key"), account_type)
+tracer = LogglyTracer(conf_reader.get("loggly_api_key"), account_type, "update_job")
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader, tracer=tracer, live=live)
 predictor_class_list = [GenericPredictor]

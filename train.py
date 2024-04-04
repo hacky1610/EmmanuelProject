@@ -18,7 +18,7 @@ from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.joy_predictor import JoyPredictor
 from Predictors.trainer import Trainer
-from BL.utils import ConfigReader
+from BL.utils import ConfigReader, EnvReader
 from BL.data_processor import DataProcessor
 from BL.analytics import Analytics
 from Connectors.dropboxservice import DropBoxService
@@ -35,7 +35,14 @@ else:
     live = True
 
 # region statics
-conf_reader = ConfigReader(live_config=live)
+if os.name == 'nt':
+    account_type = "DEMO"
+    conf_reader = ConfigReader(False)
+else:
+    conf_reader = EnvReader()
+    account_type = conf_reader.get("Type")
+
+
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, type_)
 cache = DropBoxCache(ds)
@@ -93,7 +100,7 @@ def train_predictor(ig: IG,
                     traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                     print(f"MainException: {e} File:{traceback_str}")
 
-    else:
+        else:
             print(f"No Data in {symbol} ")
 
 
@@ -110,32 +117,4 @@ while True:
                     reporting=_reporting,
                     indicators=_indicators)
 
-    # train_predictor(ig=_ig,
-    #                 trainer=_trainer,
-    #                 tiingo=_tiingo,
-    #                 predictor=JoyPredictor,
-    #                 async_ex=_async_ex,
-    #                 async_exec=_async_exec,
-    #                 train_version=_train_version,
-    #                 dp=_dp,
-    #                 reporting=_reporting,
-    #                 indicators=_indicators)
 
-    # train_predictor(ig=_ig,
-    #                 trainer=_trainer,
-    #                 tiingo=_tiingo,
-    #                 predictor=RectanglePredictor,
-    #                 async_ex=_async_ex,
-    #                 async_exec=_async_exec,
-    #                 train_version=_train_version,
-    #                 dp=_dp,
-    #                 indicators=_indicators)
-    # train_predictor(ig=_ig,
-    #                 trainer=_trainer,
-    #                 tiingo=_tiingo,
-    #                 predictor=TrianglePredictor,
-    #                 async_ex=_async_ex,
-    #                 async_exec=_async_exec,
-    #                 train_version=_train_version,
-    #                 dp=_dp,
-    #                 indicators=_indicators)
