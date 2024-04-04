@@ -25,6 +25,8 @@ from Connectors.dropboxservice import DropBoxService
 import dropbox
 
 from Predictors.utils import Reporting
+from Tracing.ConsoleTracer import ConsoleTracer
+from Tracing.LogglyTracer import LogglyTracer
 
 # endregions
 
@@ -38,9 +40,11 @@ else:
 if os.name == 'nt':
     account_type = "DEMO"
     conf_reader = ConfigReader(False)
+    _tracer = ConsoleTracer()
 else:
     conf_reader = EnvReader()
     account_type = conf_reader.get("Type")
+    _tracer = LogglyTracer(conf_reader.get("loggly_api_key"), type_, "train_job")
 
 
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
@@ -50,10 +54,10 @@ client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db
 db = client["ZuluDB"]
 ms = MarketStore(db)
 _trainer = Trainer(Analytics(market_store=ms), cache=cache, check_trainable=False)
-_tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
+_tiingo = Tiingo(conf_reader=conf_reader, cache=cache, tracer=_tracer)
 _dp = DataProcessor()
 _trade_type = TradeType.FX
-_ig = IG(conf_reader=conf_reader, live=live)
+_ig = IG(conf_reader=conf_reader, live=live, tracer=_tracer)
 _async_ex = AsyncExecutor(free_cpus=2)
 _indicators = Indicators()
 _reporting = Reporting(cache)
@@ -75,17 +79,20 @@ def train_predictor(ig: IG,
                     indicators: Indicators,
                     reporting:Reporting,
                     trade_type: TradeType = TradeType.FX,
+                    tracer = ConsoleTracer()
                     ):
+    tracer.info("Start training")
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     if len(markets) == 0:
         return
     reporting.create(markets, predictor)
     best_indicators = reporting.get_best_indicator_names()
-    #print(f"Best indicators: {best_indicators}")
+    tracer.info(f"Best indicators: {best_indicators}")
 
     for m in random.choices(markets, k=10):
         # for m in markets:
         symbol = m["symbol"]
+        tracer.info(f"Train {symbol}")
         #symbol = "EURCZK"
         df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         df_test, eval_df_test = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
@@ -115,6 +122,7 @@ while True:
                     train_version=_train_version,
                     dp=_dp,
                     reporting=_reporting,
-                    indicators=_indicators)
+                    indicators=_indicators,
+                    tracer=_tracer)
 
 

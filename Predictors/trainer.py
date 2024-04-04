@@ -6,14 +6,17 @@ from typing import List
 from pandas import DataFrame
 
 from BL.eval_result import EvalResult
+from Tracing.ConsoleTracer import ConsoleTracer
+from Tracing.Tracer import Tracer
 
 
 class Trainer:
 
-    def __init__(self, analytics, cache, check_trainable=False):
+    def __init__(self, analytics, cache, check_trainable=False, tracer:Tracer = ConsoleTracer()):
         self._analytics = analytics
         self._cache = cache
         self._check_trainable = check_trainable
+        self._tracer = tracer
 
     def is_trained(self,
                    symbol: str,
@@ -39,7 +42,7 @@ class Trainer:
 
     def train(self, symbol: str, scaling:int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame, df_eval_test: DataFrame,
               version: str, predictor_class, indicators, best_indicators: List):
-        print(
+        self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best_win_loss = 0
         best_reward = 0
@@ -51,6 +54,7 @@ class Trainer:
             predictor = predictor_class(indicators=indicators, cache=self._cache)
             predictor.load(symbol)
             if not self._trainable(predictor):
+                self._tracer.info("Predictor is not trainable")
                 return
             predictor.setup(training_set)
 
@@ -65,17 +69,17 @@ class Trainer:
                 best_predictor = predictor
                 best_predictor.save(symbol)
 
-                print(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
+                self._tracer.info(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
 
         if best_predictor is not None:
             res_test: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
             best_predictor.save(symbol)
 
-            print(f"Test:  WL: {res_test.get_win_loss()} - Reward: {res_test.get_reward()} Avg Reward {res_test.get_average_reward()}")
-            print(f"Train: WL: {best_win_loss}           - Reward: {best_reward}       Avg Reward {best_avg_reward}")
-            print(f"Stop: {best_predictor.stop} - Limit: {best_predictor.limit}   Max nones: {best_predictor._max_nones}")
+            self._tracer.info(f"Test:  WL: {res_test.get_win_loss()} - Reward: {res_test.get_reward()} Avg Reward {res_test.get_average_reward()}")
+            self._tracer.info(f"Train: WL: {best_win_loss}           - Reward: {best_reward}       Avg Reward {best_avg_reward}")
+            self._tracer.info(f"Stop: {best_predictor.stop} - Limit: {best_predictor.limit}   Max nones: {best_predictor._max_nones}")
         else:
-            print("No Best predictor")
+            self._tracer.info("No Best predictor")
 
         #print(f"Needed time for {symbol} -  {(time() - startzeit) / 60} minutes")
 
