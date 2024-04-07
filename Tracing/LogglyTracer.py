@@ -28,7 +28,7 @@ class LogglyTracer(Tracer):
 
     def warning(self, message):
         self._log.create_input(
-            f"[{self.type}] | {self._mode} | WARNING | {self._prefix} | {self._get_function()} | {message}")
+            f"[TI {self.type}] | {self._mode} | WARNING | {self._prefix} | {self._get_function()} | {message}")
 
     def result(self, message):
         print("Result: {}:".format(message))

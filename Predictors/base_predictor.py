@@ -1,4 +1,6 @@
 import itertools
+import random
+
 from pandas import DataFrame, Series
 from BL.eval_result import EvalResult
 from Connectors.dropbox_cache import BaseCache
@@ -83,8 +85,8 @@ class BasePredictor:
 
         json_objs = []
         for stop, limit in itertools.product(
-                [65, 70],
-                [10, 15, 20, 25]):
+                random.choices(range(20,65), k=3),
+                random.choices(range(6,25), k=3)):
             json_objs.append({
                 "stop": stop,
                 "limit": limit,

@@ -98,6 +98,7 @@ class Tiingo:
                 end_str = TimeUtils.get_time_string(datetime.strptime(end, "%Y-%m-%d"))
                 res = cached[start_str < cached.date]
                 res = res[res.date < end_str]
+                res = res.reset_index()
         else:
             res = self._send_history_request(ticker, start, end, resolution, trade_type)
 

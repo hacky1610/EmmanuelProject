@@ -69,7 +69,8 @@ class Trainer:
                 best_predictor = predictor
                 best_predictor.save(symbol)
 
-                self._tracer.info(f"{symbol} - Result {res} - Indicators {predictor._indicator_names}")
+                self._tracer.info(f"{symbol} - Result {res} - Indicators {predictor._indicator_names} "
+                                  f"Limit: {predictor.limit} Stop: {predictor.stop}")
 
         if best_predictor is not None:
             res_test: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)

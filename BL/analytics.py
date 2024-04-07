@@ -81,7 +81,7 @@ class Analytics:
             trades.append(trade)
 
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
-            future.reset_index(inplace=True)
+            future.reset_index(inplace=True, drop=True)
 
             additonal_text = self._create_additional_info(df.iloc[current_index],
                                                           "RSI", "CCI", "MACD", "SIGNAL", "PSAR")

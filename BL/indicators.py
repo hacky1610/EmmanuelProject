@@ -40,10 +40,10 @@ class Indicators:
     WILLIAMS_LIMIT = "williams_limit"
     WILLIAMS_BREAK = "williams_break"
     # endregion
-    #region TII
+    # region TII
     TII_50 = "tii_50"
     TII_20_80 = "tii_20_80"
-    #endregion
+    # endregion
     # MACD
     MACD = "macd"
     MACD_ZERO = "macd_zero"
@@ -111,7 +111,6 @@ class Indicators:
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
         self._add_indicator(self.RSI_BREAK_4H, self._rsi_break_predict_4h)
 
-
         self._add_indicator(self.TII_50, self._tii_50)
         self._add_indicator(self.TII_20_80, self._tii_20_80)
 
@@ -138,7 +137,6 @@ class Indicators:
         self._add_indicator(self.SMMA20_CLOSE, self._smma_20_close)
         self._add_indicator(self.EMA20_SMMA20, self._ema_20_smma_20)
         self._add_indicator(self.EMA_20_CHANNEL, self._ema_20_channel)
-
 
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
@@ -178,7 +176,7 @@ class Indicators:
 
     # endregion
 
-    def convert_1h_to_4h(self, one_h_df:DataFrame):
+    def convert_1h_to_4h(self, one_h_df: DataFrame):
         if len(one_h_df) == 0:
             return DataFrame()
 
@@ -212,12 +210,12 @@ class Indicators:
         return None
 
     def get_all_indicator_names(self, skip: List = None):
-        all_indicator_names =  [indikator.name for indikator in self._indicators]
+        all_indicator_names = [indikator.name for indikator in self._indicators]
 
         if skip is not None:
             all_indicator_names = [element for element in all_indicator_names if element not in skip]
 
-        return  all_indicator_names
+        return all_indicator_names
 
     def get_random_indicator_names(self, must: str = None, skip: List = None, min: int = 3, max: int = 6):
         all_indicator_names = self.get_all_indicator_names(skip)
@@ -242,17 +240,18 @@ class Indicators:
     # region Predict
     def _predict(self, predict_values, max_none=0):
 
-
         self._tracer.debug(f"Predict for multiple values {predict_values} and max_none {max_none}")
-        nones =  predict_values.count(TradeAction.NONE)
+        nones = predict_values.count(TradeAction.NONE)
         if nones > max_none:
             return TradeAction.NONE
 
-        if (predict_values.count(TradeAction.BUY) + predict_values.count(TradeAction.BOTH) + predict_values.count(TradeAction.NONE)) >= len(
-                predict_values) :
+        if (predict_values.count(TradeAction.BUY) + predict_values.count(TradeAction.BOTH) + predict_values.count(
+                TradeAction.NONE)) >= len(
+                predict_values):
             return TradeAction.BUY
-        elif (predict_values.count(TradeAction.SELL) + predict_values.count(TradeAction.BOTH) + predict_values.count(TradeAction.NONE)) >= len(
-                predict_values) :
+        elif (predict_values.count(TradeAction.SELL) + predict_values.count(TradeAction.BOTH) + predict_values.count(
+                TradeAction.NONE)) >= len(
+                predict_values):
             return TradeAction.SELL
 
         return TradeAction.NONE
@@ -296,11 +295,7 @@ class Indicators:
             print(f"1h {df}.")
             print(f"4h {df4h}.")
 
-
-
         return TradeAction.NONE
-
-
 
     def _ema_hist_predict(self, df):
         if len(df) < 4:
@@ -310,7 +305,7 @@ class Indicators:
 
         if len(period[period.EMA_10 > period.EMA_20]) > 0 and len(period[period.EMA_20 > period.EMA_30]) > 0:
             return TradeAction.BUY
-        elif  len(period[period.EMA_10 < period.EMA_20]) > 0 and len(period[period.EMA_20 < period.EMA_30]) > 0:
+        elif len(period[period.EMA_10 < period.EMA_20]) > 0 and len(period[period.EMA_20 < period.EMA_30]) > 0:
             return TradeAction.SELL
 
         return TradeAction.NONE
@@ -408,9 +403,11 @@ class Indicators:
         current_ema_low = df.EMA_20_LOW.iloc[-1]
         before_ema_low = df.EMA_20_LOW.iloc[-2]
 
-        if current_close > current_ema_low and before_low < before_ema_low and len(period[period.close > period.EMA_20_LOW]):
+        if current_close > current_ema_low and before_low < before_ema_low and len(
+                period[period.close > period.EMA_20_LOW]):
             return TradeAction.BUY
-        elif current_close < current_ema_high and before_high > before_ema_high and len(period[period.close < period.EMA_20_HIGH]):
+        elif current_close < current_ema_high and before_high > before_ema_high and len(
+                period[period.close < period.EMA_20_HIGH]):
             return TradeAction.SELL
 
         return TradeAction.NONE
@@ -423,10 +420,6 @@ class Indicators:
             return TradeAction.BUY
 
         return TradeAction.NONE
-
-
-
-
 
     def _rsi_limit_predict(self, df):
         return self._oscillator_limit(df, "RSI", 50, 70, 30)
@@ -468,7 +461,7 @@ class Indicators:
 
         return TradeAction.NONE
 
-    def _convergence_predict(self, df, indicator_name, b4after: int = 3, look_back:int = 20):
+    def _convergence_predict(self, df, indicator_name, b4after: int = 3, look_back: int = 20):
         pv = PivotScanner(be4after=b4after, lookback=look_back)
 
         pv.scan(df)
@@ -705,7 +698,6 @@ class Indicators:
 
         return TradeAction.NONE
 
-
     def _adx_max_predict(self, df):
         return self._oszi_max(df, "ADX", 7, 0.9)
 
@@ -718,7 +710,7 @@ class Indicators:
     def _adx_max_predict2(self, df):
         return self._oszi_max(df, "ADX", 14, 0.8)
 
-    def _oszi_max(self, df,indicator_name,  days, ratio):
+    def _oszi_max(self, df, indicator_name, days, ratio):
         current = df[indicator_name].iloc[-1]
         max = df[(days * 24) * -1:][indicator_name].max()
 
@@ -727,10 +719,10 @@ class Indicators:
 
         return TradeAction.BOTH
 
-    def _oszi_min_max(self, df,indicator_name,  days, ratio):
+    def _oszi_min_max(self, df, indicator_name, days, ratio):
         current = df[indicator_name].iloc[-1]
         max = df[(days * 24) * -1:][indicator_name].max()
-        min  = df[(days * 24) * -1:][indicator_name].min()
+        min = df[(days * 24) * -1:][indicator_name].min()
 
         if current > max * ratio:
             return TradeAction.NONE
@@ -740,10 +732,10 @@ class Indicators:
         return TradeAction.BOTH
 
     def _macd_max_predict(self, df):
-        return self._oszi_min_max(df,"MACD", 7, 0.9)
+        return self._oszi_min_max(df, "MACD", 7, 0.9)
 
     def _macd_max_predict2(self, df):
-        return self._oszi_min_max(df,"MACD", 14, 0.8)
+        return self._oszi_min_max(df, "MACD", 14, 0.8)
 
     def _macd_slope_predict(self, df):
         if len(df) < 2:

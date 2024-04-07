@@ -257,16 +257,16 @@ class Trader:
                 """
 
         if not self._evalutaion_up_to_date(predictor.get_last_scan_time()):
-            self._tracer.warning(f"{config.symbol} Last evaluation too old")
+            self._tracer.debug(f"{config.symbol} Last evaluation too old")
             return TradeResult.ERROR
 
         if not predictor.get_last_result().is_good():
-            self._tracer.warning(f"{config.symbol} has bad result {predictor.get_last_result()}")
+            self._tracer.debug(f"{config.symbol} has bad result {predictor.get_last_result()}")
             return TradeResult.ERROR
 
         open_deals = self._deal_storage.get_open_deals_by_ticker(config.symbol)
-        if len(open_deals) > 3:
-            self._tracer.warning(f"there are already 3 open position of {config.symbol}")
+        if len(open_deals) >= 2:
+            self._tracer.warning(f"there are already 2 open position of {config.symbol}")
             return TradeResult.ERROR
 
 

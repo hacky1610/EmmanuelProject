@@ -1,4 +1,5 @@
 import json
+import os
 
 from Connectors.dropboxservice import DropBoxService
 import pandas as pd
@@ -35,19 +36,38 @@ class BaseCache:
 
 class DropBoxCache(BaseCache):
 
-    def __init__(self, dropbox_servie: DropBoxService):
+    def __init__(self, dropbox_servie: DropBoxService, use_local_cache=False ):
         self.dropbox_servie = dropbox_servie
+        self.use_local_cache = use_local_cache
 
     def load_cache(self, name: str) -> DataFrame:
-        res = self.dropbox_servie.load(f"Cache/{name}")
-        if res == None:
-            return DataFrame()
-        df = pd.read_csv(io.StringIO(res), sep=",")
-        df = df.filter(["date", "open", "high", "low", "close"])
-        return df
+        if self.use_local_cache:
+            path = f"D:\\tmp\\{name}"
+            if os.path.exists(path):
+                df = pd.read_csv(path)
+                df = df.reset_index(drop=True)
+            else:
+                res = self.dropbox_servie.load(f"Cache/{name}")
+                if res == None:
+                    return DataFrame()
+                df = pd.read_csv(io.StringIO(res), sep=",")
+                df.to_csv(path)
+            df = df.filter(["date", "open", "high", "low", "close"])
+            return df
+        else:
+            res = self.dropbox_servie.load(f"Cache/{name}")
+            if res == None:
+                return DataFrame()
+            df = pd.read_csv(io.StringIO(res), sep=",")
+            df = df.filter(["date", "open", "high", "low", "close"])
+            return df
+
 
     def save_cache(self, data: DataFrame, name: str):
-        self.dropbox_servie.upload_data(data.to_csv(), f"Cache/{name}")
+        if self.use_local_cache:
+            data.to_csv(f"D:\\tmp\\{name}")
+        else:
+            self.dropbox_servie.upload_data(data.to_csv(), f"Cache/{name}")
 
     def load_settings(self, name: str):
         res = self.dropbox_servie.load(f"Settings/{name}")

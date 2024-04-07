@@ -105,4 +105,5 @@ class GenericPredictor(BasePredictor):
     @staticmethod
     def get_training_sets(version: str, best_indicators:List):
         return GenericPredictor._indicator_names_sets(version,best_indicators) + BasePredictor._stop_limit_trainer(version)
+        #return BasePredictor._stop_limit_trainer(version)
 

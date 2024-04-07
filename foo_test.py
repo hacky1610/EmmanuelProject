@@ -37,15 +37,16 @@ ds = DealStore(db, account_type)
 analytics = Analytics(ms, tracer)
 indicators = Indicators(tracer=tracer)
 
-
-hist = ig.get_transaction_history(4)
-
-markets = ig.get_markets(trade_type=TradeType.FX)
+markets = ig.get_markets(trade_type=TradeType.FX, tradeable=False)
 
 for m in markets:
-    market = ms.get_market(m["symbol"])
-    if market is None:
-        print(m["symbol"])
+    print(f"Fix {m['symbol']}")
+    p = GenericPredictor(cache=cache, indicators=indicators)
+    p = p.load(m["symbol"])
+    p.stop = 65
+    p.limit = 20
+    p.save(m["symbol"])
+
 
 
 print("")
