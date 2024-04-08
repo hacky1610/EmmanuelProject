@@ -172,24 +172,6 @@ class Trader:
                     currency=market["currency"])
             )
 
-    def _is_good(self, win_loss: float, trades: float, symbol: str):
-        """Überprüft, ob das Handelsergebnis gut genug für den Handel ist.
-
-                Args:
-                    win_loss (float): Das Verhältnis von Gewinnen zu Verlusten.
-                    trades (float): Die Anzahl der Trades.
-                    symbol (str): Das Handelssymbol.
-
-                Returns:
-                    bool: True, wenn das Ergebnis gut ist, sonst False.
-                """
-        if win_loss >= self._min_win_loss and trades >= self._min_trades:
-            return True
-
-        self._tracer.warning(
-            f"{symbol} Best result not good {win_loss} or  trades {trades} less than  {self._min_trades}")
-        return False
-
     @staticmethod
     def _evalutaion_up_to_date(last_scan_time):
         """Überprüft, ob die Bewertung aktuell ist.

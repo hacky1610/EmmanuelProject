@@ -54,7 +54,7 @@ class Analytics:
         market = self._market_store.get_market(symbol)
 
         if market is None:
-            print(f"There is no market fot{symbol}")
+            print(f"There is no market for {symbol}")
             return None
 
 
