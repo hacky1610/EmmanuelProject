@@ -51,6 +51,7 @@ class Indicators:
     MACDSINGALDIFF = "macd_signal_diff"
     MACD_CONVERGENCE = "macd_convergence"
     MACD_MAX = "macd_max"
+    MACD_MAX_4H = "macd_max_4h"
     MACD_SLOPE = "macd_slope"
     # EMA
     EMA = "ema"
@@ -70,6 +71,7 @@ class Indicators:
     ADX_SLOPE_48 = "adx_slope_48"
     ADX_BREAK = "adx_break"
     ADX_MAX = "adx_max"
+    ADX_MAX_4H = "adx_max_4h"
     ADX_MAX2 = "adx_max2"
     ADX_MAX_21 = "adx_max_21"
     ADX_MAX_48 = "adx_max_48"
@@ -122,6 +124,7 @@ class Indicators:
         self._add_indicator(self.MACD, self._macd_predict)
         self._add_indicator(self.MACD_SLOPE, self._macd_slope_predict)
         self._add_indicator(self.MACD_MAX, self._macd_max_predict)
+        self._add_indicator(self.MACD_MAX_4H, self._macd_max_predict_4h)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
@@ -144,6 +147,7 @@ class Indicators:
         self._add_indicator(self.ADX_SLOPE_21, self._adx_slope_predict_21)
         self._add_indicator(self.ADX_SLOPE_48, self._adx_slope_predict_48)
         self._add_indicator(self.ADX_MAX, self._adx_max_predict)
+        self._add_indicator(self.ADX_MAX_4H, self._adx_max_predict_4h)
         self._add_indicator(self.ADX_MAX_21, self._adx_max_predict_21)
         self._add_indicator(self.ADX_MAX_48, self._adx_max_predict_48)
         self._add_indicator(self.ADX_MAX2, self._adx_max_predict2)
@@ -196,7 +200,7 @@ class Indicators:
         dp = DataProcessor()
         dp.addSignals_big_tf(df_4h)
 
-        return df_4h
+        return df_4h.dropna()
 
     # region Get/Add Indicators
     def _add_indicator(self, name, function):
@@ -442,6 +446,9 @@ class Indicators:
 
     @staticmethod
     def _oscillator_break(df, name: str, upper_line: int, lower_line: int):
+        if len(df) <= 4:
+            return TradeAction.NONE
+
         period = df[-3:-1]
         current_rsi = df[name].iloc[-1]
         if current_rsi >= lower_line and len(period[period[name] < lower_line]) > 0:
@@ -453,6 +460,9 @@ class Indicators:
 
     @staticmethod
     def _oscillator_limit(df, name: str, middle_line: int, upper_limit: int, lower_limit: int):
+        if len(df) == 0:
+            return TradeAction.NONE
+
         current_rsi = df[name].iloc[-1]
         if middle_line > current_rsi > lower_limit:
             return TradeAction.SELL
@@ -701,6 +711,10 @@ class Indicators:
     def _adx_max_predict(self, df):
         return self._oszi_max(df, "ADX", 7, 0.9)
 
+    def _adx_max_predict_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+        return self._oszi_max(df4h, "ADX", 7, 0.9)
+
     def _adx_max_predict_21(self, df):
         return self._oszi_max(df, "ADX_21", 7, 0.9)
 
@@ -711,6 +725,9 @@ class Indicators:
         return self._oszi_max(df, "ADX", 14, 0.8)
 
     def _oszi_max(self, df, indicator_name, days, ratio):
+        if len(df) == 0:
+            return TradeAction.NONE
+
         current = df[indicator_name].iloc[-1]
         max = df[(days * 24) * -1:][indicator_name].max()
 
@@ -720,6 +737,9 @@ class Indicators:
         return TradeAction.BOTH
 
     def _oszi_min_max(self, df, indicator_name, days, ratio):
+        if len(df) == 0:
+            return TradeAction.NONE
+
         current = df[indicator_name].iloc[-1]
         max = df[(days * 24) * -1:][indicator_name].max()
         min = df[(days * 24) * -1:][indicator_name].min()
@@ -733,6 +753,9 @@ class Indicators:
 
     def _macd_max_predict(self, df):
         return self._oszi_min_max(df, "MACD", 7, 0.9)
+
+    def _macd_max_predict_4h(self, df):
+        return self._oszi_min_max(self.convert_1h_to_4h(df), "MACD", 7, 0.9)
 
     def _macd_max_predict2(self, df):
         return self._oszi_min_max(df, "MACD", 14, 0.8)
@@ -819,6 +842,10 @@ class Indicators:
         # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
         # Linie nur Long-Trades vorgenommen werden sollten, und unterhalb entsprechend nur Short-Trades.
         df4h = self.convert_1h_to_4h(df)
+
+        if len(df4h) == 0:
+            return TradeAction.NONE
+
         kijun = df4h.KIJUN.iloc[-1]
         close = df.close.iloc[-1]
 

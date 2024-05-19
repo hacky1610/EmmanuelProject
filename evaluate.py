@@ -89,7 +89,7 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
 
 # endregion
 
-#viewer = PlotlyViewer(cache=df_cache)
+    viewer = PlotlyViewer(cache=df_cache)
 
 
 
