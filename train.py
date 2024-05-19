@@ -37,14 +37,11 @@ else:
     live = True
 
 # region statics
-if os.name == 'nt':
-    account_type = "DEMO"
-    conf_reader = ConfigReader(False)
-    _tracer = ConsoleTracer()
-else:
-    conf_reader = EnvReader()
-    account_type = conf_reader.get("Type")
-    _tracer = LogglyTracer(conf_reader.get("loggly_api_key"), type_, "train_job")
+#if os.name == 'nt':
+account_type = "DEMO"
+conf_reader = ConfigReader(False)
+_tracer = ConsoleTracer()
+
 
 
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))

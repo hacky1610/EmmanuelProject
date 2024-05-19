@@ -87,26 +87,26 @@ class TestIndicators(unittest.TestCase):
     def test_rsi_break_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()
-        data['RSI'] = [40,40,40,51]
+        data['RSI'] = [40, 40,40,40,51]
         data = self.indicators._rsi_break_predict(data)
         self.assertEqual(data, TradeAction.BUY)
 
         # Teste Sell-Pfad
         data = DataFrame()
-        data['RSI'] = [40, 40, 60, 40]
+        data['RSI'] = [40, 40, 40, 60, 40]
         data = self.indicators._rsi_break_predict(data)
         self.assertEqual(data, TradeAction.SELL)
 
     def test_rsi_30_70_break_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()
-        data['RSI'] = [40,40,20,51]
+        data['RSI'] = [40, 40,40,20,51]
         data = self.indicators._rsi_break_30_70_predict(data)
         self.assertEqual(data, TradeAction.BUY)
 
         # Teste Sell-Pfad
         data = DataFrame()
-        data['RSI'] = [40, 40, 90, 66]
+        data['RSI'] = [40, 40, 40, 90, 66]
         data = self.indicators._rsi_break_30_70_predict(data)
         self.assertEqual(data, TradeAction.SELL)
 
@@ -130,13 +130,13 @@ class TestIndicators(unittest.TestCase):
     def test_williams_break_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()
-        data['WILLIAMS'] = [-40, -60, -60, -40]
+        data['WILLIAMS'] = [-40, -40, -60, -60, -40]
         data = self.indicators._williams_break_predict(data)
         self.assertEqual(data, TradeAction.BUY)
 
         # Teste Sell-Pfad
         data = DataFrame()
-        data['WILLIAMS'] = [-40, -40, -30, -70]
+        data['WILLIAMS'] = [-40, -40, -40, -30, -70]
         data = self.indicators._williams_break_predict(data)
         self.assertEqual(data, TradeAction.SELL)
 
