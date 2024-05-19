@@ -112,17 +112,19 @@ def train_predictor(ig: IG,
 
 
 while True:
-
-    train_predictor(ig=_ig,
-                    trainer=_trainer,
-                    tiingo=_tiingo,
-                    predictor=GenericPredictor,
-                    async_ex=_async_ex,
-                    async_exec=_async_exec,
-                    train_version=_train_version,
-                    dp=_dp,
-                    reporting=_reporting,
-                    indicators=_indicators,
-                    tracer=_tracer)
+    try:
+        train_predictor(ig=_ig,
+                        trainer=_trainer,
+                        tiingo=_tiingo,
+                        predictor=GenericPredictor,
+                        async_ex=_async_ex,
+                        async_exec=_async_exec,
+                        train_version=_train_version,
+                        dp=_dp,
+                        reporting=_reporting,
+                        indicators=_indicators,
+                        tracer=_tracer)
+    except Exception as e:
+        print(f"Error {e}")
 
 
