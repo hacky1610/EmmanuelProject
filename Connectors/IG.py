@@ -9,7 +9,6 @@ from BL import DataProcessor, timedelta, BaseReader
 from BL.analytics import Analytics
 from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
-from Connectors.dropbox_cache import DropBoxCache
 from Connectors.market_store import MarketStore
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import TimeUtils
@@ -279,7 +278,7 @@ class IG:
 
         return stop_distance
 
-    def intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, cache: DropBoxCache):
+    def intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore):
         open_price = position.level
         bid_price = position.bid
         offer_price = position.offer
@@ -294,12 +293,11 @@ class IG:
             f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
 
         try:
-            p = GenericPredictor(Indicators(),{},self._tracer,cache=cache).load(ticker)
             market = market_store.get_market(ticker)
             if direction == "BUY":
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
-                    if diff > p.limit * 0.7:
+                    if diff > self.intelligent_stop_border:
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price - distance
                         if new_stop_level > stop_level:
@@ -307,7 +305,7 @@ class IG:
             else:
                 if offer_price < open_price:
                     diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
-                    if diff > p.limit * 0.7:
+                    if diff > self.intelligent_stop_border:
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price + distance
                         if new_stop_level < stop_level:

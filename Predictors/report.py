@@ -1,32 +1,32 @@
+from typing import List
+
 import dropbox
-import pandas as pd
-import plotly.express as px
 from pandas import DataFrame
 
-from BL import ConfigReader
-from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxService, DropBoxCache
-from Connectors.tiingo import TradeType
+from Connectors.IG import IG
+from BL import  ConfigReader
+from Connectors.tiingo import  TradeType
+import plotly.express as px
+import pandas as pd
+from collections import Counter
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import Reporting
 
 #region members
 conf_reader = ConfigReader()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
-ds = DropBoxService(dbx, "DEMO")
+ds = DropBoxService(dbx,"DEMO")
 df_cache = DropBoxCache(ds)
 ig = IG(ConfigReader())
-
-
 #endregion
 
 #region functions
-def shop_pie(name: str, reports: DataFrame):
+def shop_pie(name:str, reports:DataFrame):
     fig = px.pie(reports, values=name, names=name, title=name)
     fig.show()
 
-
-def shop_pie_bool(name: str, reports: DataFrame):
+def shop_pie_bool(name:str, reports:DataFrame ):
     true_count = reports[name].sum()
     false_count = len(reports) - true_count
 
@@ -47,7 +47,6 @@ def shop_pie_bool(name: str, reports: DataFrame):
                  title=name)
     fig.show()
 
-
 def show_indicators(indicators):
     # Vorbereiten der Daten für das Balkendiagramm
     x_werte = list(indicators.keys())
@@ -59,7 +58,6 @@ def show_indicators(indicators):
     # Diagramm anzeigen
     fig.show()
 
-
 #endregion
 
 _currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
@@ -67,15 +65,24 @@ _currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
 _reporting = Reporting(df_cache)
 _reporting.create(_currency_markets, GenericPredictor)
 
+
 print(_reporting.results)
+
 
 fig = px.bar(_reporting.reports, x='symbol', y='frequence')
 fig.show()
 fig = px.bar(_reporting.reports.sort_values(by=["win_los"]), x='symbol', y='win_los')
 fig.show()
 
+
 show_indicators(_reporting.get_all_indicators())
 show_indicators(_reporting.get_best_indicators())
 
 reps = _reporting.reports[_reporting.reports.trades < 200]
 (px.scatter(y=reps.win_los, x=reps.trades)).show()
+
+
+
+
+
+

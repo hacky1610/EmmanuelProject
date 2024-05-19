@@ -72,9 +72,6 @@ class DataProcessor:
         df['RSI'] = TA.RSI(df)
         ichi = TA.ICHIMOKU(df)
         df["KIJUN"] = ichi["KIJUN"]
-        md = TA.MACD(df)
-        df['MACD'] = md['MACD']
-        df["ADX"] = TA.ADX(df, period=9)
 
         return
 
