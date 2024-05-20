@@ -84,12 +84,10 @@ class BasePredictor:
     def _stop_limit_trainer(version: str):
 
         json_objs = []
-        for stop, limit in itertools.product(
-                random.choices(range(20,65), k=3),
-                random.choices(range(6,25), k=3)):
+        for stop_limit in random.choices(range(15, 65), k=3):
             json_objs.append({
-                "stop": stop,
-                "limit": limit,
+                "stop": stop_limit,
+                "limit": stop_limit * random.choice([0.8, 1.0, 1.2]),
                 "version": version
             })
         return json_objs

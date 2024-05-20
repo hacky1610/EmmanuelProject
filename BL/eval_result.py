@@ -92,6 +92,8 @@ class EvalResultCollection:
             if i.get_trades() != 0:
                 market_measures = market_measures + 1
                 win_loss_overall = win_loss_overall + i.get_win_loss()
+        if market_measures == 0:
+            return 0
 
         return win_loss_overall / market_measures
 
@@ -102,6 +104,9 @@ class EvalResultCollection:
             if i.get_trades() != 0:
                 market_measures = market_measures + 1
                 win_loss_trades = win_loss_trades + i.get_trades()
+
+        if market_measures == 0:
+            return 0
 
         return win_loss_trades / market_measures
 
