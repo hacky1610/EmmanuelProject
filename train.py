@@ -37,10 +37,15 @@ else:
     live = True
 
 # region statics
-#if os.name == 'nt':
-account_type = "DEMO"
-conf_reader = ConfigReader(False)
-_tracer = ConsoleTracer()
+if os.name == 'nt' or os.environ.get("USER", "") == "daniel":
+    account_type = "DEMO"
+    conf_reader = ConfigReader(False)
+    _tracer = ConsoleTracer()
+else:
+    conf_reader = EnvReader()
+    account_type = conf_reader.get("Type")
+    _tracer = LogglyTracer(conf_reader.get("loggly_api_key"), type_, "train_job")
+
 
 
 
