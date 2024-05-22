@@ -151,7 +151,7 @@ class Trader:
     def _intelligent_update(self):
         self._tracer.debug("Intelligent Update")
         for _, item in self._ig.get_opened_positions().iterrows():
-            self._ig.intelligent_stop_level(item, self._market_store, self._deal_storage, self._cache)
+            self._ig._set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._cache)
 
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
