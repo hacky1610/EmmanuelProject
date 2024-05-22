@@ -2,33 +2,28 @@
 import os
 import random
 import traceback
-from multiprocessing import Process
 from typing import Type
 
+import dropbox
 import pymongo
 
+from BL.analytics import Analytics
 from BL.async_executor import AsyncExecutor
+from BL.data_processor import DataProcessor
 from BL.indicators import Indicators
+from BL.utils import ConfigReader, EnvReader
 from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
+from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
 from Connectors.tiingo import TradeType, Tiingo
-from Predictors.chart_pattern_rectangle import RectanglePredictor
-from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor
-from Predictors.joy_predictor import JoyPredictor
 from Predictors.trainer import Trainer
-from BL.utils import ConfigReader, EnvReader
-from BL.data_processor import DataProcessor
-from BL.analytics import Analytics
-from Connectors.dropboxservice import DropBoxService
-import dropbox
-
 from Predictors.utils import Reporting
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
 
-# endregions
+# endregion
 
 type_ = "DEMO"
 if type_ == "DEMO":

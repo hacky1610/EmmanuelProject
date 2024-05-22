@@ -99,7 +99,8 @@ class IG:
                 counter += 1
             except Exception as e:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
-                print(f"MainException: {e} File:{traceback_str}")
+                self._tracer.debug(f"MainException: {e} File:{traceback_str}")
+                time.sleep(60)
                 return DataFrame()
 
         if res is None:
