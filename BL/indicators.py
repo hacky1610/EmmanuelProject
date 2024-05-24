@@ -103,18 +103,18 @@ class Indicators:
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
         self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
-        self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict)
+        #self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict) #BAD
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
         self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
-        self._add_indicator(self.RSI_CONVERGENCE5_30, self._rsi_convergence_predict5_30)
+        #self._add_indicator(self.RSI_CONVERGENCE5_30, self._rsi_convergence_predict5_30) #BAD
         self._add_indicator(self.RSI_CONVERGENCE5_40, self._rsi_convergence_predict5_40)
         self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
-        self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict)
+        #self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict) #BAD
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
         self._add_indicator(self.RSI_BREAK_4H, self._rsi_break_predict_4h)
 
-        self._add_indicator(self.TII_50, self._tii_50)
-        self._add_indicator(self.TII_20_80, self._tii_20_80)
+        #self._add_indicator(self.TII_50, self._tii_50) #BAD
+        #self._add_indicator(self.TII_20_80, self._tii_20_80) #BAD
 
         # Williams
         self._add_indicator(self.WILLIAMS_BREAK, self._williams_break_predict)
@@ -144,8 +144,8 @@ class Indicators:
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.ADX_SLOPE, self._adx_slope_predict)
-        self._add_indicator(self.ADX_SLOPE_21, self._adx_slope_predict_21)
-        self._add_indicator(self.ADX_SLOPE_48, self._adx_slope_predict_48)
+        #self._add_indicator(self.ADX_SLOPE_21, self._adx_slope_predict_21) #BAD
+        #self._add_indicator(self.ADX_SLOPE_48, self._adx_slope_predict_48) #BAD
         self._add_indicator(self.ADX_MAX, self._adx_max_predict)
         self._add_indicator(self.ADX_MAX_4H, self._adx_max_predict_4h)
         self._add_indicator(self.ADX_MAX_21, self._adx_max_predict_21)
@@ -166,7 +166,7 @@ class Indicators:
         # Bollinger
         self._add_indicator(self.BB, self._bb_predict)
         self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
-        self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict)
+        #self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
 
         # ICHIMOKU
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)

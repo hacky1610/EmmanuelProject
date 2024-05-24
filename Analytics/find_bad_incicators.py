@@ -59,13 +59,16 @@ def find_bad_indicators(indicators, ig: IG,predictor_class):
 
             wl = predictor.get_last_result().get_win_loss()
             if wl > 0.6:
-                good_indicators.append(predictor.self._indicator_names)
+                good_indicators = good_indicators + predictor._indicator_names
 
 
         except:
             print("error")
-    print(f"{results}")
 
+    unique = list(set(good_indicators))
+    for i in indicators.get_all_indicator_names():
+        if i not in unique:
+            print(f"Bad {i}")
 
 # endregion
 
