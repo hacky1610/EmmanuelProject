@@ -1,0 +1,586 @@
+[
+    {
+        "symbol": "AUDUSD",
+        "epic": "CS.D.AUDUSD.MINI.IP",
+        "spread": 0.6000000000006,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "USD"
+    },
+    {
+        "symbol": "EURCHF",
+        "epic": "CS.D.EURCHF.MINI.IP",
+        "spread": 2.9999999999996696,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CHF"
+    },
+    {
+        "symbol": "EURGBP",
+        "epic": "CS.D.EURGBP.MINI.IP",
+        "spread": 0.900000000000345,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "GBP"
+    },
+    {
+        "symbol": "EURJPY",
+        "epic": "CS.D.EURJPY.MINI.IP",
+        "spread": 2.1000000000015007,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "EURUSD",
+        "epic": "CS.D.EURUSD.MINI.IP",
+        "spread": 0.9000000000014552,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "USD"
+    },
+    {
+        "symbol": "GBPUSD",
+        "epic": "CS.D.GBPUSD.MINI.IP",
+        "spread": 0.8999999999992347,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "USD"
+    },
+    {
+        "symbol": "USDCAD",
+        "epic": "CS.D.USDCAD.MINI.IP",
+        "spread": 1.3000000000018552,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CAD"
+    },
+    {
+        "symbol": "USDCHF",
+        "epic": "CS.D.USDCHF.MINI.IP",
+        "spread": 1.4999999999998348,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CHF"
+    },
+    {
+        "symbol": "USDJPY",
+        "epic": "CS.D.USDJPY.MINI.IP",
+        "spread": 0.7000000000005002,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "CADCHF",
+        "epic": "CS.D.CADCHF.MINI.IP",
+        "spread": 2.4999999999997247,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CHF"
+    },
+    {
+        "symbol": "CADJPY",
+        "epic": "CS.D.CADJPY.MINI.IP",
+        "spread": 1.999999999999602,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "CHFJPY",
+        "epic": "CS.D.CHFJPY.MINI.IP",
+        "spread": 2.000000000001023,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "EURCAD",
+        "epic": "CS.D.EURCAD.MINI.IP",
+        "spread": 2.4999999999986144,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CAD"
+    },
+    {
+        "symbol": "EURSGD",
+        "epic": "CS.D.EURSGD.MINI.IP",
+        "spread": 2.500000000000835,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "SGD"
+    },
+    {
+        "symbol": "EURZAR",
+        "epic": "CS.D.EURZAR.MINI.IP",
+        "spread": 150.00000000000568,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "ZAR"
+    },
+    {
+        "symbol": "GBPCAD",
+        "epic": "CS.D.GBPCAD.MINI.IP",
+        "spread": 2.9999999999996696,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CAD"
+    },
+    {
+        "symbol": "GBPCHF",
+        "epic": "CS.D.GBPCHF.MINI.IP",
+        "spread": 2.9999999999996696,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CHF"
+    },
+    {
+        "symbol": "GBPJPY",
+        "epic": "CS.D.GBPJPY.MINI.IP",
+        "spread": 2.5000000000005684,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "GBPSGD",
+        "epic": "CS.D.GBPSGD.MINI.IP",
+        "spread": 2.9999999999996696,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "SGD"
+    },
+    {
+        "symbol": "GBPZAR",
+        "epic": "CS.D.GBPZAR.MINI.IP",
+        "spread": 199.99999999999574,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "ZAR"
+    },
+    {
+        "symbol": "MXNJPY",
+        "epic": "CS.D.MXNJPY.MINI.IP",
+        "spread": 0.7999999999999119,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "PLNJPY",
+        "epic": "CS.D.PLNJPY.MINI.IP",
+        "spread": 2.0000000000003126,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "SEKJPY",
+        "epic": "CS.D.SEKJPY.MINI.IP",
+        "spread": 0.6000000000000227,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "SGDJPY",
+        "epic": "CS.D.SGDJPY.MINI.IP",
+        "spread": 2.000000000001023,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "USDHKD",
+        "epic": "CS.D.USDHKD.MINI.IP",
+        "spread": 4.999999999997229,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "HKD"
+    },
+    {
+        "symbol": "USDSGD",
+        "epic": "CS.D.USDSGD.MINI.IP",
+        "spread": 1.9999999999997797,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "SGD"
+    },
+    {
+        "symbol": "USDZAR",
+        "epic": "CS.D.USDZAR.MINI.IP",
+        "spread": 89.99999999996788,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "ZAR"
+    },
+    {
+        "symbol": "ZARJPY",
+        "epic": "CS.D.ZARJPY.MINI.IP",
+        "spread": 1.9999999999999574,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "AUDCAD",
+        "epic": "CS.D.AUDCAD.MINI.IP",
+        "spread": 1.4999999999998348,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CAD"
+    },
+    {
+        "symbol": "AUDCHF",
+        "epic": "CS.D.AUDCHF.MINI.IP",
+        "spread": 1.9999999999997797,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CHF"
+    },
+    {
+        "symbol": "AUDJPY",
+        "epic": "CS.D.AUDJPY.MINI.IP",
+        "spread": 1.2999999999991019,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "AUDNZD",
+        "epic": "CS.D.AUDNZD.MINI.IP",
+        "spread": 2.4999999999986144,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "NZD"
+    },
+    {
+        "symbol": "AUDSGD",
+        "epic": "CS.D.AUDSGD.MINI.IP",
+        "spread": 1.9999999999997797,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "SGD"
+    },
+    {
+        "symbol": "EURAUD",
+        "epic": "CS.D.EURAUD.MINI.IP",
+        "spread": 1.80000000000069,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "AUD"
+    },
+    {
+        "symbol": "EURNZD",
+        "epic": "CS.D.EURNZD.MINI.IP",
+        "spread": 2.9999999999996696,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "NZD"
+    },
+    {
+        "symbol": "GBPAUD",
+        "epic": "CS.D.GBPAUD.MINI.IP",
+        "spread": 2.20000000000109,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "AUD"
+    },
+    {
+        "symbol": "GBPNZD",
+        "epic": "CS.D.GBPNZD.MINI.IP",
+        "spread": 4.999999999997229,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "NZD"
+    },
+    {
+        "symbol": "NZDCAD",
+        "epic": "CS.D.NZDCAD.MINI.IP",
+        "spread": 3.4999999999996145,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CAD"
+    },
+    {
+        "symbol": "NZDCHF",
+        "epic": "CS.D.NZDCHF.MINI.IP",
+        "spread": 3.9999999999995595,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "CHF"
+    },
+    {
+        "symbol": "NZDJPY",
+        "epic": "CS.D.NZDJPY.MINI.IP",
+        "spread": 1.999999999999602,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "NZDUSD",
+        "epic": "CS.D.NZDUSD.MINI.IP",
+        "spread": 1.7999999999995797,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "USD"
+    },
+    {
+        "symbol": "CNHJPY",
+        "epic": "CS.D.CNHJPY.MINI.IP",
+        "spread": 0.7999999999999119,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "EMFX BRLJPY",
+        "epic": "CS.D.BRLJPY.MINI.IP",
+        "spread": 7.499999999999929,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "EMFX USDBRL ($1 Contract)",
+        "epic": "CS.D.USDBRL.MINI.IP",
+        "spread": 80.00000000000007,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "BRL"
+    },
+    {
+        "symbol": "EURCZK",
+        "epic": "CS.D.EURCZK.MINI.IP",
+        "spread": 24.99999999999858,
+        "scaling": 1000,
+        "size": 1.0,
+        "currency": "CZK"
+    },
+    {
+        "symbol": "EURHUF",
+        "epic": "CS.D.EURHUF.MINI.IP",
+        "spread": 19.999999999998863,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "HUF"
+    },
+    {
+        "symbol": "EURMXN",
+        "epic": "CS.D.EURMXN.MINI.IP",
+        "spread": 100.00000000001563,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "MXN"
+    },
+    {
+        "symbol": "EURPLN",
+        "epic": "CS.D.EURPLN.MINI.IP",
+        "spread": 24.999999999995026,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "PLN"
+    },
+    {
+        "symbol": "EURTRY",
+        "epic": "CS.D.EURTRY.MINI.IP",
+        "spread": 60.000000000002274,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "TRY"
+    },
+    {
+        "symbol": "GBPCZK",
+        "epic": "CS.D.GBPCZK.MINI.IP",
+        "spread": 30.000000000001137,
+        "scaling": 1000,
+        "size": 1.0,
+        "currency": "CZK"
+    },
+    {
+        "symbol": "GBPHUF",
+        "epic": "CS.D.GBPHUF.MINI.IP",
+        "spread": 25.0,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "HUF"
+    },
+    {
+        "symbol": "GBPMXN",
+        "epic": "CS.D.GBPMXN.MINI.IP",
+        "spread": 399.9999999999915,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "MXN"
+    },
+    {
+        "symbol": "GBPPLN",
+        "epic": "CS.D.GBPPLN.MINI.IP",
+        "spread": 49.999999999998934,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "PLN"
+    },
+    {
+        "symbol": "GBPTRY",
+        "epic": "CS.D.GBPTRY.MINI.IP",
+        "spread": 139.99999999995794,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "TRY"
+    },
+    {
+        "symbol": "TRYJPY",
+        "epic": "CS.D.TRYJPY.MINI.IP",
+        "spread": 8.000000000000007,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "USDCZK",
+        "epic": "CS.D.USDCZK.MINI.IP",
+        "spread": 24.99999999999858,
+        "scaling": 1000,
+        "size": 1.0,
+        "currency": "CZK"
+    },
+    {
+        "symbol": "USDHUF",
+        "epic": "CS.D.USDHUF.MINI.IP",
+        "spread": 19.999999999998863,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "HUF"
+    },
+    {
+        "symbol": "USDMXN",
+        "epic": "CS.D.USDMXN.MINI.IP",
+        "spread": 49.99999999999005,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "MXN"
+    },
+    {
+        "symbol": "USDPLN",
+        "epic": "CS.D.USDPLN.MINI.IP",
+        "spread": 24.999999999999467,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "PLN"
+    },
+    {
+        "symbol": "USDTRY",
+        "epic": "CS.D.USDTRY.MINI.IP",
+        "spread": 49.999999999954525,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "TRY"
+    },
+    {
+        "symbol": "CADNOK",
+        "epic": "CS.D.CADNOK.MINI.IP",
+        "spread": 25.000000000003908,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "NOK"
+    },
+    {
+        "symbol": "CHFNOK",
+        "epic": "CS.D.CHFNOK.MINI.IP",
+        "spread": 40.00000000001336,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "NOK"
+    },
+    {
+        "symbol": "EURDKK",
+        "epic": "CS.D.EURDKK.MINI.IP",
+        "spread": 15.000000000000568,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "DKK"
+    },
+    {
+        "symbol": "EURNOK",
+        "epic": "CS.D.EURNOK.MINI.IP",
+        "spread": 24.999999999995026,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "NOK"
+    },
+    {
+        "symbol": "EURSEK",
+        "epic": "CS.D.EURSEK.MINI.IP",
+        "spread": 30.000000000001137,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "SEK"
+    },
+    {
+        "symbol": "GBPDKK",
+        "epic": "CS.D.GBPDKK.MINI.IP",
+        "spread": 30.000000000001137,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "DKK"
+    },
+    {
+        "symbol": "GBPNOK",
+        "epic": "CS.D.GBPNOK.MINI.IP",
+        "spread": 49.99999999999005,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "NOK"
+    },
+    {
+        "symbol": "GBPSEK",
+        "epic": "CS.D.GBPSEK.MINI.IP",
+        "spread": 40.00000000001336,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "SEK"
+    },
+    {
+        "symbol": "NOKJPY",
+        "epic": "CS.D.NOKJPY.MINI.IP",
+        "spread": 0.9999999999999787,
+        "scaling": 100,
+        "size": 1.0,
+        "currency": "JPY"
+    },
+    {
+        "symbol": "NOKSEK",
+        "epic": "CS.D.NOKSEK.MINI.IP",
+        "spread": 5.999999999999339,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "SEK"
+    },
+    {
+        "symbol": "USDDKK",
+        "epic": "CS.D.USDDKK.MINI.IP",
+        "spread": 15.000000000000568,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "DKK"
+    },
+    {
+        "symbol": "USDNOK",
+        "epic": "CS.D.USDNOK.MINI.IP",
+        "spread": 25.00000000001279,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "NOK"
+    },
+    {
+        "symbol": "USDSEK",
+        "epic": "CS.D.USDSEK.MINI.IP",
+        "spread": 24.999999999995026,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "SEK"
+    }
+]

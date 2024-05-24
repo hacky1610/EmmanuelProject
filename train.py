@@ -1,4 +1,5 @@
 # region import
+import json
 import os
 import random
 import traceback
@@ -65,7 +66,7 @@ _loop = True
 _async_exec =False # os.name != "nt"
 
 
-def train_predictor(ig: IG,
+def train_predictor(markets:list,
                     trainer: Trainer,
                     tiingo: Tiingo,
                     async_ex: AsyncExecutor,
@@ -79,9 +80,6 @@ def train_predictor(ig: IG,
                     tracer = ConsoleTracer()
                     ):
     tracer.info("Start training")
-    markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-    if len(markets) == 0:
-        return
     reporting.create(markets, predictor)
     best_indicators = reporting.get_best_indicator_names()
     tracer.info(f"Best indicators: {best_indicators}")
@@ -90,7 +88,6 @@ def train_predictor(ig: IG,
         # for m in markets:
         symbol = m["symbol"]
         tracer.info(f"Train {symbol}")
-        #symbol = "EURCZK"
         df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         df_test, eval_df_test = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
         if len(df_train) > 0:
@@ -110,7 +107,9 @@ def train_predictor(ig: IG,
 
 while True:
     try:
-        train_predictor(ig=_ig,
+        with open(os.path.join("Data","markets.json"), 'r') as json_file:
+            markets = json.load(json_file)
+        train_predictor(markets=markets,
                         trainer=_trainer,
                         tiingo=_tiingo,
                         predictor=GenericPredictor,
