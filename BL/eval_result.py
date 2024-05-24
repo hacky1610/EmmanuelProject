@@ -40,7 +40,7 @@ class EvalResult:
             return 0
         return round(self._trades / self._len_df, 7)
 
-    def get_win_loss(self):
+    def get_win_loss(self) -> float:
         if self._trades == 0:
             return 0
         return round(self._wins / self._trades, 7)
