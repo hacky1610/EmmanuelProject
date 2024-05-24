@@ -146,6 +146,10 @@ class DealStore:
             deals.append(Deal.Create(d))
         return deals
 
+    def get_closed_deals_by_ticker_df(self, ticker: str) -> DataFrame:
+        return DataFrame(list(self._collection.find(
+            {"status": "Closed", "ticker": ticker})))
+
 
     def clear(self):
         self._collection.delete_many({ "account_type": self._account_type})

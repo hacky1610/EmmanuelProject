@@ -280,7 +280,7 @@ class IG:
 
         return stop_distance
 
-    def _set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, cache: DropBoxCache):
+    def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, cache: DropBoxCache):
         open_price = position.level
         bid_price = position.bid
         offer_price = position.offer
