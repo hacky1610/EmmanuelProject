@@ -263,7 +263,7 @@ class Trader:
 
         open_deals = self._deal_storage.get_open_deals_by_ticker(config.symbol)
         if len(open_deals) >= 2:
-            self._tracer.warning(f"there are already 2 open position of {config.symbol}")
+            self._tracer.debug(f"there are already 2 open position of {config.symbol}")
             return TradeResult.ERROR
 
 
