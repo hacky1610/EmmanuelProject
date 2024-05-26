@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 
 from pandas import Series
@@ -15,12 +16,18 @@ class TradeResult:
 
 class EvalResult:
 
-    def __init__(self, trades_results:List = [], reward: float = 0.0,
-                 trades: int = 0, len_df: int = 0, trade_minutes: int = 0, wins: int = 0):
+    def __init__(self, trades_results:List = [],
+                 reward: float = 0.0,
+                 trades: int = 0,
+                 len_df: int = 0,
+                 trade_minutes: int = 0,
+                 wins: int = 0,
+                 scan_time = datetime(1970, 1, 1)):
         self._reward = reward
         self._trades = trades
         self._len_df = len_df
         self._trade_minutes = trade_minutes
+        self._scan_time = scan_time
         self._wins = wins
         self._trade_results:List = trades_results
 
@@ -29,6 +36,9 @@ class EvalResult:
 
     def get_trades(self) -> int:
         return self._trades
+
+    def get_scan_time(self) -> datetime:
+        return self._scan_time
 
     def get_average_reward(self):
         if self._trades == 0:
@@ -56,13 +66,15 @@ class EvalResult:
             self._trades,
             self._wins,
             self._len_df,
-            self._trade_minutes
+            self._trade_minutes,
+            self._scan_time
         ],
             index=["_reward",
                    "_trades",
                    "_wins",
                    "_len_df",
                    "_trade_minutes",
+                   "scan_time"
                    ])
     def is_good(self):
         return self.get_average_reward() > 5 and self.get_reward() > 100 and self.get_win_loss() > 0.7 and self.get_trades() >= 10

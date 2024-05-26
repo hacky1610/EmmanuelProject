@@ -23,7 +23,6 @@ class BasePredictor:
     def __init__(self, indicators, config=None , cache: BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
         self.limit = 10
         self.stop = 20
-        self.last_scan = datetime(1970, 1, 1).isoformat()
         self._last_scan: EvalResult = EvalResult()
 
         if config is None:
@@ -39,12 +38,12 @@ class BasePredictor:
         self._set_att(config, "limit")
         self._set_att(config, "stop")
         self._set_att(config, "version")
-        self._set_att(config, "last_scan")
         self._last_scan = EvalResult(reward=config.get("_reward", 0.0),
                                      trades=config.get("_trades", 0),
                                      wins=config.get("_wins", 0),
                                      len_df=config.get("_len_df", 0),
-                                     trade_minutes=config.get("_trade_minutes", 0))
+                                     trade_minutes=config.get("_trade_minutes", 0),
+                                     scan_time=config.get("scan_time", datetime(1970, 1, 1).isoformat()))
 
 
     def _set_att(self, config: dict, name: str):
@@ -54,7 +53,7 @@ class BasePredictor:
         raise NotImplementedError
 
     def get_last_scan_time(self):
-        return datetime.fromisoformat(self.last_scan)
+        return self._last_scan.get_scan_time()
 
     def train(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol:str, scaling:int) -> EvalResult:
         ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=True, symbol=symbol, scaling=scaling)
@@ -106,7 +105,6 @@ class BasePredictor:
         return self._last_scan
 
     def get_save_data(self) -> Series:
-        self.last_scan = datetime.utcnow().isoformat()
         return self.get_config().append(self._last_scan.get_data())
 
     def save(self, symbol: str):
