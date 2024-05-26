@@ -66,7 +66,8 @@ class Trader:
                  analytics: Analytics,
                  cache: DropBoxCache,
                  deal_storage:DealStore,
-                 market_storage:MarketStore):
+                 market_storage:MarketStore,
+                 check_ig_performance: bool = False):
         self._ig = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
@@ -78,6 +79,7 @@ class Trader:
         self._cache = cache
         self._deal_storage = deal_storage
         self._market_store = market_storage
+        self._check_ig_performance = check_ig_performance
 
     @staticmethod
     def _get_spread(df: DataFrame, scaling: float) -> float:
@@ -91,6 +93,13 @@ class Trader:
               float: Der berechnete Spread.
           """
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
+
+    def _is_good_ticker(self, ticker: str) -> bool:
+        if not self._check_ig_performance:
+            return True
+
+        deals = self._deal_storage.get_closed_deals_by_ticker_df(ticker)
+        return deals.profit.sum() > 50
 
     def update_deals(self):
         hist = self._ig.get_transaction_history(3)
@@ -151,7 +160,9 @@ class Trader:
     def _intelligent_update(self):
         self._tracer.debug("Intelligent Update")
         for _, item in self._ig.get_opened_positions().iterrows():
-            self._ig._set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._cache)
+            deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
+            if deal != None:
+                self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._cache)
 
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
@@ -237,6 +248,10 @@ class Trader:
                 Returns:
                     TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
                 """
+
+        if not self._is_good_ticker(config.symbol):
+            self._tracer.debug(f"{config.symbol} has a bad IG Performance" )
+            return TradeResult.NOACTION
 
         if not self._evalutaion_up_to_date(predictor.get_last_scan_time()):
             self._tracer.debug(f"{config.symbol} Last evaluation too old")

@@ -28,7 +28,7 @@ ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
 tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_, "trade_job")
 tiingo = Tiingo(tracer=tracer, conf_reader=env_reader, cache=cache)
-ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
+ig = IG(conf_reader=env_reader, tracer=tracer, live=False) #TODO
 predictor_class_list = [GenericPredictor]
 client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{env_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
@@ -46,7 +46,8 @@ trader = Trader(
     analytics=analytics,
     cache=cache,
     deal_storage=ds,
-    market_storage=ms
+    market_storage=ms,
+    check_ig_performance=live
 )
 
 trader.trade_markets(TradeType.FX, indicators)

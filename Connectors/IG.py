@@ -176,6 +176,7 @@ class IG:
 
     def connect(self):
         # no cache
+        self._tracer.debug(f"Connect {self.type} {self.user} {self.accNr}")
         self.ig_service = IGService(
             self.user, self.password, self.key, self.type, acc_number=self.accNr
         )
@@ -280,7 +281,7 @@ class IG:
 
         return stop_distance
 
-    def _set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, cache: DropBoxCache):
+    def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, cache: DropBoxCache):
         open_price = position.level
         bid_price = position.bid
         offer_price = position.offer
