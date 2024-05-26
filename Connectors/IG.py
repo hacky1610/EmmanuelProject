@@ -176,6 +176,7 @@ class IG:
 
     def connect(self):
         # no cache
+        self._tracer.debug(f"Connect {self.type} {self.user} {self.accNr}")
         self.ig_service = IGService(
             self.user, self.password, self.key, self.type, acc_number=self.accNr
         )
