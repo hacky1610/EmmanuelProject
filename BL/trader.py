@@ -116,12 +116,7 @@ class Trader:
                     scaling = int(ig_m["instrument"]["contractSize"])
                     m = self._market_store.get_market(deal.ticker)
 
-                    if int(ig_deal["size"]) == 1:
-                        profit = float(ig_deal["closeLevel"]) - float(ig_deal["openLevel"])
-                        deal.profit = m.get_euro_value(profit, scaling)
-                    else:
-                        profit = float(ig_deal["openLevel"]) - float(ig_deal["closeLevel"])
-                        deal.profit = m.get_euro_value(profit, scaling)
+                    deal.profit = self._calc_profit( ig_deal, m, scaling)
 
                     self._tracer.warning(f"Problem with IG Calcululation. Profit is 0 Euro. Real profit is {deal.profit} . Deal {deal.dealId}")
 
@@ -134,6 +129,14 @@ class Trader:
                 self._deal_storage.save(deal)
             else:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
+
+    def _calc_profit(self,  ig_deal, m, scaling) -> float:
+        if int(ig_deal["size"]) == 1:
+            profit = float(ig_deal["closeLevel"]) - float(ig_deal["openLevel"])
+            return m.get_euro_value(profit, scaling)
+        else:
+            profit = float(ig_deal["openLevel"]) - float(ig_deal["closeLevel"])
+            return m.get_euro_value(profit, scaling)
 
     def trade_markets(self, trade_type: TradeType, indicators):
         """Führt den Handel für alle Märkte eines bestimmten Typs durch.
