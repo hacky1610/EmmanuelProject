@@ -99,7 +99,10 @@ class Trader:
             return True
 
         deals = self._deal_storage.get_closed_deals_by_ticker_df(ticker)
-        return deals.profit.sum() > 50
+        if len(deals) > 0:
+            return deals.profit.sum() > 50
+
+        return False
 
     def update_deals(self):
         hist = self._ig.get_transaction_history(3)
