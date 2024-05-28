@@ -10,10 +10,9 @@ from Predictors.base_predictor import BasePredictor
 
 class PredictorStore:
 
-    def __init__(self, db: Database, account_type: str):
+    def __init__(self, db: Database):
 
         self._collection = db["Predictors"]
-        self._account_type = account_type
 
     def save(self, predictor: BasePredictor):
         if predictor.is_active():

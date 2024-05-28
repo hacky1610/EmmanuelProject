@@ -10,6 +10,7 @@ from Connectors import IG
 from Connectors.deal_store import Deal, DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.market_store import MarketStore
+from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType
 from Tracing import Tracer
 from pandas import DataFrame, Series
@@ -64,7 +65,7 @@ class Trader:
                  predictor_class_list: List[type],
                  dataprocessor: DataProcessor,
                  analytics: Analytics,
-                 cache: DropBoxCache,
+                 predictor_store: PredictorStore,
                  deal_storage:DealStore,
                  market_storage:MarketStore,
                  check_ig_performance: bool = False):
@@ -76,7 +77,7 @@ class Trader:
         self._analytics = analytics
         self._min_win_loss = 0.75
         self._min_trades = 16
-        self._cache = cache
+        self._predictor_store = predictor_store
         self._deal_storage = deal_storage
         self._market_store = market_storage
         self._check_ig_performance = check_ig_performance
@@ -172,8 +173,8 @@ class Trader:
         self._tracer.set_prefix(symbol_)
         for predictor_class in self._predictor_class_list:
             self._tracer.debug(f"Try to trade {symbol_} with {predictor_class.__name__}")
-            predictor = predictor_class(tracer=self._tracer, cache=self._cache, indicators=indicators)
-            predictor.load(symbol_)
+            predictor = predictor_class(symbol=symbol_, tracer=self._tracer, indicators=indicators)
+            predictor.setup(self._predictor_store.load_active_by_symbol(symbol_))
             self.trade(
                 predictor=predictor,
                 config=TradeConfig(
@@ -289,12 +290,10 @@ class Trader:
         if signal == TradeAction.BUY:
             res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
                                                      config.currency,
-                                                     predictor.get_result().get_data(),
                                                      self._ig.buy)
         else:
             res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
                                                      config.currency,
-                                                     predictor.get_result().get_data(),
                                                      self._ig.sell)
         if res == TradeResult.SUCCESS:
             self._save_result(predictor, deal_response, config.symbol)
@@ -308,5 +307,5 @@ class Trader:
                                          epic=config.epic, direction=signal, account_type="DEMO",
                                          open_date_ig_str=date_string,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
-                                         stop_factor=stop, limit_factor=limit, predictor_data=predictor.get_save_data().to_dict()))
+                                         stop_factor=stop, limit_factor=limit,predictor_scan_id=predictor.get_id()))
         return res

@@ -51,7 +51,7 @@ cache = DropBoxCache(ds)
 client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
-ps = PredictorStore(db, account_type)
+ps = PredictorStore(db)
 _trainer = Trainer(analytics=Analytics(market_store=ms),
                    cache=cache,
                    check_trainable=False,

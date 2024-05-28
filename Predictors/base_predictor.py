@@ -38,12 +38,14 @@ class BasePredictor:
         self._set_att(config, "_stop")
         self._set_att(config, "_active")
         self._set_att(config, "_symbol")
+        self._limit = config.get("limit", self._limit)
+        self._stop = config.get("stop", self._stop)
         self._result = EvalResult(reward=config.get("_reward", 0.0),
                                   trades=config.get("_trades", 0),
                                   wins=config.get("_wins", 0),
                                   len_df=config.get("_len_df", 0),
                                   trade_minutes=config.get("_trade_minutes", 0),
-                                  scan_time=config.get("_scan_time", datetime(1970, 1, 1).isoformat()))
+                                  scan_time=config.get("_scan_time", datetime(1970, 1, 1)))
 
     def get_id(self) -> str:
         return self._id

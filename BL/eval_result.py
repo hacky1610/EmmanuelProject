@@ -67,14 +67,16 @@ class EvalResult:
             self._wins,
             self._len_df,
             self._trade_minutes,
-            self._scan_time
+            self._scan_time,
+            self.get_win_loss()
         ],
             index=["_reward",
                    "_trades",
                    "_wins",
                    "_len_df",
                    "_trade_minutes",
-                   "_scan_time"
+                   "_scan_time",
+                   "_wl"
                    ])
     def is_good(self):
         return self.get_average_reward() > 5 and self.get_reward() > 100 and self.get_win_loss() > 0.7 and self.get_trades() >= 10

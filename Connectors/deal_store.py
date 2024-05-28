@@ -24,7 +24,7 @@ class Deal:
                  account_type: str = "DEMO",
                  intelligent_stop_used: bool = False,
                  intelligent_stop_level: float = None,
-                 predictor_data = None):
+                 predictor_scan_id = ""):
         self.ticker = ticker
         self.status = status
         self.dealId = dealId
@@ -41,7 +41,7 @@ class Deal:
         self.limit_factor = limit_factor
         self.intelligent_stop_used = intelligent_stop_used
         self.intelligent_stop_level = intelligent_stop_level
-        self.predictor_data = predictor_data
+        self.predictor_scan_id = predictor_scan_id
 
     @staticmethod
     def Create(data: dict):
@@ -62,7 +62,7 @@ class Deal:
                     limit_factor=data.get("limit_factor", 20),
                     intelligent_stop_used=data.get("intelligent_stop_used", False),
                     intelligent_stop_level=data.get("intelligent_stop_level", None),
-                    predictor_data = data.get("predictor_data", None)
+                    predictor_scan_id = data.get("predictor_scan_id", "")
         )
 
     def __str__(self):
@@ -74,9 +74,6 @@ class Deal:
     def set_intelligent_stop_level(self, level:float):
         self.intelligent_stop_used = True
         self.intelligent_stop_level = level
-
-    def set_predictor_data(self, data):
-        self.predictor_data = data
 
     def to_dict(self):
         return {
@@ -96,7 +93,7 @@ class Deal:
                 "limit_factor": self.limit_factor,
                 "intelligent_stop_used": self.intelligent_stop_used,
                 "intelligent_stop_level": self.intelligent_stop_level,
-                "predictor_data": self.predictor_data
+                "predictor_scan_id": self.predictor_scan_id
         }
 
 

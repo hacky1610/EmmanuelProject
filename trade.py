@@ -1,3 +1,5 @@
+from _lsprof import profiler_entry
+
 import dropbox
 import pymongo
 
@@ -8,6 +10,7 @@ from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
+from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import Tiingo, TradeType
 from Predictors.generic_predictor import GenericPredictor
 from Tracing.LogglyTracer import LogglyTracer
@@ -38,6 +41,7 @@ ds = DealStore(db, type_)
 analytics = Analytics(ms, tracer)
 predictor_class_list = [GenericPredictor]
 indicators = Indicators()
+ps = PredictorStore(db)
 #endregion
 
 trader = Trader(
@@ -47,7 +51,7 @@ trader = Trader(
     predictor_class_list=predictor_class_list,
     dataprocessor=dataProcessor,
     analytics=analytics,
-    cache=cache,
+    predictor_store=ps,
     deal_storage=ds,
     market_storage=ms
 )
