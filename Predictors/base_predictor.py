@@ -21,7 +21,7 @@ class BasePredictor:
         self._limit = 10
         self._stop = 20
         self._id = ""
-        self._active = False
+        self._active = True
         self._symbol = symbol
         self._result: EvalResult = EvalResult()
 

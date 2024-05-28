@@ -45,6 +45,9 @@ class GenericPredictor(BasePredictor):
         self._indicator_names = self._clean_list(self._indicator_names)
         super().setup(config)
 
+    def get_indicator_names(self) ->list:
+        return self._indicator_names
+
     def get_config(self) -> Series:
         parent_c = super().get_config()
         my_conf = Series([

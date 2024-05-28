@@ -67,7 +67,6 @@ class Trainer:
                 best_win_loss = res.get_win_loss()
                 best_avg_reward = res.get_average_reward()
                 best_predictor = predictor
-                best_predictor.activate()
                 self._predictor_store.save(best_predictor)
 
                 self._tracer.info(f"{symbol} - Result {res} - Indicators {predictor._indicator_names} "

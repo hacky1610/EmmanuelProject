@@ -1,5 +1,6 @@
 # region import
 import random
+import traceback
 from typing import Dict
 
 import pymongo
@@ -13,6 +14,7 @@ from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
+from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import Tiingo, TradeType
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
@@ -40,7 +42,7 @@ ms = MarketStore(db)
 ds = DealStore(db, "DEMO")
 analytics = Analytics(ms)
 trade_type = TradeType.FX
-
+ps = PredictorStore(db)
 viewer = BaseViewer()
 only_one_position = True
 
@@ -57,13 +59,11 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
     for m in markets:
         try:
             symbol = m["symbol"]
-            #symbol = "USDCHF"
             df, df_eval = ti.load_test_data(symbol, dp, trade_type)
 
             if len(df) > 0:
-                predictor = predictor_class(indicators=indicators, cache=df_cache, viewer=viewer)
-                predictor.load(symbol)
-                predictor.setup(predictor_settings)
+                predictor = predictor_class(symbol=symbol, indicators=indicators, viewer=viewer)
+                predictor.setup(ps.load_active_by_symbol(symbol))
                 ev_result = analytics.evaluate(predictor=predictor,
                                                df=df,
                                                df_eval=df_eval,
@@ -72,18 +72,18 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
                                                only_one_position=only_one_position,
                                                scaling=m["scaling"])
 
-                predictor.set_result(ev_result)
                 results.add(ev_result)
                 if not only_test:
-                    predictor.save(symbol)
+                    ps.save(predictor)
                 viewer.save(symbol)
                 gb = "BAD"
                 if ev_result.is_good():
                     gb = f"GOOD {predictor._indicator_names}"
 
                 print(f"{gb} - {symbol} - {ev_result} {predictor._limit} - {predictor._stop} ")
-        except:
-            print("error")
+        except Exception as e:
+            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+            print(f"MainException: {e} File:{traceback_str}")
     print(f"{results}")
 
 

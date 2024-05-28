@@ -84,6 +84,5 @@ for m in markets:
     js = load(m["symbol"])
     g = GenericPredictor(symbol=m["symbol"],indicators=_indicators)
     g.setup(js)
-    g.activate()
     g.get_result()._scan_time = datetime.datetime.now()
     ps.save(g)
