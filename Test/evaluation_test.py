@@ -15,7 +15,7 @@ class EvaluationTest(unittest.TestCase):
         ms.get_market.return_value = Market("foo",1)
         self.a = Analytics(ms)
         self.a._create_additional_info = MagicMock()
-        self.predictor = BasePredictor(Indicators())
+        self.predictor = BasePredictor("",Indicators())
         self.predictor.predict = MagicMock(side_effect=self.predict_mock)
         self.predictor.get_stop_limit = MagicMock(return_value=(10,10))
 

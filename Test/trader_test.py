@@ -40,7 +40,7 @@ class TraderTest(unittest.TestCase):
                               dataprocessor=self._dataProcessor,
                               analytics=self.analytics,
                               predictor_class_list= self._predictor_class_list,
-                              cache=MagicMock(),
+                              predictor_store=MagicMock(),
                               deal_storage=MagicMock(),
                               market_storage=MagicMock())
         self._trader._get_spread = MagicMock(return_value=1)
