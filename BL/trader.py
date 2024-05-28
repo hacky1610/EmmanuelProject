@@ -205,8 +205,6 @@ class Trader:
                        limit,
                        size,
                        currency,
-                       config,
-                       last_eval_result,
                        trade_function) -> (TradeResult, dict):
         """Führt den Handel für ein bestimmtes Symbol durch.
 
@@ -226,18 +224,14 @@ class Trader:
                 """
         result, deal_response = trade_function(epic, stop, limit, size, currency)
         if result:
-            self._tracer.write(f"Trade {symbol} with settings {config} and evaluation result {last_eval_result}.")
+            self._tracer.write(f"Trade {symbol} and evaluation result.")
             return TradeResult.SUCCESS, deal_response
         else:
             self._tracer.error(f"Error while trading {symbol}")
             return TradeResult.ERROR, deal_response
 
     def _save_result(self, predictor: BasePredictor, deal_response: dict, symbol: str):
-        predictor_data = predictor.get_config().append(predictor.get_last_result().get_data())
-        deal_data = Series(deal_response)
-        all_data = predictor_data.append(deal_data)
-        name = f"{deal_response['date'][:-4]}_{symbol}"
-        self._cache.save_deal_info(all_data.to_json(), name)
+        pass
 
     def trade(self,
               predictor: BasePredictor,
@@ -260,8 +254,8 @@ class Trader:
             self._tracer.debug(f"{config.symbol} Last evaluation too old")
             return TradeResult.ERROR
 
-        if not predictor.get_last_result().is_good():
-            self._tracer.debug(f"{config.symbol} has bad result {predictor.get_last_result()}")
+        if not predictor.get_result().is_good():
+            self._tracer.debug(f"{config.symbol} has bad result {predictor.get_result()}")
             return TradeResult.ERROR
 
         open_deals = self._deal_storage.get_open_deals_by_ticker(config.symbol)
@@ -284,8 +278,8 @@ class Trader:
         self._tracer.debug(f"{config.symbol} valid to predict")
         signal = predictor.predict(trade_df)
         market = self._market_store.get_market(config.symbol)
-        stop = market.get_pip_value(predictor.stop)
-        limit = market.get_pip_value(predictor.limit)
+        stop = market.get_pip_value(predictor._stop)
+        limit = market.get_pip_value(predictor._limit)
 
         if signal == TradeAction.NONE:
             return TradeResult.NOACTION
@@ -293,14 +287,14 @@ class Trader:
         self._tracer.info(f"Trade {signal} ")
 
         if signal == TradeAction.BUY:
-            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit,config.size,
-                                                     config.currency, predictor.get_config(),
-                                                     predictor.get_last_result().get_data(),
+            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
+                                                     config.currency,
+                                                     predictor.get_result().get_data(),
                                                      self._ig.buy)
         else:
             res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
-                                                     config.currency, predictor.get_config(),
-                                                     predictor.get_last_result().get_data(),
+                                                     config.currency,
+                                                     predictor.get_result().get_data(),
                                                      self._ig.sell)
         if res == TradeResult.SUCCESS:
             self._save_result(predictor, deal_response, config.symbol)

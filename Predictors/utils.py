@@ -4,6 +4,7 @@ from collections import Counter
 from pandas import DataFrame, Series
 from BL.eval_result import EvalResultCollection
 from BL.indicators import Indicators
+from Connectors.predictore_store import PredictorStore
 
 
 class TimeUtils:
@@ -18,27 +19,26 @@ class TimeUtils:
 
 class Reporting:
 
-    def __init__(self, cache):
-        self._cache = cache
+    def __init__(self, predictor_store: PredictorStore):
+        self._predictor_store= predictor_store
         self.results:EvalResultCollection = None
         self.reports:DataFrame = DataFrame()
         self._wl_limit = 0.8
+
     def create(self, markets, predictor_class, verbose=False):
         self.results, self.reports = self.report_predictors(markets, predictor_class, verbose)
 
-    def report_predictor(self,symbol,  predictor_class:Type, verbose:bool):
-        predictor = predictor_class(cache=self._cache, indicators=Indicators())
-        predictor.load(symbol)
+    def report_predictor(self,symbol:str,  predictor_class:Type, verbose:bool):
+        predictor = predictor_class(symbol=symbol, indicators=Indicators())
+        predictor.setup(self._predictor_store.load_active_by_symbol(symbol))
         if verbose:
-            print(f"{symbol} - {predictor.get_last_result()} {predictor._indicator_names}")
-        return predictor.get_last_result(),  Series([symbol,
-                       predictor._limit_factor,
-                       predictor._indicator_names,
-                       predictor.get_last_result().get_win_loss(),
-                       predictor.get_last_result().get_trades(),
-                       predictor.get_last_result().get_trade_frequency()],
-                      index=["symbol",
-                             "_limit_factor",
+            print(f"{symbol} - {predictor.get_result()} {predictor._indicator_names}")
+        return predictor.get_result(),  Series([symbol,
+                                                predictor._indicator_names,
+                                                predictor.get_result().get_win_loss(),
+                                                predictor.get_result().get_trades(),
+                                                predictor.get_result().get_trade_frequency()],
+                                               index=["symbol",
                              "_indicator_names",
                              "win_los",
                              "trades",

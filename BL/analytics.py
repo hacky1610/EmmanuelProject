@@ -1,3 +1,5 @@
+import datetime
+
 from BL.eval_result import EvalResult, TradeResult
 from Connectors.market_store import MarketStore
 from Predictors.utils import TimeUtils
@@ -72,8 +74,8 @@ class Analytics:
             if action == TradeAction.NONE:
                 continue
 
-            stop = market.get_pip_value(predictor.stop, scaling)
-            limit = market.get_pip_value(predictor.limit, scaling)
+            stop = market.get_pip_value(predictor._stop, scaling)
+            limit = market.get_pip_value(predictor._limit, scaling)
 
             trade:TradeResult = TradeResult()
             trade.action = action
@@ -143,7 +145,7 @@ class Analytics:
 
         predictor._tracer = old_tracer
         reward_eur = reward * scaling / market.pip_euro
-        ev_res = EvalResult(trades, reward_eur, wins + losses, len(df), trading_minutes, wins)
+        ev_res = EvalResult(trades, reward_eur, wins + losses, len(df), trading_minutes, wins, scan_time=datetime.datetime.now())
         viewer.update_title(f"{ev_res}")
         viewer.show()
 

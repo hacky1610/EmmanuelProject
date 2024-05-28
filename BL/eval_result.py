@@ -60,7 +60,7 @@ class EvalResult:
             return 0
         return round(self._trade_minutes / self._trades, 7)
 
-    def get_data(self):
+    def get_data(self) -> Series:
         return Series([
             self._reward,
             self._trades,
@@ -74,7 +74,7 @@ class EvalResult:
                    "_wins",
                    "_len_df",
                    "_trade_minutes",
-                   "scan_time"
+                   "_scan_time"
                    ])
     def is_good(self):
         return self.get_average_reward() > 5 and self.get_reward() > 100 and self.get_win_loss() > 0.7 and self.get_trades() >= 10

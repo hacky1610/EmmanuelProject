@@ -1,0 +1,39 @@
+import datetime
+from typing import List, Optional
+
+from pandas import DataFrame
+from pymongo.database import Database
+from pymongo.results import UpdateResult
+
+from Predictors.base_predictor import BasePredictor
+
+
+class PredictorStore:
+
+    def __init__(self, db: Database, account_type: str):
+
+        self._collection = db["Predictors"]
+        self._account_type = account_type
+
+    def save(self, predictor: BasePredictor):
+        if predictor.is_active():
+            self._collection.update_many({"_symbol": predictor.get_symbol()}, {"$set":{"_active": False}})
+
+        if self._collection.find_one({"_id": predictor.get_id()}):
+            self._collection.update_one({"_id": predictor.get_id()}, {"$set": predictor.get_save_data()})
+        else:
+            self._collection.insert_one(predictor.get_save_data())
+
+    def load_by_id(self, predictor_id: str):
+        return self._collection.find_one({"_id": predictor_id})
+
+    def load_all_by_symbol(self, symbol):
+        return self._collection.find({"_symbol": symbol})
+
+    def load_active_by_symbol(self, symbol):
+        d =  self._collection.find_one({"_symbol": symbol, "_active": True})
+        if d == None:
+            return {}
+        return d
+
+

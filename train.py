@@ -9,7 +9,6 @@ import dropbox
 import pymongo
 
 from BL.analytics import Analytics
-from BL.async_executor import AsyncExecutor
 from BL.data_processor import DataProcessor
 from BL.indicators import Indicators
 from BL.utils import ConfigReader, EnvReader
@@ -17,6 +16,7 @@ from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
+from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.trainer import Trainer
@@ -51,29 +51,25 @@ cache = DropBoxCache(ds)
 client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
-_trainer = Trainer(Analytics(market_store=ms), cache=cache, check_trainable=False)
+ps = PredictorStore(db, account_type)
+_trainer = Trainer(analytics=Analytics(market_store=ms),
+                   cache=cache,
+                   check_trainable=False,
+                   predictor_store=ps)
 _tiingo = Tiingo(conf_reader=conf_reader, cache=cache, tracer=_tracer)
 _dp = DataProcessor()
 _trade_type = TradeType.FX
 _ig = IG(conf_reader=conf_reader, live=live, tracer=_tracer)
-_async_ex = AsyncExecutor(free_cpus=2)
 _indicators = Indicators()
-_reporting = Reporting(cache)
+_reporting = Reporting(predictor_store=ps)
 # endregion
-
-_train_version = "V2.20"
-_loop = True
-_async_exec =False # os.name != "nt"
 
 
 def train_predictor(markets:list,
                     trainer: Trainer,
                     tiingo: Tiingo,
-                    async_ex: AsyncExecutor,
                     dp: DataProcessor,
-                    train_version: str,
                     predictor: Type,
-                    async_exec: bool,
                     indicators: Indicators,
                     reporting:Reporting,
                     trade_type: TradeType = TradeType.FX,
@@ -84,6 +80,9 @@ def train_predictor(markets:list,
     best_indicators = reporting.get_best_indicator_names()
     tracer.info(f"Best indicators: {best_indicators}")
 
+    if len(best_indicators) == 0:
+        best_indicators.append("RSI")
+
     for m in random.choices(markets, k=10):
         # for m in markets:
         symbol = m["symbol"]
@@ -91,15 +90,11 @@ def train_predictor(markets:list,
         df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         df_test, eval_df_test = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
         if len(df_train) > 0:
-            if async_exec:
-                if __name__ == '__main__':
-                    async_ex.run(trainer.train, args=(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, train_version, predictor, indicators, best_indicators))
-            else:
-                try:
-                    trainer.train(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, train_version, predictor, indicators, best_indicators)
-                except Exception as e:
-                    traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
-                    print(f"MainException: {e} File:{traceback_str}")
+            try:
+                trainer.train(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, predictor, indicators, best_indicators)
+            except Exception as e:
+                traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+                print(f"MainException: {e} File:{traceback_str}")
 
         else:
             print(f"No Data in {symbol} ")
@@ -113,9 +108,6 @@ while True:
                         trainer=_trainer,
                         tiingo=_tiingo,
                         predictor=GenericPredictor,
-                        async_ex=_async_ex,
-                        async_exec=_async_exec,
-                        train_version=_train_version,
                         dp=_dp,
                         reporting=_reporting,
                         indicators=_indicators,

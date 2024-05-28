@@ -6,17 +6,19 @@ from typing import List
 from pandas import DataFrame
 
 from BL.eval_result import EvalResult
+from Connectors.predictore_store import PredictorStore
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 
 
 class Trainer:
 
-    def __init__(self, analytics, cache, check_trainable=False, tracer:Tracer = ConsoleTracer()):
+    def __init__(self, analytics, cache, predictor_store: PredictorStore, check_trainable=False, tracer:Tracer = ConsoleTracer()):
         self._analytics = analytics
         self._cache = cache
         self._check_trainable = check_trainable
         self._tracer = tracer
+        self._predictor_store = predictor_store
 
     def is_trained(self,
                    symbol: str,
@@ -29,10 +31,10 @@ class Trainer:
         if not self._check_trainable:
             return True
 
-        if predictor.get_last_result().get_trades() < 8:
+        if predictor.get_result().get_trades() < 8:
             print("To less trades")
             return False
-        if predictor.get_last_result().get_win_loss() < 0.67:
+        if predictor.get_result().get_win_loss() < 0.67:
             print("To less win losses")
             return False
         return True
@@ -40,19 +42,17 @@ class Trainer:
     def _get_time_range(self, df):
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
-    def train(self, symbol: str, scaling:int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame, df_eval_test: DataFrame,
-              version: str, predictor_class, indicators, best_indicators: List):
+    def train(self, symbol: str, scaling:int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame, df_eval_test: DataFrame, predictor_class, indicators, best_indicators: List):
         self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best_win_loss = 0
         best_reward = 0
         best_avg_reward = 0
         best_predictor = None
-        startzeit = time()
 
-        for training_set in self._get_sets(predictor_class, version, best_indicators):
-            predictor = predictor_class(indicators=indicators, cache=self._cache)
-            predictor.load(symbol)
+        for training_set in self._get_sets(predictor_class, best_indicators):
+            predictor = predictor_class(symbol=symbol, indicators=indicators)
+            predictor.setup(self._predictor_store.load_active_by_symbol(symbol))
             if not self._trainable(predictor):
                 self._tracer.info("Predictor is not trainable")
                 return
@@ -67,26 +67,27 @@ class Trainer:
                 best_win_loss = res.get_win_loss()
                 best_avg_reward = res.get_average_reward()
                 best_predictor = predictor
-                best_predictor.save(symbol)
+                best_predictor.activate()
+                self._predictor_store.save(best_predictor)
 
                 self._tracer.info(f"{symbol} - Result {res} - Indicators {predictor._indicator_names} "
-                                  f"Limit: {predictor.limit} Stop: {predictor.stop}")
+                                  f"Limit: {predictor._limit} Stop: {predictor._stop}")
 
         if best_predictor is not None:
             res_test: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
-            best_predictor.save(symbol)
+            best_predictor.activate()
+            self._predictor_store.save(best_predictor)
 
             self._tracer.info(f"Test:  WL: {res_test.get_win_loss()} - Reward: {res_test.get_reward()} Avg Reward {res_test.get_average_reward()}")
             self._tracer.info(f"Train: WL: {best_win_loss}           - Reward: {best_reward}       Avg Reward {best_avg_reward}")
-            self._tracer.info(f"Stop: {best_predictor.stop} - Limit: {best_predictor.limit}   Max nones: {best_predictor._max_nones}")
+            self._tracer.info(f"Stop: {best_predictor._stop} - Limit: {best_predictor._limit}   Max nones: {best_predictor._max_nones}")
         else:
             self._tracer.info("No Best predictor")
 
-        #print(f"Needed time for {symbol} -  {(time() - startzeit) / 60} minutes")
 
-    def _get_sets(self, predictor_class, version, best_indicators: List):
-        sets = predictor_class.get_training_sets(version, best_indicators)
+    def _get_sets(self, predictor_class , best_indicators: List):
+        sets = predictor_class.get_training_sets(best_indicators)
         #sets = random.choices(sets, k=5)
         random.shuffle(sets)
-        sets.insert(0, {"version": version})  # insert a fake set. So that the current best version is beeing testet
+        sets.insert(0, {})  # insert a fake set. So that the current best version is beeing testet
         return sets

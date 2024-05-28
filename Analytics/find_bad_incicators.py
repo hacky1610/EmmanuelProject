@@ -57,7 +57,7 @@ def find_bad_indicators(indicators, ig: IG,predictor_class):
             predictor = predictor_class(indicators=indicators, cache=df_cache)
             predictor.load(m["symbol"])
 
-            wl = predictor.get_last_result().get_win_loss()
+            wl = predictor.get_result().get_win_loss()
             if wl > 0.6:
                 good_indicators = good_indicators + predictor._indicator_names
 

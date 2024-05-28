@@ -31,8 +31,8 @@ class TestBasePredictor(unittest.TestCase):
         }
         base_predictor = BasePredictor(indicators=Indicators(), config=config)
 
-        self.assertEqual(base_predictor.limit, 1.5)
-        self.assertEqual(base_predictor.stop, 1.5)
+        self.assertEqual(base_predictor._limit, 1.5)
+        self.assertEqual(base_predictor._stop, 1.5)
         self.assertEqual(base_predictor.version, "V2.0")
         self.assertEqual(base_predictor.get_last_scan_time(), datetime(2023, 7, 31, 18, 0, 0))
 
@@ -45,8 +45,8 @@ class TestBasePredictor(unittest.TestCase):
 
     def test_get_config(self):
         base_predictor = BasePredictor(Indicators())
-        base_predictor.limit = 1.5
-        base_predictor.stop = 1.5
+        base_predictor._limit = 1.5
+        base_predictor._stop = 1.5
         base_predictor.version = "V2.0"
         base_predictor.last_scan = datetime(2023, 7, 31, 18, 0, 0).isoformat()
 

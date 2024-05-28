@@ -63,10 +63,10 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
             predictor.load(symbol)
 
             gb = "BAD"
-            if predictor.get_last_result().is_good():
+            if predictor.get_result().is_good():
                 gb = f"GOOD"
 
-            print(f"{gb} - {symbol} - {predictor.get_last_result().get_average_reward()}  {predictor.get_last_result().get_trades()} - {predictor.get_last_result().get_win_loss()} - {predictor.limit} - {predictor.stop} ")
+            print(f"{gb} - {symbol} - {predictor.get_result().get_average_reward()}  {predictor.get_result().get_trades()} - {predictor.get_result().get_win_loss()} - {predictor._limit} - {predictor._stop} ")
         except:
             print("error")
     print(f"{results}")

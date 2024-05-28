@@ -1,5 +1,6 @@
 import itertools
 import random
+from typing import Mapping
 
 from pandas import DataFrame, Series
 from BL.eval_result import EvalResult
@@ -16,34 +17,45 @@ class BasePredictor:
                 indicators (Indicators): Indikatoren
             """
 
-    version = "V2.0"
-    fallback_model_version = ""
-
-
-    def __init__(self, indicators, config=None , cache: BaseCache = BaseCache(), tracer: Tracer = ConsoleTracer()):
-        self.limit = 10
-        self.stop = 20
-        self._last_scan: EvalResult = EvalResult()
+    def __init__(self,symbol:str, indicators, config=None , tracer: Tracer = ConsoleTracer()):
+        self._limit = 10
+        self._stop = 20
+        self._id = ""
+        self._active = False
+        self._symbol = symbol
+        self._result: EvalResult = EvalResult()
 
         if config is None:
             config = {}
         self.setup(config)
         self._tracer = tracer
-        self.lastState = ""
-        self._cache = cache
         self._indicators = indicators
-        self.model_version = ""
 
     def setup(self, config):
-        self._set_att(config, "limit")
-        self._set_att(config, "stop")
-        self._set_att(config, "version")
-        self._last_scan = EvalResult(reward=config.get("_reward", 0.0),
-                                     trades=config.get("_trades", 0),
-                                     wins=config.get("_wins", 0),
-                                     len_df=config.get("_len_df", 0),
-                                     trade_minutes=config.get("_trade_minutes", 0),
-                                     scan_time=config.get("scan_time", datetime(1970, 1, 1).isoformat()))
+
+        self._set_att(config, "_id")
+        self._set_att(config, "_limit")
+        self._set_att(config, "_stop")
+        self._set_att(config, "_active")
+        self._set_att(config, "_symbol")
+        self._result = EvalResult(reward=config.get("_reward", 0.0),
+                                  trades=config.get("_trades", 0),
+                                  wins=config.get("_wins", 0),
+                                  len_df=config.get("_len_df", 0),
+                                  trade_minutes=config.get("_trade_minutes", 0),
+                                  scan_time=config.get("_scan_time", datetime(1970, 1, 1).isoformat()))
+
+    def get_id(self) -> str:
+        return self._id
+
+    def get_symbol(self) -> str:
+        return self._symbol
+
+    def activate(self):
+        self._active = True
+
+    def is_active(self) -> bool:
+        return self._active
 
 
     def _set_att(self, config: dict, name: str):
@@ -53,70 +65,55 @@ class BasePredictor:
         raise NotImplementedError
 
     def get_last_scan_time(self):
-        return self._last_scan.get_scan_time()
+        return self._result.get_scan_time()
 
     def train(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol:str, scaling:int) -> EvalResult:
         ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=True, symbol=symbol, scaling=scaling)
+        self._result = ev_result
         return ev_result
 
     def eval(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, scaling:int) -> EvalResult:
         ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=True,
                                                    symbol=symbol, scaling=scaling)
-        self._last_scan = ev_result
+        self._result = ev_result
         return ev_result
 
     def get_config(self):
         return Series([self.__class__.__name__,
-                       self.stop,
-                       self.limit,
-                       self.version,
-                       self.last_scan,
+                       self._stop,
+                       self._limit,
+                       self._active,
+                       self._symbol
                        ],
-                      index=["Type",
-                             "stop",
-                             "limit",
-                             "version",
-                             "last_scan",
+                      index=["_type",
+                             "_stop",
+                             "_limit",
+                             "_active",
+                             "_symbol"
                              ])
 
     @staticmethod
-    def _stop_limit_trainer(version: str):
+    def _stop_limit_trainer():
 
         json_objs = []
         for stop_limit in random.choices(range(15, 65), k=3):
             json_objs.append({
                 "stop": stop_limit,
-                "limit": stop_limit * random.choice([0.8, 1.0, 1.2]),
-                "version": version
+                "limit": stop_limit * random.choice([0.8, 1.0, 1.2])
             })
         return json_objs
 
     @staticmethod
-    def get_training_sets(version: str):
+    def get_training_sets():
         return []
 
-    def _get_filename(self, symbol, model_version: str):
-        return f"{self.__class__.__name__}_{symbol}{model_version}.json"
-
     def set_result(self, result: EvalResult):
-        self._last_scan = result
+        self._result = result
 
-    def get_last_result(self) -> EvalResult:
-        return self._last_scan
+    def get_result(self) -> EvalResult:
+        return self._result
 
-    def get_save_data(self) -> Series:
-        return self.get_config().append(self._last_scan.get_data())
+    def get_save_data(self) -> Mapping:
+        return self.get_config().append(self._result.get_data()).to_dict()
 
-    def save(self, symbol: str):
 
-        self._cache.save_settings(self.get_save_data().to_json(), self._get_filename(symbol, self.model_version))
-
-    def load(self, symbol: str):
-        json = self._cache.load_settings(self._get_filename(symbol,self.model_version))
-        if json is None:
-            json = self._cache.load_settings(self._get_filename(symbol,self.fallback_model_version))
-
-        if json is not None:
-            self.setup(json)
-
-        return self
