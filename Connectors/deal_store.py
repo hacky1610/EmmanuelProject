@@ -109,6 +109,7 @@ class DealStore:
             self._collection.update_one({"open_date_ig_str": deal.open_date_ig_str,
                                          "account_type": self._account_type}, {"$set": deal.to_dict()})
         else:
+            deal.account_type = self._account_type #TODO
             self._collection.insert_one(deal.to_dict())
 
     def get_deal_by_ig_id(self, ig_date: str, ticker: str) -> Optional[Deal]:
