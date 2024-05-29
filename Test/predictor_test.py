@@ -42,7 +42,7 @@ class TestBasePredictor(unittest.TestCase):
             "BasePredictor",
             1.5,
             1.5,
-            False,
+            True,
             ""
         ], index=["_type", "_stop", "_limit", "_active", "_symbol"])
 
