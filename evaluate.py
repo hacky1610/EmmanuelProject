@@ -71,6 +71,8 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
                                                symbol=symbol,
                                                only_one_position=only_one_position,
                                                scaling=m["scaling"])
+                if ev_result is None:
+                    continue
 
                 results.add(ev_result)
                 if not only_test:
