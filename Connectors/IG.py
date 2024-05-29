@@ -301,8 +301,8 @@ class IG:
             if direction == "BUY":
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
-                    if diff > p.limit * 0.7:
-                        self._tracer.debug(f"Current profit {diff} is greate than limit {p.limit * 0.7}")
+                    if diff > p.limit * 0.6:
+                        self._tracer.debug(f"Current profit {diff} is greate than limit {p.limit * 0.6}")
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price - distance
                         if new_stop_level > stop_level:
@@ -310,8 +310,8 @@ class IG:
             else:
                 if offer_price < open_price:
                     diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
-                    if diff > p.limit * 0.7:
-                        self._tracer.debug(f"Current profit {diff} is greate than limit {p.limit * 0.7}")
+                    if diff > p.limit * 0.6:
+                        self._tracer.debug(f"Current profit {diff} is greate than limit {p.limit * 0.6}")
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price + distance
                         if new_stop_level < stop_level:
