@@ -49,35 +49,37 @@ class Trainer:
         best_reward = 0
         best_avg_reward = 0
         best_predictor = None
+        best_config = {}
 
         for training_set in self._get_sets(predictor_class, best_indicators):
             predictor = predictor_class(symbol=symbol, indicators=indicators)
             predictor.setup(self._predictor_store.load_active_by_symbol(symbol))
+            predictor.setup(best_config)
             if not self._trainable(predictor):
                 self._tracer.info("Predictor is not trainable")
                 return
             predictor.setup(training_set)
 
-            res: EvalResult = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol, scaling=scaling)
-            if res is None:
+            best_train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol, scaling=scaling)
+            if best_train_result is None:
                 return
 
-            if res.get_reward() > best_reward and res.get_win_loss() >= 0.66 and res.get_trades() >= 15:
-                best_reward = res.get_reward()
-                best_win_loss = res.get_win_loss()
-                best_avg_reward = res.get_average_reward()
-                best_predictor = predictor
-                self._predictor_store.save(best_predictor)
 
-                self._tracer.info(f"{symbol} - Result {res} - Indicators {predictor._indicator_names} "
+            if best_train_result.get_reward() > best_reward and best_train_result.get_win_loss() >= 0.66 and best_train_result.get_trades() >= 15:
+                best_reward = best_train_result.get_reward()
+                best_win_loss = best_train_result.get_win_loss()
+                best_avg_reward = best_train_result.get_average_reward()
+                best_predictor = predictor
+                best_config = predictor.get_config()
+
+                self._tracer.info(f"{symbol} - Result {best_train_result} - Indicators {predictor._indicator_names} "
                                   f"Limit: {predictor._limit} Stop: {predictor._stop}")
 
         if best_predictor is not None:
-            res_test: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
-            best_predictor.activate()
-            self._predictor_store.save(best_predictor)
+            test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
+            self._predictor_store.save(best_predictor, overwrite=False)
 
-            self._tracer.info(f"Test:  WL: {res_test.get_win_loss()} - Reward: {res_test.get_reward()} Avg Reward {res_test.get_average_reward()}")
+            self._tracer.info(f"Test:  WL: {test_result.get_win_loss()} - Reward: {test_result.get_reward()} Avg Reward {test_result.get_average_reward()}")
             self._tracer.info(f"Train: WL: {best_win_loss}           - Reward: {best_reward}       Avg Reward {best_avg_reward}")
             self._tracer.info(f"Stop: {best_predictor._stop} - Limit: {best_predictor._limit}   Max nones: {best_predictor._max_nones}")
         else:

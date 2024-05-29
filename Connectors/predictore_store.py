@@ -14,11 +14,11 @@ class PredictorStore:
 
         self._collection = db["Predictors"]
 
-    def save(self, predictor: BasePredictor):
+    def save(self, predictor: BasePredictor, overwrite: bool = True):
         if predictor.is_active():
             self._collection.update_many({"_symbol": predictor.get_symbol()}, {"$set":{"_active": False}})
 
-        if self._collection.find_one({"_id": predictor.get_id()}):
+        if self._collection.find_one({"_id": predictor.get_id()}) and overwrite:
             self._collection.update_one({"_id": predictor.get_id()}, {"$set": predictor.get_save_data()})
         else:
             self._collection.insert_one(predictor.get_save_data())
