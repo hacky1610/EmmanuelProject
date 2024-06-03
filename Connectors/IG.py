@@ -12,6 +12,7 @@ from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.market_store import MarketStore
+from Connectors.predictore_store import PredictorStore
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import TimeUtils
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -282,7 +283,7 @@ class IG:
 
         return stop_distance
 
-    def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, cache: DropBoxCache):
+    def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, predictor_store: PredictorStore):
         open_price = position.level
         bid_price = position.bid
         offer_price = position.offer
@@ -297,7 +298,8 @@ class IG:
             f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
 
         try:
-            p = GenericPredictor(Indicators(),{},self._tracer,cache=cache).load(ticker)
+            p = GenericPredictor(ticker, Indicators(),{},self._tracer)
+            p.setup(predictor_store.load_active_by_symbol(ticker))
             market = market_store.get_market(ticker)
             if direction == "BUY":
                 if bid_price > open_price:

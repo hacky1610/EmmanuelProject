@@ -170,7 +170,7 @@ class Trader:
         for _, item in self._ig.get_opened_positions().iterrows():
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
             if deal != None:
-                self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._cache)
+                self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
 
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
