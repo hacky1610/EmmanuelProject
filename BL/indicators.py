@@ -373,6 +373,19 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _ema_50_close(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        period = df[-2:]
+
+        if len(period[period.EMA_20 < period.close]) == len(period):
+            return TradeAction.BUY
+        elif len(period[period.EMA_20 > period.close]) == len(period):
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
     def _smma_20_close(self, df):
         if len(df) < 2:
             return TradeAction.NONE

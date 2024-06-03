@@ -20,6 +20,7 @@ class DataProcessor:
         df['EMA_20_LOW'] = TA.EMA(df, 20, "low")
         df['EMA_30'] = TA.EMA(df, 30)
         df['EMA_50'] = TA.EMA(df, 50)
+        #df['EMA_200'] = TA.EMA(df, 200)
 
         df['SMMA_20'] = TA.SMMA(df, 20)
 
