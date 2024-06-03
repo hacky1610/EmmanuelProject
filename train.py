@@ -12,7 +12,6 @@ from BL.analytics import Analytics
 from BL.data_processor import DataProcessor
 from BL.indicators import Indicators
 from BL.utils import ConfigReader, EnvReader
-from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
@@ -59,7 +58,6 @@ _trainer = Trainer(analytics=Analytics(market_store=ms),
 _tiingo = Tiingo(conf_reader=conf_reader, cache=cache, tracer=_tracer)
 _dp = DataProcessor()
 _trade_type = TradeType.FX
-_ig = IG(conf_reader=conf_reader, live=live, tracer=_tracer)
 _indicators = Indicators()
 _reporting = Reporting(predictor_store=ps)
 # endregion
