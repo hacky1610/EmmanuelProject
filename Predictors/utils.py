@@ -17,38 +17,40 @@ class TimeUtils:
     def get_date_string(da: date):
         return da.strftime("%Y-%m-%d")
 
+
 class Reporting:
 
     def __init__(self, predictor_store: PredictorStore):
-        self._predictor_store= predictor_store
-        self.results:EvalResultCollection = None
-        self.reports:DataFrame = DataFrame()
+        self._predictor_store = predictor_store
+        self.results: EvalResultCollection = None
+        self.reports: DataFrame = DataFrame()
         self._wl_limit = 0.8
 
     def create(self, markets, predictor_class, verbose=False):
         self.results, self.reports = self.report_predictors(markets, predictor_class, verbose)
 
-    def report_predictor(self,symbol:str,  predictor_class:Type, verbose:bool):
+    def report_predictor(self, symbol: str, predictor_class: Type, verbose: bool):
         predictor = predictor_class(symbol=symbol, indicators=Indicators())
         predictor.setup(self._predictor_store.load_active_by_symbol(symbol))
         if verbose:
             print(f"{symbol} - {predictor.get_result()} {predictor._indicator_names}")
-        return predictor.get_result(),  Series([symbol,
-                                                predictor._indicator_names,
-                                                predictor.get_result().get_win_loss(),
-                                                predictor.get_result().get_trades(),
-                                                predictor.get_result().get_trade_frequency()],
-                                               index=["symbol",
-                             "_indicator_names",
-                             "win_los",
-                             "trades",
-                             "frequence"])
+        return predictor.get_result(), Series([symbol,
+                                               predictor._indicator_names,
+                                               predictor.get_result().get_win_loss(),
+                                               predictor.get_result().get_trades(),
+                                               predictor.get_result().get_trade_frequency()],
+                                              index=["symbol",
+                                                     "_indicator_names",
+                                                     "win_los",
+                                                     "trades",
+                                                     "frequence"])
 
-    def report_predictors(self,markets, predictor_class:Type, verbose:bool = True) -> (EvalResultCollection, DataFrame):
+    def report_predictors(self, markets, predictor_class: Type, verbose: bool = True) -> (
+    EvalResultCollection, DataFrame):
         results = EvalResultCollection()
         df = DataFrame()
         for market in markets:
-            result,data = self.report_predictor(market["symbol"], predictor_class, verbose)
+            result, data = self.report_predictor(market["symbol"], predictor_class, verbose)
             results.add(result)
             df = df.append(data, ignore_index=True)
 
@@ -66,7 +68,7 @@ class Reporting:
 
         return string_counts
 
-    def get_best_indicator_names(self, n:int = 7):
+    def get_best_indicator_names(self, n: int = 7):
 
         best_df = self.reports[self.reports.win_los > self._wl_limit]
         indicators = []
@@ -81,9 +83,6 @@ class Reporting:
 
         return indicators
 
-
-
-
     def get_all_indicators(self):
         indicators = []
         for r in self.reports.iterrows():
@@ -93,4 +92,3 @@ class Reporting:
         #most_common_strings = string_counts.most_common()
 
         return string_counts
-

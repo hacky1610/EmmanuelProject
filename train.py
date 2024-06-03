@@ -102,9 +102,7 @@ def train_predictor(markets:list,
 
 while True:
     try:
-        with open(os.path.join("Data","markets.json"), 'r') as json_file:
-            markets = json.load(json_file)
-        train_predictor(markets=markets,
+        train_predictor(markets=IG.get_markets_offline(),
                         trainer=_trainer,
                         tiingo=_tiingo,
                         predictor=GenericPredictor,

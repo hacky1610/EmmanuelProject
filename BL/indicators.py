@@ -80,6 +80,7 @@ class Indicators:
     CCI = "cci"
     CANDLE = "candle"
     CANDLEPATTERN = "candle_pattern"
+    CANDLE_4H = "candle_4h"
     # Bollinger
     BB = "bb"
     BB_MIDDLE_CROSS = "bb_middle_crossing"
@@ -157,6 +158,7 @@ class Indicators:
 
         self._add_indicator(self.CANDLE, self._candle_predict)
         self._add_indicator(self.CANDLEPATTERN, self._candle_pattern_predict)
+        self._add_indicator(self.CANDLE_4H, self._candle_predict_4h)
         self._add_indicator(self.CCI, self._cci_predict)
 
         # PSAR
@@ -543,6 +545,15 @@ class Indicators:
 
     def _candle_predict(self, df):
         c = Candle(df[-1:])
+
+        if c.direction() == Direction.Bullish:
+            return TradeAction.BUY
+        else:
+            return TradeAction.SELL
+
+    def _candle_predict_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+        c = Candle(df4h[-1:])
 
         if c.direction() == Direction.Bullish:
             return TradeAction.BUY

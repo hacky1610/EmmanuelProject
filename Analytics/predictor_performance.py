@@ -1,24 +1,23 @@
 from typing import List
 
 import dropbox
+import pymongo
 from pandas import DataFrame
-
 from Connectors.dropbox_cache import DropBoxService, DropBoxCache
 from Connectors.IG import IG
 from BL import  ConfigReader
+from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import  TradeType
 import plotly.express as px
 import pandas as pd
-from collections import Counter
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import Reporting
 
 #region members
 conf_reader = ConfigReader()
-dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
-ds = DropBoxService(dbx,"DEMO")
-df_cache = DropBoxCache(ds)
-ig = IG(ConfigReader())
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+db = client["ZuluDB"]
+ps = PredictorStore(db)
 #endregion
 
 #region functions
@@ -60,10 +59,8 @@ def show_indicators(indicators):
 
 #endregion
 
-_currency_markets = ig.get_markets(TradeType.FX, tradeable=False)
-
-_reporting = Reporting(df_cache)
-_reporting.create(_currency_markets, GenericPredictor)
+_reporting = Reporting(ps)
+_reporting.create(IG.get_markets_offline(), GenericPredictor)
 
 
 print(_reporting.results)

@@ -1,3 +1,4 @@
+import json
 import os.path
 import time
 import traceback
@@ -552,6 +553,14 @@ class IG:
         # if len(df_results[df_results.wl != df_results.eval_result]) > 0:
         #     print(f"{ticker} ERROR - evaluation mismatch")
         return df_results
+
+    @staticmethod
+    def get_markets_offline():
+        _currency_markets = []
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "Data", "markets.json"), 'r') as json_file:
+            _currency_markets = json.load(json_file)
+
+        return _currency_markets
 
     def report_last_day(self, ti, cache, dp, analytics, viewer: BaseViewer, days: int = 7):
         start_time = (datetime.now() - timedelta(hours=days * 24))
