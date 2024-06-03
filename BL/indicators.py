@@ -4,7 +4,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from BL import DataProcessor
-from BL.candle import Candle, Direction, MultiCandle, MultiCandleType
+from BL.candle import Candle, Direction, MultiCandle, MultiCandleType, CandleType
 from BL.datatypes import TradeAction
 import random
 
@@ -553,12 +553,31 @@ class Indicators:
 
     def _candle_predict_4h(self, df):
         df4h = self.convert_1h_to_4h(df)
+        if len(df4h) < 1:
+            return TradeAction.NONE
+
         c = Candle(df4h[-1:])
 
         if c.direction() == Direction.Bullish:
             return TradeAction.BUY
         else:
             return TradeAction.SELL
+
+    def _candle_type_predict_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+        if len(df4h) < 1:
+            return TradeAction.NONE
+
+        c = Candle(df4h[-1:])
+        ct = c.candle_type()
+        if ct == CandleType.Hammer:
+            return TradeAction.BUY
+
+        if ct == CandleType.HangingMan:
+            return TradeAction.SELL
+
+
+        return TradeAction.NONE
 
     def _candle_pattern_predict(self, df):
         if len(df) < 3:
