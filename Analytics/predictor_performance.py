@@ -5,9 +5,9 @@ import pymongo
 from pandas import DataFrame
 from Connectors.dropbox_cache import DropBoxService, DropBoxCache
 from Connectors.IG import IG
-from BL import  ConfigReader
+from BL import ConfigReader
 from Connectors.predictore_store import PredictorStore
-from Connectors.tiingo import  TradeType
+from Connectors.tiingo import TradeType
 import plotly.express as px
 import pandas as pd
 from Predictors.generic_predictor import GenericPredictor
@@ -15,17 +15,21 @@ from Predictors.utils import Reporting
 
 #region members
 conf_reader = ConfigReader()
-client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient(
+    f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ps = PredictorStore(db)
+
+
 #endregion
 
 #region functions
-def shop_pie(name:str, reports:DataFrame):
+def shop_pie(name: str, reports: DataFrame):
     fig = px.pie(reports, values=name, names=name, title=name)
     fig.show()
 
-def shop_pie_bool(name:str, reports:DataFrame ):
+
+def shop_pie_bool(name: str, reports: DataFrame):
     true_count = reports[name].sum()
     false_count = len(reports) - true_count
 
@@ -46,6 +50,7 @@ def shop_pie_bool(name:str, reports:DataFrame ):
                  title=name)
     fig.show()
 
+
 def show_indicators(indicators):
     # Vorbereiten der Daten für das Balkendiagramm
     x_werte = list(indicators.keys())
@@ -57,29 +62,21 @@ def show_indicators(indicators):
     # Diagramm anzeigen
     fig.show()
 
+
 #endregion
 
 _reporting = Reporting(ps)
 _reporting.create(IG.get_markets_offline(), GenericPredictor)
 
-
 print(_reporting.results)
-
 
 fig = px.bar(_reporting.reports, x='symbol', y='frequence')
 fig.show()
 fig = px.bar(_reporting.reports.sort_values(by=["win_los"]), x='symbol', y='win_los')
 fig.show()
 
-
 show_indicators(_reporting.get_all_indicators())
 show_indicators(_reporting.get_best_indicators())
 
 reps = _reporting.reports[_reporting.reports.trades < 200]
 (px.scatter(y=reps.win_los, x=reps.trades)).show()
-
-
-
-
-
-

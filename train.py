@@ -1,5 +1,4 @@
 # region import
-import json
 import os
 import random
 import traceback
@@ -12,6 +11,7 @@ from BL.analytics import Analytics
 from BL.data_processor import DataProcessor
 from BL.indicators import Indicators
 from BL.utils import ConfigReader, EnvReader
+from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
