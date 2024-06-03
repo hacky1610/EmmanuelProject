@@ -81,6 +81,8 @@ class Indicators:
     CANDLE = "candle"
     CANDLEPATTERN = "candle_pattern"
     CANDLE_4H = "candle_4h"
+    CANDLE_TYPE = "candle_type"
+    CANDLE_TYPE_4H = "candle_type_4h"
     # Bollinger
     BB = "bb"
     BB_MIDDLE_CROSS = "bb_middle_crossing"
@@ -159,6 +161,10 @@ class Indicators:
         self._add_indicator(self.CANDLE, self._candle_predict)
         self._add_indicator(self.CANDLEPATTERN, self._candle_pattern_predict)
         self._add_indicator(self.CANDLE_4H, self._candle_predict_4h)
+        self._add_indicator(self.CANDLE_TYPE, self._candle_type_predict)
+        self._add_indicator(self.CANDLE_TYPE_4H, self._candle_type_predict_4h)
+
+
         self._add_indicator(self.CCI, self._cci_predict)
 
         # PSAR
@@ -563,21 +569,23 @@ class Indicators:
         else:
             return TradeAction.SELL
 
-    def _candle_type_predict_4h(self, df):
-        df4h = self.convert_1h_to_4h(df)
-        if len(df4h) < 1:
+    def _candle_type_predict(self, df):
+        if len(df) < 1:
             return TradeAction.NONE
 
-        c = Candle(df4h[-1:])
+        c = Candle(df[-1:])
         ct = c.candle_type()
-        if ct == CandleType.Hammer:
+        if ct == CandleType.Hammer or ct == CandleType.ImvertedHammer or ct == CandleType.DragonflyDoji:
             return TradeAction.BUY
 
-        if ct == CandleType.HangingMan:
+        if ct == CandleType.HangingMan or ct == CandleType.ShootingStar or ct == CandleType.GraveStoneDoji:
             return TradeAction.SELL
 
-
         return TradeAction.NONE
+
+    def _candle_type_predict_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+        return self._candle_type_predict(df4h)
 
     def _candle_pattern_predict(self, df):
         if len(df) < 3:
