@@ -574,6 +574,23 @@ class TestIndicators(unittest.TestCase):
         data = self.indicators._ema_10_50_diff(data)
         self.assertEqual(data, TradeAction.NONE)
 
+    def test_ema_10_30_diff_max(self):
+        # Teste None-Pfad
+        data = DataFrame()
+        data['EMA_10'] = [100,60, 75, 80, 90]
+        data['EMA_30'] = [80,70, 70, 70, 70]
+        data = self.indicators._ema_10_30_diff_max(data)
+        self.assertEqual(data, TradeAction.NONE)
+
+        # Teste Both-Pfad
+        data = DataFrame()
+        data['EMA_10'] = [100, 60, 75, 80, 90]
+        data['EMA_30'] = [80, 70, 70, 70, 80]
+        data = self.indicators._ema_10_30_diff_max(data)
+        self.assertEqual(data, TradeAction.BOTH)
+
+
+
     def test_ema_20_channel(self):
         data = DataFrame()
         data['EMA_20_HIGH'] = [100, 100, 100, 100]

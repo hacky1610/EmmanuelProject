@@ -391,6 +391,20 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _ema_10_30_diff_max(self, df:DataFrame):
+        return self._line_diff_max(df.EMA_10,df.EMA_30)
+
+    def _line_diff_max(self, line1: Series,  line2: Series, ratio: float = 0.7):
+        diff = abs(line1 - line2)
+        max_diff = diff.max()
+
+        if abs(diff.iloc[-1]) > max_diff * ratio:
+            return TradeAction.NONE
+
+        return TradeAction.BOTH
+
+
+
     def _ema_20_close(self, df):
         if len(df) < 2:
             return TradeAction.NONE
@@ -638,9 +652,9 @@ class Indicators:
         c = MultiCandle(df)
         t = c.get_type()
 
-        if t == MultiCandleType.MorningStart or t == MultiCandleType.BullishEngulfing:
+        if t == MultiCandleType.MorningStart or t == MultiCandleType.BullishEngulfing or t == MultiCandleType.ThreeWhiteSoldiers:
             return TradeAction.BUY
-        elif t == MultiCandleType.EveningStar or t == MultiCandleType.BearishEngulfing:
+        elif t == MultiCandleType.EveningStar or t == MultiCandleType.BearishEngulfing or t == MultiCandleType.ThreeBlackCrows:
             return TradeAction.SELL
 
         return TradeAction.NONE

@@ -17,42 +17,13 @@ ps = PredictorStore(db)
 #endregion
 
 #region functions
-def shop_pie(name: str, reports: DataFrame):
-    fig = px.pie(reports, values=name, names=name, title=name)
-    fig.show()
-
-
-def shop_pie_bool(name: str, reports: DataFrame):
-    true_count = reports[name].sum()
-    false_count = len(reports) - true_count
-
-    true_percentage = (true_count / len(reports)) * 100
-    false_percentage = (false_count / len(reports)) * 100
-
-    percentage_df = pd.DataFrame({
-        'Label': ['True', 'False'],
-        'Percentage': [true_percentage, false_percentage]
-    })
-
-    percentage_df = pd.DataFrame({
-        'Label': ['True', 'False'],
-        'Percentage': [true_percentage, false_percentage]
-    })
-
-    fig = px.pie(percentage_df, names='Label', values='Percentage',
-                 title=name)
-    fig.show()
-
 
 def show_indicators(indicators):
-    # Vorbereiten der Daten für das Balkendiagramm
     x_werte = list(indicators.keys())
     y_werte = list(indicators.values())
     sortierte_daten = sorted(zip(x_werte, y_werte), key=lambda x: x[1], reverse=True)
     x_werte_sortiert, y_werte_sortiert = zip(*sortierte_daten)
-    # Erstellen Sie das Balkendiagramm
     fig = px.bar(x=x_werte_sortiert, y=y_werte_sortiert, labels={'x': 'Elemente', 'y': 'Häufigkeit'})
-    # Diagramm anzeigen
     fig.show()
 
 #endregion
