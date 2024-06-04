@@ -1,7 +1,7 @@
 from typing import List
 
 import pandas as pd
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from BL import DataProcessor
 from BL.candle import Candle, Direction, MultiCandle, MultiCandleType, CandleType
@@ -55,6 +55,9 @@ class Indicators:
     MACD_SLOPE = "macd_slope"
     # EMA
     EMA = "ema"
+    EMA_10_SLOPE = "ema_10_slope"
+    EMA_30_SLOPE = "ema_30_slope"
+    EMA_50_SLOPE = "ema_50_slope"
     EMA_HIST = "ema_hist"
     EMA_ALLIGATOR = "ema_alligator"
     EMA_ALLIGATOR_HIST = "ema_alligator_hist"
@@ -135,6 +138,10 @@ class Indicators:
 
         # EMA
         self._add_indicator(self.EMA, self._ema_predict)
+        self._add_indicator(self.EMA_10_SLOPE, self._ema_10_slope)
+        self._add_indicator(self.EMA_30_SLOPE, self._ema_30_slope)
+        self._add_indicator(self.EMA_50_SLOPE, self._ema_50_slope)
+
         self._add_indicator(self.EMA_ALLIGATOR, self._ema_alligator_predict)
         self._add_indicator(self.EMA_HIST, self._ema_hist_predict)
         self._add_indicator(self.EMA_ALLIGATOR_HIST, self._ema_alligator_hist_predict)
@@ -297,6 +304,30 @@ class Indicators:
             return TradeAction.SELL
 
         return TradeAction.NONE
+
+    def _ema_10_slope(self, df):
+        return  self._check_slope(df.EMA_10)
+
+    def _ema_30_slope(self, df):
+        return self._check_slope(df.EMA_30)
+
+    def _ema_50_slope(self, df):
+        return self._check_slope(df.EMA_50)
+
+    def _check_slope(self, s:Series):
+
+        diffs = s.diff()
+        pos_sloap = diffs > 0
+        if pos_sloap[-3:].all():
+            return TradeAction.BUY
+
+        neg_sloap = diffs < 0
+
+        if neg_sloap[-3:].all():
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
 
     def _rsi_break_predict_4h(self, df):
         try:

@@ -60,6 +60,7 @@ class Reporting:
     def get_best_indicators(self):
 
         best_df = self.reports[self.reports.win_los > self._wl_limit]
+        best_df = best_df[best_df.trades > 15]
         indicators = []
         for r in best_df.iterrows():
             indicators = indicators + r[1]._indicator_names

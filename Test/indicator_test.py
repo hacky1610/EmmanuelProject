@@ -124,7 +124,22 @@ class TestIndicators(unittest.TestCase):
         data = self.indicators._bb_middle_cross_predict(data)
         self.assertEqual(data, TradeAction.SELL)
 
+    def test_slope_predict(self):
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['EMA'] = [99,100,101,102]
+        data = self.indicators._check_slope(data['EMA'])
+        self.assertEqual(data, TradeAction.BUY)
 
+        data = DataFrame()
+        data['EMA'] = [99, 100, 80, 102]
+        data = self.indicators._check_slope(data['EMA'])
+        self.assertEqual(data, TradeAction.NONE)
+
+        data = DataFrame()
+        data['EMA'] = [110, 109, 108, 107]
+        data = self.indicators._check_slope(data['EMA'])
+        self.assertEqual(data, TradeAction.SELL)
 
 
     def test_williams_break_predict(self):
