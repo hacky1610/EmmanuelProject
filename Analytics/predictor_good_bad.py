@@ -13,6 +13,7 @@ from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
+from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import Tiingo, TradeType
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
@@ -38,6 +39,7 @@ client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db
 db = client["ZuluDB"]
 ms = MarketStore(db)
 ds = DealStore(db, "DEMO")
+ps = PredictorStore(db)
 analytics = Analytics(ms)
 trade_type = TradeType.FX
 
@@ -48,19 +50,16 @@ only_one_position = True
 # endregion
 
 # region functions
-def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, only_one_position: bool = True,
-                       only_test=False, predictor_settings:Dict = {}):
+def evaluate_predictor(indicators, ig: IG,predictor_class, viewer: BaseViewer):
     global symbol
     results = EvalResultCollection()
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-    # for m in random.choices(markets,k=30):
     for m in markets:
         try:
             symbol = m["symbol"]
-            #symbol = "USDCHF"
 
-            predictor = predictor_class(indicators=indicators, cache=df_cache, viewer=viewer)
-            predictor.load(symbol)
+            predictor = predictor_class(indicators=indicators, symbol=symbol, viewer=viewer)
+            predictor.setup(ps.load_active_by_symbol(symbol))
 
             gb = "BAD"
             if predictor.get_result().is_good():
@@ -80,8 +79,5 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
 
 evaluate_predictor(indicators,
                    ig,
-                   ti,
                    GenericPredictor,
-                   viewer,
-                   only_test=False,
-                   only_one_position=only_one_position)
+                   viewer)

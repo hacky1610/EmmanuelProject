@@ -1,3 +1,4 @@
+import itertools
 import random
 from datetime import datetime
 from time import time
@@ -5,7 +6,8 @@ from typing import List
 
 from pandas import DataFrame
 
-from BL.eval_result import EvalResult
+from BL.eval_result import EvalResult, EvalResultCollection
+from BL.indicators import Indicator, Indicators
 from Connectors.predictore_store import PredictorStore
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
@@ -13,7 +15,8 @@ from Tracing.Tracer import Tracer
 
 class Trainer:
 
-    def __init__(self, analytics, cache, predictor_store: PredictorStore, check_trainable=False, tracer:Tracer = ConsoleTracer()):
+    def __init__(self, analytics, cache, predictor_store: PredictorStore, check_trainable=False,
+                 tracer: Tracer = ConsoleTracer()):
         self._analytics = analytics
         self._cache = cache
         self._check_trainable = check_trainable
@@ -42,7 +45,8 @@ class Trainer:
     def _get_time_range(self, df):
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
-    def train(self, symbol: str, scaling:int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame, df_eval_test: DataFrame, predictor_class, indicators, best_indicators: List):
+    def train(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame,
+              df_eval_test: DataFrame, predictor_class, indicators, best_indicators: List):
         self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best_win_loss = 0
@@ -60,10 +64,10 @@ class Trainer:
                 return
             predictor.setup(training_set)
 
-            best_train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol, scaling=scaling)
+            best_train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
+                                                scaling=scaling)
             if best_train_result is None:
                 return
-
 
             if best_train_result.get_reward() > best_reward and best_train_result.get_win_loss() >= 0.66 and best_train_result.get_trades() >= 15:
                 best_reward = best_train_result.get_reward()
@@ -79,14 +83,61 @@ class Trainer:
             test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
             self._predictor_store.save(best_predictor, overwrite=False)
 
-            self._tracer.info(f"Test:  WL: {test_result.get_win_loss()} - Reward: {test_result.get_reward()} Avg Reward {test_result.get_average_reward()}")
-            self._tracer.info(f"Train: WL: {best_win_loss}           - Reward: {best_reward}       Avg Reward {best_avg_reward}")
-            self._tracer.info(f"Stop: {best_predictor._stop} - Limit: {best_predictor._limit}   Max nones: {best_predictor._max_nones}")
+            self._tracer.info(
+                f"Test:  WL: {test_result.get_win_loss()} - Reward: {test_result.get_reward()} Avg Reward {test_result.get_average_reward()}")
+            self._tracer.info(
+                f"Train: WL: {best_win_loss}           - Reward: {best_reward}       Avg Reward {best_avg_reward}")
+            self._tracer.info(
+                f"Stop: {best_predictor._stop} - Limit: {best_predictor._limit}   Max nones: {best_predictor._max_nones}")
         else:
             self._tracer.info("No Best predictor")
 
+    def train_2(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame,
+                df_eval_test: DataFrame, predictor_class, indicators, best_indicators: List):
+        self._tracer.info(
+            f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
+        #self._foo()
+        results = EvalResultCollection()
 
-    def _get_sets(self, predictor_class , best_indicators: List):
+        for indicator in [ Indicators.EMA_ALLIGATOR_HIST, Indicators.RSI_CONVERGENCE5, Indicators.ICHIMOKU_KIJUN_CONFIRM, Indicators.ADX_MAX]:
+            self._tracer.info(f"Train Indicator {indicator}")
+            predictor = predictor_class(symbol=symbol, indicators=indicators)
+            predictor.setup({"_indicator_names": [indicator], "_stop": 54, "_limit": 51.2})
+
+            best_train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
+                                                scaling=scaling, only_one_position=False)
+            if best_train_result is not None:
+                best_train_result.save_trade_result()
+                results.add(best_train_result)
+
+        self._find_best_indicators(results.get_trade_results_as_dataframe())
+
+
+    def _foo(self):
+        import pandas as pd
+        df1 = pd.read_csv("trade_results_AUDUSD_adx_max.csv")
+        df2 = pd.read_csv("trade_results_AUDUSD_ema_alligator_hist.csv")
+        df3 = pd.read_csv("trade_results_AUDUSD_ichi_kijun_confirm.csv")
+        df4 = pd.read_csv("trade_results_AUDUSD_rsi_convergence5.csv")
+
+        self._find_best_indicators([df1,df2,df3,df4], 4)
+
+    def _find_best_indicators(self, results:List[DataFrame], combo_count:int = 4):
+        all_combos = list(itertools.combinations(results, combo_count))
+        best_result = -1
+        best_indicators = []
+        for c in all_combos:
+            result = EvalResultCollection.calc_combination(list(c))
+            indicator_names = EvalResultCollection.get_indicator_names(list(c))
+            self._tracer.info(f"Result {result} for {indicator_names}")
+
+            if result > best_result:
+                best_indicators = indicator_names
+                best_result = result
+
+        self._tracer.info(f"Ultimate Best Result {best_result} for {best_indicators}")
+
+    def _get_sets(self, predictor_class, best_indicators: List):
         sets = predictor_class.get_training_sets(best_indicators)
         #sets = random.choices(sets, k=5)
         random.shuffle(sets)

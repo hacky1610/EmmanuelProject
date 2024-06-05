@@ -286,7 +286,7 @@ class Trader:
         stop = market.get_pip_value(predictor._stop)
         limit = market.get_pip_value(predictor._limit)
 
-        if signal == TradeAction.NONE:
+        if signal == TradeAction.NONE or signal == TradeAction.BOTH:
             return TradeResult.NOACTION
 
         self._tracer.info(f"Trade {signal} ")

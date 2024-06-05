@@ -74,13 +74,12 @@ class Analytics:
             if action == TradeAction.NONE:
                 continue
 
+            if action == TradeAction.BOTH:
+                trades.append(TradeResult(action, 0, i))
+                continue
+
             stop = market.get_pip_value(predictor._stop, scaling)
             limit = market.get_pip_value(predictor._limit, scaling)
-
-            trade:TradeResult = TradeResult()
-            trade.action = action
-            trade.last_df_time = df.date[current_index]
-            trades.append(trade)
 
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True, drop=True)
@@ -106,7 +105,8 @@ class Analytics:
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
-                        trade.result = "won"
+                        trades.append(TradeResult(action,limit,i))
+
                         break
                     elif low < open_price - stop:
                         # Loss
@@ -114,7 +114,8 @@ class Analytics:
                         reward -= stop
                         losses += 1
                         last_exit = future.date[j]
-                        trade.result = "lost"
+                        trades.append(TradeResult(action, stop * -1, i))
+
                         break
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
@@ -133,19 +134,21 @@ class Analytics:
                         reward += limit
                         wins += 1
                         last_exit = future.date[j]
-                        trade.result = "won"
+                        trades.append(TradeResult(action, limit , i))
                         break
                     elif high > open_price + stop:
                         viewer.print_lost(train_index, future.close[j])
                         reward -= stop
                         losses += 1
-                        trade.result = "lost"
                         last_exit = future.date[j]
+                        trades.append(TradeResult(action, stop * -1, i))
                         break
 
         predictor._tracer = old_tracer
         reward_eur = reward * scaling / market.pip_euro
-        ev_res = EvalResult(trades, reward_eur, wins + losses, len(df), trading_minutes, wins, scan_time=datetime.datetime.now())
+        ev_res = EvalResult(trades, reward_eur, wins + losses,
+                            len(df), trading_minutes, wins,
+                            scan_time=datetime.datetime.now(), symbol=symbol, indicator=predictor._indicator_names[0])
         viewer.update_title(f"{ev_res}")
         viewer.show()
 

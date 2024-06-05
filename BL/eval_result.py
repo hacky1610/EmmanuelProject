@@ -1,35 +1,41 @@
 from datetime import datetime
+from functools import reduce
 from typing import List
 
-from pandas import Series
+from pandas import Series, DataFrame
 
 from BL.datatypes import TradeAction
 
 
 class TradeResult:
-     def __init__(self):
-         self.action:str = TradeAction.NONE
-         self.result:str  = ""
-         self.last_df_time = ""
+     def __init__(self, action: str, result: float, index: int):
+         self.action:str = action
+         self.result:float  = result
+         self.index: int = index
 
 
 
 class EvalResult:
 
-    def __init__(self, trades_results:List = [],
+    def __init__(self,
+                 trades_results:List = [],
                  reward: float = 0.0,
                  trades: int = 0,
                  len_df: int = 0,
                  trade_minutes: int = 0,
                  wins: int = 0,
-                 scan_time = datetime(1970, 1, 1)):
+                 scan_time = datetime(1970, 1, 1),
+                 symbol: str = "",
+                 indicator:str = "" ):
         self._reward = reward
+        self._symbol = symbol
         self._trades = trades
         self._len_df = len_df
         self._trade_minutes = trade_minutes
         self._scan_time = scan_time
         self._wins = wins
         self._trade_results:List = trades_results
+        self._indicator = indicator
 
     def get_reward(self):
         return self._reward
@@ -81,6 +87,16 @@ class EvalResult:
     def is_good(self):
         return self.get_average_reward() > 5 and self.get_reward() > 100 and self.get_win_loss() > 0.7 and self.get_trades() >= 10
 
+    def get_trade_df(self) -> DataFrame:
+        df = DataFrame()
+        for i in self._trade_results:
+            df = df.append(Series(data=[i.action, i.result, i.index, self._symbol, self._indicator],
+                                  index=["action", "result", "chart_index", "symbol", "indicator"]), ignore_index=True)
+        return df
+
+    def save_trade_result(self):
+        self.get_trade_df().to_csv(f"trade_results_{self._symbol}_{self._indicator}.csv")
+
     def __repr__(self):
         return f"Reward {self.get_reward()} E " + \
             f"Avg. Reqard {self.get_average_reward()} E " \
@@ -123,6 +139,53 @@ class EvalResultCollection:
             return 0
 
         return win_loss_trades / market_measures
+
+    def get_trade_results_as_dataframe(self) -> List[DataFrame]:
+        df_list = []
+
+        for ev_res in self._items:
+            df_list.append(ev_res.get_trade_df())
+
+        return df_list
+
+    @staticmethod
+    def get_indicator_names(df_list:List[DataFrame]) -> List[str]:
+        indicator_names = []
+        for df in df_list:
+            indicator_names.append(df.iloc[0].indicator)
+
+        return indicator_names
+
+
+    @staticmethod
+    def calc_combination(dataframes: List[DataFrame]):
+        common_indices = list(reduce(lambda x, y: x.intersection(y), [set(df["chart_index"]) for df in dataframes]))
+        common_indices.sort()
+        overall_reward = 0
+        for i in common_indices:
+            #print(f"Calc indice {i}")
+            actions = []
+            reward = 0
+            for df in dataframes:
+                v = df[df.chart_index == i]
+                action = v["action"].item()
+                if action != "both":
+                    #print(f"Action {action}")
+                    actions.append(action)
+                    reward = v["result"].item()
+
+            if len(actions) > 0 and len(set(actions)) == 1:
+                print(f"Trade at {i}")
+                overall_reward = overall_reward + reward
+
+
+        return overall_reward
+
+
+
+
+
+
 
     def __repr__(self):
         text = f"Avg Win_loss {self.get_avg_profit()} \r\n"

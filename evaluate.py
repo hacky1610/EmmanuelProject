@@ -44,7 +44,7 @@ analytics = Analytics(ms)
 trade_type = TradeType.FX
 ps = PredictorStore(db)
 viewer = BaseViewer()
-only_one_position = True
+only_one_position = False
 
 
 # endregion
@@ -54,12 +54,12 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
                        only_test=False, predictor_settings:Dict = {}):
     global symbol
     results = EvalResultCollection()
-    markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-    # for m in random.choices(markets,k=30):
+    markets = IG.get_markets_offline()
     for m in markets:
         try:
             symbol = m["symbol"]
-            df, df_eval = ti.load_test_data(symbol, dp, trade_type)
+            symbol = "AUDUSD"
+            df, df_eval = ti.load_train_data(symbol, dp, trade_type)
 
             if len(df) > 0:
                 predictor = predictor_class(symbol=symbol, indicators=indicators, viewer=viewer)
@@ -92,9 +92,6 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
 # endregion
 
 #viewer = PlotlyViewer(cache=df_cache)
-
-
-
 
 evaluate_predictor(indicators,
                    ig,

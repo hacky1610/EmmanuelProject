@@ -114,6 +114,7 @@ class Tiingo:
             data_processor.clean_data(res)
         if validate:
             self._validate(res)
+        print(f"Load {[ticker]} from {res.iloc[0].date} to {res.iloc[-1].date} {start} {end}")
         return res
 
     @staticmethod

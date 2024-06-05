@@ -264,6 +264,9 @@ class Indicators:
         if nones > max_none:
             return TradeAction.NONE
 
+        if predict_values.count(TradeAction.BOTH) == len(predict_values):
+            return TradeAction.BOTH
+
         if (predict_values.count(TradeAction.BUY) + predict_values.count(TradeAction.BOTH) + predict_values.count(
                 TradeAction.NONE)) >= len(
                 predict_values):
