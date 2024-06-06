@@ -93,24 +93,27 @@ class Trainer:
         else:
             self._tracer.info("No Best predictor")
 
-    def train_single_indicator(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame,
-                               df_eval_test: DataFrame, predictor_class, indicators):
+    def train_all_indicators(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame,
+                             df_eval_test: DataFrame, predictor_class, indicators):
         self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
 
         for indicator in indicators.get_all_indicator_names():
-            self._tracer.info(f"Train Indicator {indicator}")
-            if EvalResult.is_trained(symbol, indicator):
-                self._tracer.info(f"Indicator {indicator} already trained")
-                continue
+            self.train_indicator(indicator, symbol, scaling, df, df_eval, predictor_class, indicators)
 
-            predictor = predictor_class(symbol=symbol, indicators=indicators)
-            predictor.setup({"_indicator_names": [indicator], "_stop": 54, "_limit": 51.2})
+    def train_indicator(self, indicator:str ,symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame, predictor_class, indicators):
+        self._tracer.info(f"Train Indicator {indicator}")
+        if EvalResult.is_trained(symbol, indicator):
+            self._tracer.info(f"Indicator {indicator} already trained")
+            return
 
-            best_train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
-                                                scaling=scaling, only_one_position=False)
-            if best_train_result is not None:
-                best_train_result.save_trade_result()
+        predictor = predictor_class(symbol=symbol, indicators=indicators)
+        predictor.setup({"_indicator_names": [indicator], "_stop": 54, "_limit": 51.2})
+
+        best_train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
+                                            scaling=scaling, only_one_position=False)
+        if best_train_result is not None:
+            best_train_result.save_trade_result()
 
 
 

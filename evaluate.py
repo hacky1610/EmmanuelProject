@@ -58,8 +58,7 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
     for m in markets:
         try:
             symbol = m["symbol"]
-            symbol = "AUDUSD"
-            df, df_eval = ti.load_train_data(symbol, dp, trade_type)
+            df, df_eval = ti.load_test_data(symbol, dp, trade_type)
 
             if len(df) > 0:
                 predictor = predictor_class(symbol=symbol, indicators=indicators, viewer=viewer)
