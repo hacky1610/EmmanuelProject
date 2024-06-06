@@ -1,5 +1,7 @@
 import datetime
 
+from tqdm import tqdm
+
 from BL.eval_result import EvalResult, TradeResult
 from Connectors.market_store import MarketStore
 from Predictors.utils import TimeUtils
@@ -60,7 +62,7 @@ class Analytics:
             return None
 
 
-        for i in range(len(df) - 1):
+        for i in tqdm(range(len(df) - 1)):
             current_index = i + 1
             if filter is not None and TimeUtils.get_time_string(filter) != df.date[current_index]:
                 continue
@@ -69,6 +71,7 @@ class Analytics:
 
             if only_one_position and df.date[i] < last_exit:
                 continue
+
 
             action = predictor.predict(df[:current_index])
             if action == TradeAction.NONE:

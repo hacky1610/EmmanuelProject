@@ -9,6 +9,7 @@ from pandas import DataFrame
 from BL.eval_result import EvalResult, EvalResultCollection
 from BL.indicators import Indicator, Indicators
 from Connectors.predictore_store import PredictorStore
+from Predictors.utils import FileSystem
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 
@@ -92,15 +93,17 @@ class Trainer:
         else:
             self._tracer.info("No Best predictor")
 
-    def train_2(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame,
-                df_eval_test: DataFrame, predictor_class, indicators, best_indicators: List):
+    def train_single_indicator(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame,
+                               df_eval_test: DataFrame, predictor_class, indicators):
         self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
-        #self._foo()
-        results = EvalResultCollection()
 
-        for indicator in [ Indicators.EMA_ALLIGATOR_HIST, Indicators.RSI_CONVERGENCE5, Indicators.ICHIMOKU_KIJUN_CONFIRM, Indicators.ADX_MAX]:
+        for indicator in indicators.get_all_indicator_names():
             self._tracer.info(f"Train Indicator {indicator}")
+            if EvalResult.is_trained(symbol, indicator):
+                self._tracer.info(f"Indicator {indicator} already trained")
+                continue
+
             predictor = predictor_class(symbol=symbol, indicators=indicators)
             predictor.setup({"_indicator_names": [indicator], "_stop": 54, "_limit": 51.2})
 
@@ -108,19 +111,17 @@ class Trainer:
                                                 scaling=scaling, only_one_position=False)
             if best_train_result is not None:
                 best_train_result.save_trade_result()
-                results.add(best_train_result)
-
-        self._find_best_indicators(results.get_trade_results_as_dataframe())
 
 
-    def _foo(self):
+
+    def find_best_combination(self, symbol:str):
         import pandas as pd
-        df1 = pd.read_csv("trade_results_AUDUSD_adx_max.csv")
-        df2 = pd.read_csv("trade_results_AUDUSD_ema_alligator_hist.csv")
-        df3 = pd.read_csv("trade_results_AUDUSD_ichi_kijun_confirm.csv")
-        df4 = pd.read_csv("trade_results_AUDUSD_rsi_convergence5.csv")
+        directory = "D:\Code\EmmanuelProject\Data\TrainResults"
+        dfs_file_names = FileSystem.find_files_with_prefix(directory,f"trade_results_{symbol}")
 
-        self._find_best_indicators([df1,df2,df3,df4], 4)
+        dfs = [pd.read_csv(f"{directory}\\{df}") for df in dfs_file_names]
+
+        self._find_best_indicators(dfs, 3)
 
     def _find_best_indicators(self, results:List[DataFrame], combo_count:int = 4):
         all_combos = list(itertools.combinations(results, combo_count))

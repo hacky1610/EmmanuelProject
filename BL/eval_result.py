@@ -1,3 +1,4 @@
+import os.path
 from datetime import datetime
 from functools import reduce
 from typing import List
@@ -95,7 +96,15 @@ class EvalResult:
         return df
 
     def save_trade_result(self):
-        self.get_trade_df().to_csv(f"trade_results_{self._symbol}_{self._indicator}.csv")
+        self.get_trade_df().to_csv(f".\\Data\\TrainResults\\{self._get_trade_result_filename(self._symbol, self._indicator)}")
+
+    @staticmethod
+    def is_trained(symbol:str, indicator:str) -> bool:
+        return os.path.exists(f".\\Data\\TrainResults\\{EvalResult._get_trade_result_filename(symbol, indicator)}")
+
+    @staticmethod
+    def _get_trade_result_filename(symbol:str, indicator:str) -> str:
+        return f"trade_results_{symbol}_{indicator}.csv"
 
     def __repr__(self):
         return f"Reward {self.get_reward()} E " + \
@@ -175,7 +184,7 @@ class EvalResultCollection:
                     reward = v["result"].item()
 
             if len(actions) > 0 and len(set(actions)) == 1:
-                print(f"Trade at {i}")
+                #print(f"Trade at {i}")
                 overall_reward = overall_reward + reward
 
 

@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, date
 from typing import Type
 from collections import Counter
@@ -16,6 +17,16 @@ class TimeUtils:
     @staticmethod
     def get_date_string(da: date):
         return da.strftime("%Y-%m-%d")
+
+class FileSystem:
+
+    @staticmethod
+    def find_files_with_prefix(directory, prefix):
+        matched_files = []
+        for filename in os.listdir(directory):
+            if filename.startswith(prefix):
+                matched_files.append(filename)
+        return matched_files
 
 
 class Reporting:
