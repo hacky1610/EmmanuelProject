@@ -6,6 +6,7 @@ from typing import Type
 
 import dropbox
 import pymongo
+import pandas as pd
 
 from BL.analytics import Analytics
 from BL.data_processor import DataProcessor
@@ -86,12 +87,13 @@ def train_predictor(markets:list,
         symbol = m["symbol"]
         symbol = "EURCHF"
         tracer.info(f"Train {symbol}")
-        df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
+        #df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         #df_test, eval_df_test = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
+        df_train = pd.read_csv("D:\Code\EmmanuelProject\Data\TrainResults\EURCHF_1h.csv")
+        eval_df_train = pd.read_csv("D:\Code\EmmanuelProject\Data\TrainResults\EURCHF_5min.csv")
         if len(df_train) > 0:
             try:
-                #trainer.train_all_indicators(symbol, m["scaling"], df_train, eval_df_train, None, None, predictor, indicators)
-                trainer.train_indicator(Indicators.RSI_LIMIT,symbol, m["scaling"], df_train, eval_df_train, predictor, indicators)
+                trainer.train_all_indicators(symbol, m["scaling"], df_train, eval_df_train, None, None, predictor, indicators)
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 print(f"MainException: {ex} File:{traceback_str}")

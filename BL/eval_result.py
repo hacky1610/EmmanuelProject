@@ -96,11 +96,16 @@ class EvalResult:
         return df
 
     def save_trade_result(self):
-        self.get_trade_df().to_csv(f".\\Data\\TrainResults\\{self._get_trade_result_filename(self._symbol, self._indicator)}")
+        self.get_trade_df().to_csv(f"{EvalResult._get_results_dir()}{self._get_trade_result_filename(self._symbol, self._indicator)}")
+
+    @staticmethod
+    def _get_results_dir():
+        return f"{os.path.dirname(os.path.abspath(__file__))}\\..\\Data\\TrainResults\\"
+
 
     @staticmethod
     def is_trained(symbol:str, indicator:str) -> bool:
-        return os.path.exists(f".\\Data\\TrainResults\\{EvalResult._get_trade_result_filename(symbol, indicator)}")
+        return os.path.exists(f"{EvalResult._get_results_dir()}{EvalResult._get_trade_result_filename(symbol, indicator)}")
 
     @staticmethod
     def _get_trade_result_filename(symbol:str, indicator:str) -> str:
