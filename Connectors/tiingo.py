@@ -77,8 +77,7 @@ class Tiingo:
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
                           clean_data: bool = True, trade_type: TradeType = TradeType.FX,
-                          use_cache: bool = True, validate:bool = True) -> DataFrame:
-        res = DataFrame()
+                          use_cache: bool = True, validate: bool = True) -> DataFrame:
         name = f"{ticker}_{resolution}.csv"
         cached = self._cache.load_cache(name)
 
@@ -89,16 +88,14 @@ class Tiingo:
             if lastchached.to_pydatetime() == toCompare:
                 res = cached
             elif end is None:
-                res = self._send_history_request(ticker, TimeUtils.get_date_string(lastchached), end, resolution, trade_type)
+                res = self._send_history_request(ticker, TimeUtils.get_date_string(lastchached), end, resolution,
+                                                 trade_type)
                 res = cached.append(res[res.date > cached[-1:].date.item()])
-                res.reset_index(inplace=True)
-                res.drop(columns=["index"], inplace=True)
             else:
-                start_str = TimeUtils.get_time_string(datetime.strptime(start,"%Y-%m-%d"))
+                start_str = TimeUtils.get_time_string(datetime.strptime(start, "%Y-%m-%d"))
                 end_str = TimeUtils.get_time_string(datetime.strptime(end, "%Y-%m-%d"))
                 res = cached[start_str < cached.date]
                 res = res[res.date < end_str]
-                res = res.reset_index()
         else:
             res = self._send_history_request(ticker, start, end, resolution, trade_type)
 
@@ -107,6 +104,13 @@ class Tiingo:
 
         if end is None:
             self._cache.save_cache(res, name)
+        else:
+            end_str = TimeUtils.get_time_string(datetime.strptime(end, "%Y-%m-%d"))
+            res = res[res.date < end_str]
+
+        start_str = TimeUtils.get_time_string(datetime.strptime(start, "%Y-%m-%d"))
+        res = res[start_str < res.date]
+        res = res.reset_index()
 
         if add_signals:
             data_processor.addSignals(res)

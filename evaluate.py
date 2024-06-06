@@ -5,9 +5,9 @@ from typing import Dict
 
 import pymongo
 
-from BL import DataProcessor,  ConfigReader
+from BL import DataProcessor, ConfigReader
 from BL.analytics import Analytics
-from BL.eval_result import  EvalResultCollection
+from BL.eval_result import EvalResultCollection
 
 from Connectors.IG import IG
 from Connectors.deal_store import DealStore
@@ -36,7 +36,8 @@ dp = DataProcessor()
 ig = IG(conf_reader)
 ti = Tiingo(conf_reader=conf_reader, cache=df_cache)
 indicators = Indicators()
-client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient(
+    f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
 ds = DealStore(db, "DEMO")
@@ -50,12 +51,12 @@ only_one_position = True
 # endregion
 
 # region functions
-def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer, only_one_position: bool = True,
-                       only_test=False, predictor_settings:Dict = {}):
+def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer,
+                       only_one_position: bool = True,
+                       only_test=False):
     global symbol
     results = EvalResultCollection()
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
-    # for m in random.choices(markets,k=30):
     for m in markets:
         try:
             symbol = m["symbol"]
@@ -94,12 +95,10 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
 #viewer = PlotlyViewer(cache=df_cache)
 
 
-
-
 evaluate_predictor(indicators,
                    ig,
                    ti,
                    GenericPredictor,
                    viewer,
-                   only_test=True,
+                   only_test=False,
                    only_one_position=only_one_position)
