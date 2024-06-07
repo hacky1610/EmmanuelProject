@@ -6,6 +6,7 @@ from typing import List
 
 from pandas import DataFrame
 
+from BL.analytics import Analytics
 from BL.eval_result import EvalResult, EvalResultCollection
 from BL.indicators import Indicator, Indicators
 from Connectors.predictore_store import PredictorStore
@@ -16,7 +17,7 @@ from Tracing.Tracer import Tracer
 
 class Trainer:
 
-    def __init__(self, analytics, cache, predictor_store: PredictorStore, check_trainable=False,
+    def __init__(self, analytics:Analytics, cache, predictor_store: PredictorStore, check_trainable=False,
                  tracer: Tracer = ConsoleTracer()):
         self._analytics = analytics
         self._cache = cache
@@ -115,6 +116,15 @@ class Trainer:
         if best_train_result is not None:
             best_train_result.save_trade_result()
 
+    def get_signals(self,symbol:str ,df: DataFrame, indicators:Indicators, predictor_class):
+        for indicator in indicators.get_all_indicator_names():
+            predictor = predictor_class(symbol=symbol, indicators=indicators)
+            predictor.setup({"_indicator_names": [indicator], "_stop": 54, "_limit": 51.2})
+            trades = predictor.get_signals(df, self._analytics)
+            print(trades)
+
+    def simulate(self,df: DataFrame, df_eval: DataFrame, symbol:str, scaling:int):
+        self._analytics.simulate("buy", 54, 51.2, df, df_eval, symbol, scaling)
 
 
     def find_best_combination(self, symbol:str):

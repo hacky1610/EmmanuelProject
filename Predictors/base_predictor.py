@@ -1,9 +1,9 @@
 import itertools
 import random
-from typing import Mapping
+from typing import Mapping, List
 
 from pandas import DataFrame, Series
-from BL.eval_result import EvalResult
+from BL.eval_result import EvalResult, TradeResult
 from Connectors.dropbox_cache import BaseCache
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
@@ -73,6 +73,10 @@ class BasePredictor:
         ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=only_one_position, symbol=symbol, scaling=scaling)
         self._result = ev_result
         return ev_result
+
+    def get_signals(self, df_train: DataFrame, analytics) -> DataFrame:
+        return analytics.get_signals(self, df=df_train)
+
 
     def eval(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, scaling:int) -> EvalResult:
         ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=True,

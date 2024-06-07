@@ -93,7 +93,9 @@ def train_predictor(markets:list,
         eval_df_train = pd.read_csv("D:\Code\EmmanuelProject\Data\TrainResults\EURCHF_5min.csv")
         if len(df_train) > 0:
             try:
-                trainer.train_all_indicators(symbol, m["scaling"], df_train, eval_df_train, None, None, predictor, indicators)
+                #trainer.train_all_indicators(symbol, m["scaling"], df_train, eval_df_train, None, None, predictor, indicators)
+                #trainer.get_signals(symbol,df_train, indicators, predictor)
+                trainer.simulate(df_train,eval_df_train,symbol, m["scaling"])
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 print(f"MainException: {ex} File:{traceback_str}")
