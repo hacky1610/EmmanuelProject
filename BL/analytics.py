@@ -176,22 +176,24 @@ class Analytics:
 
     def simulate(self,
                  action:str,
-                 stop:float,
-                 limit:float,
+                 stop_euro:float,
+                 limit_euro:float,
                  df: DataFrame,
                  df_eval: DataFrame,
                  symbol: str,
-                 scaling: int,
-                 only_one_position: bool = True,
-                 filter=None) -> EvalResult:
+                 scaling: int) -> EvalResult:
 
         assert len(df) > 0
         assert len(df_eval) > 0
 
+        def get_next_index(df_:DataFrame, last_exit_time) -> int:
+            filtered_df = df_[df_.date > last_exit_time]
+            if len(filtered_df) > 0:
+                return filtered_df[: 1].index.item()
+            return -1
 
         trading_minutes = 0
         spread = self._calc_spread(df)
-        last_exit = df.date[0]
         market = self._market_store.get_market(symbol)
         simulation_result = DataFrame()
 
@@ -199,26 +201,17 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
+        stop = market.get_pip_value(stop_euro, scaling)
+        limit = market.get_pip_value(limit_euro, scaling)
+
         for i in tqdm(range(len(df) - 1)):
             current_index = i + 1
-            if filter is not None and TimeUtils.get_time_string(filter) != df.date[current_index]:
-                continue
-
             open_price = df.open[current_index]
-
-            if only_one_position and df.date[i] < last_exit:
-                continue
-
-            stop = market.get_pip_value(stop, scaling)
-            limit = market.get_pip_value(limit, scaling)
-
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True, drop=True)
 
-
             if action == TradeAction.BUY:
                 open_price = open_price + spread
-
 
                 for j in range(len(future)):
                     trading_minutes += 5
@@ -228,43 +221,35 @@ class Analytics:
                     if high > open_price + limit:
                         # Won
                         last_exit = future.date[j]
-                        next_index = df[df.date > last_exit][:1].index.item()
-                        simulation_result = simulation_result.append(Series(index=["action","result","chart_index", "next_index"], data=[action,limit,i, next_index]), ignore_index=True)
-
+                        simulation_result = simulation_result.append(Series(index=["action","result","chart_index", "next_index"],
+                                                                            data=[action,limit,i, get_next_index(df,last_exit)]), ignore_index=True)
                         break
                     elif low < open_price - stop:
                         # Loss
                         last_exit = future.date[j]
-                        next_index = df[df.date > last_exit][:1].index.item()
                         simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, stop * -1, i,next_index]),
+                            Series(index=["action", "result", "chart_index", "next_index"],
+                                   data=[action, stop * -1, i,get_next_index(df,last_exit)]),
                             ignore_index=True)
-
                         break
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
-
-
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
 
-
                     if low < open_price - limit:
                         # Won
                         last_exit = future.date[j]
-                        next_index = df[df.date > last_exit][:1].index.item()
                         simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, limit, i, next_index]),
+                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, limit, i, get_next_index(df,last_exit)]),
                             ignore_index=True)
-
                         break
                     elif high > open_price + stop:
                         last_exit = future.date[j]
-                        next_index = df[df.date > last_exit][:1].index.item()
                         simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, stop * -1, i, next_index]),
+                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, stop * -1, i, get_next_index(df,last_exit)]),
                             ignore_index=True)
                         break
 

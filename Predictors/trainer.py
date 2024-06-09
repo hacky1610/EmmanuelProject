@@ -119,12 +119,17 @@ class Trainer:
     def get_signals(self,symbol:str ,df: DataFrame, indicators:Indicators, predictor_class):
         for indicator in indicators.get_all_indicator_names():
             predictor = predictor_class(symbol=symbol, indicators=indicators)
-            predictor.setup({"_indicator_names": [indicator], "_stop": 54, "_limit": 51.2})
+            predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
             trades = predictor.get_signals(df, self._analytics)
-            print(trades)
+            trades.to_csv(f"D:\\tmp\\signal_{symbol}_{indicator}.csv")
 
     def simulate(self,df: DataFrame, df_eval: DataFrame, symbol:str, scaling:int):
-        self._analytics.simulate("buy", 54, 51.2, df, df_eval, symbol, scaling)
+        res = self._analytics.simulate("buy", 50, 50, df, df_eval, symbol, scaling)
+        res.to_csv(f"D:\\tmp\\simulation_buy{symbol}.csv")
+        res = self._analytics.simulate("sell", 50, 50, df, df_eval, symbol, scaling)
+        res.to_csv(f"D:\\tmp\\simulation_sell{symbol}.csv")
+
+
 
 
     def find_best_combination(self, symbol:str):

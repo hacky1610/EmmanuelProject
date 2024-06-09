@@ -87,10 +87,11 @@ def train_predictor(markets:list,
         symbol = m["symbol"]
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
-        df_test, eval_df_test = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
+        #df_test, eval_df_test = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
         if len(df_train) > 0:
             try:
-                trainer.train(symbol, m["scaling"], df_train, eval_df_train, df_test, eval_df_test, predictor, indicators)
+                #trainer.get_signals(symbol,df_train, indicators, predictor)
+                trainer.simulate(df_train,eval_df_train,symbol, m["scaling"])
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 print(f"MainException: {ex} File:{traceback_str}")
