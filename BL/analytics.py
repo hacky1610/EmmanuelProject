@@ -3,6 +3,8 @@ from typing import List
 
 from tqdm import tqdm
 
+from tqdm import tqdm
+
 from BL.eval_result import EvalResult, TradeResult
 from Connectors.market_store import MarketStore
 from Predictors.utils import TimeUtils

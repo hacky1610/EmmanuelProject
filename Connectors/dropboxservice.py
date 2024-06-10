@@ -29,5 +29,5 @@ class DropBoxService:
             meta, res = self._dropbox.files_download(f"{self._basepath}/{source}")
             return res.content.decode()
         except Exception as e:
-            print(f"Error loading file {e}")
+            print(f"Error loading file {source} {e}")
             return None

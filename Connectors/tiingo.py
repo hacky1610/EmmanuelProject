@@ -89,16 +89,14 @@ class Tiingo:
             if lastchached.to_pydatetime() == toCompare:
                 res = cached
             elif end is None:
-                res = self._send_history_request(ticker, TimeUtils.get_date_string(lastchached), end, resolution, trade_type)
+                res = self._send_history_request(ticker, TimeUtils.get_date_string(lastchached), end, resolution,
+                                                 trade_type)
                 res = cached.append(res[res.date > cached[-1:].date.item()])
-                #res.reset_index(inplace=True)
-                #res.drop(columns=["index"], inplace=True)
             else:
-                start_str = TimeUtils.get_time_string(datetime.strptime(start,"%Y-%m-%d"))
+                start_str = TimeUtils.get_time_string(datetime.strptime(start, "%Y-%m-%d"))
                 end_str = TimeUtils.get_time_string(datetime.strptime(end, "%Y-%m-%d"))
                 res = cached[start_str < cached.date]
                 res = res[res.date < end_str]
-                #res = res.reset_index()
         else:
             res = self._send_history_request(ticker, start, end, resolution, trade_type)
 

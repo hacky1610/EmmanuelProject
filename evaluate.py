@@ -5,9 +5,9 @@ from typing import Dict
 
 import pymongo
 
-from BL import DataProcessor,  ConfigReader
+from BL import DataProcessor, ConfigReader
 from BL.analytics import Analytics
-from BL.eval_result import  EvalResultCollection
+from BL.eval_result import EvalResultCollection
 
 from Connectors.IG import IG
 from Connectors.deal_store import DealStore
@@ -58,13 +58,11 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
     for m in markets:
         try:
             symbol = m["symbol"]
-            symbol = "USDCHF"
             df, df_eval = ti.load_test_data(symbol, dp, trade_type)
 
             if len(df) > 0:
                 predictor = predictor_class(symbol=symbol, indicators=indicators, viewer=viewer)
                 predictor.setup(ps.load_active_by_symbol(symbol))
-                predictor.setup({"_indicator_names":  ['rsi_slope', 'ema_20_smma_20', 'adx_max2']})
                 ev_result = analytics.evaluate(predictor=predictor,
                                                df=df,
                                                df_eval=df_eval,
@@ -93,6 +91,7 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
 # endregion
 
 #viewer = PlotlyViewer(cache=df_cache)
+
 
 evaluate_predictor(indicators,
                    ig,
