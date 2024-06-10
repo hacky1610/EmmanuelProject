@@ -83,27 +83,23 @@ class Tiingo:
         cached = self._cache.load_cache(name)
 
         if len(cached) > 0 and use_cache:
-            print("Cache used")
             lastchached = pd.to_datetime(cached[-1:].date.item())
             now = datetime.utcnow().replace(tzinfo=lastchached.tzinfo)
             toCompare = datetime(now.year, now.month, now.day, now.hour, tzinfo=lastchached.tzinfo) - timedelta(hours=1)
             if lastchached.to_pydatetime() == toCompare:
                 res = cached
             elif end is None:
-                print("Trim end date")
                 res = self._send_history_request(ticker, TimeUtils.get_date_string(lastchached), end, resolution, trade_type)
                 res = cached.append(res[res.date > cached[-1:].date.item()])
                 #res.reset_index(inplace=True)
                 #res.drop(columns=["index"], inplace=True)
             else:
-                print("Else path")
                 start_str = TimeUtils.get_time_string(datetime.strptime(start,"%Y-%m-%d"))
                 end_str = TimeUtils.get_time_string(datetime.strptime(end, "%Y-%m-%d"))
                 res = cached[start_str < cached.date]
                 res = res[res.date < end_str]
                 #res = res.reset_index()
         else:
-            print("Load new")
             res = self._send_history_request(ticker, start, end, resolution, trade_type)
 
         if len(res) == 0:
@@ -125,7 +121,6 @@ class Tiingo:
             data_processor.clean_data(res)
         if validate:
             self._validate(res)
-        print(f"Load {[ticker]} from {res.iloc[0].date} to {res.iloc[-1].date} {start} {end}")
         return res
 
     @staticmethod

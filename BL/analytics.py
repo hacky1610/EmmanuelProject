@@ -165,7 +165,7 @@ class Analytics:
 
         trades = DataFrame()
 
-        for i in tqdm(range(len(df) - 1)):
+        for i in range(len(df) - 1):
             current_index = i + 1
             action = predictor.predict(df[:current_index])
 
@@ -254,6 +254,25 @@ class Analytics:
                         break
 
         return simulation_result
+
+    def foo(self, signals:DataFrame, df_buy_results: DataFrame, df_sell_results: DataFrame):
+
+        overall_result = 0
+        next_index = 0
+        for i in range(len(signals)):
+            signal = signals.iloc[i]
+            if signal["index"] > next_index:
+                if signal.action == TradeAction.BUY:
+                    res = df_buy_results[df_buy_results.chart_index == signal["index"]]
+                if signal.action == TradeAction.SELL:
+                    res = df_sell_results[df_sell_results.chart_index == signal["index"]]
+                if len(res) == 1:
+                    overall_result = overall_result + res[:1].result.item()
+                    next_index = res[:1].next_index.item()
+
+        return overall_result
+
+
 
 
 

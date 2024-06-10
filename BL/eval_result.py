@@ -175,25 +175,20 @@ class EvalResultCollection:
     def calc_combination(dataframes: List[DataFrame]):
         common_indices = list(reduce(lambda x, y: x.intersection(y), [set(df["chart_index"]) for df in dataframes]))
         common_indices.sort()
-        overall_reward = 0
+        foo = []
         for i in common_indices:
-            #print(f"Calc indice {i}")
             actions = []
-            reward = 0
             for df in dataframes:
                 v = df[df.chart_index == i]
                 action = v["action"].item()
                 if action != "both":
-                    #print(f"Action {action}")
                     actions.append(action)
-                    reward = v["result"].item()
 
             if len(actions) > 0 and len(set(actions)) == 1:
-                #print(f"Trade at {i}")
-                overall_reward = overall_reward + reward
+                foo.append({"action":actions[0],"index":i})
 
 
-        return overall_reward
+        return DataFrame(foo)
 
     @staticmethod
     def combine_signals(dataframes: List[DataFrame]):

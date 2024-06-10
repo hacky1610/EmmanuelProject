@@ -44,7 +44,7 @@ analytics = Analytics(ms)
 trade_type = TradeType.FX
 ps = PredictorStore(db)
 viewer = BaseViewer()
-only_one_position = False
+only_one_position = True
 
 
 # endregion
@@ -58,11 +58,13 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
     for m in markets:
         try:
             symbol = m["symbol"]
+            symbol = "USDCHF"
             df, df_eval = ti.load_test_data(symbol, dp, trade_type)
 
             if len(df) > 0:
                 predictor = predictor_class(symbol=symbol, indicators=indicators, viewer=viewer)
                 predictor.setup(ps.load_active_by_symbol(symbol))
+                predictor.setup({"_indicator_names":  ['rsi_slope', 'ema_20_smma_20', 'adx_max2']})
                 ev_result = analytics.evaluate(predictor=predictor,
                                                df=df,
                                                df_eval=df_eval,

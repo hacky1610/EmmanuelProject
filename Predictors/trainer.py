@@ -1,10 +1,13 @@
 import itertools
+import os.path
 import random
 from datetime import datetime
 from time import time
 from typing import List
 
+import pandas as pd
 from pandas import DataFrame
+from tqdm import tqdm
 
 from BL.analytics import Analytics
 from BL.eval_result import EvalResult, EvalResultCollection
@@ -117,17 +120,61 @@ class Trainer:
             best_train_result.save_trade_result()
 
     def get_signals(self,symbol:str ,df: DataFrame, indicators:Indicators, predictor_class):
-        for indicator in indicators.get_all_indicator_names():
-            predictor = predictor_class(symbol=symbol, indicators=indicators)
-            predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
-            trades = predictor.get_signals(df, self._analytics)
-            trades.to_csv(f"D:\\tmp\\signal_{symbol}_{indicator}.csv")
+        print (f"Get Signals for {symbol}")
+        for indicator in tqdm(indicators.get_all_indicator_names()):
+            path = f"D:\\tmp\\Signals\\signal_{symbol}_{indicator}.csv"
+            if not os.path.exists(path):
+                predictor = predictor_class(symbol=symbol, indicators=indicators)
+                predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
+                trades = predictor.get_signals(df, self._analytics)
+                trades.to_csv(path)
 
     def simulate(self,df: DataFrame, df_eval: DataFrame, symbol:str, scaling:int):
-        res = self._analytics.simulate("buy", 50, 50, df, df_eval, symbol, scaling)
-        res.to_csv(f"D:\\tmp\\simulation_buy{symbol}.csv")
-        res = self._analytics.simulate("sell", 50, 50, df, df_eval, symbol, scaling)
-        res.to_csv(f"D:\\tmp\\simulation_sell{symbol}.csv")
+        buy_path = f"D:\\tmp\\Simulations\\simulation_buy{symbol}.csv"
+        if not os.path.exists(buy_path):
+            res = self._analytics.simulate("buy", 50, 50, df, df_eval, symbol, scaling)
+            res.to_csv(buy_path)
+
+        sell_path = f"D:\\tmp\\Simulations\\simulation_sell{symbol}.csv"
+        if not os.path.exists(sell_path):
+            res = self._analytics.simulate("sell", 50, 50, df, df_eval, symbol, scaling)
+            res.to_csv(sell_path)
+
+    def foo_combinations(self, symbol:str, indicators:Indicators) :
+        df_list = []
+        for indicator in indicators.get_all_indicator_names():
+            try:
+                df_list.append({"indicator": indicator,
+                                "data": pd.read_csv(f"D:\\tmp\\Signals\\signal_{symbol}_{indicator}.csv")})
+            except Exception as e:
+                print(f"Error {e}")
+                pass
+
+        all_combos = list(itertools.combinations(df_list, 5))
+        try:
+            buy_results = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_buy{symbol}.csv")
+            sell_results = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_sell{symbol}.csv")
+        except Exception as e:
+            print(f"No Simulation")
+            return
+
+        if len(df_list) != len(indicators.get_all_indicator_names()):
+            print("Not all indicators are there")
+
+        best_result = -10000
+        best_combo = []
+        for combo in random.choices(all_combos,k=100):
+            signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
+            current_result = self._analytics.foo(signals, buy_results, sell_results)
+            if current_result > best_result:
+                best_result = current_result
+                best_combo = [item['indicator'] for item in combo]
+                print(f"New best result: {best_result} for { best_combo}")
+        print(f"Amazing best result: {best_result} for {best_combo}")
+
+        return best_combo
+
+
 
 
 
@@ -144,17 +191,9 @@ class Trainer:
     def _find_best_indicators(self, results:List[DataFrame], combo_count:int = 4):
         all_combos = list(itertools.combinations(results, combo_count))
         best_result = -1
-        best_indicators = []
         for c in all_combos:
             result = EvalResultCollection.calc_combination(list(c))
-            indicator_names = EvalResultCollection.get_indicator_names(list(c))
-            self._tracer.info(f"Result {result} for {indicator_names}")
 
-            if result > best_result:
-                best_indicators = indicator_names
-                best_result = result
-
-        self._tracer.info(f"Ultimate Best Result {best_result} for {best_indicators}")
 
     def _get_sets(self, predictor_class, best_indicators: List):
         sets = predictor_class.get_training_sets(best_indicators)

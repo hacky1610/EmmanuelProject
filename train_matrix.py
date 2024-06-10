@@ -7,6 +7,7 @@ from typing import Type
 import dropbox
 import pymongo
 import pandas as pd
+from pandas import DataFrame
 
 from BL.analytics import Analytics
 from BL.data_processor import DataProcessor
@@ -64,6 +65,33 @@ _reporting = Reporting(predictor_store=ps)
 # endregion
 
 
+def get_train_data(tiingo:Tiingo, symbol:str, trade_type:TradeType, dp:DataProcessor) -> (DataFrame, DataFrame):
+    hour_df = f"D:\\tmp\Tiingo\\{symbol}_train_1hour.csv"
+    minute_df = f"D:\\tmp\Tiingo\\{symbol}_train_5minute.csv"
+    if os.path.exists(hour_df) and os.path.exists(minute_df):
+        df_train = pd.read_csv(hour_df)
+        eval_df_train = pd.read_csv(minute_df)
+    else:
+        df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
+        df_train.to_csv(hour_df)
+        eval_df_train.to_csv(minute_df)
+
+    return df_train, eval_df_train
+
+def get_test_data(tiingo:Tiingo, symbol:str, trade_type:TradeType, dp:DataProcessor) -> (DataFrame, DataFrame):
+    hour_df = f"D:\\tmp\Tiingo\\{symbol}_test_1hour.csv"
+    minute_df = f"D:\\tmp\Tiingo\\{symbol}_test_5minute.csv"
+    if os.path.exists(hour_df) and os.path.exists(minute_df):
+        df_train = pd.read_csv(hour_df)
+        eval_df_train = pd.read_csv(minute_df)
+    else:
+        df_train, eval_df_train = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
+        df_train.to_csv(hour_df)
+        eval_df_train.to_csv(minute_df)
+
+    return df_train, eval_df_train
+
+
 def train_predictor(markets:list,
                     trainer: Trainer,
                     tiingo: Tiingo,
@@ -75,23 +103,23 @@ def train_predictor(markets:list,
                     tracer = ConsoleTracer()
                     ):
     tracer.info("Start training")
-    reporting.create(markets, predictor)
-    best_indicators = reporting.get_best_indicator_names()
-    tracer.info(f"Best indicators: {best_indicators}")
-
-    if len(best_indicators) == 0:
-        best_indicators.append("RSI")
 
     for m in random.choices(markets, k=10):
         # for m in markets:
         symbol = m["symbol"]
-        tracer.info(f"Train {symbol}")
-        df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
-        #df_test, eval_df_test = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
+        tracer.info(f"Matrix Train {symbol}")
+        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp)
         if len(df_train) > 0:
             try:
-                #trainer.get_signals(symbol,df_train, indicators, predictor)
+                trainer.get_signals(symbol,df_train, indicators, predictor)
                 trainer.simulate(df_train,eval_df_train,symbol, m["scaling"])
+                best_combo = trainer.foo_combinations(symbol, indicators)
+
+                df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp)
+                pred = GenericPredictor(symbol=symbol, indicators=indicators)
+                pred.setup({"_indicator_names": best_combo, "_stop": 50, "_limit": 50})
+                pred.eval(df_test, eval_df_test, analytics=Analytics(ms), symbol=symbol, scaling=m["scaling"])
+
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 print(f"MainException: {ex} File:{traceback_str}")
