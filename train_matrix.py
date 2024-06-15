@@ -91,6 +91,29 @@ def get_test_data(tiingo:Tiingo, symbol:str, trade_type:TradeType, dp:DataProces
 
     return df_train, eval_df_train
 
+def get_best_combo(symbol:str):
+    path = f"D:\\tmp\\BestCombo\\{symbol}.txt"
+
+    if not os.path.exists(path):
+        return ["rsi"]
+
+    with open(path, "r") as datei:
+        gelesene_liste = datei.readlines()
+
+    # Zeilenenden entfernen
+    gelesene_liste = [element.strip() for element in gelesene_liste]
+    return gelesene_liste
+
+def save_best_combo(symbol:str, best_combo:[]):
+    if best_combo is None:
+        return
+
+    path = f"D:\\tmp\\BestCombo\\{symbol}.txt"
+
+    with open(path, "w") as datei:
+        for element in best_combo:
+            datei.write(element + "\n")
+
 
 def train_predictor(markets:list,
                     trainer: Trainer,
@@ -111,14 +134,33 @@ def train_predictor(markets:list,
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp)
         if len(df_train) > 0:
             try:
+                pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
+                pred_standard.setup(ps.load_active_by_symbol(symbol))
+
                 trainer.get_signals(symbol,df_train, indicators, predictor)
                 trainer.simulate(df_train,eval_df_train,symbol, m["scaling"])
-                best_combo = trainer.foo_combinations(symbol, indicators)
+                best_combo, stop, limit = trainer.foo_combinations(symbol, indicators, get_best_combo(symbol), pred_standard._indicator_names)
+                if best_combo is None or len(best_combo) == 0:
+                    print("No best combo found")
+                    continue
+                save_best_combo(symbol, best_combo)
 
                 df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp)
-                pred = GenericPredictor(symbol=symbol, indicators=indicators)
-                pred.setup({"_indicator_names": best_combo, "_stop": 50, "_limit": 50})
-                pred.eval(df_test, eval_df_test, analytics=Analytics(ms), symbol=symbol, scaling=m["scaling"])
+                pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
+                pred_matrix.setup({"_indicator_names": best_combo, "_stop": stop, "_limit": limit})
+                pred_matrix.eval(df_test, eval_df_test, analytics=Analytics(ms), symbol=symbol, scaling=m["scaling"])
+
+
+                pred_standard.eval(df_test, eval_df_test, analytics=Analytics(ms), symbol=symbol,
+                                                      scaling=m["scaling"])
+
+                if pred_matrix.get_result().get_reward() > pred_standard.get_result().get_reward():
+                    ps.save(pred_matrix)
+                    print(f"****************************************")
+                    print(f"* Matrix is better {symbol} {best_combo}")
+                    print(f"* Matrix Train {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
+                    print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
+                    print(f"****************************************")
 
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück

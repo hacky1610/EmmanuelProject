@@ -65,7 +65,7 @@ class Analytics:
             return None
 
 
-        for i in tqdm(range(len(df) - 1)):
+        for i in range(len(df) - 1):
             current_index = i + 1
             if filter is not None and TimeUtils.get_time_string(filter) != df.date[current_index]:
                 continue
@@ -183,7 +183,7 @@ class Analytics:
                  df: DataFrame,
                  df_eval: DataFrame,
                  symbol: str,
-                 scaling: int) -> EvalResult:
+                 scaling: int) -> DataFrame:
 
         assert len(df) > 0
         assert len(df_eval) > 0
@@ -206,7 +206,7 @@ class Analytics:
         stop = market.get_pip_value(stop_euro, scaling)
         limit = market.get_pip_value(limit_euro, scaling)
 
-        for i in tqdm(range(len(df) - 1)):
+        for i in range(len(df) - 1):
             current_index = i + 1
             open_price = df.open[current_index]
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]

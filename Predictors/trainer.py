@@ -120,8 +120,7 @@ class Trainer:
             best_train_result.save_trade_result()
 
     def get_signals(self,symbol:str ,df: DataFrame, indicators:Indicators, predictor_class):
-        print (f"Get Signals for {symbol}")
-        for indicator in tqdm(indicators.get_all_indicator_names()):
+        for indicator in indicators.get_all_indicator_names():
             path = f"D:\\tmp\\Signals\\signal_{symbol}_{indicator}.csv"
             if not os.path.exists(path):
                 predictor = predictor_class(symbol=symbol, indicators=indicators)
@@ -133,46 +132,107 @@ class Trainer:
         buy_path = f"D:\\tmp\\Simulations\\simulation_buy{symbol}.csv"
         if not os.path.exists(buy_path):
             res = self._analytics.simulate("buy", 50, 50, df, df_eval, symbol, scaling)
-            res.to_csv(buy_path)
+            if res  is not None:
+                res.to_csv(buy_path)
 
         sell_path = f"D:\\tmp\\Simulations\\simulation_sell{symbol}.csv"
         if not os.path.exists(sell_path):
             res = self._analytics.simulate("sell", 50, 50, df, df_eval, symbol, scaling)
-            res.to_csv(sell_path)
+            if res is not None:
+                res.to_csv(sell_path)
 
-    def foo_combinations(self, symbol:str, indicators:Indicators) :
+        buy_path = f"D:\\tmp\\Simulations\\simulation_buy{symbol}_30_30.csv"
+        if not os.path.exists(buy_path):
+            res = self._analytics.simulate("buy", 30, 30, df, df_eval, symbol, scaling)
+            if res is not None:
+                res.to_csv(buy_path)
+
+        sell_path = f"D:\\tmp\\Simulations\\simulation_sell{symbol}_30_30.csv"
+        if not os.path.exists(sell_path):
+            res = self._analytics.simulate("sell", 30, 30, df, df_eval, symbol, scaling)
+            if res is not None:
+                res.to_csv(sell_path)
+
+
+    def foo_combinations(self, symbol:str, indicators:Indicators, best_combo:List[str], current_indicators:List[str]):
         df_list = []
+        current_indicators_objects = []
+        current_indicators_combos = []
         for indicator in indicators.get_all_indicator_names():
             try:
-                df_list.append({"indicator": indicator,
-                                "data": pd.read_csv(f"D:\\tmp\\Signals\\signal_{symbol}_{indicator}.csv")})
+                indicator_object = {"indicator": indicator,
+                                "data": pd.read_csv(f"D:\\tmp\\Signals\\signal_{symbol}_{indicator}.csv")}
+                df_list.append(indicator_object)
+                if indicator in current_indicators:
+                    current_indicators_objects.append(indicator_object)
             except Exception as e:
                 print(f"Error {e}")
                 pass
 
-        all_combos = list(itertools.combinations(df_list, 5))
+        all_combos = list(itertools.combinations(df_list, random.randint(4,5)))
+
+        for i in df_list:
+            new_list = current_indicators_objects.copy()
+            new_list.append(i)
+            current_indicators_combos.append(new_list)
+
+            new_list = current_indicators_objects.copy()
+            new_list.pop(random.randint(0, len(current_indicators) - 1))
+            new_list.append(i)
+            current_indicators_combos.append(new_list)
+
+
         try:
             buy_results = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_buy{symbol}.csv")
             sell_results = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_sell{symbol}.csv")
+            buy_results_30_30 = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_buy{symbol}_30_30.csv")
+            sell_results_30_30 = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_sell{symbol}_30_30.csv")
         except Exception as e:
             print(f"No Simulation")
-            return
+            return None, 0,0
+
+        if len(buy_results) == 0 or len(sell_results) == 0:
+            print("No Simulation")
+            return None, 0, 0
+
+        if len(buy_results_30_30) == 0 or len(sell_results_30_30) == 0:
+            print("No Simulation")
+            return None, 0, 0
 
         if len(df_list) != len(indicators.get_all_indicator_names()):
             print("Not all indicators are there")
 
+        best_combo_list = []
+        for indicator in df_list:
+            if indicator["indicator"] in best_combo:
+                best_combo_list.append(indicator)
+
+
         best_result = -10000
         best_combo = []
-        for combo in random.choices(all_combos,k=100):
+        filtered_combos = random.choices(all_combos,k=2000)
+        filtered_combos.insert(0,best_combo_list)
+        for combo in filtered_combos:
             signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
             current_result = self._analytics.foo(signals, buy_results, sell_results)
             if current_result > best_result:
                 best_result = current_result
                 best_combo = [item['indicator'] for item in combo]
-                print(f"New best result: {best_result} for { best_combo}")
-        print(f"Amazing best result: {best_result} for {best_combo}")
 
-        return best_combo
+        best_result_30_30 = -1000
+        for combo in filtered_combos:
+            signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
+            current_result = self._analytics.foo(signals, buy_results_30_30, sell_results_30_30)
+            if current_result > best_result_30_30:
+                best_result_30_30 = current_result
+                best_combo = [item['indicator'] for item in combo]
+
+        if best_result > best_result_30_30:
+            return best_combo, 50 ,50
+        else:
+            return best_combo, 30,30
+
+
 
 
 
