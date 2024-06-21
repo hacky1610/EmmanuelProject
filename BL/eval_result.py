@@ -7,36 +7,56 @@ from BL.datatypes import TradeAction
 
 
 class TradeResult:
-     def __init__(self):
-         self.action:str = TradeAction.NONE
-         self.result:str  = ""
-         self.last_df_time = ""
-         self.close_df_time = ""
-         self.profit:float = 0
-         self.opening:float = 0
-         self.closing: float = 0
-         self.intelligent_stop_used:bool = False
+    def __init__(self, action: str = TradeAction.NONE,
+                 open_time: str = "", opening: float = 0):
+        self.action: str = action
+        self.open_time = open_time
+        self.opening: float = opening
+        self.close_time = ''
+        self.profit: float = 0
+        self.closing: float = 0
+        self.intelligent_stop_used: bool = False
 
+    def set_result(self, closing: float, close_time: str, profit: float):
+        self.closing = closing
+        self.close_time = close_time
+        self.profit = profit
+
+    def set_intelligent_stop_used(self):
+        self.intelligent_stop_used = True
+
+    def won(self) -> bool:
+        return self.profit > 0
 
 class EvalResult:
 
-    def __init__(self, trades_results:List = [],
-                 reward: float = 0.0,
-                 trades: int = 0,
+    def __init__(self, trades_results: List[TradeResult] = None,
                  len_df: int = 0,
                  trade_minutes: int = 0,
-                 wins: int = 0,
-                 scan_time = datetime(1970, 1, 1)):
-        self._reward = reward
-        self._trades = trades
+                 scan_time=datetime(1970, 1, 1)):
+        if trades_results is None:
+            trades_results = []
+
+        self._reward = 0
+        self._trades = 0
+        self._wins = 0
         self._len_df = len_df
         self._trade_minutes = trade_minutes
         self._scan_time = scan_time
-        self._wins = wins
-        self._trade_results:List = trades_results
+        self._trade_results = trades_results
+
+        for trade in trades_results:
+            self._reward += trade.profit
+            if trade.won():
+                self._wins += 1
+        self._trades = len(trades_results)
+
 
     def get_reward(self):
         return self._reward
+
+    def get_trade_results(self) -> List[TradeResult]:
+        return self._trade_results
 
     def get_trades(self) -> int:
         return self._trades
@@ -82,6 +102,7 @@ class EvalResult:
                    "_scan_time",
                    "_wl"
                    ])
+
     def is_good(self):
         return self.get_average_reward() > 5 and self.get_reward() > 100 and self.get_win_loss() > 0.6 and self.get_trades() >= 10
 

@@ -1,4 +1,5 @@
 import datetime
+import sys
 
 from tqdm import tqdm
 
@@ -16,9 +17,9 @@ from UI.base_viewer import BaseViewer
 
 class Analytics:
 
-    def __init__(self, market_store:MarketStore, ig, tracer: Tracer = ConsoleTracer()):
+    def __init__(self, market_store: MarketStore, ig, tracer: Tracer = ConsoleTracer()):
         self._tracer = tracer
-        self._market_store =  market_store
+        self._market_store = market_store
         self._ig = ig
 
     @staticmethod
@@ -36,14 +37,11 @@ class Analytics:
                  scaling: int,
                  viewer: BaseViewer = BaseViewer(),
                  only_one_position: bool = True,
-                 filter=None) -> EvalResult:
+                 time_filter=None) -> EvalResult:
 
         assert len(df) > 0
         assert len(df_eval) > 0
 
-        reward = 0
-        losses = 0
-        wins = 0
         trading_minutes = 0
         spread = self._calc_spread(df)
         old_tracer = predictor._tracer
@@ -56,15 +54,13 @@ class Analytics:
         market = self._market_store.get_market(symbol)
         distance = self._ig.get_stop_distance(market, "", scaling, check_min=False)
 
-
         if market is None:
             print(f"There is no market for {symbol}")
             return None
 
-
-        for i in tqdm(range(len(df) - 1)):
+        for i in range(len(df) - 1):
             current_index = i + 1
-            if filter is not None and TimeUtils.get_time_string(filter) != df.date[current_index]:
+            if time_filter is not None and TimeUtils.get_time_string(time_filter) != df.date[current_index]:
                 continue
 
             open_price = df.open[current_index]
@@ -76,13 +72,10 @@ class Analytics:
             if action == TradeAction.NONE:
                 continue
 
-            stop = market.get_pip_value(predictor._stop, scaling)
-            limit = market.get_pip_value(predictor._limit, scaling)
+            stop_pip = market.get_pip_value(predictor.get_stop(), scaling)
+            limit_pip = market.get_pip_value(predictor.get_limit(), scaling)
 
-            trade:TradeResult = TradeResult()
-            trade.action = action
-            trade.last_df_time = df.date[current_index]
-            trade.opening = df.close[current_index]
+            trade = TradeResult(action=action, open_time=df.date[current_index], opening=df.close[current_index])
             trades.append(trade)
 
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
@@ -94,8 +87,8 @@ class Analytics:
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread
-                limit_price = open_price + limit
-                stop_price = open_price - stop
+                limit_price = open_price + limit_pip
+                stop_price = open_price - stop_pip
                 viewer.print_buy(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
@@ -108,36 +101,29 @@ class Analytics:
                     if high > limit_price:
                         # Won
                         viewer.print_won(train_index, future.close[j])
-                        reward += limit
-                        wins += 1
                         last_exit = future.date[j]
-                        trade.result = "won"
-                        trade.profit = limit
-                        trade.close_df_time = last_exit
-                        trade.closing = high
+                        trade.set_result(profit=predictor.get_limit(), closing=high, close_time=last_exit)
                         break
                     elif low < stop_price:
                         # Loss
                         viewer.print_lost(train_index, future.close[j])
-                        reward -= stop
-                        losses += 1
                         last_exit = future.date[j]
-                        trade.result = "lost"
-                        trade.profit = stop * -1
-                        trade.closing = low
-                        trade.close_df_time = last_exit
+                        trade.set_result(profit=predictor.get_stop() * -1, closing=low, close_time=last_exit)
                         break
 
-                    if self._ig.is_ready_to_set_intelligent_stop(high - open_price, limit):
-                        new_stop_level = close - distance
-                        if new_stop_level > stop_price:
-                            stop_price = new_stop_level
-                            trade.intelligent_stop_used = True
+                    if predictor._use_isl:
+                        if self._ig.is_ready_to_set_intelligent_stop(high - open_price, limit_pip):
+                            new_stop_level = close - distance
+                            if new_stop_level > stop_price:
+                                stop_price = new_stop_level
+                                trade.set_intelligent_stop_used()
+                                if predictor._isl_open_end:
+                                    limit_price = sys.float_info.max
 
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
-                limit_price = open_price + limit
-                stop_price = open_price - stop
+                limit_price = open_price - limit_pip
+                stop_price = open_price + stop_pip
                 viewer.print_sell(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
@@ -150,34 +136,27 @@ class Analytics:
                     if low < limit_price:
                         # Won
                         viewer.print_won(train_index, future.close[j])
-                        reward += limit
-                        wins += 1
                         last_exit = future.date[j]
-                        trade.result = "won"
-                        trade.profit = limit
-                        trade.closing = high
-                        trade.close_df_time = last_exit
+                        trade.set_result(profit=predictor.get_limit(), closing=high, close_time=last_exit)
                         break
                     elif high > stop_price:
                         viewer.print_lost(train_index, future.close[j])
-                        reward -= stop
-                        losses += 1
-                        trade.result = "lost"
-                        trade.profit = stop * -1
                         last_exit = future.date[j]
-                        trade.closing = low
-                        trade.close_df_time = last_exit
+                        trade.set_result(profit=predictor.get_stop() * -1, closing=low, close_time=last_exit)
                         break
 
-                    if self._ig.is_ready_to_set_intelligent_stop(open_price - low, limit):
-                        new_stop_level = close + distance
-                        if new_stop_level < stop_price:
-                            stop_price = new_stop_level
-                            trade.intelligent_stop_used = True
+                    if predictor._use_isl:
+                        if self._ig.is_ready_to_set_intelligent_stop(open_price - low, limit_pip):
+                            new_stop_level = close + distance
+                            if new_stop_level < stop_price:
+                                stop_price = new_stop_level
+                                trade.set_intelligent_stop_used()
+                                if predictor._isl_open_end:
+                                    limit_price = sys.float_info.min
 
         predictor._tracer = old_tracer
-        reward_eur = reward * scaling / market.pip_euro
-        ev_res = EvalResult(trades, reward_eur, wins + losses, len(df), trading_minutes, wins, scan_time=datetime.datetime.now())
+        ev_res = EvalResult(trades_results=trades, len_df=len(df), trade_minutes=trading_minutes,
+                            scan_time=datetime.datetime.now())
         viewer.update_title(f"{ev_res}")
         viewer.show()
 

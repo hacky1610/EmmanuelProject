@@ -2,15 +2,13 @@ import json
 import os.path
 import time
 import traceback
-from typing import List, Dict
-
+from typing import  Dict
 from trading_ig import IGService
 from trading_ig.rest import IGException, ApiExceededException
 from BL import DataProcessor, timedelta, BaseReader
 from BL.analytics import Analytics
 from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
-from Connectors.dropbox_cache import DropBoxCache
 from Connectors.market_store import MarketStore, Market
 from Connectors.predictore_store import PredictorStore
 from Predictors.generic_predictor import GenericPredictor
@@ -25,7 +23,6 @@ import tempfile
 from datetime import datetime
 from Connectors.tiingo import TradeType
 from UI.base_viewer import BaseViewer
-from UI.plotly_viewer import PlotlyViewer
 
 
 class IG:
@@ -516,9 +513,9 @@ class IG:
 
                 df_results = df_results.append(open_data)
                 res = analytics.evaluate(predictor, df, df_eval, name, viewer,
-                                         filter=datetime(dt.year, dt.month, dt.day, dt.hour))
-                for trade in res._trade_results:
-                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour)) == trade.last_df_time:
+                                         time_filter=datetime(dt.year, dt.month, dt.day, dt.hour))
+                for trade in res.get_trade_results():
+                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour)) == trade.open_time:
                         df_results.loc[
                             df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
                         df_results.loc[
