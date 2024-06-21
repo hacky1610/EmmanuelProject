@@ -48,13 +48,10 @@ class Analytics:
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
         last_exit = df.date[0]
-
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
                     df, df_eval)
         viewer.print_graph()
-
         trades = []
-
         market = self._market_store.get_market(symbol)
 
         if market is None:
@@ -94,7 +91,8 @@ class Analytics:
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread
-
+                limit_price = open_price + limit
+                stop_price = open_price - stop
                 viewer.print_buy(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
@@ -103,7 +101,7 @@ class Analytics:
                     low = future.low[j]
                     train_index = df[df.date <= future.date[j]][-1:].index.item()
 
-                    if high > open_price + limit:
+                    if high > limit_price:
                         # Won
                         viewer.print_won(train_index, future.close[j])
                         reward += limit
@@ -114,7 +112,7 @@ class Analytics:
                         trade.close_df_time = last_exit
                         trade.closing = high
                         break
-                    elif low < open_price - stop:
+                    elif low < stop_price:
                         # Loss
                         viewer.print_lost(train_index, future.close[j])
                         reward -= stop
@@ -127,7 +125,8 @@ class Analytics:
                         break
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
-
+                limit_price = open_price + limit
+                stop_price = open_price - stop
                 viewer.print_sell(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
@@ -136,7 +135,7 @@ class Analytics:
                     low = future.low[j]
                     train_index = df[df.date <= future.date[j]][-1:].index.item()
 
-                    if low < open_price - limit:
+                    if low < limit_price:
                         # Won
                         viewer.print_won(train_index, future.close[j])
                         reward += limit
@@ -147,7 +146,7 @@ class Analytics:
                         trade.closing = high
                         trade.close_df_time = last_exit
                         break
-                    elif high > open_price + stop:
+                    elif high > stop_price:
                         viewer.print_lost(train_index, future.close[j])
                         reward -= stop
                         losses += 1
