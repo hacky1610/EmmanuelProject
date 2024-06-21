@@ -14,10 +14,8 @@ from Connectors.tiingo import Tiingo, TradeType
 from BL.utils import ConfigReader
 import dropbox
 from Connectors.dropboxservice import DropBoxService
-from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import TimeUtils
-from UI.base_viewer import BaseViewer
 from UI.plotly_viewer import PlotlyViewer
 
 conf_reader = ConfigReader()
@@ -84,14 +82,14 @@ for deal in closed:
                 ev_res = analytics.evaluate(predictor, df=df_train, df_eval=df_eval_train, only_one_position=False,
                                             symbol=deal["ticker"], scaling=scaling)
 
-                trades = ev_res._trade_results
+                trades = ev_res.get_trade_results()
 
                 if len(trades) == 0:
                     print("No trades - len is 0")
 
                 matched = False
                 for t in trades:
-                    if t.last_df_time == TimeUtils.get_time_string(deal["open_date_ig_datetime"]):
+                    if t.open_time == TimeUtils.get_time_string(deal["open_date_ig_datetime"]):
                         print(f"{deal['ticker']} {deal['dealId']}")
                         if t.profit == 0:
                             raise Exception("Profit is 0")
@@ -100,7 +98,7 @@ for deal in closed:
                         market = ms.get_market(deal['ticker'])
                         ev_res_profit = t.profit * scaling / market.pip_euro
                         real_res_profit = deal['profit']
-                        ev_res_close_time = t.close_df_time
+                        ev_res_close_time = t.close_time
                         real_res_close_time = deal["close_date_ig_datetime"]
                         if (real_res_profit < 0 < ev_res_profit):
                             print("Error: Real worse ")
