@@ -11,7 +11,7 @@ from BL.analytics import Analytics
 from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
-from Connectors.market_store import MarketStore
+from Connectors.market_store import MarketStore, Market
 from Connectors.predictore_store import PredictorStore
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import TimeUtils
@@ -176,6 +176,9 @@ class IG:
 
         return markets
 
+    def get_deal_by_reference(self, reference):
+        return self.ig_service.fetch_deal_by_deal_reference(reference)
+
     def connect(self):
         # no cache
         self._tracer.debug(f"Connect {self.type} {self.user} {self.accNr}")
@@ -283,6 +286,13 @@ class IG:
 
         return stop_distance
 
+    def is_ready_to_set_intelligent_stop(self, pip_diff:float, limit:float, scaling_factor:int, market:Market, ):
+        diff = market.get_euro_value(pips=pip_diff, scaling_factor=scaling_factor)
+        ready = diff > limit * 0.7
+        if ready:
+            self._tracer.debug(f"Current profit {diff} is greate than limit {limit * 0.7}")
+        return ready
+
     def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, predictor_store: PredictorStore):
         open_price = position.level
         bid_price = position.bid
@@ -303,18 +313,14 @@ class IG:
             market = market_store.get_market(ticker)
             if direction == "BUY":
                 if bid_price > open_price:
-                    diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
-                    if diff > p._limit * 0.7:
-                        self._tracer.debug(f"Current profit {diff} is greate than limit {p._limit * 0.7}")
+                    if self.is_ready_to_set_intelligent_stop(bid_price - open_price,p._limit, scaling_factor, market):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price - distance
                         if new_stop_level > stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
             else:
                 if offer_price < open_price:
-                    diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
-                    if diff > p._limit * 0.7:
-                        self._tracer.debug(f"Current profit {diff} is greate than limit {p._limit * 0.7}")
+                    if self.is_ready_to_set_intelligent_stop(open_price - offer_price,p._limit, scaling_factor, market):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price + distance
                         if new_stop_level < stop_level:
