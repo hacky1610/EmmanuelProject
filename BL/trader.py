@@ -114,6 +114,8 @@ class Trader:
             deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
             if deal is not None:
                 deal.profit = float(ig_deal.profitAndLoss[1:])
+                deal.open_level = float(ig_deal["openLevel"])
+                deal.close_level = float(ig_deal["closeLevel"])
                 deal.close_date_ig_datetime = datetime.strptime(ig_deal.dateUtc, '%Y-%m-%dT%H:%M:%S')
 
                 if deal.profit == 0:
