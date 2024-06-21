@@ -210,13 +210,14 @@ class Tiingo:
                                          validate=False)
         return df, df_eval
 
-    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 100):
+    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 100, use_cache=True):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,
                                     start=start_time,
                                     end=None,
                                     data_processor=dp,
+                                    use_cache=use_cache,
                                     trade_type=trade_type,
                                     resolution="1hour",
                                     validate=False)
@@ -224,6 +225,7 @@ class Tiingo:
                                          start=start_time,
                                          end=None,
                                          data_processor=dp,
+                                         use_cache=use_cache,
                                          trade_type=trade_type,
                                          resolution="5min",
                                          add_signals=False,
