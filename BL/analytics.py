@@ -82,6 +82,7 @@ class Analytics:
             trade:TradeResult = TradeResult()
             trade.action = action
             trade.last_df_time = df.date[current_index]
+            trade.opening = df.close[current_index]
             trades.append(trade)
 
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
@@ -109,6 +110,9 @@ class Analytics:
                         wins += 1
                         last_exit = future.date[j]
                         trade.result = "won"
+                        trade.profit = limit
+                        trade.close_df_time = last_exit
+                        trade.closing = high
                         break
                     elif low < open_price - stop:
                         # Loss
@@ -117,6 +121,9 @@ class Analytics:
                         losses += 1
                         last_exit = future.date[j]
                         trade.result = "lost"
+                        trade.profit = stop * -1
+                        trade.closing = low
+                        trade.close_df_time = last_exit
                         break
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
@@ -136,13 +143,19 @@ class Analytics:
                         wins += 1
                         last_exit = future.date[j]
                         trade.result = "won"
+                        trade.profit = limit
+                        trade.closing = high
+                        trade.close_df_time = last_exit
                         break
                     elif high > open_price + stop:
                         viewer.print_lost(train_index, future.close[j])
                         reward -= stop
                         losses += 1
                         trade.result = "lost"
+                        trade.profit = stop * -1
                         last_exit = future.date[j]
+                        trade.closing = low
+                        trade.close_df_time = last_exit
                         break
 
         predictor._tracer = old_tracer

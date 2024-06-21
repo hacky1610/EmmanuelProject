@@ -11,7 +11,10 @@ class TradeResult:
          self.action:str = TradeAction.NONE
          self.result:str  = ""
          self.last_df_time = ""
-
+         self.close_df_time = ""
+         self.profit:float = 0
+         self.opening:float = 0
+         self.closing: float = 0
 
 
 class EvalResult:
