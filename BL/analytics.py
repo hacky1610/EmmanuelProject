@@ -49,14 +49,13 @@ class Analytics:
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
         last_exit = df.date[0]
-
         viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
                     df, df_eval)
         viewer.print_graph()
-
         trades = []
-
         market = self._market_store.get_market(symbol)
+        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False)
+
 
         if market is None:
             print(f"There is no market for {symbol}")
@@ -95,20 +94,18 @@ class Analytics:
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread
-
+                limit_price = open_price + limit
+                stop_price = open_price - stop
                 viewer.print_buy(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
+                    close = future.close[j]
                     train_index = df[df.date <= future.date[j]][-1:].index.item()
 
-                    if self._ig.is_ready_to_set_intelligent_stop(high - open_price,limit):
-                        print("Intelligent stop")
-
-
-                    if high > open_price + limit:
+                    if high > limit_price:
                         # Won
                         viewer.print_won(train_index, future.close[j])
                         reward += limit
@@ -119,7 +116,7 @@ class Analytics:
                         trade.close_df_time = last_exit
                         trade.closing = high
                         break
-                    elif low < open_price - stop:
+                    elif low < stop_price:
                         # Loss
                         viewer.print_lost(train_index, future.close[j])
                         reward -= stop
@@ -130,18 +127,27 @@ class Analytics:
                         trade.closing = low
                         trade.close_df_time = last_exit
                         break
+
+                    if self._ig.is_ready_to_set_intelligent_stop(high - open_price, limit):
+                        new_stop_level = close - distance
+                        if new_stop_level > stop_price:
+                            stop_price = new_stop_level
+                            trade.intelligent_stop_used = True
+
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
-
+                limit_price = open_price + limit
+                stop_price = open_price - stop
                 viewer.print_sell(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
+                    close = future.close[j]
                     train_index = df[df.date <= future.date[j]][-1:].index.item()
 
-                    if low < open_price - limit:
+                    if low < limit_price:
                         # Won
                         viewer.print_won(train_index, future.close[j])
                         reward += limit
@@ -152,7 +158,7 @@ class Analytics:
                         trade.closing = high
                         trade.close_df_time = last_exit
                         break
-                    elif high > open_price + stop:
+                    elif high > stop_price:
                         viewer.print_lost(train_index, future.close[j])
                         reward -= stop
                         losses += 1
@@ -162,6 +168,12 @@ class Analytics:
                         trade.closing = low
                         trade.close_df_time = last_exit
                         break
+
+                    if self._ig.is_ready_to_set_intelligent_stop(open_price - low, limit):
+                        new_stop_level = close + distance
+                        if new_stop_level < stop_price:
+                            stop_price = new_stop_level
+                            trade.intelligent_stop_used = True
 
         predictor._tracer = old_tracer
         reward_eur = reward * scaling / market.pip_euro

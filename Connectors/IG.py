@@ -272,11 +272,14 @@ class IG:
             self._tracer.error(f"Error while get limit {e}")
             return -1
 
-    def get_stop_distance(self, market, epic: str, scaling_factor: int) -> float:
+    def get_stop_distance(self, market, epic: str, scaling_factor: int, check_min = True) -> float:
         stop_distance = market.get_pip_value(euro=self.intelligent_stop_distance,
                                              scaling_factor=scaling_factor)
 
-        min_stop_distance = self.get_min_stop_distance(epic) / scaling_factor
+        if check_min:
+            min_stop_distance = self.get_min_stop_distance(epic) / scaling_factor
+        else:
+            min_stop_distance = 0
 
         if stop_distance <= min_stop_distance:
             self._tracer.debug(f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")

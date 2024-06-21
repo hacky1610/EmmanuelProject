@@ -15,6 +15,7 @@ class TradeResult:
          self.profit:float = 0
          self.opening:float = 0
          self.closing: float = 0
+         self.intelligent_stop_used:bool = False
 
 
 class EvalResult:

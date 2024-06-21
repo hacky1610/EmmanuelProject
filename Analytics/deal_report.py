@@ -36,7 +36,7 @@ pred_scans = PredictorStore(db)
 ms = MarketStore(db)
 dp = DataProcessor()
 closed = deals_store.get_closed_deals()
-analytics = Analytics(ms)
+analytics = Analytics(ms, ig)
 
 eval_result = 0
 real_result = 0
@@ -120,6 +120,9 @@ for deal in closed:
 
                         eval_result += ev_res_profit
                         real_result += real_res_profit
+
+                        if deal["intelligent_stop_used"] != t.intelligent_stop_used:
+                            print(f"Error: intelligent_stop_used not equal")
 
                         if deal["intelligent_stop_used"]:
                             eval_intelli_result += ev_res_profit
