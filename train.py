@@ -51,7 +51,7 @@ client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db
 db = client["ZuluDB"]
 ms = MarketStore(db)
 ps = PredictorStore(db)
-_trainer = Trainer(analytics=Analytics(market_store=ms),
+_trainer = Trainer(analytics=Analytics(market_store=ms, ig=IG(conf_reader=conf_reader)),
                    cache=cache,
                    check_trainable=False,
                    predictor_store=ps)
