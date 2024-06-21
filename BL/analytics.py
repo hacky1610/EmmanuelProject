@@ -16,9 +16,10 @@ from UI.base_viewer import BaseViewer
 
 class Analytics:
 
-    def __init__(self, market_store:MarketStore, tracer: Tracer = ConsoleTracer()):
+    def __init__(self, market_store:MarketStore, ig, tracer: Tracer = ConsoleTracer()):
         self._tracer = tracer
         self._market_store =  market_store
+        self._ig = ig
 
     @staticmethod
     def _create_additional_info(row, *args):
@@ -102,6 +103,10 @@ class Analytics:
                     high = future.high[j]
                     low = future.low[j]
                     train_index = df[df.date <= future.date[j]][-1:].index.item()
+
+                    if self._ig.is_ready_to_set_intelligent_stop(high - open_price,limit):
+                        print("Intelligent stop")
+
 
                     if high > open_price + limit:
                         # Won

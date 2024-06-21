@@ -286,8 +286,8 @@ class IG:
 
         return stop_distance
 
-    def is_ready_to_set_intelligent_stop(self, pip_diff:float, limit:float, scaling_factor:int, market:Market, ):
-        diff = market.get_euro_value(pips=pip_diff, scaling_factor=scaling_factor)
+    def is_ready_to_set_intelligent_stop(self, diff, limit:float):
+
         ready = diff > limit * 0.7
         if ready:
             self._tracer.debug(f"Current profit {diff} is greate than limit {limit * 0.7}")
@@ -313,14 +313,16 @@ class IG:
             market = market_store.get_market(ticker)
             if direction == "BUY":
                 if bid_price > open_price:
-                    if self.is_ready_to_set_intelligent_stop(bid_price - open_price,p._limit, scaling_factor, market):
+                    diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
+                    if self.is_ready_to_set_intelligent_stop(diff,p._limit):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price - distance
                         if new_stop_level > stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
             else:
                 if offer_price < open_price:
-                    if self.is_ready_to_set_intelligent_stop(open_price - offer_price,p._limit, scaling_factor, market):
+                    diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
+                    if self.is_ready_to_set_intelligent_stop(diff,p._limit):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price + distance
                         if new_stop_level < stop_level:
