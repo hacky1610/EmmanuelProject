@@ -52,7 +52,7 @@ class Trainer:
         best_predictor = None
         best_config = {}
 
-        for training_set in tqdm(self._get_sets(predictor_class, best_indicators)):
+        for training_set in self._get_sets(predictor_class, best_indicators):
             predictor = predictor_class(symbol=symbol, indicators=indicators)
             predictor.setup(self._predictor_store.load_active_by_symbol(symbol))
             predictor.setup(best_config)

@@ -52,11 +52,13 @@ class Analytics:
         viewer.print_graph()
         trades = []
         market = self._market_store.get_market(symbol)
-        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False)
 
         if market is None:
             print(f"There is no market for {symbol}")
             return None
+
+        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False)
+
 
         for i in range(len(df) - 1):
             current_index = i + 1
@@ -102,13 +104,13 @@ class Analytics:
                         # Won
                         viewer.print_won(train_index, future.close[j])
                         last_exit = future.date[j]
-                        trade.set_result(profit=predictor.get_limit(), closing=high, close_time=last_exit)
+                        trade.set_result(profit=market.get_euro_value(high - open_price, scaling), closing=high, close_time=last_exit)
                         break
                     elif low < stop_price:
                         # Loss
                         viewer.print_lost(train_index, future.close[j])
                         last_exit = future.date[j]
-                        trade.set_result(profit=predictor.get_stop() * -1, closing=low, close_time=last_exit)
+                        trade.set_result(profit=market.get_euro_value(low-open_price, scaling), closing=low, close_time=last_exit)
                         break
 
                     if predictor._use_isl:
@@ -137,12 +139,12 @@ class Analytics:
                         # Won
                         viewer.print_won(train_index, future.close[j])
                         last_exit = future.date[j]
-                        trade.set_result(profit=predictor.get_limit(), closing=high, close_time=last_exit)
+                        trade.set_result(profit=market.get_euro_value(open_price - low, scaling), closing=low, close_time=last_exit)
                         break
                     elif high > stop_price:
                         viewer.print_lost(train_index, future.close[j])
                         last_exit = future.date[j]
-                        trade.set_result(profit=predictor.get_stop() * -1, closing=low, close_time=last_exit)
+                        trade.set_result(profit=market.get_euro_value(open_price - high, scaling), closing=high, close_time=last_exit)
                         break
 
                     if predictor._use_isl:

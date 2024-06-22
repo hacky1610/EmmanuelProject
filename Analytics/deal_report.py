@@ -1,3 +1,4 @@
+import traceback
 from datetime import timedelta, datetime
 
 import pymongo
@@ -60,9 +61,11 @@ for deal in closed:
                 end = deal["close_date_ig_datetime"] + timedelta(days=10)
                 if end > datetime.now():
                     end = None
+                else:
+                    end = TimeUtils.get_date_string(end)
                 df_train = tiingo.load_data_by_date(ticker=deal["ticker"],
                                                     start=TimeUtils.get_date_string(start),
-                                                    end=TimeUtils.get_date_string(end),
+                                                    end=end,
                                                     data_processor=dp,
                                                     trade_type=TradeType.FX,
                                                     resolution="1hour",
@@ -70,7 +73,7 @@ for deal in closed:
 
                 df_eval_train = tiingo.load_data_by_date(ticker=deal["ticker"],
                                                          start=TimeUtils.get_date_string(start),
-                                                         end=TimeUtils.get_date_string(end),
+                                                         end=end,
                                                          data_processor=dp,
                                                          trade_type=TradeType.FX,
                                                          resolution="5min",
@@ -80,64 +83,61 @@ for deal in closed:
                 scaling = ig.get_market_details(deal["epic"])["snapshot"]["scalingFactor"]
 
                 ev_res = analytics.evaluate(predictor, df=df_train, df_eval=df_eval_train, only_one_position=False,
-                                            symbol=deal["ticker"], scaling=scaling)
+                                            symbol=deal["ticker"], scaling=scaling, time_filter=deal["open_date_ig_datetime"])
 
                 trades = ev_res.get_trade_results()
 
-                if len(trades) == 0:
-                    print("No trades - len is 0")
+                if len(trades) != 1:
+                    print("Trade count incorrect")
 
-                matched = False
-                for t in trades:
-                    if t.open_time == TimeUtils.get_time_string(deal["open_date_ig_datetime"]):
-                        print(f"{deal['ticker']} {deal['dealId']}")
-                        if t.profit == 0:
-                            raise Exception("Profit is 0")
+                print(f"{deal['ticker']} {deal['dealId']}")
+                t = trades[0]
+                if t.profit == 0:
+                    raise Exception("Profit is 0")
 
-                        matched = True
-                        market = ms.get_market(deal['ticker'])
-                        ev_res_profit = t.profit * scaling / market.pip_euro
-                        real_res_profit = deal['profit']
-                        ev_res_close_time = t.close_time
-                        real_res_close_time = deal["close_date_ig_datetime"]
-                        if (real_res_profit < 0 < ev_res_profit):
-                            print("Error: Real worse ")
-                            print(f"Open time {deal['open_date_ig_datetime']} ")
-                            print(f"Error: Real close time {real_res_close_time} open {deal['open_level']} close {deal['close_level']}")
-                            print(f"Error: Eval close time {ev_res_close_time} open {t.opening} close {t.closing}")
-                            print(f"Eval Result {ev_res_profit}")
-                            print(f"Real Result {real_res_profit}")
-                        elif (real_res_profit > 0 > ev_res_profit):
-                            if not deal["intelligent_stop_used"]:
-                                print(f"Error: Real better")
-                                print(f"Open time {deal['open_date_ig_datetime']} ")
-                                print(f"Error: Real close time {real_res_close_time} open {deal['open_level']} close {deal['close_level']}")
-                                print(f"Error: Eval close time {ev_res_close_time} open {t.opening} close {t.closing}")
-                                print(f"Eval Result {ev_res_profit}")
-                                print(f"Real Result {real_res_profit}")
+                matched = True
+                market = ms.get_market(deal['ticker'])
+                ev_res_profit = t.profit
+                real_res_profit = deal['profit']
+                ev_res_close_time = t.close_time
+                real_res_close_time = deal["close_date_ig_datetime"]
+                if (real_res_profit < 0 < ev_res_profit):
+                    print("Error: Real worse ")
+                    print(f"Open time {deal['open_date_ig_datetime']} ")
+                    print(f"Error: Real close time {real_res_close_time} open {deal['open_level']} close {deal['close_level']}")
+                    print(f"Error: Eval close time {ev_res_close_time} open {t.opening} close {t.closing}")
+                    print(f"Eval Result {ev_res_profit}")
+                    print(f"Real Result {real_res_profit}")
+                elif (real_res_profit > 0 > ev_res_profit):
+                    if not deal["intelligent_stop_used"]:
+                        print(f"Error: Real better")
+                        print(f"Open time {deal['open_date_ig_datetime']} ")
+                        print(f"Error: Real close time {real_res_close_time} open {deal['open_level']} close {deal['close_level']}")
+                        print(f"Error: Eval close time {ev_res_close_time} open {t.opening} close {t.closing}")
+                        print(f"Eval Result {ev_res_profit}")
+                        print(f"Real Result {real_res_profit}")
 
-                        eval_result += ev_res_profit
-                        real_result += real_res_profit
+                eval_result += ev_res_profit
+                real_result += real_res_profit
 
-                        if deal["intelligent_stop_used"] != t.intelligent_stop_used:
-                            print(f"Error: intelligent_stop_used not equal")
+                if deal["intelligent_stop_used"] != t.intelligent_stop_used:
+                    print(f"Error: intelligent_stop_used not equal")
 
-                        if deal["intelligent_stop_used"]:
-                            eval_intelli_result += ev_res_profit
-                            real_intelli_result += real_res_profit
-                        else:
-                            diff = prozentualer_unterschied(ev_res_profit, real_res_profit)
-                            if abs(diff) > 20:
-                                print("Error: Big difference")
-                                print(f"Diff: {diff}")
-                                print(f"Eval Result {ev_res_profit}")
-                                print(f"Real Result {real_res_profit}")
+                if deal["intelligent_stop_used"]:
+                    eval_intelli_result += ev_res_profit
+                    real_intelli_result += real_res_profit
+                else:
+                    diff = prozentualer_unterschied(ev_res_profit, real_res_profit)
+                    if abs(diff) > 20:
+                        print("Error: Big difference")
+                        print(f"Diff: {diff}")
+                        print(f"Eval Result {ev_res_profit}")
+                        print(f"Real Result {real_res_profit}")
 
 
-                if not matched:
-                    print("No matching trades")
     except Exception as e:
-        print(f"Error {e}")
+        traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+        print(f"MainException: {e} File:{traceback_str}")
 
 print(f"Eval {eval_result}")
 print(f"Real {real_result}")
