@@ -89,7 +89,10 @@ class Analytics:
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread
-                limit_price = open_price + limit_pip
+                if predictor._isl_open_end:
+                    limit_price = sys.float_info.max
+                else:
+                    limit_price = open_price + limit_pip
                 stop_price = open_price - stop_pip
                 viewer.print_buy(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
@@ -119,12 +122,14 @@ class Analytics:
                             if new_stop_level > stop_price:
                                 stop_price = new_stop_level
                                 trade.set_intelligent_stop_used()
-                                if predictor._isl_open_end:
-                                    limit_price = sys.float_info.max
+
 
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
-                limit_price = open_price - limit_pip
+                if predictor._isl_open_end:
+                    limit_price = sys.float_info.min
+                else:
+                    limit_price = open_price - limit_pip
                 stop_price = open_price + stop_pip
                 viewer.print_sell(df[i + 1:i + 2].index.item(), open_price, additonal_text)
 
@@ -153,8 +158,7 @@ class Analytics:
                             if new_stop_level < stop_price:
                                 stop_price = new_stop_level
                                 trade.set_intelligent_stop_used()
-                                if predictor._isl_open_end:
-                                    limit_price = sys.float_info.min
+
 
         predictor._tracer = old_tracer
         ev_res = EvalResult(trades_results=trades, len_df=len(df), trade_minutes=trading_minutes,

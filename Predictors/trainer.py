@@ -73,16 +73,16 @@ class Trainer:
                 best_predictor = predictor
                 best_config = predictor.get_config()
 
-                self._tracer.info(f"{symbol} - Result {best_train_result} - Indicators {predictor._indicator_names} "
-                                  f"{predictor} ")
+                #self._tracer.info(f"{symbol} - Result {best_train_result} - Indicators {predictor._indicator_names} "
+                #                  f"{predictor} ")
 
         if best_predictor is not None:
             test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
             self._predictor_store.save(best_predictor, overwrite=False)
 
-            self._tracer.info(f"Test:  WL: {test_result.get_win_loss()} - Reward: {test_result.get_reward()} Avg Reward {test_result.get_average_reward()}")
-            self._tracer.info(f"Train: WL: {best_win_loss}           - Reward: {best_reward}       Avg Reward {best_avg_reward}")
-            self._tracer.info(f"Stop: {best_predictor} ")
+            self._tracer.info(f"Test:  WL: {test_result.get_win_loss():.2f} - Reward: {test_result.get_reward():.2f} Avg Reward {test_result.get_average_reward():.2f}")
+            self._tracer.info(f"Train: WL: {best_win_loss:.2f} - Reward: {best_reward:.2f} Avg Reward {best_avg_reward:.2f}")
+            self._tracer.info(f"{best_predictor} ")
         else:
             self._tracer.info("No Best predictor")
 

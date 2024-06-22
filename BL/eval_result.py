@@ -104,7 +104,7 @@ class EvalResult:
                    ])
 
     def is_good(self):
-        return self.get_average_reward() > 5 and self.get_reward() > 100 and self.get_win_loss() > 0.6 and self.get_trades() >= 10
+        return self.get_average_reward() > 5 and self.get_reward() > 100 and self.get_win_loss() > 0.4 and self.get_trades() >= 10
 
     def __repr__(self):
         return f"Reward {self.get_reward()} E " + \

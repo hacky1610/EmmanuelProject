@@ -291,6 +291,9 @@ class Trader:
         if signal == TradeAction.NONE:
             return TradeResult.NOACTION
 
+        if predictor.get_open_limit_isl():
+            limit = None
+
         self._tracer.info(f"Trade {signal} ")
 
         if signal == TradeAction.BUY:

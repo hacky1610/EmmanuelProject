@@ -157,5 +157,8 @@ class DealStore:
         return self._collection.find(
             {"status": "Closed"})
 
+    def get_custom(self, query:dict):
+        return self._collection.find(query)
+
     def clear(self):
         self._collection.delete_many({"account_type": self._account_type})

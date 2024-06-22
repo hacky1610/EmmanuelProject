@@ -16,7 +16,7 @@ class TraderTest(unittest.TestCase):
     def setUp(self):
         self._tracer = ConsoleTracer()
         self._dataProcessor = DataProcessor()
-        self.analytics = Analytics(ConsoleTracer())
+        self.analytics = Analytics(ConsoleTracer(), MagicMock())
         self._tiingo = MagicMock()
         self._mock_ig = MagicMock()
         self._mock_ig.buy = MagicMock(return_value=(True, {"date":"2016-03-04T00:00:00"}))

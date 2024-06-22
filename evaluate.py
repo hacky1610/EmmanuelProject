@@ -75,6 +75,8 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
                 if ev_result is None:
                     continue
 
+                predictor._result = ev_result #TODO
+
                 results.add(ev_result)
                 if not only_test:
                     ps.save(predictor)

@@ -68,6 +68,12 @@ class BasePredictor:
     def get_limit(self) -> float:
         return self._limit
 
+    def get_open_limit_isl(self) -> bool:
+        return self._isl_open_end
+
+    def get_isl_factor(self) -> float:
+        return self._isl_factor
+
     def get_isl_distance(self) -> float:
         return self._isl_distance
 
@@ -81,7 +87,13 @@ class BasePredictor:
         return self._active
 
     def _set_att(self, config: dict, name: str):
-        self.__setattr__(name, config.get(name, self.__getattribute__(name)))
+        if name in config:
+            self.__setattr__(name, config[name])
+        else:
+            if hasattr(self, name):
+                self.__setattr__(name, self.__getattribute__(name))
+            else:
+                self.__setattr__(name, None)  # or any default value you'd prefer
 
     def predict(self, df: DataFrame) -> str:
         raise NotImplementedError
@@ -150,10 +162,17 @@ class BasePredictor:
             "_isl_open_end": True
         })
 
-        for factor, distance in itertools.product([0.6, 0.8, 1.0, 1.3], random.choices(range(6,25), k=4)):
+        for factor, distance in itertools.product([0.6, 0.8, 1.0, 1.3], random.choices(range(6,30), k=4)):
             json_objs.append({
                 "_use_isl": True,
                 "_isl_open_end": True,
+                "_isl_factor": factor,
+                "_isl_distance": distance
+            })
+        for factor, distance in itertools.product([0.6, 0.8, 1.0, 1.3], random.choices(range(6,30), k=4)):
+            json_objs.append({
+                "_use_isl": True,
+                "_isl_open_end": False,
                 "_isl_factor": factor,
                 "_isl_distance": distance
             })
