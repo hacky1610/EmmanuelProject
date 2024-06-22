@@ -24,6 +24,8 @@ class BasePredictor:
         self._active = True
         self._use_isl = True
         self._isl_open_end = False
+        self._isl_distance = 6.0
+        self._isl_factor = 0.7
         self._symbol = symbol
         self._result: EvalResult = EvalResult()
 
@@ -34,7 +36,7 @@ class BasePredictor:
         self._indicators = indicators
 
     def __str__(self):
-        return f"{self.__class__.__name__} {self._symbol} Limit {self._limit} Stop {self._stop} ISL {self._use_isl} Open End {self._isl_open_end}"
+        return f"Limit {self._limit} Stop {self._stop} ISL {self._use_isl} Open End {self._isl_open_end} Dist {self._isl_distance} Fact {self._isl_factor}"
 
 
     def setup(self, config):
@@ -45,6 +47,8 @@ class BasePredictor:
         self._set_att(config, "_active")
         self._set_att(config, "_symbol")
         self._set_att(config, "_use_isl")
+        self._set_att(config, "_isl_distance")
+        self._set_att(config, "_isl_factor")
         self._set_att(config, "_isl_open_end")
         self._limit = config.get("limit", self._limit)
         self._stop = config.get("stop", self._stop)
@@ -63,6 +67,12 @@ class BasePredictor:
 
     def get_limit(self) -> float:
         return self._limit
+
+    def get_isl_distance(self) -> float:
+        return self._isl_distance
+
+    def get_isl_factor(self) -> float:
+        return self._isl_factor
 
     def activate(self):
         self._active = True
@@ -98,7 +108,9 @@ class BasePredictor:
                        self._active,
                        self._symbol,
                        self._use_isl,
-                       self._isl_open_end
+                       self._isl_open_end,
+                       self._isl_factor,
+                       self._isl_distance
                        ],
                       index=["_type",
                              "_stop",
@@ -106,7 +118,9 @@ class BasePredictor:
                              "_active",
                              "_symbol",
                              "_use_isl",
-                             "_isl_open_end"
+                             "_isl_open_end",
+                             "_isl_factor",
+                             "_isl_distance"
                              ])
 
     @staticmethod
@@ -135,6 +149,15 @@ class BasePredictor:
             "_use_isl": True,
             "_isl_open_end": True
         })
+
+        for factor, distance in itertools.product([0.6, 0.8, 1.0, 1.3], random.choices(range(6,25), k=4)):
+            json_objs.append({
+                "_use_isl": True,
+                "_isl_open_end": True,
+                "_isl_factor": factor,
+                "_isl_distance": distance
+            })
+
         return json_objs
 
     @staticmethod

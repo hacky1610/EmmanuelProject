@@ -33,8 +33,6 @@ class IG:
         self.password = conf_reader.get("ig_demo_pass")
         self.key = conf_reader.get("ig_demo_key")
         self.accNr = conf_reader.get("ig_demo_acc_nr")
-        self.intelligent_stop_border = conf_reader.get_float("is_border", 13)
-        self.intelligent_stop_distance = conf_reader.get_float("is_distance", 6)
         if live:
             self.type = "LIVE"
             self._fx_id = 342535
@@ -269,8 +267,8 @@ class IG:
             self._tracer.error(f"Error while get limit {e}")
             return -1
 
-    def get_stop_distance(self, market, epic: str, scaling_factor: int, check_min = True) -> float:
-        stop_distance = market.get_pip_value(euro=self.intelligent_stop_distance,
+    def get_stop_distance(self, market,  epic: str, scaling_factor: int, intelligent_stop_distance:float = 6.0, check_min = True) -> float:
+        stop_distance = market.get_pip_value(euro=intelligent_stop_distance,
                                              scaling_factor=scaling_factor)
 
         if check_min:
@@ -286,9 +284,9 @@ class IG:
 
         return stop_distance
 
-    def is_ready_to_set_intelligent_stop(self, diff, limit:float):
+    def is_ready_to_set_intelligent_stop(self, diff, limit:float, factor:float):
 
-        ready = diff > limit * 0.7
+        ready = diff > limit * factor
         if ready:
             self._tracer.debug(f"Current profit {diff} is greate than limit {limit * 0.7}")
         return ready

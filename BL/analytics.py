@@ -57,7 +57,7 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
-        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False)
+        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False, intelligent_stop_distance=predictor.get_isl_distance() )
 
 
         for i in range(len(df) - 1):
@@ -114,7 +114,7 @@ class Analytics:
                         break
 
                     if predictor._use_isl:
-                        if self._ig.is_ready_to_set_intelligent_stop(high - open_price, limit_pip):
+                        if self._ig.is_ready_to_set_intelligent_stop(high - open_price, limit_pip, predictor.get_isl_factor()):
                             new_stop_level = close - distance
                             if new_stop_level > stop_price:
                                 stop_price = new_stop_level
@@ -148,7 +148,7 @@ class Analytics:
                         break
 
                     if predictor._use_isl:
-                        if self._ig.is_ready_to_set_intelligent_stop(open_price - low, limit_pip):
+                        if self._ig.is_ready_to_set_intelligent_stop(open_price - low, limit_pip, predictor.get_isl_factor()):
                             new_stop_level = close + distance
                             if new_stop_level < stop_price:
                                 stop_price = new_stop_level
