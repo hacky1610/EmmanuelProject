@@ -76,6 +76,7 @@ class Analytics:
 
             stop_pip = market.get_pip_value(predictor.get_stop(), scaling)
             limit_pip = market.get_pip_value(predictor.get_limit(), scaling)
+            isl_entry_pip = market.get_pip_value(predictor.get_isl_entry(), scaling)
 
             trade = TradeResult(action=action, open_time=df.date[current_index], opening=df.close[current_index])
             trades.append(trade)
@@ -117,7 +118,7 @@ class Analytics:
                         break
 
                     if predictor._use_isl:
-                        if self._ig.is_ready_to_set_intelligent_stop(high - open_price, limit_pip, predictor.get_isl_factor()):
+                        if self._ig.is_ready_to_set_intelligent_stop(high - open_price, isl_entry_pip):
                             new_stop_level = close - distance
                             if new_stop_level > stop_price:
                                 stop_price = new_stop_level
@@ -153,7 +154,7 @@ class Analytics:
                         break
 
                     if predictor._use_isl:
-                        if self._ig.is_ready_to_set_intelligent_stop(open_price - low, limit_pip, predictor.get_isl_factor()):
+                        if self._ig.is_ready_to_set_intelligent_stop(open_price - low, isl_entry_pip):
                             new_stop_level = close + distance
                             if new_stop_level < stop_price:
                                 stop_price = new_stop_level

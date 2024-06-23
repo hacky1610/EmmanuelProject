@@ -16,6 +16,7 @@ from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import Tiingo, TradeType
+from Predictors.base_predictor import BasePredictor
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor
@@ -51,7 +52,7 @@ only_one_position = True
 # endregion
 
 # region functions
-def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer,
+def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer,
                        only_one_position: bool = True,
                        only_test=False):
     global symbol
@@ -63,29 +64,24 @@ def evaluate_predictor(indicators, ig: IG, ti: Tiingo, predictor_class, viewer: 
             df, df_eval = ti.load_test_data(symbol, dp, trade_type)
 
             if len(df) > 0:
-                predictor = predictor_class(symbol=symbol, indicators=indicators, viewer=viewer)
+                predictor:BasePredictor = predictor_class(symbol=symbol, indicators=indicator_logic, viewer=viewer)
                 predictor.setup(ps.load_active_by_symbol(symbol))
-                ev_result = analytics.evaluate(predictor=predictor,
-                                               df=df,
-                                               df_eval=df_eval,
-                                               viewer=viewer,
-                                               symbol=symbol,
-                                               only_one_position=only_one_position,
-                                               scaling=m["scaling"])
-                if ev_result is None:
+                predictor.eval(df_train=df, df_eval=df_eval,
+                               only_one_position=only_one_position, analytics=analytics,
+                               symbol=symbol, scaling=m["scaling"])
+
+                if predictor.get_result() is None:
                     continue
 
-                predictor._result = ev_result #TODO
-
-                results.add(ev_result)
+                results.add(predictor.get_result())
                 if not only_test:
                     ps.save(predictor)
                 viewer.save(symbol)
                 gb = "BAD"
-                if ev_result.is_good():
+                if predictor.get_result().is_good():
                     gb = f"GOOD {predictor._indicator_names}"
 
-                print(f"{gb} - {symbol} - {ev_result} {predictor} ")
+                print(f"{gb} - {symbol} - {predictor.get_result()} {predictor} ")
         except Exception as e:
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
             print(f"MainException: {e} File:{traceback_str}")

@@ -56,8 +56,8 @@ for deal in closed:
     try:
         id = deal["predictor_scan_id"]
         if id != '':
-            if deal["dealId"] != "DIAAAAP5XLHRVAC":
-                continue
+            #if deal["dealId"] != "DIAAAAP5XLHRVAC":
+            #    continue
 
             scan = pred_scans.load_by_id(id)
             start = deal["open_date_ig_datetime"] - timedelta(days=50)

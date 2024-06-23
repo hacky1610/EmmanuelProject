@@ -284,9 +284,9 @@ class IG:
 
         return stop_distance
 
-    def is_ready_to_set_intelligent_stop(self, diff, limit:float, factor:float):
+    def is_ready_to_set_intelligent_stop(self, diff, limit:float):
 
-        ready = diff > limit * factor
+        ready = diff > limit
         if ready:
             self._tracer.debug(f"Current profit {diff} is greate than limit {limit * 0.7}")
         return ready
@@ -309,25 +309,23 @@ class IG:
             p = GenericPredictor(ticker, Indicators(),{},self._tracer)
             p.setup(predictor_store.load_active_by_symbol(ticker))
             market = market_store.get_market(ticker)
+            if p.get_open_limit_isl():
+                limit_level = None
             if direction == "BUY":
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
-                    if self.is_ready_to_set_intelligent_stop(diff,p.get_limit(), p.get_isl_factor()):
+                    if self.is_ready_to_set_intelligent_stop(diff,p.get_isl_entry()):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price - distance
                         if new_stop_level > stop_level:
-                            if p.get_open_limit_isl():
-                                limit_level = None
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
             else:
                 if offer_price < open_price:
                     diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
-                    if self.is_ready_to_set_intelligent_stop(diff,p.get_limit(), p.get_isl_factor()):
+                    if self.is_ready_to_set_intelligent_stop(diff,p.get_isl_entry()):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price + distance
                         if new_stop_level < stop_level:
-                            if p.get_open_limit_isl():
-                                limit_level = None
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
         except Exception as e:
             self._tracer.error(f"Bid or offer price is none {position}")

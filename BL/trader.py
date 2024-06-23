@@ -171,7 +171,7 @@ class Trader:
         self._tracer.debug("Intelligent Update")
         for _, item in self._ig.get_opened_positions().iterrows():
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
-            if deal != None:
+            if deal is not None:
                 self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
 
     def trade_market(self, indicators, market):

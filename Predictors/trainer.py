@@ -43,7 +43,9 @@ class Trainer:
     def _get_time_range(self, df):
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
-    def train(self, symbol: str, scaling:int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame, df_eval_test: DataFrame, predictor_class, indicators, best_indicators: List):
+    def train(self, symbol: str, scaling:int, df: DataFrame, df_eval: DataFrame,
+              df_test: DataFrame, df_eval_test: DataFrame, predictor_class,
+              indicators, best_indicators: List, best_online_config:dict):
         self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best_win_loss = 0
@@ -52,7 +54,10 @@ class Trainer:
         best_predictor = None
         best_config = {}
 
-        for training_set in self._get_sets(predictor_class, best_indicators):
+        training_sets = self._get_sets(predictor_class, best_indicators)
+        training_sets.insert(0, best_online_config)
+
+        for training_set in training_sets:
             predictor = predictor_class(symbol=symbol, indicators=indicators)
             predictor.setup(self._predictor_store.load_active_by_symbol(symbol))
             predictor.setup(best_config)

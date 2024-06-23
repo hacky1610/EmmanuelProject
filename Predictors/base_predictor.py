@@ -22,10 +22,11 @@ class BasePredictor:
         self._stop = 20
         self._id = ""
         self._active = True
-        self._use_isl = True
+        self._use_isl = False
         self._isl_open_end = False
         self._isl_distance = 6.0
         self._isl_factor = 0.7
+        self._isl_entry = self._stop * 0.7
         self._symbol = symbol
         self._result: EvalResult = EvalResult()
 
@@ -36,7 +37,7 @@ class BasePredictor:
         self._indicators = indicators
 
     def __str__(self):
-        return f"Limit {self._limit} Stop {self._stop} ISL {self._use_isl} Open End {self._isl_open_end} Dist {self._isl_distance} Fact {self._isl_factor}"
+        return f"Limit {self._limit} Stop {self._stop} ISL {self._use_isl} Open End {self._isl_open_end} Dist {self._isl_distance} Fact {self._isl_entry}"
 
 
     def setup(self, config):
@@ -49,6 +50,7 @@ class BasePredictor:
         self._set_att(config, "_use_isl")
         self._set_att(config, "_isl_distance")
         self._set_att(config, "_isl_factor")
+        self._set_att(config, "_isl_entry")
         self._set_att(config, "_isl_open_end")
         self._limit = config.get("limit", self._limit)
         self._stop = config.get("stop", self._stop)
@@ -77,8 +79,8 @@ class BasePredictor:
     def get_isl_distance(self) -> float:
         return self._isl_distance
 
-    def get_isl_factor(self) -> float:
-        return self._isl_factor
+    def get_isl_entry(self) -> float:
+        return self._isl_entry
 
     def activate(self):
         self._active = True
@@ -107,8 +109,8 @@ class BasePredictor:
         self._result = ev_result
         return ev_result
 
-    def eval(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, scaling: int) -> EvalResult:
-        ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=True,
+    def eval(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, scaling: int, only_one_position=True) -> EvalResult:
+        ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=only_one_position,
                                                    symbol=symbol, scaling=scaling)
         self._result = ev_result
         return ev_result
@@ -122,7 +124,8 @@ class BasePredictor:
                        self._use_isl,
                        self._isl_open_end,
                        self._isl_factor,
-                       self._isl_distance
+                       self._isl_distance,
+                       self._isl_entry,
                        ],
                       index=["_type",
                              "_stop",
@@ -132,7 +135,8 @@ class BasePredictor:
                              "_use_isl",
                              "_isl_open_end",
                              "_isl_factor",
-                             "_isl_distance"
+                             "_isl_distance",
+                             "_isl_entry"
                              ])
 
     @staticmethod
@@ -162,18 +166,18 @@ class BasePredictor:
             "_isl_open_end": True
         })
 
-        for factor, distance in itertools.product([0.6, 0.8, 1.0, 1.3], random.choices(range(6,30), k=4)):
+        for entry, distance in itertools.product(random.choices(range(5,50), k=4), random.choices(range(6,30), k=4)):
             json_objs.append({
                 "_use_isl": True,
                 "_isl_open_end": True,
-                "_isl_factor": factor,
+                "_isl_entry": entry,
                 "_isl_distance": distance
             })
-        for factor, distance in itertools.product([0.6, 0.8, 1.0, 1.3], random.choices(range(6,30), k=4)):
+        for entry, distance in itertools.product(random.choices(range(5,50), k=4), random.choices(range(6,30), k=4)):
             json_objs.append({
                 "_use_isl": True,
                 "_isl_open_end": False,
-                "_isl_factor": factor,
+                "_isl_entry": entry,
                 "_isl_distance": distance
             })
 
