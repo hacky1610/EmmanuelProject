@@ -66,7 +66,6 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
             if len(df) > 0:
                 predictor:BasePredictor = predictor_class(symbol=symbol, indicators=indicator_logic, viewer=viewer)
                 predictor.setup(ps.load_active_by_symbol(symbol))
-                predictor.setup(ps.load_best_by_symbol(symbol))
                 predictor.eval(df_train=df, df_eval=df_eval,
                                only_one_position=only_one_position, analytics=analytics,
                                symbol=symbol, scaling=m["scaling"])
