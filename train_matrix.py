@@ -138,7 +138,7 @@ def train_predictor(markets:list,
                 pred_standard.setup(ps.load_active_by_symbol(symbol))
 
                 trainer.get_signals(symbol,df_train, indicators, predictor)
-                trainer.simulate(df_train,eval_df_train,symbol, m["scaling"])
+                trainer.simulate(df_train,eval_df_train,symbol, m["scaling"], ps.load_active_by_symbol(symbol))
                 best_combo, stop, limit = trainer.foo_combinations(symbol, indicators, get_best_combo(symbol), pred_standard._indicator_names)
                 if best_combo is None or len(best_combo) == 0:
                     print("No best combo found")

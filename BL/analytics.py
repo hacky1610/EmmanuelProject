@@ -1,4 +1,5 @@
 import datetime
+import sys
 from typing import List
 
 from tqdm import tqdm
@@ -70,25 +71,20 @@ class Analytics:
             if time_filter is not None and TimeUtils.get_time_string(time_filter) != df.date[current_index]:
                 continue
 
-
             if only_one_position and df.date[i] < last_exit:
                 continue
-
 
             action = predictor.predict(df[:current_index])
             if action == TradeAction.NONE:
                 continue
 
-            open_price = df.open[current_index]
-            trade = TradeResult(action=action, open_time=df.date[current_index], opening=df.close[current_index])
-            trades.append(trade)
-
             if action == TradeAction.BOTH:
                 trades.append(TradeResult(action, 0, i))
                 continue
 
-            stop = market.get_pip_value(predictor._stop, scaling)
-            limit = market.get_pip_value(predictor._limit, scaling)
+            open_price = df.open[current_index]
+            trade = TradeResult(action=action, open_time=df.date[current_index], opening=df.close[current_index])
+            trades.append(trade)
 
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True, drop=True)
@@ -189,6 +185,10 @@ class Analytics:
                  action:str,
                  stop_euro:float,
                  limit_euro:float,
+                 isl_entry: float,
+                 isl_distance: float,
+                 use_isl: bool,
+                 isl_open_end: bool,
                  df: DataFrame,
                  df_eval: DataFrame,
                  symbol: str,
@@ -212,8 +212,11 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
-        stop = market.get_pip_value(stop_euro, scaling)
-        limit = market.get_pip_value(limit_euro, scaling)
+        stop_pip = market.get_pip_value(stop_euro, scaling)
+        limit_pip = market.get_pip_value(limit_euro, scaling)
+        isl_entry_pip = market.get_pip_value(isl_entry, scaling)
+        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False,
+                                              intelligent_stop_distance=isl_distance)
 
         for i in range(len(df) - 1):
             current_index = i + 1
@@ -223,46 +226,70 @@ class Analytics:
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread
+                if isl_open_end:
+                    limit_price = sys.float_info.max
+                else:
+                    limit_price = open_price + limit_pip
+                stop_price = open_price - stop_pip
 
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
+                    close = future.close[j]
 
-                    if high > open_price + limit:
+                    if high > limit_price:
                         # Won
                         last_exit = future.date[j]
                         simulation_result = simulation_result.append(Series(index=["action","result","chart_index", "next_index"],
-                                                                            data=[action,limit,i, get_next_index(df,last_exit)]), ignore_index=True)
+                                                                            data=[action,high - open_price,i, get_next_index(df,last_exit)]), ignore_index=True)
                         break
-                    elif low < open_price - stop:
+                    elif low < stop_price:
                         # Loss
                         last_exit = future.date[j]
                         simulation_result = simulation_result.append(
                             Series(index=["action", "result", "chart_index", "next_index"],
-                                   data=[action, stop * -1, i,get_next_index(df,last_exit)]),
+                                   data=[action, low - open_price, i,get_next_index(df,last_exit)]),
                             ignore_index=True)
                         break
+
+                    if use_isl:
+                        if self._ig.is_ready_to_set_intelligent_stop(high - open_price, isl_entry_pip):
+                            new_stop_level = close - distance
+                            if new_stop_level > stop_price:
+                                stop_price = new_stop_level
+
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
+                if isl_open_end:
+                    limit_price = sys.float_info.min
+                else:
+                    limit_price = open_price - limit_pip
+                stop_price = open_price + stop_pip
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
 
-                    if low < open_price - limit:
+                    if low < limit_price:
                         # Won
                         last_exit = future.date[j]
                         simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, limit, i, get_next_index(df,last_exit)]),
+                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - low, i, get_next_index(df,last_exit)]),
                             ignore_index=True)
                         break
-                    elif high > open_price + stop:
+                    elif high > stop_price:
                         last_exit = future.date[j]
                         simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, stop * -1, i, get_next_index(df,last_exit)]),
+                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - high, i, get_next_index(df,last_exit)]),
                             ignore_index=True)
                         break
+
+                    if use_isl:
+                        if self._ig.is_ready_to_set_intelligent_stop(open_price - low, isl_entry_pip):
+                            new_stop_level = close + distance
+                            if new_stop_level < stop_price:
+                                stop_price = new_stop_level
 
         return simulation_result
 

@@ -130,30 +130,11 @@ class Trainer:
                 trades = predictor.get_signals(df, self._analytics)
                 trades.to_csv(path)
 
-    def simulate(self,df: DataFrame, df_eval: DataFrame, symbol:str, scaling:int):
-        buy_path = f"D:\\tmp\\Simulations\\simulation_buy{symbol}.csv"
-        if not os.path.exists(buy_path):
-            res = self._analytics.simulate("buy", 50, 50, df, df_eval, symbol, scaling)
-            if res  is not None:
-                res.to_csv(buy_path)
+    def simulate(self,df: DataFrame, df_eval: DataFrame, symbol:str, scaling:int, current_config:dict):
+        buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
+                                       isl_entry=0,
+                                       limit_euro=current_config["_stop"], df= df, df_eval=df_eval, symbol=symbol, scaling=scaling)
 
-        sell_path = f"D:\\tmp\\Simulations\\simulation_sell{symbol}.csv"
-        if not os.path.exists(sell_path):
-            res = self._analytics.simulate("sell", 50, 50, df, df_eval, symbol, scaling)
-            if res is not None:
-                res.to_csv(sell_path)
-
-        buy_path = f"D:\\tmp\\Simulations\\simulation_buy{symbol}_30_30.csv"
-        if not os.path.exists(buy_path):
-            res = self._analytics.simulate("buy", 30, 30, df, df_eval, symbol, scaling)
-            if res is not None:
-                res.to_csv(buy_path)
-
-        sell_path = f"D:\\tmp\\Simulations\\simulation_sell{symbol}_30_30.csv"
-        if not os.path.exists(sell_path):
-            res = self._analytics.simulate("sell", 30, 30, df, df_eval, symbol, scaling)
-            if res is not None:
-                res.to_csv(sell_path)
 
 
     def foo_combinations(self, symbol:str, indicators:Indicators, best_combo:List[str], current_indicators:List[str]):
