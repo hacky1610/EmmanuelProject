@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from BL.eval_result import EvalResult
 from Connectors.predictore_store import PredictorStore
+from Predictors.base_predictor import BasePredictor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 
@@ -57,8 +58,8 @@ class Trainer:
         training_sets = self._get_sets(predictor_class, best_indicators)
         training_sets.insert(0, best_online_config)
 
-        for training_set in training_sets:
-            predictor = predictor_class(symbol=symbol, indicators=indicators)
+        for training_set in tqdm(training_sets):
+            predictor:BasePredictor = predictor_class(symbol=symbol, indicators=indicators)
             predictor.setup(self._predictor_store.load_active_by_symbol(symbol))
             predictor.setup(best_config)
             if not self._trainable(predictor):
@@ -80,6 +81,7 @@ class Trainer:
 
                 #self._tracer.info(f"{symbol} - Result {best_train_result} - Indicators {predictor._indicator_names} "
                 #                  f"{predictor} ")
+
 
         if best_predictor is not None:
             test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
