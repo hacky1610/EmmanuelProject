@@ -51,6 +51,11 @@ class EvalResult:
                 self._wins += 1
         self._trades = len(trades_results)
 
+    def set_result(self, reward, trades, wins):
+        self._reward = reward
+        self._trades = trades
+        self._wins = wins
+
 
     def get_reward(self):
         return self._reward
