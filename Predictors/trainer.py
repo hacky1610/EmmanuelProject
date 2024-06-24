@@ -85,6 +85,7 @@ class Trainer:
 
         if best_predictor is not None:
             test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
+            best_predictor.activate()
             self._predictor_store.save(best_predictor, overwrite=False)
 
             self._tracer.info(f"Test:  WL: {test_result.get_win_loss():.2f} - Reward: {test_result.get_reward():.2f} Avg Reward {test_result.get_average_reward():.2f}")

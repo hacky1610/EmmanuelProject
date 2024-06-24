@@ -61,11 +61,13 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
     for m in markets:
         try:
             symbol = m["symbol"]
+            #symbol = "AUDUSD"
             df, df_eval = ti.load_test_data(symbol, dp, trade_type)
 
             if len(df) > 0:
                 predictor:BasePredictor = predictor_class(symbol=symbol, indicators=indicator_logic, viewer=viewer)
                 predictor.setup(ps.load_active_by_symbol(symbol))
+                predictor.setup(ps.load_best_by_symbol(symbol))
                 predictor.eval(df_train=df, df_eval=df_eval,
                                only_one_position=only_one_position, analytics=analytics,
                                symbol=symbol, scaling=m["scaling"])
@@ -75,6 +77,7 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
 
                 results.add(predictor.get_result())
                 if not only_test:
+                    predictor.activate()
                     ps.save(predictor)
                 viewer.save(symbol)
                 gb = "BAD"

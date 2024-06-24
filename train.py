@@ -110,6 +110,7 @@ while True:
                         indicators=_indicators,
                         tracer=_tracer)
     except Exception as e:
-        print(f"Error {e}")
+        traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+        print(f"MainException: {e} File:{traceback_str}")
 
 
