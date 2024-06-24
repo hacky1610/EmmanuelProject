@@ -2,7 +2,13 @@ import unittest
 from unittest.mock import MagicMock
 from Connectors.IG import IG
 from pandas import DataFrame,Series
-
+import unittest
+from unittest.mock import Mock, patch
+from pandas import Series
+from Connectors.market_store import MarketStore
+from Connectors.deal_store import DealStore
+from Connectors.predictore_store import PredictorStore
+from Connectors.IG import IG
 from Connectors.tiingo import TradeType
 
 
@@ -40,5 +46,14 @@ class IgTest(unittest.TestCase):
 
         cur = self.ig.get_currency("CS.D.USDEUR.CFD.IP")
         assert cur == "EUR"
+
+
+
+
+
+
+
+
+
 
 

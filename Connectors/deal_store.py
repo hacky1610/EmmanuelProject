@@ -6,7 +6,6 @@ from pymongo.database import Database
 from pymongo.results import UpdateResult
 
 
-
 class Deal:
 
     def __init__(self, ticker: str,
@@ -24,7 +23,9 @@ class Deal:
                  account_type: str = "DEMO",
                  intelligent_stop_used: bool = False,
                  intelligent_stop_level: float = None,
-                 predictor_scan_id = ""):
+                 predictor_scan_id="",
+                 open_level: float = None,
+                 close_level: float = None):
         self.ticker = ticker
         self.status = status
         self.dealId = dealId
@@ -42,27 +43,31 @@ class Deal:
         self.intelligent_stop_used = intelligent_stop_used
         self.intelligent_stop_level = intelligent_stop_level
         self.predictor_scan_id = predictor_scan_id
+        self.open_level = open_level
+        self.close_level = close_level
 
     @staticmethod
     def Create(data: dict):
         return Deal(
-                    dealId=data["dealId"],
-                    direction=data["direction"],
-                    ticker=data["ticker"],
-                    dealReference=data["dealReference"],
-                    epic=data["epic"],
-                    status=data["status"],
-                    account_type=data.get("account_type", "DEMO"),
-                    profit=data.get("profit", 0.0),
-                    result=data.get("result", 0),
-                    open_date_ig_str=data["open_date_ig_str"],
-                    open_date_ig_datetime=data.get("open_date_ig_datetime", None),
-                    close_date_ig_datetime=data.get("close_date_ig_datetime", None),
-                    stop_factor=data.get("stop_factor", 20),
-                    limit_factor=data.get("limit_factor", 20),
-                    intelligent_stop_used=data.get("intelligent_stop_used", False),
-                    intelligent_stop_level=data.get("intelligent_stop_level", None),
-                    predictor_scan_id = data.get("predictor_scan_id", "")
+            dealId=data["dealId"],
+            direction=data["direction"],
+            ticker=data["ticker"],
+            dealReference=data["dealReference"],
+            epic=data["epic"],
+            status=data["status"],
+            account_type=data.get("account_type", "DEMO"),
+            profit=data.get("profit", 0.0),
+            result=data.get("result", 0),
+            open_date_ig_str=data["open_date_ig_str"],
+            open_date_ig_datetime=data.get("open_date_ig_datetime", None),
+            close_date_ig_datetime=data.get("close_date_ig_datetime", None),
+            stop_factor=data.get("stop_factor", 20),
+            limit_factor=data.get("limit_factor", 20),
+            intelligent_stop_used=data.get("intelligent_stop_used", False),
+            intelligent_stop_level=data.get("intelligent_stop_level", None),
+            predictor_scan_id=data.get("predictor_scan_id", ""),
+            open_level=data.get("open_level", None),
+            close_level=data.get("close_level", None)
         )
 
     def __str__(self):
@@ -71,29 +76,31 @@ class Deal:
     def close(self):
         self.status = "Closed"
 
-    def set_intelligent_stop_level(self, level:float):
+    def set_intelligent_stop_level(self, level: float):
         self.intelligent_stop_used = True
         self.intelligent_stop_level = level
 
     def to_dict(self):
         return {
-                "ticker": self.ticker,
-                "status": self.status,
-                "dealReference": self.dealReference,
-                "dealId": self.dealId,
-                "epic": self.epic,
-                "direction": self.direction,
-                "profit": self.profit,
-                "account_type": self.account_type,
-                "open_date_ig_str": self.open_date_ig_str,
-                "open_date_ig_datetime": self.open_date_ig_datetime,
-                "close_date_ig_datetime": self.close_date_ig_datetime,
-                "result": self.result,
-                "stop_factor": self.stop_factor,
-                "limit_factor": self.limit_factor,
-                "intelligent_stop_used": self.intelligent_stop_used,
-                "intelligent_stop_level": self.intelligent_stop_level,
-                "predictor_scan_id": self.predictor_scan_id
+            "ticker": self.ticker,
+            "status": self.status,
+            "dealReference": self.dealReference,
+            "dealId": self.dealId,
+            "epic": self.epic,
+            "direction": self.direction,
+            "profit": self.profit,
+            "account_type": self.account_type,
+            "open_date_ig_str": self.open_date_ig_str,
+            "open_date_ig_datetime": self.open_date_ig_datetime,
+            "close_date_ig_datetime": self.close_date_ig_datetime,
+            "result": self.result,
+            "stop_factor": self.stop_factor,
+            "limit_factor": self.limit_factor,
+            "intelligent_stop_used": self.intelligent_stop_used,
+            "intelligent_stop_level": self.intelligent_stop_level,
+            "predictor_scan_id": self.predictor_scan_id,
+            "open_level": self.open_level,
+            "close_level": self.close_level
         }
 
 
@@ -109,7 +116,7 @@ class DealStore:
             self._collection.update_one({"open_date_ig_str": deal.open_date_ig_str,
                                          "account_type": self._account_type}, {"$set": deal.to_dict()})
         else:
-            deal.account_type = self._account_type #TODO
+            deal.account_type = self._account_type  #TODO
             self._collection.insert_one(deal.to_dict())
 
     def get_deal_by_ig_id(self, ig_date: str, ticker: str) -> Optional[Deal]:
@@ -119,14 +126,12 @@ class DealStore:
             return Deal.Create(res)
         return None
 
-    def get_deal_by_deal_id(self, deal_id:str):
+    def get_deal_by_deal_id(self, deal_id: str):
         res = self._collection.find_one(
             {"dealId": deal_id, "account_type": self._account_type})
         if res is not None:
             return Deal.Create(res)
         return None
-
-
 
     def get_all_deals(self):
         return self._collection.find({"account_type": self._account_type})
@@ -139,8 +144,8 @@ class DealStore:
 
     def get_open_deals_by_ticker(self, ticker: str) -> List:
         deals = []
-        for d in  self._collection.find(
-            {"status": "open", "ticker": ticker, "account_type": self._account_type}):
+        for d in self._collection.find(
+                {"status": "open", "ticker": ticker, "account_type": self._account_type}):
             deals.append(Deal.Create(d))
         return deals
 
@@ -148,7 +153,12 @@ class DealStore:
         return DataFrame(list(self._collection.find(
             {"status": "Closed", "ticker": ticker})))
 
+    def get_closed_deals(self):
+        return self._collection.find(
+            {"status": "Closed"})
+
+    def get_custom(self, query:dict):
+        return self._collection.find(query)
 
     def clear(self):
-        self._collection.delete_many({ "account_type": self._account_type})
-
+        self._collection.delete_many({"account_type": self._account_type})

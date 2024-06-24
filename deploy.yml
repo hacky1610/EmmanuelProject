@@ -16,9 +16,7 @@ strategy:
 
 steps:
 - script: |
-    python -m pip install --upgrade pip
-    pip install Cython
-    pip install ZigZag==0.2.2
+    python -m pip install pip==24.0
     pip install -r requirements.txt
   displayName: 'Install dependencies'
 
@@ -33,4 +31,4 @@ steps:
     repository: 'hacky1610/emmanuel_ti'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v23.04'
+    tags: 'v24.00'

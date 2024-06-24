@@ -7,5 +7,6 @@ scikit-learn~=1.0.2
 trading_ig~=0.0.20
 dropbox==11.26.0
 pymongo==4.5.0
+tqdm==4.66.4
 scipy
 

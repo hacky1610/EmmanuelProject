@@ -52,7 +52,7 @@ client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db
 db = client["ZuluDB"]
 ms = MarketStore(db)
 ps = PredictorStore(db)
-_trainer = Trainer(analytics=Analytics(market_store=ms),
+_trainer = Trainer(analytics=Analytics(market_store=ms, ig=IG(conf_reader=conf_reader)),
                    cache=cache,
                    check_trainable=False,
                    predictor_store=ps)
@@ -90,7 +90,8 @@ def train_predictor(markets:list,
         df_test, eval_df_test = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
         if len(df_train) > 0:
             try:
-                trainer.train(symbol, m["scaling"], df_train, eval_df_train, df_test, eval_df_test, predictor, indicators)
+                trainer.train(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, predictor, indicators, best_indicators,
+                              best_online_config=ps.load_best_by_symbol(symbol))
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 print(f"MainException: {ex} File:{traceback_str}")
@@ -110,6 +111,7 @@ while True:
                         indicators=_indicators,
                         tracer=_tracer)
     except Exception as e:
-        print(f"Error {e}")
+        traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+        print(f"MainException: {e} File:{traceback_str}")
 
 

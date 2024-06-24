@@ -35,7 +35,7 @@ class Reporting:
         self._predictor_store = predictor_store
         self.results: EvalResultCollection = None
         self.reports: DataFrame = DataFrame()
-        self._wl_limit = 0.7
+        self._min_reward = 100
 
     def create(self, markets, predictor_class, verbose=False):
         self.results, self.reports = self.report_predictors(markets, predictor_class, verbose)
@@ -49,12 +49,14 @@ class Reporting:
                                                predictor._indicator_names,
                                                predictor.get_result().get_win_loss(),
                                                predictor.get_result().get_trades(),
-                                               predictor.get_result().get_trade_frequency()],
+                                               predictor.get_result().get_trade_frequency(),
+                                               predictor.get_result().get_reward()],
                                               index=["symbol",
                                                      "_indicator_names",
                                                      "win_los",
                                                      "trades",
-                                                     "frequence"])
+                                                     "frequence",
+                                                     "reward"])
 
     def report_predictors(self, markets, predictor_class: Type, verbose: bool = True) -> (
     EvalResultCollection, DataFrame):
@@ -82,7 +84,7 @@ class Reporting:
 
     def get_best_indicator_names(self, n: int = 7):
 
-        best_df = self.reports[self.reports.win_los > self._wl_limit]
+        best_df = self.reports[self.reports.reward > self._min_reward]
         indicators = []
         for r in best_df.iterrows():
             indicators = indicators + r[1]._indicator_names

@@ -2,16 +2,14 @@ import json
 import os.path
 import time
 import traceback
-from typing import List, Dict
-
+from typing import  Dict
 from trading_ig import IGService
 from trading_ig.rest import IGException, ApiExceededException
 from BL import DataProcessor, timedelta, BaseReader
 from BL.analytics import Analytics
 from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
-from Connectors.dropbox_cache import DropBoxCache
-from Connectors.market_store import MarketStore
+from Connectors.market_store import MarketStore, Market
 from Connectors.predictore_store import PredictorStore
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import TimeUtils
@@ -25,7 +23,6 @@ import tempfile
 from datetime import datetime
 from Connectors.tiingo import TradeType
 from UI.base_viewer import BaseViewer
-from UI.plotly_viewer import PlotlyViewer
 
 
 class IG:
@@ -36,8 +33,6 @@ class IG:
         self.password = conf_reader.get("ig_demo_pass")
         self.key = conf_reader.get("ig_demo_key")
         self.accNr = conf_reader.get("ig_demo_acc_nr")
-        self.intelligent_stop_border = conf_reader.get_float("is_border", 13)
-        self.intelligent_stop_distance = conf_reader.get_float("is_distance", 6)
         if live:
             self.type = "LIVE"
             self._fx_id = 342535
@@ -176,6 +171,9 @@ class IG:
 
         return markets
 
+    def get_deal_by_reference(self, reference):
+        return self.ig_service.fetch_deal_by_deal_reference(reference)
+
     def connect(self):
         # no cache
         self._tracer.debug(f"Connect {self.type} {self.user} {self.accNr}")
@@ -269,11 +267,14 @@ class IG:
             self._tracer.error(f"Error while get limit {e}")
             return -1
 
-    def get_stop_distance(self, market, epic: str, scaling_factor: int) -> float:
-        stop_distance = market.get_pip_value(euro=self.intelligent_stop_distance,
+    def get_stop_distance(self, market,  epic: str, scaling_factor: int, intelligent_stop_distance:float = 6.0, check_min = True) -> float:
+        stop_distance = market.get_pip_value(euro=intelligent_stop_distance,
                                              scaling_factor=scaling_factor)
 
-        min_stop_distance = self.get_min_stop_distance(epic) / scaling_factor
+        if check_min:
+            min_stop_distance = self.get_min_stop_distance(epic) / scaling_factor
+        else:
+            min_stop_distance = 0
 
         if stop_distance <= min_stop_distance:
             self._tracer.debug(f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")
@@ -282,6 +283,13 @@ class IG:
         self._tracer.debug(f"Calculated stop distance is {stop_distance}")
 
         return stop_distance
+
+    def is_ready_to_set_intelligent_stop(self, diff, limit:float):
+
+        ready = diff > limit
+        if ready:
+            self._tracer.debug(f"Current profit {diff} is greate than limit {limit * 0.7}")
+        return ready
 
     def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, predictor_store: PredictorStore):
         open_price = position.level
@@ -301,11 +309,12 @@ class IG:
             p = GenericPredictor(ticker, Indicators(),{},self._tracer)
             p.setup(predictor_store.load_active_by_symbol(ticker))
             market = market_store.get_market(ticker)
+            if p.get_open_limit_isl():
+                limit_level = None
             if direction == "BUY":
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
-                    if diff > p._limit * 0.7:
-                        self._tracer.debug(f"Current profit {diff} is greate than limit {p._limit * 0.7}")
+                    if self.is_ready_to_set_intelligent_stop(diff,p.get_isl_entry()):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price - distance
                         if new_stop_level > stop_level:
@@ -313,8 +322,7 @@ class IG:
             else:
                 if offer_price < open_price:
                     diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
-                    if diff > p._limit * 0.7:
-                        self._tracer.debug(f"Current profit {diff} is greate than limit {p._limit * 0.7}")
+                    if self.is_ready_to_set_intelligent_stop(diff,p.get_isl_entry()):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price + distance
                         if new_stop_level < stop_level:
@@ -505,9 +513,9 @@ class IG:
 
                 df_results = df_results.append(open_data)
                 res = analytics.evaluate(predictor, df, df_eval, name, viewer,
-                                         filter=datetime(dt.year, dt.month, dt.day, dt.hour))
-                for trade in res._trade_results:
-                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour)) == trade.last_df_time:
+                                         time_filter=datetime(dt.year, dt.month, dt.day, dt.hour))
+                for trade in res.get_trade_results():
+                    if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour)) == trade.open_time:
                         df_results.loc[
                             df_results.date == TimeUtils.get_time_string(filter), "eval_result"] = trade.result
                         df_results.loc[

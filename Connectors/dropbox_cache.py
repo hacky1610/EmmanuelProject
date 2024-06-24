@@ -57,7 +57,7 @@ class DropBoxCache(BaseCache):
         else:
             res = self.dropbox_servie.load(f"Cache/{name}")
             if res == None:
-                raise Exception(f"Cache {name} not found")
+                return DataFrame()
             df = pd.read_csv(io.StringIO(res), sep=",")
             df = df.filter(["date", "open", "high", "low", "close"])
             return df

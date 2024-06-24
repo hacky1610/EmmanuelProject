@@ -29,6 +29,9 @@ class PredictorStore:
     def load_all_by_symbol(self, symbol):
         return self._collection.find({"_symbol": symbol})
 
+    def load_best_by_symbol(self, symbol):
+        return self._collection.find({"_symbol": symbol}, sort=[('_reward', -1)])[0]
+
     def load_active_by_symbol(self, symbol):
         d =  self._collection.find_one({"_symbol": symbol, "_active": True})
         if d == None:

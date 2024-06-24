@@ -14,7 +14,7 @@ class EvaluationTest(unittest.TestCase):
     def setUp(self):
         ms = MagicMock()
         ms.get_market.return_value = Market("foo",1)
-        self.a = Analytics(ms)
+        self.a = Analytics(ms, MagicMock())
         self.a._create_additional_info = MagicMock()
         self.predictor = BasePredictor("",Indicators())
         self.predictor.predict = MagicMock(side_effect=self.predict_mock)
@@ -72,8 +72,8 @@ class EvaluationTest(unittest.TestCase):
         res  = self.a.evaluate(self.predictor, df, df_eval, symbol="Foo", scaling=1)
 
         assert res.get_win_loss() == 1.0
-        assert res.get_reward() == 10
-        assert res.get_average_reward() == 10
+        assert res.get_reward() == 50
+        assert res.get_average_reward() == 50
 
     def test_buy_lost_trade(self):
 
@@ -97,7 +97,7 @@ class EvaluationTest(unittest.TestCase):
         res = self.a.evaluate(self.predictor, df, df_eval,symbol="USDEUR", scaling=1)
 
         assert res.get_win_loss() == 0.0
-        assert res.get_reward() == -20
+        assert res.get_reward() == -50
 
     def test_sell_won_trade(self):
 
@@ -121,8 +121,8 @@ class EvaluationTest(unittest.TestCase):
         res = self.a.evaluate(self.predictor, df, df_eval,symbol="Foo", scaling=1)
 
         assert res.get_win_loss() == 1.0
-        assert res.get_reward() == 10
-        assert res.get_average_reward() == 10
+        assert res.get_reward() == 50
+        assert res.get_average_reward() == 50
 
     def test_sell_lost_trade(self):
 
@@ -146,7 +146,7 @@ class EvaluationTest(unittest.TestCase):
         res = self.a.evaluate(self.predictor, df, df_eval, symbol="foo", scaling=1)
 
         assert res.get_win_loss() == 0.0
-        assert res.get_reward() == -20
+        assert res.get_reward() == -30
 
     def test_evalresult_collection(self):
 

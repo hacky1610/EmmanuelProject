@@ -98,5 +98,5 @@ class GenericPredictor(BasePredictor):
 
     @staticmethod
     def get_training_sets(best_indicators:List):
-        return GenericPredictor._indicator_names_sets(best_indicators) + BasePredictor._stop_limit_trainer()
+        return GenericPredictor._indicator_names_sets(best_indicators) + BasePredictor._stop_limit_trainer() + BasePredictor._isl_trainer()
 

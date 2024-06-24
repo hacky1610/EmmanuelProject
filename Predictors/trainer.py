@@ -2,7 +2,6 @@ import itertools
 import os.path
 import random
 from datetime import datetime
-from time import time
 from typing import List
 
 import pandas as pd
@@ -11,9 +10,10 @@ from tqdm import tqdm
 
 from BL.analytics import Analytics
 from BL.eval_result import EvalResult, EvalResultCollection
-from BL.indicators import Indicator, Indicators
+from BL.indicators import Indicators
 from Connectors.predictore_store import PredictorStore
 from Predictors.utils import FileSystem
+from Predictors.base_predictor import BasePredictor
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 
@@ -51,7 +51,7 @@ class Trainer:
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
     def train(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame,
-              df_eval_test: DataFrame, predictor_class, indicators, best_indicators: List):
+              df_eval_test: DataFrame, predictor_class, indicators, best_indicators: List,  best_online_config:dict):
         self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best_win_loss = 0
@@ -60,8 +60,11 @@ class Trainer:
         best_predictor = None
         best_config = {}
 
-        for training_set in tqdm(self._get_sets(predictor_class, best_indicators)):
-            predictor = predictor_class(symbol=symbol, indicators=indicators)
+        training_sets = self._get_sets(predictor_class, best_indicators)
+        training_sets.insert(0, best_online_config)
+
+        for training_set in tqdm(training_sets):
+            predictor:BasePredictor = predictor_class(symbol=symbol, indicators=indicators)
             predictor.setup(self._predictor_store.load_active_by_symbol(symbol))
             predictor.setup(best_config)
             if not self._trainable(predictor):
@@ -81,19 +84,18 @@ class Trainer:
                 best_predictor = predictor
                 best_config = predictor.get_config()
 
-                self._tracer.info(f"{symbol} - Result {best_train_result} - Indicators {predictor._indicator_names} "
-                                  f"Limit: {predictor._limit} Stop: {predictor._stop}")
+                #self._tracer.info(f"{symbol} - Result {best_train_result} - Indicators {predictor._indicator_names} "
+                #                  f"{predictor} ")
+
 
         if best_predictor is not None:
             test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
+            best_predictor.activate()
             self._predictor_store.save(best_predictor, overwrite=False)
 
-            self._tracer.info(
-                f"Test:  WL: {test_result.get_win_loss()} - Reward: {test_result.get_reward()} Avg Reward {test_result.get_average_reward()}")
-            self._tracer.info(
-                f"Train: WL: {best_win_loss}           - Reward: {best_reward}       Avg Reward {best_avg_reward}")
-            self._tracer.info(
-                f"Stop: {best_predictor._stop} - Limit: {best_predictor._limit}   Max nones: {best_predictor._max_nones}")
+            self._tracer.info(f"Test:  WL: {test_result.get_win_loss():.2f} - Reward: {test_result.get_reward():.2f} Avg Reward {test_result.get_average_reward():.2f}")
+            self._tracer.info(f"Train: WL: {best_win_loss:.2f} - Reward: {best_reward:.2f} Avg Reward {best_avg_reward:.2f}")
+            self._tracer.info(f"{best_predictor} ")
         else:
             self._tracer.info("No Best predictor")
 

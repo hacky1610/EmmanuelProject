@@ -114,6 +114,8 @@ class Trader:
             deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
             if deal is not None:
                 deal.profit = float(ig_deal.profitAndLoss[1:])
+                deal.open_level = float(ig_deal["openLevel"])
+                deal.close_level = float(ig_deal["closeLevel"])
                 deal.close_date_ig_datetime = datetime.strptime(ig_deal.dateUtc, '%Y-%m-%dT%H:%M:%S')
 
                 if deal.profit == 0:
@@ -169,7 +171,7 @@ class Trader:
         self._tracer.debug("Intelligent Update")
         for _, item in self._ig.get_opened_positions().iterrows():
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
-            if deal != None:
+            if deal is not None:
                 self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
 
     def trade_market(self, indicators, market):
@@ -288,6 +290,9 @@ class Trader:
 
         if signal == TradeAction.NONE or signal == TradeAction.BOTH:
             return TradeResult.NOACTION
+
+        if predictor.get_open_limit_isl():
+            limit = None
 
         self._tracer.info(f"Trade {signal} ")
 
