@@ -185,8 +185,8 @@ while True:
                         tiingo=_tiingo,
                         predictor=GenericPredictor,
                         dp=_dp,
-                        reporting=_reporting,
                         indicators=_indicators,
                         tracer=_tracer)
-    except Exception as e:
-        print(f"Error {e}")
+    except Exception as ex:
+        traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+        print(f"MainException: {ex} File:{traceback_str}")
