@@ -1,7 +1,24 @@
 from pathlib import Path
 import os
 import json
-from datetime import timedelta,date
+import time
+from functools import wraps
+
+def measure_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        hours, rem = divmod(elapsed_time, 3600)
+        minutes, seconds = divmod(rem, 60)
+        print(
+            f"Die Laufzeit von {func.__name__} betrug {int(hours):02}:{int(minutes):02}:{seconds:.2f} (Stunden:Minuten:Sekunden).")
+
+        return result
+    return wrapper
 
 def get_project_dir():
     return Path(__file__).parent.parent

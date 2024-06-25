@@ -11,6 +11,8 @@ from tqdm import tqdm
 from BL.analytics import Analytics
 from BL.eval_result import EvalResult, EvalResultCollection
 from BL.indicators import Indicators
+from BL import measure_time
+from BL.eval_result import EvalResult
 from Connectors.predictore_store import PredictorStore
 from Predictors.utils import FileSystem
 from Predictors.base_predictor import BasePredictor
@@ -50,8 +52,10 @@ class Trainer:
     def _get_time_range(self, df):
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
-    def train(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame, df_test: DataFrame,
-              df_eval_test: DataFrame, predictor_class, indicators, best_indicators: List,  best_online_config:dict):
+    @measure_time
+    def train(self, symbol: str, scaling:int, df: DataFrame, df_eval: DataFrame,
+              df_test: DataFrame, df_eval_test: DataFrame, predictor_class,
+              indicators, best_indicators: List, best_online_config:dict):
         self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best_win_loss = 0
@@ -132,6 +136,7 @@ class Trainer:
                 trades = predictor.get_signals(df, self._analytics)
                 trades.to_csv(path)
 
+    @measure_time
     def simulate(self,df: DataFrame, df_eval: DataFrame, symbol:str, scaling:int, current_config:dict):
         buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
                                        isl_entry=current_config["_isl_entry"], isl_distance=current_config["_isl_distance"], isl_open_end=current_config["_isl_open_end"],
@@ -147,8 +152,7 @@ class Trainer:
                                        symbol=symbol, scaling=scaling)
         return buy, sell
 
-
-
+    @measure_time
     def foo_combinations(self, symbol:str, indicators:Indicators, best_combo:List[str], current_indicators:List[str], buy_results, sell_results):
         df_list = []
         current_indicators_objects = []
