@@ -5,7 +5,7 @@ import traceback
 from typing import  Dict
 from trading_ig import IGService
 from trading_ig.rest import IGException, ApiExceededException
-from BL import DataProcessor, timedelta, BaseReader
+from BL import DataProcessor, BaseReader
 from BL.analytics import Analytics
 from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
@@ -20,7 +20,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 import re
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from Connectors.tiingo import TradeType
 from UI.base_viewer import BaseViewer
 

@@ -6,6 +6,7 @@ from typing import List
 from pandas import DataFrame
 from tqdm import tqdm
 
+from BL import measure_time
 from BL.eval_result import EvalResult
 from Connectors.predictore_store import PredictorStore
 from Predictors.base_predictor import BasePredictor
@@ -44,6 +45,7 @@ class Trainer:
     def _get_time_range(self, df):
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
+    @measure_time
     def train(self, symbol: str, scaling:int, df: DataFrame, df_eval: DataFrame,
               df_test: DataFrame, df_eval_test: DataFrame, predictor_class,
               indicators, best_indicators: List, best_online_config:dict):
