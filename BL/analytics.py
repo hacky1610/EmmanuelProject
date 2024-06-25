@@ -1,11 +1,5 @@
 import datetime
 import sys
-from typing import List
-
-from tqdm import tqdm
-
-from tqdm import tqdm
-
 from BL.eval_result import EvalResult, TradeResult
 from Connectors.market_store import MarketStore
 from Predictors.utils import TimeUtils
@@ -270,6 +264,7 @@ class Analytics:
                     trading_minutes += 5
                     high = future.high[j]
                     low = future.low[j]
+                    close = future.close[j]
 
                     if low < limit_price:
                         # Won

@@ -104,8 +104,6 @@ class BasePredictor:
     def get_last_scan_time(self):
         return self._result.get_scan_time()
 
-    def train(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol:str, scaling:int, only_one_position = True) -> EvalResult:
-        ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=only_one_position, symbol=symbol, scaling=scaling)
     def train(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, scaling: int) -> EvalResult:
         ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=True,
                                                    symbol=symbol, scaling=scaling)

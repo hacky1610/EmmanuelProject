@@ -43,17 +43,16 @@ else:
     account_type = conf_reader.get("Type")
     _tracer = LogglyTracer(conf_reader.get("loggly_api_key"), type_, "train_job")
 
-
-
-
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx, type_)
 cache = DropBoxCache(ds)
-client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient(
+    f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
 ps = PredictorStore(db)
-_trainer = Trainer(analytics=Analytics(market_store=ms),
+an = Analytics(market_store=ms, ig=IG(conf_reader=conf_reader))
+_trainer = Trainer(analytics=an,
                    cache=cache,
                    check_trainable=False,
                    predictor_store=ps)
@@ -62,10 +61,12 @@ _dp = DataProcessor()
 _trade_type = TradeType.FX
 _indicators = Indicators()
 _reporting = Reporting(predictor_store=ps)
+
+
 # endregion
 
 
-def get_train_data(tiingo:Tiingo, symbol:str, trade_type:TradeType, dp:DataProcessor) -> (DataFrame, DataFrame):
+def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor) -> (DataFrame, DataFrame):
     hour_df = f"D:\\tmp\Tiingo\\{symbol}_train_1hour.csv"
     minute_df = f"D:\\tmp\Tiingo\\{symbol}_train_5minute.csv"
     if os.path.exists(hour_df) and os.path.exists(minute_df):
@@ -78,7 +79,8 @@ def get_train_data(tiingo:Tiingo, symbol:str, trade_type:TradeType, dp:DataProce
 
     return df_train, eval_df_train
 
-def get_test_data(tiingo:Tiingo, symbol:str, trade_type:TradeType, dp:DataProcessor) -> (DataFrame, DataFrame):
+
+def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor) -> (DataFrame, DataFrame):
     hour_df = f"D:\\tmp\Tiingo\\{symbol}_test_1hour.csv"
     minute_df = f"D:\\tmp\Tiingo\\{symbol}_test_5minute.csv"
     if os.path.exists(hour_df) and os.path.exists(minute_df):
@@ -91,7 +93,8 @@ def get_test_data(tiingo:Tiingo, symbol:str, trade_type:TradeType, dp:DataProces
 
     return df_train, eval_df_train
 
-def get_best_combo(symbol:str):
+
+def get_best_combo(symbol: str):
     path = f"D:\\tmp\\BestCombo\\{symbol}.txt"
 
     if not os.path.exists(path):
@@ -104,7 +107,8 @@ def get_best_combo(symbol:str):
     gelesene_liste = [element.strip() for element in gelesene_liste]
     return gelesene_liste
 
-def save_best_combo(symbol:str, best_combo:[]):
+
+def save_best_combo(symbol: str, best_combo: []):
     if best_combo is None:
         return
 
@@ -115,15 +119,15 @@ def save_best_combo(symbol:str, best_combo:[]):
             datei.write(element + "\n")
 
 
-def train_predictor(markets:list,
+def train_predictor(markets: list,
                     trainer: Trainer,
                     tiingo: Tiingo,
                     dp: DataProcessor,
                     predictor: Type,
                     indicators: Indicators,
-                    reporting:Reporting,
+                    reporting: Reporting,
                     trade_type: TradeType = TradeType.FX,
-                    tracer = ConsoleTracer()
+                    tracer=ConsoleTracer()
                     ):
     tracer.info("Start training")
 
@@ -132,27 +136,32 @@ def train_predictor(markets:list,
         symbol = m["symbol"]
         tracer.info(f"Matrix Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp)
+        df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp)
+
         if len(df_train) > 0:
             try:
-                pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
-                pred_standard.setup(ps.load_active_by_symbol(symbol))
+                config = ps.load_active_by_symbol(symbol)
 
-                trainer.get_signals(symbol,df_train, indicators, predictor)
-                trainer.simulate(df_train,eval_df_train,symbol, m["scaling"], ps.load_active_by_symbol(symbol))
-                best_combo, stop, limit = trainer.foo_combinations(symbol, indicators, get_best_combo(symbol), pred_standard._indicator_names)
+                pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
+                pred_standard.setup(config)
+                pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
+                pred_matrix.setup(config)
+
+                trainer.get_signals(symbol, df_train, indicators, predictor)
+                buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config)
+                best_combo = trainer.foo_combinations(symbol, indicators, get_best_combo(symbol),
+                                                      pred_standard._indicator_names, buy_results, sell_results)
                 if best_combo is None or len(best_combo) == 0:
                     print("No best combo found")
                     continue
                 save_best_combo(symbol, best_combo)
 
-                df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp)
-                pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
-                pred_matrix.setup({"_indicator_names": best_combo, "_stop": stop, "_limit": limit})
-                pred_matrix.eval(df_test, eval_df_test, analytics=Analytics(ms), symbol=symbol, scaling=m["scaling"])
 
+                pred_matrix.setup({"_indicator_names": best_combo})
 
-                pred_standard.eval(df_test, eval_df_test, analytics=Analytics(ms), symbol=symbol,
-                                                      scaling=m["scaling"])
+                pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
+
+                pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
 
                 if pred_matrix.get_result().get_reward() > pred_standard.get_result().get_reward():
                     ps.save(pred_matrix)
@@ -182,5 +191,3 @@ while True:
                         tracer=_tracer)
     except Exception as e:
         print(f"Error {e}")
-
-

@@ -132,12 +132,22 @@ class Trainer:
 
     def simulate(self,df: DataFrame, df_eval: DataFrame, symbol:str, scaling:int, current_config:dict):
         buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
-                                       isl_entry=0,
-                                       limit_euro=current_config["_stop"], df= df, df_eval=df_eval, symbol=symbol, scaling=scaling)
+                                       isl_entry=current_config["_isl_entry"], isl_distance=current_config["_isl_distance"], isl_open_end=current_config["_isl_open_end"],
+                                       use_isl=current_config["_use_isl"],
+                                       limit_euro=current_config["_stop"], df= df, df_eval=df_eval,
+                                       symbol=symbol, scaling=scaling)#
+        sell = self._analytics.simulate(action="sell", stop_euro=current_config["_stop"],
+                                       isl_entry=current_config["_isl_entry"],
+                                       isl_distance=current_config["_isl_distance"],
+                                       isl_open_end=current_config["_isl_open_end"],
+                                       use_isl=current_config["_use_isl"],
+                                       limit_euro=current_config["_stop"], df=df, df_eval=df_eval,
+                                       symbol=symbol, scaling=scaling)
+        return buy, sell
 
 
 
-    def foo_combinations(self, symbol:str, indicators:Indicators, best_combo:List[str], current_indicators:List[str]):
+    def foo_combinations(self, symbol:str, indicators:Indicators, best_combo:List[str], current_indicators:List[str], buy_results, sell_results):
         df_list = []
         current_indicators_objects = []
         current_indicators_combos = []
@@ -165,22 +175,6 @@ class Trainer:
             current_indicators_combos.append(new_list)
 
 
-        try:
-            buy_results = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_buy{symbol}.csv")
-            sell_results = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_sell{symbol}.csv")
-            buy_results_30_30 = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_buy{symbol}_30_30.csv")
-            sell_results_30_30 = pd.read_csv(f"D:\\tmp\\Simulations\\simulation_sell{symbol}_30_30.csv")
-        except Exception as e:
-            print(f"No Simulation")
-            return None, 0,0
-
-        if len(buy_results) == 0 or len(sell_results) == 0:
-            print("No Simulation")
-            return None, 0, 0
-
-        if len(buy_results_30_30) == 0 or len(sell_results_30_30) == 0:
-            print("No Simulation")
-            return None, 0, 0
 
         if len(df_list) != len(indicators.get_all_indicator_names()):
             print("Not all indicators are there")
@@ -199,21 +193,11 @@ class Trainer:
             signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
             current_result = self._analytics.foo(signals, buy_results, sell_results)
             if current_result > best_result:
+                print(f"Best Res {current_result}")
                 best_result = current_result
                 best_combo = [item['indicator'] for item in combo]
 
-        best_result_30_30 = -1000
-        for combo in filtered_combos:
-            signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
-            current_result = self._analytics.foo(signals, buy_results_30_30, sell_results_30_30)
-            if current_result > best_result_30_30:
-                best_result_30_30 = current_result
-                best_combo = [item['indicator'] for item in combo]
-
-        if best_result > best_result_30_30:
-            return best_combo, 50 ,50
-        else:
-            return best_combo, 30,30
+        return best_combo
 
 
 
