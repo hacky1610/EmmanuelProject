@@ -125,14 +125,12 @@ def train_predictor(markets: list,
                     dp: DataProcessor,
                     predictor: Type,
                     indicators: Indicators,
-                    reporting: Reporting,
                     trade_type: TradeType = TradeType.FX,
                     tracer=ConsoleTracer()
                     ):
     tracer.info("Start training")
 
     for m in random.choices(markets, k=10):
-        # for m in markets:
         symbol = m["symbol"]
         tracer.info(f"Matrix Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp)
@@ -164,6 +162,7 @@ def train_predictor(markets: list,
                 pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
 
                 if pred_matrix.get_result().get_reward() > pred_standard.get_result().get_reward():
+                    pred_matrix.activate()
                     ps.save(pred_matrix)
                     print(f"****************************************")
                     print(f"* Matrix is better {symbol} {best_combo}")
