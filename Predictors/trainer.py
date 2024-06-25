@@ -89,6 +89,8 @@ class Trainer:
 
 
         if best_predictor is not None:
+            self._tracer.info(
+                f"#####Test {symbol}  over {self._get_time_range(df_test)} days #######################")
             test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
             best_predictor.activate()
             self._predictor_store.save(best_predictor, overwrite=False)
