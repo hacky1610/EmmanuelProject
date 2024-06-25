@@ -219,6 +219,7 @@ class IG:
         deal_response: dict = {}
         result = False
         try:
+            self._tracer.debug(f"Open trade for {epic} with {direction} {currency} Size {size} Stop {stop} Limit {limit} ")
             response = self.ig_service.create_open_position(
                 currency_code=currency,
                 direction=direction,
