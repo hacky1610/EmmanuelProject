@@ -83,6 +83,9 @@ class BasePredictor:
     def get_isl_entry(self) -> float:
         return self._isl_entry
 
+    def use_isl(self) -> bool:
+        return self._use_isl
+
     def activate(self):
         self._active = True
 

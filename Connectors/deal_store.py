@@ -126,7 +126,7 @@ class DealStore:
             return Deal.Create(res)
         return None
 
-    def get_deal_by_deal_id(self, deal_id: str):
+    def get_deal_by_deal_id(self, deal_id: str) -> Optional[Deal]:
         res = self._collection.find_one(
             {"dealId": deal_id, "account_type": self._account_type})
         if res is not None:
