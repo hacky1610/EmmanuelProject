@@ -96,12 +96,15 @@ class Trainer:
             self._tracer.info(
                 f"#####Test {symbol}  over {self._get_time_range(df_test)} days #######################")
             test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
-            best_predictor.activate()
-            self._predictor_store.save(best_predictor, overwrite=False)
+            if best_predictor.get_result().get_reward() > 0:
+                best_predictor.activate()
+                self._predictor_store.save(best_predictor, overwrite=False)
 
-            self._tracer.info(f"Test:  WL: {test_result.get_win_loss():.2f} - Reward: {test_result.get_reward():.2f} Avg Reward {test_result.get_average_reward():.2f}")
-            self._tracer.info(f"Train: WL: {best_win_loss:.2f} - Reward: {best_reward:.2f} Avg Reward {best_avg_reward:.2f}")
-            self._tracer.info(f"{best_predictor} ")
+                self._tracer.info(f"Test:  WL: {test_result.get_win_loss():.2f} - Reward: {test_result.get_reward():.2f} Avg Reward {test_result.get_average_reward():.2f}")
+                self._tracer.info(f"Train: WL: {best_win_loss:.2f} - Reward: {best_reward:.2f} Avg Reward {best_avg_reward:.2f}")
+                self._tracer.info(f"{best_predictor} ")
+            else:
+                self._tracer.info("No good predictor")
         else:
             self._tracer.info("No Best predictor")
 
