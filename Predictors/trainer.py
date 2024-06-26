@@ -179,7 +179,7 @@ class Trainer:
             current_indicators_combos.append(new_list)
 
             new_list = current_indicators_objects.copy()
-            new_list.pop(random.randint(0, len(current_indicators) - 1))
+            new_list.pop(random.randint(0, len(current_indicators_objects) - 1))
             new_list.append(i)
             current_indicators_combos.append(new_list)
 
