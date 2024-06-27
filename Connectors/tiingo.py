@@ -77,8 +77,8 @@ class Tiingo:
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
                           clean_data: bool = True, trade_type: TradeType = TradeType.FX,
-                          use_cache: bool = True, validate: bool = True) -> DataFrame:
-        name = f"{ticker}_{resolution}.csv"
+                          use_cache: bool = True, validate: bool = True, suffix:str="mega") -> DataFrame:
+        name = f"{ticker}_{resolution}{suffix}.csv"
         cached = self._cache.load_cache(name)
 
         if len(cached) > 0 and use_cache:
@@ -147,8 +147,9 @@ class Tiingo:
                           trade_type, days: int = 100,
                           resolution: str = "1hour",
                           window: int = 10,
-                          use_cache: bool = True):
-        name = f"{symbol}_{resolution}.csv"
+                          use_cache: bool = True,
+                          suffix: str = ""):
+        name = f"{symbol}_{resolution}{suffix}.csv"
 
         cache = self._cache.load_cache(name)
         if 0 < len(cache) and use_cache:
@@ -163,8 +164,8 @@ class Tiingo:
         data = DataFrame()
         for i in range(0, days, window):
             df = self._send_history_request(ticker=symbol,
-                                            start=start_time,
-                                            end=end_time,
+                                            start=TimeUtils.get_date_string(start_time),
+                                            end=TimeUtils.get_date_string(end_time),
                                             trade_type=trade_type,
                                             resolution=resolution, )
             if len(data) == 0:
@@ -182,14 +183,14 @@ class Tiingo:
         print(f"Saved {name}")
         return data
 
-    def init_data(self, symbol: str, trade_type, days: int = 100):
+    def init_data(self, symbol: str, trade_type, days: int = 100, suffix:str = ""):
 
         self._load_long_period(symbol=symbol, trade_type=trade_type,
-                               days=days, resolution="1hour", use_cache=False)
+                               days=days, resolution="1hour", use_cache=False, suffix=suffix)
         self._load_long_period(symbol=symbol, trade_type=trade_type,
-                               days=days, resolution="5min", use_cache=False)
+                               days=days, resolution="5min", use_cache=False, suffix=suffix)
 
-    def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days_start: int = 240, days_end:int = 100):
+    def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days_start: int = 4 * 365, days_end:int = 300):
 
         start_time = self._get_start_time(days=days_start)
         end_time = self._get_start_time(days=days_end)
@@ -210,7 +211,7 @@ class Tiingo:
                                          validate=False)
         return df, df_eval
 
-    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 100, use_cache=True):
+    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 300, use_cache=True):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,
@@ -220,14 +221,16 @@ class Tiingo:
                                     use_cache=use_cache,
                                     trade_type=trade_type,
                                     resolution="1hour",
-                                    validate=False)
+                                    validate=False,
+                                    suffix="mega")
         df_eval = self.load_data_by_date(ticker=symbol,
                                          start=start_time,
-                                         end=None,
+                                         end=end_time,
                                          data_processor=dp,
                                          use_cache=use_cache,
                                          trade_type=trade_type,
                                          resolution="5min",
                                          add_signals=False,
-                                         validate=False)
+                                         validate=False,
+                                         suffix="mega")
         return df, df_eval

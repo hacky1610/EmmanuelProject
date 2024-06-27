@@ -100,13 +100,13 @@ class Analytics:
                     if high > limit_price:
                         # Won
                         last_exit = future.date[j]
-                        trade.set_result(profit=market.get_euro_value(high - open_price, scaling), closing=high,
+                        trade.set_result(profit=market.get_euro_value(limit_price - open_price, scaling), closing=high,
                                          close_time=last_exit)
                         break
                     elif low < stop_price:
                         # Loss
                         last_exit = future.date[j]
-                        trade.set_result(profit=market.get_euro_value(low - open_price, scaling), closing=low,
+                        trade.set_result(profit=market.get_euro_value(stop_price - open_price, scaling), closing=low,
                                          close_time=last_exit)
                         break
 
@@ -135,12 +135,12 @@ class Analytics:
                     if low < limit_price:
                         # Won
                         last_exit = future.date[j]
-                        trade.set_result(profit=market.get_euro_value(open_price - low, scaling), closing=low,
+                        trade.set_result(profit=market.get_euro_value(open_price - limit_price, scaling), closing=low,
                                          close_time=last_exit)
                         break
                     elif high > stop_price:
                         last_exit = future.date[j]
-                        trade.set_result(profit=market.get_euro_value(open_price - high, scaling), closing=high,
+                        trade.set_result(profit=market.get_euro_value(open_price - stop_price, scaling), closing=high,
                                          close_time=last_exit)
                         break
 

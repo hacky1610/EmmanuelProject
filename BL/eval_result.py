@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from pandas import Series
+from pandas import Series, DataFrame
 
 from BL.datatypes import TradeAction
 
@@ -27,6 +27,18 @@ class TradeResult:
 
     def won(self) -> bool:
         return self.profit > 0
+
+    def to_dict(self) -> dict:
+        return {
+            "action": self.action,
+            "open_time": self.open_time,
+            "opening": self.opening,
+            "close_time": self.close_time,
+            "profit": self.profit,
+            "closing": self.closing,
+            "won": self.won(),
+            "intelligent_stop_used": self.intelligent_stop_used
+        }
 
 class EvalResult:
 
@@ -62,6 +74,13 @@ class EvalResult:
 
     def get_trade_results(self) -> List[TradeResult]:
         return self._trade_results
+
+    def get_trade_result_df(self) -> DataFrame:
+        l = []
+        for trade in self._trade_results:
+            l.append(trade.to_dict())
+
+        return DataFrame(l)
 
     def get_trades(self) -> int:
         return self._trades
