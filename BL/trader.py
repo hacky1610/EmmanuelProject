@@ -292,6 +292,7 @@ class Trader:
             return TradeResult.NOACTION
 
         if predictor.get_open_limit_isl():
+            self._tracer.debug("ISL is used")
             limit = None
 
         self._tracer.info(f"Trade {signal} ")

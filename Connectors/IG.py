@@ -285,11 +285,11 @@ class IG:
 
         return stop_distance
 
-    def is_ready_to_set_intelligent_stop(self, diff, limit:float):
+    def is_ready_to_set_intelligent_stop(self, diff, limit:float) -> bool:
 
         ready = diff > limit
         if ready:
-            self._tracer.debug(f"Current profit {diff} is greate than limit {limit * 0.7}")
+            self._tracer.debug(f"Current profit {diff} is greate than limit {limit}")
         return ready
 
     def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, predictor_store: PredictorStore):
@@ -307,10 +307,17 @@ class IG:
             f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
 
         try:
+            deal = deal_store.get_deal_by_deal_id(deal_id)
+
             p = GenericPredictor(ticker, Indicators(),{},self._tracer)
-            p.setup(predictor_store.load_active_by_symbol(ticker))
+            p.setup(predictor_store.load_by_id(deal.predictor_scan_id))
             market = market_store.get_market(ticker)
+            if not p.use_isl():
+                self._tracer.debug("ISL is not activated")
+                return
+
             if p.get_open_limit_isl():
+                self._tracer.debug(f"Limit is open")
                 limit_level = None
             if direction == "BUY":
                 if bid_price > open_price:
