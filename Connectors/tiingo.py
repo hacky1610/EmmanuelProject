@@ -225,7 +225,7 @@ class Tiingo:
                                     suffix="mega")
         df_eval = self.load_data_by_date(ticker=symbol,
                                          start=start_time,
-                                         end=end_time,
+                                         end=None,
                                          data_processor=dp,
                                          use_cache=use_cache,
                                          trade_type=trade_type,
