@@ -174,14 +174,14 @@ class BasePredictor:
             "_isl_open_end": True
         })
 
-        for entry, distance in itertools.product(random.choices(range(5,50), k=4), random.choices(range(6,30), k=4)):
+        for entry, distance in itertools.product(random.choices(range(5,50), k=2), random.choices(range(6,30), k=2)):
             json_objs.append({
                 "_use_isl": True,
                 "_isl_open_end": True,
                 "_isl_entry": entry,
                 "_isl_distance": distance
             })
-        for entry, distance in itertools.product(random.choices(range(5,50), k=4), random.choices(range(6,30), k=4)):
+        for entry, distance in itertools.product(random.choices(range(5,50), k=2), random.choices(range(6,30), k=2)):
             json_objs.append({
                 "_use_isl": True,
                 "_isl_open_end": False,

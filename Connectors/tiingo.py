@@ -152,16 +152,13 @@ class Tiingo:
         name = f"{symbol}_{resolution}{suffix}.csv"
 
         cache = self._cache.load_cache(name)
-        if 0 < len(cache) and use_cache:
-            start = datetime.strptime(cache.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")
-            diff = datetime.now() - start
+        if len(cache) > 0:
+            return
 
-            if diff.days > 200:
-                return
+        data = DataFrame()
 
         end_time = datetime.now()
         start_time = end_time - timedelta(days=window)
-        data = DataFrame()
         for i in range(0, days, window):
             df = self._send_history_request(ticker=symbol,
                                             start=TimeUtils.get_date_string(start_time),
@@ -171,7 +168,10 @@ class Tiingo:
             if len(data) == 0:
                 data = df
             else:
-                df = df[df.date < data[0:1].date.item()]
+                if "date" in df.columns:
+                    df = df[df.date < data[0:1].date.item()]
+                else:
+                    break
                 data = df.append(data)
             end_time = start_time + timedelta(days=1)
             start_time = end_time - timedelta(days=window)
