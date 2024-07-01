@@ -1,6 +1,7 @@
 import itertools
 import os.path
 import random
+import traceback
 from datetime import datetime
 from typing import List
 
@@ -141,18 +142,31 @@ class Trainer:
 
     @measure_time
     def simulate(self,df: DataFrame, df_eval: DataFrame, symbol:str, scaling:int, current_config:dict):
-        buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
-                                       isl_entry=current_config["_isl_entry"], isl_distance=current_config["_isl_distance"], isl_open_end=current_config["_isl_open_end"],
-                                       use_isl=current_config["_use_isl"],
-                                       limit_euro=current_config["_stop"], df= df, df_eval=df_eval,
-                                       symbol=symbol, scaling=scaling)#
-        sell = self._analytics.simulate(action="sell", stop_euro=current_config["_stop"],
-                                       isl_entry=current_config["_isl_entry"],
-                                       isl_distance=current_config["_isl_distance"],
-                                       isl_open_end=current_config["_isl_open_end"],
-                                       use_isl=current_config["_use_isl"],
-                                       limit_euro=current_config["_stop"], df=df, df_eval=df_eval,
-                                       symbol=symbol, scaling=scaling)
+        buy_path = f"D:\\tmp\\Simulations\\simulation_buy{symbol}{current_config['_stop']}{current_config['_limit']}{current_config['_use_isl']}{current_config['_isl_distance']}{current_config['_isl_open_end']}.csv"
+        sell_path = f"D:\\tmp\\Simulations\\simulation_sell{symbol}{current_config['_stop']}{current_config['_limit']}{current_config['_use_isl']}{current_config['_isl_distance']}{current_config['_isl_open_end']}.csv"
+
+        if not os.path.exists(buy_path):
+            buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
+                                           isl_entry=current_config.get("_isl_entry", 0), isl_distance=current_config.get("_isl_distance", 0), isl_open_end=current_config["_isl_open_end"],
+                                           use_isl=current_config.get("_use_isl", False),
+                                           limit_euro=current_config["_limit"], df= df, df_eval=df_eval,
+                                           symbol=symbol, scaling=scaling)
+            if buy is not None:
+                buy.to_csv(buy_path)
+        else:
+            buy = pd.read_csv(buy_path)
+        if not os.path.exists(sell_path):
+            sell = self._analytics.simulate(action="sell", stop_euro=current_config["_stop"],
+                                           isl_entry=current_config["_isl_entry"],
+                                           isl_distance=current_config["_isl_distance"],
+                                           isl_open_end=current_config["_isl_open_end"],
+                                           use_isl=current_config["_use_isl"],
+                                           limit_euro=current_config["_limit"], df=df, df_eval=df_eval,
+                                           symbol=symbol, scaling=scaling)
+            if sell is not None:
+                sell.to_csv(sell_path)
+        else:
+            sell =  pd.read_csv(sell_path)
         return buy, sell
 
     @measure_time
@@ -198,7 +212,7 @@ class Trainer:
         best_combo = []
         filtered_combos = random.choices(all_combos,k=2000)
         filtered_combos.insert(0,best_combo_list)
-        for combo in filtered_combos:
+        for combo in tqdm(filtered_combos):
             signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
             current_result = self._analytics.foo(signals, buy_results, sell_results)
             if current_result > best_result:
@@ -208,12 +222,57 @@ class Trainer:
 
         return best_combo
 
+    @measure_time
+    def foo_combinations2(self, symbol: str, indicators: Indicators, best_combo_online: List[str],
+                         current_indicators: List[str], buy_results, sell_results):
 
+        merge_path = f"D:\\tmp\\Merged\\{symbol}.csv"
+        if not os.path.exists(merge_path):
+            merged = self.merge_signal_simmulations(indicators, buy_results, sell_results, symbol )
+            merged.to_csv(merge_path)
+        else:
+            merged = pd.read_csv(merge_path)
 
+        all_combos = list(itertools.combinations(indicators.get_all_indicator_names(), random.randint(4, 5)))
+        filtered_combos = random.choices(all_combos, k=4000)
+        filtered_combos.insert(0, best_combo_online)
 
+        def filter_rows(row):
+                return (row >= 0).all() or (row <= 0).all()
 
+        best_combo = None
+        best_sum = -100000
+        for combo in tqdm(filtered_combos):
+            combo = list(combo)
+            filtered_df = merged[combo]
+            filtered_df.dropna(inplace=True)
+            filtered_df = filtered_df[filtered_df.apply(filter_rows, axis=1)]
 
+            filtered_df['Result'] = filtered_df.sum(axis=1)
+            sum = filtered_df['Result'].sum()
+            if sum > best_sum:
+                print(f"new best sum {sum} of combo {combo}")
+                best_combo = combo
+                best_sum = sum
 
+        return best_combo
+
+    def merge_signal_simmulations(self,indicators,  buy_results, sell_results, symbol):
+        date_frames = []
+        for i in tqdm(indicators.get_all_indicator_names()):
+            try:
+
+                signals = pd.read_csv(f"D:\\tmp\\Signals\\signal_{symbol}_{i}.csv")
+                date_frames.append(self._analytics.simulate_signal(signals, buy_results, sell_results, i))
+
+            except Exception as e:
+                traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+                print(f"MainException: {e} File:{traceback_str}")
+        merged_df = date_frames[0]
+        # Schleife durch die restlichen DataFrames und mergen
+        for df in date_frames[1:]:
+            merged_df = pd.merge(merged_df, df, on="chart_index", how="outer")
+        return merged_df
 
     def find_best_combination(self, symbol:str):
         import pandas as pd

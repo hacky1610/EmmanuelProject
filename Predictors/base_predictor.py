@@ -37,7 +37,7 @@ class BasePredictor:
         self._indicators = indicators
 
     def __str__(self):
-        return f"Limit {self._limit} Stop {self._stop} ISL {self._use_isl} Open End {self._isl_open_end} Dist {self._isl_distance} Fact {self._isl_entry}"
+        return f"Indicatornames {self._indicator_names} Limit {self._limit} Stop {self._stop} ISL {self._use_isl} Open End {self._isl_open_end} Dist {self._isl_distance} Fact {self._isl_entry}"
 
 
     def setup(self, config):

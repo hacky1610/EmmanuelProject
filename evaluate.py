@@ -55,6 +55,8 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
                        only_one_position: bool = True,
                        only_test=False):
     global symbol
+
+
     results = EvalResultCollection()
     markets = IG.get_markets_offline()
     for m in markets:
@@ -72,7 +74,6 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
                 if predictor.get_result() is None:
                     continue
 
-                df = predictor.get_result().get_trade_result_df()
                 results.add(predictor.get_result())
                 if not only_test:
                     predictor.activate()
@@ -80,7 +81,7 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
                 viewer.save(symbol)
                 gb = "BAD"
                 if predictor.get_result().is_good():
-                    gb = f"GOOD {predictor._indicator_names}"
+                    gb = f"GOOD {predictor}"
 
                 print(f"{gb} - {symbol} - {predictor.get_result()} {predictor} ")
         except Exception as e:
@@ -99,5 +100,5 @@ evaluate_predictor(indicators,
                    ti,
                    GenericPredictor,
                    viewer,
-                   only_test=True,
+                   only_test=False,
                    only_one_position=only_one_position)

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 from pandas import DataFrame
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
@@ -28,7 +28,7 @@ class TestAnalytics(unittest.TestCase):
         df = DataFrame({'date': [datetime(2024,1,1, 10), datetime(2024,1,1, 11)], 'open': [1.0, 1.0], 'close': [2.0,2.0]})
         df_eval = DataFrame({'date': [datetime.now()], 'high': [1.0], 'low': [1.0]})
 
-        analytics = Analytics(mock_market_store)
+        analytics = Analytics(mock_market_store, MagicMock())
         result = analytics.evaluate(mock_predictor, df, df_eval, 'symbol', 1, mock_viewer)
 
         self.assertIsInstance(result, EvalResult)
@@ -54,13 +54,13 @@ class TestAnalytics(unittest.TestCase):
         # Creating a non-empty DataFrame
         df = DataFrame(
             {'date': [datetime(2024, 1, 1, 10), datetime(2024, 1, 1, 11)], 'open': [1.0, 1.0], 'close': [2.0, 2.0]})
-        df_eval = DataFrame({'date': [datetime.now()], 'high': [1.0], 'low': [1.0]})
+        df_eval = DataFrame({'date': [datetime.now()], 'high': [1.0], 'low': [1.0], 'close': [1.0]})
 
-        analytics = Analytics(mock_market_store)
+        analytics = Analytics(mock_market_store, MagicMock())
         result = analytics.evaluate(mock_predictor, df, df_eval, 'symbol', 1, mock_viewer)
 
         self.assertIsInstance(result, EvalResult)
-        self.assertEqual(result.get_trades(), 0)
+        self.assertEqual(result.get_trades(), 1)
         self.assertEqual(result.get_win_loss(), 0)
         self.assertEqual(result.get_average_reward(), 0)
 

@@ -1,5 +1,8 @@
 import datetime
 import sys
+
+from tqdm import tqdm
+
 from BL.eval_result import EvalResult, TradeResult
 from Connectors.market_store import MarketStore
 from Predictors.utils import TimeUtils
@@ -60,7 +63,7 @@ class Analytics:
         limit_pip = market.get_pip_value(predictor.get_limit(), scaling)
         isl_entry_pip = market.get_pip_value(predictor.get_isl_entry(), scaling)
 
-        for i in range(len(df) - 1):
+        for i in tqdm(range(len(df) - 1)):
             current_index = i + 1
             if time_filter is not None and TimeUtils.get_time_string(time_filter) != df.date[current_index]:
                 continue
@@ -206,13 +209,15 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
+        print(f"Start simulation for {symbol}")
+
         stop_pip = market.get_pip_value(stop_euro, scaling)
         limit_pip = market.get_pip_value(limit_euro, scaling)
         isl_entry_pip = market.get_pip_value(isl_entry, scaling)
         distance = self._ig.get_stop_distance(market, "", scaling, check_min=False,
                                               intelligent_stop_distance=isl_distance)
 
-        for i in range(len(df) - 1):
+        for i in tqdm(range(len(df) - 1)):
             current_index = i + 1
             open_price = df.open[current_index]
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
@@ -304,6 +309,30 @@ class Analytics:
                     next_index = res[:1].next_index.item()
 
         return overall_result
+
+    def simulate_signal(self, signals:DataFrame, df_buy_results: DataFrame, df_sell_results: DataFrame, indicator_name:str) -> DataFrame:
+
+        results = []
+        for i in range(len(signals)):
+            signal = signals.iloc[i]
+            if signal.action == TradeAction.NONE:
+                continue
+
+            if signal.action == TradeAction.BUY:
+                res = df_buy_results[df_buy_results.chart_index == signal["chart_index"]]
+                if len(res) != 0:
+                    results.append({"chart_index": signal["chart_index"], indicator_name: res[:1].result.item()})
+            elif signal.action == TradeAction.SELL:
+                res = df_sell_results[df_sell_results.chart_index == signal["chart_index"]]
+                if len(res) != 0:
+                    results.append({"chart_index": signal["chart_index"], indicator_name: res[:1].result.item()})
+            elif signal.action == TradeAction.BOTH:
+                results.append({"chart_index": signal["chart_index"], indicator_name: 0})
+
+
+
+
+        return DataFrame(results)
 
 
 

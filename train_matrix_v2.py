@@ -148,11 +148,7 @@ def train_predictor(markets: list,
 
                 trainer.get_signals(symbol, df_train, indicators, predictor)
                 buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config)
-
-                buy_results.to_csv(f"D:\\tmp\Signals\\{symbol}_buy.csv")
-                sell_results.to_csv(f"D:\\tmp\Signals\\{symbol}_sell.csv")
-
-                best_combo = trainer.foo_combinations(symbol, indicators, get_best_combo(symbol),
+                best_combo = trainer.foo_combinations2(symbol, indicators, get_best_combo(symbol),
                                                       pred_standard._indicator_names, buy_results, sell_results)
                 if best_combo is None or len(best_combo) == 0:
                     print("No best combo found")
@@ -161,13 +157,14 @@ def train_predictor(markets: list,
 
 
                 pred_matrix.setup({"_indicator_names": best_combo})
+
                 print("Evaluate")
                 pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
+
                 pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
 
-                print(f"+ Matrix Train {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
-                print(f"+ Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
-
+                print(f"+ Matrix Eval {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()} {pred_matrix}")
+                print(f"+ Standard Eval {pred_standard.get_result().get_reward()} - {pred_standard.get_result()} {pred_standard}")
 
                 if pred_matrix.get_result().get_reward() > pred_standard.get_result().get_reward():
                     pred_matrix.activate()

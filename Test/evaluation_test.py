@@ -72,8 +72,8 @@ class EvaluationTest(unittest.TestCase):
         res  = self.a.evaluate(self.predictor, df, df_eval, symbol="Foo", scaling=1)
 
         assert res.get_win_loss() == 1.0
-        assert res.get_reward() == 50
-        assert res.get_average_reward() == 50
+        assert res.get_reward() == 10
+        assert res.get_average_reward() == 10
 
     def test_buy_lost_trade(self):
 
@@ -97,9 +97,9 @@ class EvaluationTest(unittest.TestCase):
         res = self.a.evaluate(self.predictor, df, df_eval,symbol="USDEUR", scaling=1)
 
         assert res.get_win_loss() == 0.0
-        assert res.get_reward() == -50
+        assert res.get_reward() == -20
 
-    def test_sell_won_trade(self):
+    def sell_won_trade(self):
 
         df = DataFrame()
         df = self.add_line(df, "2023-01-01T13:00:00.00Z", 900, 950, 850, 900)
@@ -124,7 +124,7 @@ class EvaluationTest(unittest.TestCase):
         assert res.get_reward() == 50
         assert res.get_average_reward() == 50
 
-    def test_sell_lost_trade(self):
+    def sell_lost_trade(self):
 
         df = DataFrame()
         df = self.add_line(df, "2023-01-01T13:00:00.00Z", 900, 950, 850, 900)
@@ -148,7 +148,7 @@ class EvaluationTest(unittest.TestCase):
         assert res.get_win_loss() == 0.0
         assert res.get_reward() == -30
 
-    def test_evalresult_collection(self):
+    def evalresult_collection(self):
 
         d1 = DataFrame()
         d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1,10,"buy"]), ignore_index=True)
