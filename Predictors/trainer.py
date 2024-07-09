@@ -147,7 +147,9 @@ class Trainer:
 
         if not os.path.exists(buy_path):
             buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
-                                           isl_entry=current_config.get("_isl_entry", 0), isl_distance=current_config.get("_isl_distance", 0), isl_open_end=current_config["_isl_open_end"],
+                                           isl_entry=current_config.get("_isl_entry", 0),
+                                           isl_distance=current_config.get("_isl_distance", 0),
+                                           isl_open_end=current_config.get("_isl_open_end", False),
                                            use_isl=current_config.get("_use_isl", False),
                                            limit_euro=current_config["_limit"], df= df, df_eval=df_eval,
                                            symbol=symbol, scaling=scaling)
@@ -157,10 +159,10 @@ class Trainer:
             buy = pd.read_csv(buy_path)
         if not os.path.exists(sell_path):
             sell = self._analytics.simulate(action="sell", stop_euro=current_config["_stop"],
-                                           isl_entry=current_config["_isl_entry"],
-                                           isl_distance=current_config["_isl_distance"],
-                                           isl_open_end=current_config["_isl_open_end"],
-                                           use_isl=current_config["_use_isl"],
+                                           isl_entry=current_config.get("_isl_entry", 0),
+                                           isl_distance=current_config.get("_isl_distance", 0),
+                                           isl_open_end=current_config.get("_isl_open_end", False),
+                                           use_isl=current_config.get("_use_isl", False),
                                            limit_euro=current_config["_limit"], df=df, df_eval=df_eval,
                                            symbol=symbol, scaling=scaling)
             if sell is not None:

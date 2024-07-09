@@ -141,7 +141,8 @@ class Tiingo:
                                       end=None,
                                       data_processor=dp,
                                       trade_type=trade_type,
-                                      resolution="1hour")
+                                      resolution="1hour",
+                                      suffix="")
 
     def _load_long_period(self, symbol: str,
                           trade_type, days: int = 100,

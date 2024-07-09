@@ -56,8 +56,8 @@ for deal in closed:
     try:
         id = deal["predictor_scan_id"]
         if id != '':
-            #if deal["dealId"] != "DIAAAAP5XLHRVAC":
-            #    continue
+            if deal["dealId"] != "DIAAAAP8CLKJFAL":
+                continue
 
             scan = pred_scans.load_by_id(id)
             start = deal["open_date_ig_datetime"] - timedelta(days=50)
@@ -113,13 +113,12 @@ for deal in closed:
                 print(f"Eval Result {ev_res_profit}")
                 print(f"Real Result {real_res_profit}")
             elif (real_res_profit > 0 > ev_res_profit):
-                if not deal["intelligent_stop_used"]:
-                    print(f"Error: Real better")
-                    print(f"Open time {deal['open_date_ig_datetime']} ")
-                    print(f"Error: Real close time {real_res_close_time} open {deal['open_level']} close {deal['close_level']}")
-                    print(f"Error: Eval close time {ev_res_close_time} open {t.opening} close {t.closing}")
-                    print(f"Eval Result {ev_res_profit}")
-                    print(f"Real Result {real_res_profit}")
+                print(f"Error: Real better")
+                print(f"Open time {deal['open_date_ig_datetime']} ")
+                print(f"Error: Real close time {real_res_close_time} open {deal['open_level']} close {deal['close_level']}")
+                print(f"Error: Eval close time {ev_res_close_time} open {t.opening} close {t.closing}")
+                print(f"Eval Result {ev_res_profit}")
+                print(f"Real Result {real_res_profit}")
 
             eval_result += ev_res_profit
             real_result += real_res_profit

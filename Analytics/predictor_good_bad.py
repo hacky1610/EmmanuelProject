@@ -40,7 +40,7 @@ db = client["ZuluDB"]
 ms = MarketStore(db)
 ds = DealStore(db, "DEMO")
 ps = PredictorStore(db)
-analytics = Analytics(ms)
+analytics = Analytics(ms, ig)
 trade_type = TradeType.FX
 
 viewer = BaseViewer()
@@ -65,7 +65,7 @@ def evaluate_predictor(indicators, ig: IG,predictor_class, viewer: BaseViewer):
             if predictor.get_result().is_good():
                 gb = f"GOOD"
 
-            print(f"{gb} - {symbol} - {predictor.get_result().get_average_reward()}  {predictor.get_result().get_trades()} - {predictor.get_result().get_win_loss()} - {predictor._limit} - {predictor._stop} ")
+            print(f"{gb} - {symbol} - {predictor.get_result()}")
         except:
             print("error")
     print(f"{results}")
