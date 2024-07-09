@@ -79,8 +79,8 @@ class Analytics:
                 trades.append(TradeResult(action, 0, i))
                 continue
 
-            open_price = df.open[current_index]
-            trade = TradeResult(action=action, open_time=df.date[current_index], opening=df.close[current_index])
+            open_price = df.close[current_index - 1]
+            trade = TradeResult(action=action, open_time=df.date[current_index], opening=open_price)
             trades.append(trade)
 
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
@@ -219,7 +219,7 @@ class Analytics:
 
         for i in tqdm(range(len(df) - 1)):
             current_index = i + 1
-            open_price = df.open[current_index]
+            open_price = df.close[current_index - 1]
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True, drop=True)
 

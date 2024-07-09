@@ -30,12 +30,14 @@ viewer = PlotlyViewer(cache)
 client = pymongo.MongoClient(
     f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
-deals_store = DealStore(db, account_type="DEMO")
+account_type = "DEMO"
+deals_store = DealStore(db, account_type=account_type)
 pred_scans = PredictorStore(db)
 ms = MarketStore(db)
 dp = DataProcessor()
 vor_7_tagen = datetime.now() - timedelta(days=7)
 closed = deals_store.get_custom({"status": "Closed",
+                                 "account_type": account_type,
                                  'predictor_scan_id': {'$exists': True},
                                  "open_date_ig_datetime": {'$gt': vor_7_tagen}})
 analytics = Analytics(ms, ig)
