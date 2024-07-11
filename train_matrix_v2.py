@@ -155,16 +155,11 @@ def train_predictor(markets: list,
                     continue
                 save_best_combo(symbol, best_combo)
 
-
                 pred_matrix.setup({"_indicator_names": best_combo})
 
                 print("Evaluate")
                 pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
-
                 pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
-
-                print(f"+ Matrix Eval {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()} {pred_matrix}")
-                print(f"+ Standard Eval {pred_standard.get_result().get_reward()} - {pred_standard.get_result()} {pred_standard}")
 
                 if pred_matrix.get_result().get_reward() > pred_standard.get_result().get_reward():
                     pred_matrix.activate()
@@ -174,6 +169,10 @@ def train_predictor(markets: list,
                     print(f"* Matrix Train {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
                     print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
                     print(f"****************************************")
+                else:
+                    print("Standard is better")
+                    pred_standard.activate()
+                    ps.save(pred_standard)
 
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück

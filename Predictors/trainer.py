@@ -218,7 +218,6 @@ class Trainer:
             signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
             current_result = self._analytics.foo(signals, buy_results, sell_results)
             if current_result > best_result:
-                print(f"Best Res {current_result}")
                 best_result = current_result
                 best_combo = [item['indicator'] for item in combo]
 
@@ -253,7 +252,6 @@ class Trainer:
             filtered_df['Result'] = filtered_df.sum(axis=1)
             sum = filtered_df['Result'].sum()
             if sum > best_sum:
-                print(f"new best sum {sum} of combo {combo}")
                 best_combo = combo
                 best_sum = sum
 
