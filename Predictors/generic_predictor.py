@@ -97,6 +97,19 @@ class GenericPredictor(BasePredictor):
         return json_objs
 
     @staticmethod
-    def get_training_sets(best_indicators:List):
-        return BasePredictor._stop_limit_trainer() + BasePredictor._isl_trainer()
+    def _indicator_names_sets_by_combos(best_indicator_combos: List[List[str]]):
+
+        json_objs = []
+
+        for combo in best_indicator_combos:
+            json_objs.append({
+                "_indicator_names": combo
+            })
+
+
+        return json_objs
+
+    @staticmethod
+    def get_training_sets(best_indicator_combs:List[List[str]]):
+        return BasePredictor._stop_limit_trainer() + BasePredictor._isl_trainer() + GenericPredictor._indicator_names_sets_by_combos(best_indicator_combs)
 

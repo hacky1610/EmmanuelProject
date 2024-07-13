@@ -77,6 +77,7 @@ def train_predictor(markets:list,
     tracer.info("Start training")
     reporting.create(markets, predictor)
     best_indicators = reporting.get_best_indicator_names()
+    best_indicator_combos = reporting.get_best_indicator_combos()
     tracer.info(f"Best indicators: {best_indicators}")
 
     if len(best_indicators) == 0:
@@ -91,7 +92,7 @@ def train_predictor(markets:list,
         if len(df_train) > 0:
             try:
                 trainer.train(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, predictor, indicators, best_indicators,
-                              best_online_config=ps.load_best_by_symbol(symbol))
+                              best_online_config=ps.load_best_by_symbol(symbol), best_indicator_combos=best_indicator_combos)
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 print(f"MainException: {ex} File:{traceback_str}")

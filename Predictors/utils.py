@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, date
-from typing import Type
+from typing import Type, List
 from collections import Counter
 from pandas import DataFrame, Series
 from BL.eval_result import EvalResultCollection
@@ -35,7 +35,7 @@ class Reporting:
         self._predictor_store = predictor_store
         self.results: EvalResultCollection = None
         self.reports: DataFrame = DataFrame()
-        self._min_reward = 100
+        self._min_reward = 600
 
     def create(self, markets, predictor_class, verbose=False):
         self.results, self.reports = self.report_predictors(markets, predictor_class, verbose)
@@ -82,20 +82,25 @@ class Reporting:
 
         return string_counts
 
-    def get_best_indicator_names(self, n: int = 7):
+    def get_best_indicator_names(self, factor: float = 0.36) -> List[str]:
 
         best_df = self.reports[self.reports.reward > self._min_reward]
         indicators = []
         for r in best_df.iterrows():
             indicators = indicators + r[1]._indicator_names
         string_counts = Counter(indicators)
-        most_common_strings = string_counts.most_common(n)
+        most_common_strings = string_counts.most_common(int(len(string_counts) * factor))
 
         indicators = []
         for i in most_common_strings:
             indicators.append(i[0])
 
         return indicators
+
+    def get_best_indicator_combos(self, n: int = 7) -> List[List[str]]:
+
+        best_df = self.reports[self.reports.reward > self._min_reward]
+        return best_df['_indicator_names'].tolist()
 
     def get_all_indicators(self):
         indicators = []

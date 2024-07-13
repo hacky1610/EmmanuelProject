@@ -2,6 +2,7 @@
 import os
 import random
 import traceback
+from itertools import combinations
 from typing import Type
 
 import dropbox
@@ -125,6 +126,7 @@ def train_predictor(markets: list,
                     dp: DataProcessor,
                     predictor: Type,
                     indicators: Indicators,
+                    reporting: Reporting,
                     trade_type: TradeType = TradeType.FX,
                     tracer=ConsoleTracer()
                     ):
@@ -136,6 +138,12 @@ def train_predictor(markets: list,
         tracer.info(f"Matrix Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp)
         df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp)
+        _reporting.create(markets, predictor)
+        best_indicator_combos = reporting.get_best_indicator_combos()
+        best_indicators = reporting.get_best_indicator_names()
+        kombinationen = [list(kombi) for kombi in combinations(best_indicators, 5)]
+        all_combos = best_indicator_combos + kombinationen
+
 
         if len(df_train) > 0:
             try:
@@ -152,7 +160,7 @@ def train_predictor(markets: list,
                 buy_results.to_csv(f"D:\\tmp\Signals\\{symbol}_buy.csv")
                 sell_results.to_csv(f"D:\\tmp\Signals\\{symbol}_sell.csv")
 
-                best_combo = trainer.foo_combinations(symbol, indicators, get_best_combo(symbol),
+                best_combo = trainer.foo_combinations(symbol, indicators, all_combos,
                                                       pred_standard._indicator_names, buy_results, sell_results)
                 if best_combo is None or len(best_combo) == 0:
                     print("No best combo found")
@@ -193,7 +201,8 @@ while True:
                         predictor=GenericPredictor,
                         dp=_dp,
                         indicators=_indicators,
-                        tracer=_tracer)
+                        tracer=_tracer,
+                        reporting=_reporting)
     except Exception as ex:
         traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
         print(f"MainException: {ex} File:{traceback_str}")
