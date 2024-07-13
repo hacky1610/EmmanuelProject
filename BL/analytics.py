@@ -297,16 +297,23 @@ class Analytics:
 
         overall_result = 0
         next_index = 0
-        for i in range(len(signals)):
-            signal = signals.iloc[i]
+
+        # Vorabfiltern der Buy- und Sell-DataFrames nach chart_index für schnelleren Zugriff
+        buy_results_dict = df_buy_results.set_index('chart_index').to_dict(orient='index')
+        sell_results_dict = df_sell_results.set_index('chart_index').to_dict(orient='index')
+
+        for _, signal in signals.iterrows():
             if signal["index"] > next_index:
                 if signal.action == TradeAction.BUY:
-                    res = df_buy_results[df_buy_results.chart_index == signal["index"]]
-                if signal.action == TradeAction.SELL:
-                    res = df_sell_results[df_sell_results.chart_index == signal["index"]]
-                if len(res) == 1:
-                    overall_result = overall_result + res[:1].result.item()
-                    next_index = res[:1].next_index.item()
+                    res = buy_results_dict.get(signal["index"])
+                elif signal.action == TradeAction.SELL:
+                    res = sell_results_dict.get(signal["index"])
+                else:
+                    res = None
+
+                if res:
+                    overall_result += res['result']
+                    next_index = res['next_index']
 
         return overall_result
 

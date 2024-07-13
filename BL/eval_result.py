@@ -3,6 +3,7 @@ from datetime import datetime
 from functools import reduce
 from typing import List
 
+import pandas as pd
 from pandas import Series, DataFrame
 
 from BL.datatypes import TradeAction
@@ -225,22 +226,24 @@ class EvalResultCollection:
 
     @staticmethod
     def calc_combination(dataframes: List[DataFrame]):
-        common_indices = list(reduce(lambda x, y: x.intersection(y), [set(df["chart_index"]) for df in dataframes]))
-        common_indices.sort()
-        foo = []
-        for i in common_indices:
-            actions = []
-            for df in dataframes:
-                v = df[df.chart_index == i]
-                action = v["action"].item()
-                if action != "both":
-                    actions.append(action)
+        # Merge all dataframes on 'chart_index' and keep only common indices
+        merged_df = reduce(lambda left, right: pd.merge(left, right, on='chart_index', suffixes=('', '_r')), dataframes)
 
-            if len(actions) > 0 and len(set(actions)) == 1:
-                foo.append({"action":actions[0],"index":i})
+        # Get columns related to 'action'
+        action_columns = [col for col in merged_df.columns if col.startswith('action')]
 
+        # Filter rows where all actions are the same and not 'both'
+        common_actions = merged_df[action_columns].apply(lambda row: row.nunique() == 1 and row.iloc[0] != 'both',
+                                                         axis=1)
+        result_df = merged_df[common_actions]
 
-        return DataFrame(foo)
+        # Create the result DataFrame with required columns
+        result = pd.DataFrame({
+            'action': result_df[action_columns[0]],
+            'index': result_df['chart_index']
+        })
+
+        return result
 
     @staticmethod
     def combine_signals(dataframes: List[DataFrame]):
