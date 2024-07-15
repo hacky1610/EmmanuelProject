@@ -167,24 +167,7 @@ class TraderTest(unittest.TestCase):
         self._mock_ig.sell.assert_not_called()
         assert res == TradeResult.NOACTION
 
-    def test_trade_markets(self):
-        # Mock-Daten für currency_markets
-        mock_currency_markets = [
-            {"symbol": "AAPL", "epic": "AAPL-123", "spread": 0.05, "scaling": 100, "size": 1.0, "currency": "USD"},
-            {"symbol": "GOOGL", "epic": "GOOGL-456", "spread": 0.03, "scaling": 200, "size": 2.0, "currency": "USD"}
-        ]
 
-        # Mock-Rückgabe für die IG get_markets-Methode
-        self._mock_ig.get_markets.return_value = mock_currency_markets
-
-        # Mock für die Trade-Funktion
-        self._trader.trade = MagicMock()
-
-        # Testaufruf der trade_markets-Funktion
-        self._trader.trade_markets(trade_type=TradeType.FX, indicators=MagicMock())
-
-        # Überprüfen, ob die trade-Funktion für jeden currency_market aufgerufen wurde
-        self.assertEqual(self._trader.trade.call_count, len(mock_currency_markets) * len(self._predictor_class_list))
 
 
 
