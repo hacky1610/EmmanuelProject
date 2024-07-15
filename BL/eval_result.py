@@ -226,22 +226,28 @@ class EvalResultCollection:
 
     @staticmethod
     def calc_combination(dataframes: List[DataFrame]):
-        # Merge all dataframes on 'chart_index' and keep only common indices
-        merged_df = reduce(lambda left, right: pd.merge(left, right, on='chart_index', suffixes=('', '_r')), dataframes)
+        try:
+            # Merge all dataframes on 'chart_index' and keep only common indices
+            merged_df = reduce(lambda left, right: pd.merge(left, right, on='chart_index', suffixes=('', '_r')), dataframes)
+            if len(merged_df) == 0:
+                return merged_df
 
-        # Get columns related to 'action'
-        action_columns = [col for col in merged_df.columns if col.startswith('action')]
 
-        # Filter rows where all actions are the same and not 'both'
-        common_actions = merged_df[action_columns].apply(lambda row: row.nunique() == 1 and row.iloc[0] != 'both',
-                                                         axis=1)
-        result_df = merged_df[common_actions]
+            # Get columns related to 'action'
+            action_columns = [col for col in merged_df.columns if col.startswith('action')]
 
-        # Create the result DataFrame with required columns
-        result = pd.DataFrame({
-            'action': result_df[action_columns[0]],
-            'index': result_df['chart_index']
-        })
+            # Filter rows where all actions are the same and not 'both'
+            common_actions = merged_df[action_columns].apply(lambda row: row.nunique() == 1 and row.iloc[0] != 'both',
+                                                             axis=1)
+            result_df = merged_df[common_actions]
+
+            # Create the result DataFrame with required columns
+            result = pd.DataFrame({
+                'action': result_df[action_columns[0]],
+                'index': result_df['chart_index']
+            })
+        except Exception as e:
+            print("Error creating")
 
         return result
 
