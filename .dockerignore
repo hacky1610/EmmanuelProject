@@ -1,7 +1,7 @@
 venv
 azure-pipelines.yml
 logs
-Data
+Data/TrainResults
 .pytest_cache
 Test
 .git
