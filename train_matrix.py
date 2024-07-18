@@ -73,6 +73,15 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
     if os.path.exists(hour_df) and os.path.exists(minute_df):
         df_train = pd.read_csv(hour_df)
         eval_df_train = pd.read_csv(minute_df)
+
+        if "PIVOT" not in df_train.columns:
+            from finta import TA
+            pivot = TA.PIVOT(df_train)
+            df_train["PIVOT"] = pivot["pivot"]
+            df_train["S1"] = pivot["s1"]
+            df_train["S2"] = pivot["s2"]
+            df_train["R1"] = pivot["r1"]
+            df_train["R2"] = pivot["r2"]
     else:
         df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         df_train.to_csv(hour_df)

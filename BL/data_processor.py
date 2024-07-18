@@ -65,6 +65,13 @@ class DataProcessor:
         df["SENKOU_B"] = ichi["SENKOU"]
 
         df["TII"] = DataProcessor._tii(df,10)
+
+        pivot  = TA.PIVOT(df)
+        df["PIVOT"] = pivot["pivot"]
+        df["S1"] = pivot["s1"]
+        df["S2"] = pivot["s2"]
+        df["R1"] = pivot["r1"]
+        df["R2"] = pivot["r2"]
         return
 
     @staticmethod
@@ -75,8 +82,19 @@ class DataProcessor:
         df["KIJUN"] = ichi["KIJUN"]
         md = TA.MACD(df)
         df['MACD'] = md['MACD']
+        df['CCI'] = TA.CCI(df)
         df["ADX"] = TA.ADX(df, period=9)
-
+        bb1 = TA.BBANDS(df, std_multiplier=1)
+        df['BB1_UPPER'] = bb1['BB_UPPER']
+        df['BB1_MIDDLE'] = bb1['BB_MIDDLE']
+        df['BB1_LOWER'] = bb1['BB_LOWER']
+        df['WILLIAMS'] = TA.WILLIAMS(df, period=14)
+        pivot = TA.PIVOT(df)
+        df["PIVOT"] = pivot["pivot"]
+        df["S1"] = pivot["s1"]
+        df["S2"] = pivot["s2"]
+        df["R1"] = pivot["r1"]
+        df["R2"] = pivot["r2"]
         return
 
 

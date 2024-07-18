@@ -39,6 +39,8 @@ class Indicators:
     # region Williams
     WILLIAMS_LIMIT = "williams_limit"
     WILLIAMS_BREAK = "williams_break"
+    WILLIAMS_LIMIT_4H = "williams_limit_4h"
+    WILLIAMS_BREAK_4H = "williams_break_4h"
     # endregion
     # region TII
     TII_50 = "tii_50"
@@ -67,6 +69,21 @@ class Indicators:
     EMA20_SMMA20 = "ema_20_smma_20"
     EMA_20_CHANNEL = "ema_20_channel"
 
+    #PIVOT
+    PIVOT_BOUNCE = "pivot_bounce"
+    PIVOT_BOUNCE_4H = "pivot_bounce_4h"
+    PIVOT_BREAKOUT = "pivot_breakout"
+    PIVOT_SR_TRADING = "privot_sr_trading"
+    PIVOT_SR_TRADING_4H = "privot_sr_trading_4h"
+
+    # CCI
+    CCI = "cci"
+    CCI_4h = "cci_4h"
+    CCI_CONV = "cci_convergence"
+    CCI_CROSS = "cci_cross"
+    CCI_CROSS_4H = "cci_cross_4h"
+
+
     # Others
     ADX = "adx"
     ADX_SLOPE = "adx_slope"
@@ -80,7 +97,7 @@ class Indicators:
     ADX_MAX_48 = "adx_max_48"
     PSAR = "psar"
     PSAR_CHANGE = "psar_change"
-    CCI = "cci"
+
     CANDLE = "candle"
     CANDLEPATTERN = "candle_pattern"
     CANDLE_4H = "candle_4h"
@@ -88,7 +105,9 @@ class Indicators:
     CANDLE_TYPE_4H = "candle_type_4h"
     # Bollinger
     BB = "bb"
+    BB_4H = "bb_4h"
     BB_MIDDLE_CROSS = "bb_middle_crossing"
+    BB_MIDDLE_CROSS_4H = "bb_middle_crossing_4h"
     BB_BORDER_CROSS = "bb_border_crossing"
     # ICHIMOKU
     ICHIMOKU = "ichi"
@@ -124,7 +143,9 @@ class Indicators:
 
         # Williams
         self._add_indicator(self.WILLIAMS_BREAK, self._williams_break_predict)
+        self._add_indicator(self.WILLIAMS_BREAK_4H, self._williams_break_predict_4h)
         self._add_indicator(self.WILLIAMS_LIMIT, self._williams_limit_predict)
+        self._add_indicator(self.WILLIAMS_LIMIT_4H, self._williams_limit_predict_4h)
 
         # MACD
         self._add_indicator(self.MACD, self._macd_predict)
@@ -151,6 +172,13 @@ class Indicators:
         self._add_indicator(self.EMA20_SMMA20, self._ema_20_smma_20)
         self._add_indicator(self.EMA_20_CHANNEL, self._ema_20_channel)
 
+        #Pivoting
+        self._add_indicator(self.PIVOT_BOUNCE, self._pivot_bounce)
+        self._add_indicator(self.PIVOT_BOUNCE_4H, self._pivot_bounce_4h)
+        self._add_indicator(self.PIVOT_BREAKOUT, self._pivot_breakout)
+        self._add_indicator(self.PIVOT_SR_TRADING, self._pivot_sr_trading)
+        self._add_indicator(self.PIVOT_SR_TRADING_4H, self._pivot_sr_trading_4h)
+
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
         self._add_indicator(self.ADX_SLOPE, self._adx_slope_predict)
@@ -163,6 +191,14 @@ class Indicators:
         self._add_indicator(self.ADX_MAX2, self._adx_max_predict2)
         self._add_indicator(self.ADX_BREAK, self._adx__break_predict)
 
+        #CCI
+        self._add_indicator(self.CCI, self._cci_predict)
+        self._add_indicator(self.CCI_4h, self._cci_predict_4h)
+        self._add_indicator(self.CCI_CONV, self._cci_convergence)
+        self._add_indicator(self.CCI_CROSS, self._cci_zero_cross)
+        self._add_indicator(self.CCI_CROSS_4H, self._cci_zero_cross_4h)
+
+
         # Others
 
         self._add_indicator(self.CANDLE, self._candle_predict)
@@ -172,7 +208,7 @@ class Indicators:
         self._add_indicator(self.CANDLE_TYPE_4H, self._candle_type_predict_4h)
 
 
-        self._add_indicator(self.CCI, self._cci_predict)
+
 
         # PSAR
         self._add_indicator(self.PSAR, self._psar_predict)
@@ -180,7 +216,10 @@ class Indicators:
 
         # Bollinger
         self._add_indicator(self.BB, self._bb_predict)
+        self._add_indicator(self.BB_4H, self._bb_predict_4h)
         self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
+        self._add_indicator(self.BB_MIDDLE_CROSS_4H, self._bb_middle_cross_predict_4h)
+
         #self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
 
         # ICHIMOKU
@@ -331,6 +370,44 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _pivot_bounce(self, df):
+        if len(df) <2:
+            return TradeAction.NONE
+
+        if df['close'].iloc[-2] < df['PIVOT'].iloc[-2] and df['close'].iloc[-1] > \
+                df['PIVOT'].iloc[-1]:
+            return TradeAction.BUY
+        elif df['close'].iloc[-2] > df['PIVOT'].iloc[-2] and df['close'].iloc[-1] < \
+                df['PIVOT'].iloc[-1]:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _pivot_bounce_4h(self, df):
+        return self._pivot_bounce(self.convert_1h_to_4h(df))
+
+    def _pivot_breakout(self,df):
+
+        if df['close'].iloc[-1] > df['R1'].iloc[-1]:
+            return TradeAction.BUY
+        elif df['close'].iloc[-1] < df['S1'].iloc[-1]:
+            return TradeAction.SELL
+        return TradeAction.NONE
+
+    def _pivot_sr_trading(self, df) -> str:
+        if len(df) == 0:
+            return TradeAction.NONE
+
+        if df['low'].iloc[-1] <= df['S1'].iloc[-1] and df['close'].iloc[-1] > df['S1'].iloc[-1]:
+            return TradeAction.BUY
+
+        elif df['high'].iloc[-1] >= df['R1'].iloc[-1] and df['close'].iloc[-1] < df['R1'].iloc[-1]:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _pivot_sr_trading_4h(self, df):
+        return self._pivot_sr_trading(self.convert_1h_to_4h(df))
 
     def _rsi_break_predict_4h(self, df):
         try:
@@ -504,6 +581,9 @@ class Indicators:
     def _williams_limit_predict(self, df):
         return self._oscillator_limit(df, "WILLIAMS", -50, -20, -80)
 
+    def _williams_limit_predict_4h(self, df):
+        return self._williams_limit_predict(self.convert_1h_to_4h(df))
+
     def _rsi_break_predict(self, df):
         return self._oscillator_break(df, "RSI", 50, 50)
 
@@ -512,6 +592,9 @@ class Indicators:
 
     def _williams_break_predict(self, df):
         return self._oscillator_break(df, "WILLIAMS", -50, -50)
+
+    def _williams_break_predict_4h(self, df):
+        return self._williams_break_predict(self.convert_1h_to_4h(df))
 
     @staticmethod
     def _oscillator_break(df, name: str, upper_line: int, lower_line: int):
@@ -576,7 +659,47 @@ class Indicators:
     def _rsi_convergence_predict3(self, df):
         return self._convergence_predict(df, "RSI")
 
+    def _cci_predict_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+        return self._cci_predict(df4h)
+
+    def _cci_convergence(self, df):
+        return self._convergence_predict(df, "CCI")
+
+    def _cci_zero_cross(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        cci_before = df.CCI.iloc[-2]
+        cci_now = df.CCI.iloc[-1]
+
+        if cci_before < 0 < cci_now:
+            return TradeAction.BUY
+        elif cci_before > 0 > cci_now:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _cci_zero_cross_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+
+        if len(df4h) < 2:
+            return TradeAction.NONE
+
+        cci_before = df4h.CCI.iloc[-2]
+        cci_now = df4h.CCI.iloc[-1]
+
+        if cci_before < 0 < cci_now:
+            return TradeAction.BUY
+        elif cci_before > 0 > cci_now:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
     def _cci_predict(self, df):
+        if len(df) < 1:
+            return TradeAction.NONE
+
         cci = df.CCI.iloc[-1]
 
         if cci > 100:
@@ -714,6 +837,9 @@ class Indicators:
         return TradeAction.NONE
 
     def _bb_predict(self, df):
+        if len(df) == 0:
+            return TradeAction.NONE
+
         bb_middle = df.BB_MIDDLE.iloc[-1]
         bb_upper = df.BB_UPPER.iloc[-1]
         bb_lower = df.BB_LOWER.iloc[-1]
@@ -726,7 +852,14 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _bb_predict_4h(self, df):
+        return self._bb_predict(self.convert_1h_to_4h(df))
+
+
     def _bb_middle_cross_predict(self, df):
+        if len(df) < 4:
+            return TradeAction.NONE
+
         bb_middle = df.BB_MIDDLE.iloc[-1]
         close = df.close.iloc[-1]
         period = df[-3:-1]
@@ -737,6 +870,9 @@ class Indicators:
             return TradeAction.SELL
 
         return TradeAction.NONE
+
+    def _bb_middle_cross_predict_4h(self, df):
+        return self._bb_middle_cross_predict(self.convert_1h_to_4h(df))
 
     def _bb_border_cross_predict(self, df):
         bb_lower = df.BB_LOWER.iloc[-1]
