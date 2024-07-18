@@ -271,7 +271,8 @@ class Trader:
             return TradeResult.ERROR
 
 
-        trade_df = self._tiingo.load_trade_data(config.symbol, self._dataprocessor, config.trade_type)
+        trade_df = self._tiingo.load_trade_data(symbol=config.symbol, dp=self._dataprocessor,
+                                                trade_type=config.trade_type)
 
         if len(trade_df) == 0:
             self._tracer.error(f"Could not load train data for {config.symbol}")

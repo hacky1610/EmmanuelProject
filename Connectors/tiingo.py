@@ -139,6 +139,7 @@ class Tiingo:
         return self.load_data_by_date(ticker=symbol,
                                       start=start_time,
                                       end=None,
+                                      validate=False,
                                       data_processor=dp,
                                       trade_type=trade_type,
                                       resolution="1hour",

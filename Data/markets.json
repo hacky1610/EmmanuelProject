@@ -472,14 +472,6 @@
         "currency": "PLN"
     },
     {
-        "symbol": "USDTRY",
-        "epic": "CS.D.USDTRY.MINI.IP",
-        "spread": 49.999999999954525,
-        "scaling": 10000,
-        "size": 1.0,
-        "currency": "TRY"
-    },
-    {
         "symbol": "CADNOK",
         "epic": "CS.D.CADNOK.MINI.IP",
         "spread": 25.000000000003908,
