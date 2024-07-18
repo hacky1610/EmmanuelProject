@@ -67,12 +67,13 @@ _reporting = Reporting(predictor_store=ps)
 # endregion
 
 
-def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor) -> (DataFrame, DataFrame):
-    hour_df = f"D:\\tmp\Tiingo\\{symbol}_train_1hour.csv"
-    minute_df = f"D:\\tmp\Tiingo\\{symbol}_train_5minute.csv"
+def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor, dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
+    hour_df = f"{symbol}_train_1hour.csv"
+    minute_df = f"{symbol}_train_5minute.csv"
+
     if os.path.exists(hour_df) and os.path.exists(minute_df):
-        df_train = pd.read_csv(hour_df)
-        eval_df_train = pd.read_csv(minute_df)
+        df_train = dropbox_cache.load_train_cache(hour_df)
+        eval_df_train = dropbox_cache.load_train_cache(minute_df)
 
         if "PIVOT" not in df_train.columns:
             from finta import TA
@@ -84,22 +85,32 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
             df_train["R2"] = pivot["r2"]
     else:
         df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
-        df_train.to_csv(hour_df)
-        eval_df_train.to_csv(minute_df)
+        dropbox_cache.save_train_cache(df_train,hour_df)
+        dropbox_cache.save_train_cache(eval_df_train,minute_df)
 
     return df_train, eval_df_train
 
 
-def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor) -> (DataFrame, DataFrame):
-    hour_df = f"D:\\tmp\Tiingo\\{symbol}_test_1hour.csv"
-    minute_df = f"D:\\tmp\Tiingo\\{symbol}_test_5minute.csv"
+def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor,  dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
+    hour_df = f"{symbol}_test_1hour.csv"
+    minute_df = f"{symbol}_test_5minute.csv"
+
     if os.path.exists(hour_df) and os.path.exists(minute_df):
-        df_train = pd.read_csv(hour_df)
-        eval_df_train = pd.read_csv(minute_df)
+        df_train = dropbox_cache.load_train_cache(hour_df)
+        eval_df_train = dropbox_cache.load_train_cache(minute_df)
+
+        if "PIVOT" not in df_train.columns:
+            from finta import TA
+            pivot = TA.PIVOT(df_train)
+            df_train["PIVOT"] = pivot["pivot"]
+            df_train["S1"] = pivot["s1"]
+            df_train["S2"] = pivot["s2"]
+            df_train["R1"] = pivot["r1"]
+            df_train["R2"] = pivot["r2"]
     else:
-        df_train, eval_df_train = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
-        df_train.to_csv(hour_df)
-        eval_df_train.to_csv(minute_df)
+        df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
+        dropbox_cache.save_train_cache(df_train, hour_df)
+        dropbox_cache.save_train_cache(eval_df_train, minute_df)
 
     return df_train, eval_df_train
 
@@ -145,8 +156,8 @@ def train_predictor(markets: list,
         symbol = m["symbol"]
 
         tracer.info(f"Matrix Train {symbol}")
-        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp)
-        df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp)
+        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
+        df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
         _reporting.create(markets, predictor)
         best_indicator_combos = reporting.get_best_indicator_combos()
         best_indicators = reporting.get_best_indicator_names()

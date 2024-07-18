@@ -92,3 +92,24 @@ class DropBoxCache(BaseCache):
 
     def save_report_image(self, source: str, destination: str):
         self.dropbox_servie.upload_file(source, destination)
+
+    def load_settings(self, name: str):
+        res = self.dropbox_servie.load(f"Settings/{name}")
+        if res is not None:
+            return json.loads(res)
+        return None
+
+    def load_train_cache(self, name: str):
+        res = self.dropbox_servie.load(f"TrainCache/{name}")
+        if res is not None:
+            return json.loads(res)
+        return None
+
+    def save_train_cache(self, data: DataFrame, name: str):
+        self.dropbox_servie.upload_data(data.to_csv(), f"TrainCache/{name}")
+
+    def train_cache_exist(self, name: str):
+        res = self.dropbox_servie.exists(f"TrainCache/{name}")
+        if res is not None:
+            return json.loads(res)
+        return None
