@@ -82,6 +82,15 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
             df_train["S2"] = pivot["s2"]
             df_train["R1"] = pivot["r1"]
             df_train["R2"] = pivot["r2"]
+
+        if "PIVOT_FIB" not in df_train.columns:
+            from finta import TA
+            pivot = TA.PIVOT_FIB(df_train)
+            df_train["PIVOT_FIB"] = pivot["pivot"]
+            df_train["S1_FIB"] = pivot["s1"]
+            df_train["S2_FIB"] = pivot["s2"]
+            df_train["R1_FIB"] = pivot["r1"]
+            df_train["R2_FIB"] = pivot["r2"]
     else:
         df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
         df_train.to_csv(hour_df)

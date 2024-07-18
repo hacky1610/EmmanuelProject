@@ -76,6 +76,12 @@ class Indicators:
     PIVOT_SR_TRADING = "privot_sr_trading"
     PIVOT_SR_TRADING_4H = "privot_sr_trading_4h"
 
+    #Fibonacci
+    PIVOT_FIB_BOUNCE = "pivot_fib_bounce"
+    PIVOT_FIB_BOUNCE_4H = "pivot_fib_bounce_4h"
+    PIVOT_FIB_SR_TRADING = "privot_fib_sr_trading"
+    PIVOT_FIB_SR_TRADING_4H = "privot_fib_sr_trading_4h"
+
     # CCI
     CCI = "cci"
     CCI_4h = "cci_4h"
@@ -178,6 +184,10 @@ class Indicators:
         self._add_indicator(self.PIVOT_BREAKOUT, self._pivot_breakout)
         self._add_indicator(self.PIVOT_SR_TRADING, self._pivot_sr_trading)
         self._add_indicator(self.PIVOT_SR_TRADING_4H, self._pivot_sr_trading_4h)
+
+        #Fibonacci
+        self._add_indicator(self.PIVOT_FIB_BOUNCE, self._pivot_fib_bounce)
+        self._add_indicator(self.PIVOT_FIB_SR_TRADING, self._pivot_fib_sr_trading)
 
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
@@ -371,14 +381,20 @@ class Indicators:
         return TradeAction.NONE
 
     def _pivot_bounce(self, df):
-        if len(df) <2:
+        return self._pivot_bounce_bl(df["close"], df["PIVOT"])
+
+    def _pivot_fib_bounce(self, df):
+        return self._pivot_bounce_bl(df["close"], df["PIVOT_FIB"])
+
+    def _pivot_bounce_bl(self, close:Series, pivot:Series):
+        if len(pivot) < 2:
             return TradeAction.NONE
 
-        if df['close'].iloc[-2] < df['PIVOT'].iloc[-2] and df['close'].iloc[-1] > \
-                df['PIVOT'].iloc[-1]:
+        if close.iloc[-2] < pivot.iloc[-2] and close.iloc[-1] > \
+                pivot.iloc[-1]:
             return TradeAction.BUY
-        elif df['close'].iloc[-2] > df['PIVOT'].iloc[-2] and df['close'].iloc[-1] < \
-                df['PIVOT'].iloc[-1]:
+        elif close.iloc[-2] > pivot.iloc[-2] and close.iloc[-1] < \
+                pivot.iloc[-1]:
             return TradeAction.SELL
 
         return TradeAction.NONE
@@ -395,13 +411,19 @@ class Indicators:
         return TradeAction.NONE
 
     def _pivot_sr_trading(self, df) -> str:
-        if len(df) == 0:
+        return self._pivot_sr_trading_bl(low=df["low"],high= df["high"],close= df["close"], s1= df["S1"], r1=df["R1"])
+
+    def _pivot_fib_sr_trading(self, df) -> str:
+        return self._pivot_sr_trading_bl(low=df["low"], high=df["high"], close=df["close"], s1=df["S1_FIB"], r1=df["R1_FIB"])
+
+    def _pivot_sr_trading_bl(self,low:Series, high:Series,close:Series, s1:Series, r1:Series):
+        if len(s1) == 0:
             return TradeAction.NONE
 
-        if df['low'].iloc[-1] <= df['S1'].iloc[-1] and df['close'].iloc[-1] > df['S1'].iloc[-1]:
+        if low.iloc[-1] <= s1.iloc[-1] and close.iloc[-1] > s1.iloc[-1]:
             return TradeAction.BUY
 
-        elif df['high'].iloc[-1] >= df['R1'].iloc[-1] and df['close'].iloc[-1] < df['R1'].iloc[-1]:
+        elif high.iloc[-1] >= r1.iloc[-1] and close.iloc[-1] < r1.iloc[-1]:
             return TradeAction.SELL
 
         return TradeAction.NONE

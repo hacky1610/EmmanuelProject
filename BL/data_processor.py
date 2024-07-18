@@ -72,6 +72,13 @@ class DataProcessor:
         df["S2"] = pivot["s2"]
         df["R1"] = pivot["r1"]
         df["R2"] = pivot["r2"]
+
+        pivot = TA.PIVOT_FIB(df)
+        df["PIVOT_FIB"] = pivot["pivot"]
+        df["S1_FIB"] = pivot["s1"]
+        df["S2_FIB"] = pivot["s2"]
+        df["R1_FIB"] = pivot["r1"]
+        df["R2_FIB"] = pivot["r2"]
         return
 
     @staticmethod
@@ -95,6 +102,13 @@ class DataProcessor:
         df["S2"] = pivot["s2"]
         df["R1"] = pivot["r1"]
         df["R2"] = pivot["r2"]
+
+        pivot = TA.PIVOT_FIB(df)
+        df["PIVOT_FIB"] = pivot["pivot"]
+        df["S1_FIB"] = pivot["s1"]
+        df["S2_FIB"] = pivot["s2"]
+        df["R1_FIB"] = pivot["r1"]
+        df["R2_FIB"] = pivot["r2"]
         return
 
 
