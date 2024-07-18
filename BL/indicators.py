@@ -75,6 +75,7 @@ class Indicators:
     PIVOT_BREAKOUT = "pivot_breakout"
     PIVOT_SR_TRADING = "privot_sr_trading"
     PIVOT_SR_TRADING_4H = "privot_sr_trading_4h"
+    PIVOT_EMA_20_CROSS = "pivot_bounce"
 
     #Fibonacci
     PIVOT_FIB_BOUNCE = "pivot_fib_bounce"
@@ -184,6 +185,7 @@ class Indicators:
         self._add_indicator(self.PIVOT_BREAKOUT, self._pivot_breakout)
         self._add_indicator(self.PIVOT_SR_TRADING, self._pivot_sr_trading)
         self._add_indicator(self.PIVOT_SR_TRADING_4H, self._pivot_sr_trading_4h)
+        self._add_indicator(self.PIVOT_EMA_20_CROSS, self._pivot_ema_20_cross)
 
         #Fibonacci
         self._add_indicator(self.PIVOT_FIB_BOUNCE, self._pivot_fib_bounce)
@@ -394,6 +396,22 @@ class Indicators:
                 pivot.iloc[-1]:
             return TradeAction.BUY
         elif close.iloc[-2] > pivot.iloc[-2] and close.iloc[-1] < \
+                pivot.iloc[-1]:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _pivot_ema_20_cross(self, df):
+
+        if len(df) < 2:
+            return TradeAction.NONE
+        ema = df["EMA_20"]
+        pivot = df["PIVOT"]
+
+        if ema.iloc[-2] < pivot.iloc[-2] and ema.iloc[-1] > \
+                pivot.iloc[-1]:
+            return TradeAction.BUY
+        elif ema.iloc[-2] > pivot.iloc[-2] and ema.iloc[-1] < \
                 pivot.iloc[-1]:
             return TradeAction.SELL
 
