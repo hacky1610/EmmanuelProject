@@ -102,7 +102,7 @@ class DropBoxCache(BaseCache):
     def load_train_cache(self, name: str):
         res = self.dropbox_servie.load(f"TrainCache/{name}")
         if res is not None:
-            return json.loads(res)
+            return pd.read_csv(io.StringIO(res), sep=",")
         return None
 
     def save_train_cache(self, data: DataFrame, name: str):
