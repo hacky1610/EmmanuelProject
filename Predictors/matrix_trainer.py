@@ -43,8 +43,8 @@ class MatrixTrainer:
 
     @measure_time
     def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict):
-        buy_path = f"D:\\tmp\\Simulations\\simulation_buy{symbol}{current_config['_stop']}{current_config['_limit']}{current_config['_use_isl']}{current_config['_isl_distance']}{current_config['_isl_open_end']}.csv"
-        sell_path = f"D:\\tmp\\Simulations\\simulation_sell{symbol}{current_config['_stop']}{current_config['_limit']}{current_config['_use_isl']}{current_config['_isl_distance']}{current_config['_isl_open_end']}.csv"
+        buy_path = f"D:\\tmp\\Simulations\\simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl',False)}{current_config.get('_isl_distance',20)}{current_config.get('_isl_open_end',False)}.csv"
+        sell_path = f"D:\\tmp\\Simulations\\simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl',False)}{current_config.get('_isl_distance',20)}{current_config.get('_isl_open_end',False)}.csv"
 
         if not os.path.exists(buy_path):
             buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
