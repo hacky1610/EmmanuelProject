@@ -120,7 +120,7 @@ class DropBoxCache(BaseCache):
     def load_signal(self, name: str):
         res = self.dropbox_servie.load(f"Signals/{name}")
         if res is not None:
-            return json.loads(res)
+            return pd.read_csv(io.StringIO(res), sep=",")
         return None
 
     def simulation_exist(self, name: str):
@@ -132,6 +132,6 @@ class DropBoxCache(BaseCache):
     def load_simulation(self, name: str):
         res = self.dropbox_servie.load(f"Simulations/{name}")
         if res is not None:
-            return json.loads(res)
+            return pd.read_csv(io.StringIO(res), sep=",")
         return None
 
