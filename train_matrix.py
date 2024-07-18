@@ -21,7 +21,7 @@ from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
-from Predictors.trainer import Trainer
+from Predictors.matrix_trainer import MatrixTrainer
 from Predictors.utils import Reporting
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
@@ -53,7 +53,7 @@ db = client["ZuluDB"]
 ms = MarketStore(db)
 ps = PredictorStore(db)
 an = Analytics(market_store=ms, ig=IG(conf_reader=conf_reader))
-_trainer = Trainer(analytics=an,
+_trainer = MatrixTrainer(analytics=an,
                    cache=cache,
                    check_trainable=False,
                    predictor_store=ps)
@@ -130,7 +130,7 @@ def save_best_combo(symbol: str, best_combo: []):
 
 
 def train_predictor(markets: list,
-                    trainer: Trainer,
+                    trainer: MatrixTrainer,
                     tiingo: Tiingo,
                     dp: DataProcessor,
                     predictor: Type,
@@ -169,8 +169,8 @@ def train_predictor(markets: list,
                 buy_results.to_csv(f"D:\\tmp\Signals\\{symbol}_buy.csv")
                 sell_results.to_csv(f"D:\\tmp\Signals\\{symbol}_sell.csv")
 
-                best_combo = trainer.foo_combinations(symbol, indicators, all_combos,
-                                                      pred_standard._indicator_names, buy_results, sell_results)
+                best_combo = trainer.train_combinations(symbol, indicators, all_combos,
+                                                        pred_standard._indicator_names, buy_results, sell_results)
                 if best_combo is None or len(best_combo) == 0:
                     print("No best combo found")
                     continue

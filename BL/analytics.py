@@ -293,7 +293,7 @@ class Analytics:
 
         return simulation_result
 
-    def foo(self, signals:DataFrame, df_buy_results: DataFrame, df_sell_results: DataFrame):
+    def calculate_overall_result(self, signals:DataFrame, df_buy_results: DataFrame, df_sell_results: DataFrame):
 
         overall_result = 0
         next_index = 0

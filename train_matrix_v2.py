@@ -20,6 +20,7 @@ from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
+from Predictors.matrix_trainer import MatrixTrainer
 from Predictors.trainer import Trainer
 from Predictors.utils import Reporting
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -52,7 +53,7 @@ db = client["ZuluDB"]
 ms = MarketStore(db)
 ps = PredictorStore(db)
 an = Analytics(market_store=ms, ig=IG(conf_reader=conf_reader))
-_trainer = Trainer(analytics=an,
+_trainer = MatrixTrainer(analytics=an,
                    cache=cache,
                    check_trainable=False,
                    predictor_store=ps)
@@ -120,7 +121,7 @@ def save_best_combo(symbol: str, best_combo: []):
 
 
 def train_predictor(markets: list,
-                    trainer: Trainer,
+                    trainer: MatrixTrainer,
                     tiingo: Tiingo,
                     dp: DataProcessor,
                     predictor: Type,
