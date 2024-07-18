@@ -174,10 +174,10 @@ class Indicators:
 
         #Pivoting
         self._add_indicator(self.PIVOT_BOUNCE, self._pivot_bounce)
-        self._add_indicator(self.PIVOT_BOUNCE_4H, self._pivot_bounce_4h)
+        #self._add_indicator(self.PIVOT_BOUNCE_4H, self._pivot_bounce_4h)
         self._add_indicator(self.PIVOT_BREAKOUT, self._pivot_breakout)
         self._add_indicator(self.PIVOT_SR_TRADING, self._pivot_sr_trading)
-        self._add_indicator(self.PIVOT_SR_TRADING_4H, self._pivot_sr_trading_4h)
+        #self._add_indicator(self.PIVOT_SR_TRADING_4H, self._pivot_sr_trading_4h)
 
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
