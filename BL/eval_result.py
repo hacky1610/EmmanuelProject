@@ -1,4 +1,5 @@
 import os.path
+import traceback
 from datetime import datetime
 from functools import reduce
 from typing import List
@@ -247,7 +248,8 @@ class EvalResultCollection:
                 'index': result_df['chart_index']
             })
         except Exception as e:
-            print("Error creating")
+            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+            print(f"Exception: {e} File:{traceback_str}")
 
         return result
 
