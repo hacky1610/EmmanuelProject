@@ -237,6 +237,9 @@ class EvalResultCollection:
 
             # Define a function to check if actions are the same or contain "both"
             def is_valid_combination(row):
+                if 'none' in row.values:
+                    return False
+
                 actions = [action for action in row if action != TradeAction.BOTH]
                 return len(set(actions)) <= 1
 
