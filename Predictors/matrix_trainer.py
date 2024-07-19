@@ -122,6 +122,7 @@ class MatrixTrainer:
             signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
             current_result = self._analytics.calculate_overall_result(signals, buy_results, sell_results)
             if current_result > best_result:
+                print(f"New best result {current_result} from {[item['indicator'] for item in combo]}")
                 best_result = current_result
                 best_combo = [item['indicator'] for item in combo]
 
