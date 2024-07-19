@@ -67,12 +67,13 @@ _reporting = Reporting(predictor_store=ps)
 # endregion
 
 
-def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor) -> (DataFrame, DataFrame):
-    hour_df = f"D:\\tmp\Tiingo\\{symbol}_train_1hour.csv"
-    minute_df = f"D:\\tmp\Tiingo\\{symbol}_train_5minute.csv"
-    if os.path.exists(hour_df) and os.path.exists(minute_df):
-        df_train = pd.read_csv(hour_df)
-        eval_df_train = pd.read_csv(minute_df)
+def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor, dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
+    hour_df = f"{symbol}_train_1hour.csv"
+    minute_df = f"{symbol}_train_5minute.csv"
+
+    if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(minute_df):
+        df_train = dropbox_cache.load_train_cache(hour_df)
+        eval_df_train = dropbox_cache.load_train_cache(minute_df)
 
         if "PIVOT" not in df_train.columns:
             from finta import TA
@@ -84,49 +85,34 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
             df_train["R2"] = pivot["r2"]
     else:
         df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
-        df_train.to_csv(hour_df)
-        eval_df_train.to_csv(minute_df)
+        dropbox_cache.save_train_cache(df_train,hour_df)
+        dropbox_cache.save_train_cache(eval_df_train,minute_df)
 
     return df_train, eval_df_train
 
 
-def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor) -> (DataFrame, DataFrame):
-    hour_df = f"D:\\tmp\Tiingo\\{symbol}_test_1hour.csv"
-    minute_df = f"D:\\tmp\Tiingo\\{symbol}_test_5minute.csv"
-    if os.path.exists(hour_df) and os.path.exists(minute_df):
-        df_train = pd.read_csv(hour_df)
-        eval_df_train = pd.read_csv(minute_df)
+def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor,  dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
+    hour_df = f"{symbol}_test_1hour.csv"
+    minute_df = f"{symbol}_test_5minute.csv"
+
+    if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(minute_df):
+        df_train = dropbox_cache.load_train_cache(hour_df)
+        eval_df_train = dropbox_cache.load_train_cache(minute_df)
+
+        if "PIVOT" not in df_train.columns:
+            from finta import TA
+            pivot = TA.PIVOT(df_train)
+            df_train["PIVOT"] = pivot["pivot"]
+            df_train["S1"] = pivot["s1"]
+            df_train["S2"] = pivot["s2"]
+            df_train["R1"] = pivot["r1"]
+            df_train["R2"] = pivot["r2"]
     else:
         df_train, eval_df_train = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
-        df_train.to_csv(hour_df)
-        eval_df_train.to_csv(minute_df)
+        dropbox_cache.save_train_cache(df_train, hour_df)
+        dropbox_cache.save_train_cache(eval_df_train, minute_df)
 
     return df_train, eval_df_train
-
-
-def get_best_combo(symbol: str):
-    path = f"D:\\tmp\\BestCombo\\{symbol}.txt"
-
-    if not os.path.exists(path):
-        return ["rsi"]
-
-    with open(path, "r") as datei:
-        gelesene_liste = datei.readlines()
-
-    # Zeilenenden entfernen
-    gelesene_liste = [element.strip() for element in gelesene_liste]
-    return gelesene_liste
-
-
-def save_best_combo(symbol: str, best_combo: []):
-    if best_combo is None:
-        return
-
-    path = f"D:\\tmp\\BestCombo\\{symbol}.txt"
-
-    with open(path, "w") as datei:
-        for element in best_combo:
-            datei.write(element + "\n")
 
 
 def train_predictor(markets: list,
@@ -144,9 +130,12 @@ def train_predictor(markets: list,
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
+        #if symbol != "AUDSGD":
+        #    continue
+
         tracer.info(f"Matrix Train {symbol}")
-        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp)
-        df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp)
+        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
+        df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
         _reporting.create(markets, predictor)
         best_indicator_combos = reporting.get_best_indicator_combos()
         best_indicators = reporting.get_best_indicator_names()
@@ -166,15 +155,11 @@ def train_predictor(markets: list,
                 trainer.get_signals(symbol, df_train, indicators, predictor)
                 buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config)
 
-                buy_results.to_csv(f"D:\\tmp\Signals\\{symbol}_buy.csv")
-                sell_results.to_csv(f"D:\\tmp\Signals\\{symbol}_sell.csv")
-
                 best_combo = trainer.train_combinations(symbol, indicators, all_combos,
                                                         pred_standard._indicator_names, buy_results, sell_results)
                 if best_combo is None or len(best_combo) == 0:
                     print("No best combo found")
                     continue
-                save_best_combo(symbol, best_combo)
 
                 pred_matrix.setup({"_indicator_names": best_combo})
                 print("Evaluate")

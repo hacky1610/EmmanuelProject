@@ -298,9 +298,14 @@ class Analytics:
         overall_result = 0
         next_index = 0
 
+        #TODO
+        try:
         # Vorabfiltern der Buy- und Sell-DataFrames nach chart_index für schnelleren Zugriff
-        buy_results_dict = df_buy_results.set_index('chart_index').to_dict(orient='index')
-        sell_results_dict = df_sell_results.set_index('chart_index').to_dict(orient='index')
+            buy_results_dict = df_buy_results.set_index('chart_index').to_dict(orient='index')
+            sell_results_dict = df_sell_results.set_index('chart_index').to_dict(orient='index')
+        except Exception:
+            print(df_buy_results)
+            print(df_sell_results)
 
         for _, signal in signals.iterrows():
             if signal["index"] > next_index:
