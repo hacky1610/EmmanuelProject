@@ -1,5 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch, MagicMock
+
+import pandas as pd
 from pandas import DataFrame
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
@@ -8,6 +10,9 @@ from datetime import datetime
 
 class TestAnalytics(unittest.TestCase):
 
+
+    def setUp(self):
+        self._analytics = Analytics(MagicMock(),MagicMock())
 
     @patch('BL.analytics.MarketStore')
     @patch('BL.analytics.BaseViewer')
@@ -63,4 +68,42 @@ class TestAnalytics(unittest.TestCase):
         self.assertEqual(result.get_trades(), 1)
         self.assertEqual(result.get_win_loss(), 0)
         self.assertEqual(result.get_average_reward(), 0)
+
+    def test_simple_buy_and_sell(self):
+        signals = pd.DataFrame({
+            "index": [1, 5],
+            "action": [TradeAction.BUY, TradeAction.SELL]
+        })
+        df_buy_results = pd.DataFrame({
+            "chart_index": [1],
+            "result": [10],
+            "next_index": [3]
+        })
+        df_sell_results = pd.DataFrame({
+            "chart_index": [5],
+            "result": [5],
+            "next_index": [10]
+        })
+
+        result = self._analytics.calculate_overall_result(signals, df_buy_results, df_sell_results)
+        self.assertEqual(result, 15)
+
+    def test_next_index_logic(self):
+        signals = pd.DataFrame({
+            "index": [1, 2],
+            "action": [TradeAction.BUY, TradeAction.SELL]
+        })
+        df_buy_results = pd.DataFrame({
+            "chart_index": [1],
+            "result": [10],
+            "next_index": [3]
+        })
+        df_sell_results = pd.DataFrame({
+            "chart_index": [2],
+            "result": [5],
+            "next_index": [10]
+        })
+
+        result = self._analytics.calculate_overall_result(signals, df_buy_results, df_sell_results)
+        self.assertEqual(result, 10)
 

@@ -136,6 +136,10 @@ def train_predictor(markets: list,
         tracer.info(f"Matrix Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
         df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
+
+        if len(df_train) == 0:
+            continue
+
         _reporting.create(markets, predictor)
         best_indicator_combos = reporting.get_best_indicator_combos()
         best_indicators = reporting.get_best_indicator_names()
