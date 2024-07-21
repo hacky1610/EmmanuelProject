@@ -92,3 +92,46 @@ class DropBoxCache(BaseCache):
 
     def save_report_image(self, source: str, destination: str):
         self.dropbox_servie.upload_file(source, destination)
+
+    def load_settings(self, name: str):
+        res = self.dropbox_servie.load(f"Settings/{name}")
+        if res is not None:
+            return json.loads(res)
+        return None
+
+    def load_train_cache(self, name: str):
+        res = self.dropbox_servie.load(f"TrainCache/{name}")
+        if res is not None:
+            return pd.read_csv(io.StringIO(res), sep=",")
+        return None
+
+    def save_train_cache(self, data: DataFrame, name: str):
+        self.dropbox_servie.upload_data(data.to_csv(), f"TrainCache/{name}")
+
+    def train_cache_exist(self, name: str):
+        return self.dropbox_servie.exists(f"TrainCache/{name}")
+
+    def signal_exist(self, name: str):
+        return self.dropbox_servie.exists(f"Signals/{name}")
+
+    def save_signal(self, data: DataFrame, name: str):
+        self.dropbox_servie.upload_data(data.to_csv(), f"Signals/{name}")
+
+    def load_signal(self, name: str):
+        res = self.dropbox_servie.load(f"Signals/{name}")
+        if res is not None:
+            return pd.read_csv(io.StringIO(res), sep=",")
+        return None
+
+    def simulation_exist(self, name: str):
+        return self.dropbox_servie.exists(f"Simulations/{name}")
+
+    def save_simulation(self, data: DataFrame, name: str):
+        self.dropbox_servie.upload_data(data.to_csv(), f"Simulations/{name}")
+
+    def load_simulation(self, name: str):
+        res = self.dropbox_servie.load(f"Simulations/{name}")
+        if res is not None:
+            return pd.read_csv(io.StringIO(res), sep=",")
+        return None
+

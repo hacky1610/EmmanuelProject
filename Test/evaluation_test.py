@@ -148,7 +148,7 @@ class EvaluationTest(unittest.TestCase):
         assert res.get_win_loss() == 0.0
         assert res.get_reward() == -30
 
-    def evalresult_collection(self):
+    def test_evalresult_collection(self):
 
         d1 = DataFrame()
         d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1,10,"buy"]), ignore_index=True)
@@ -159,8 +159,18 @@ class EvaluationTest(unittest.TestCase):
         d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
 
         result = EvalResultCollection.calc_combination([d1,d2])
-        assert result == 20
+        assert len(result) == 2
 
+        d1 = DataFrame()
+        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]), ignore_index=True)
+        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
+
+        d2 = DataFrame()
+        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]), ignore_index=True)
+        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "both"]), ignore_index=True)
+
+        result = EvalResultCollection.calc_combination([d1, d2])
+        assert len(result) == 2
 
         d1 = DataFrame()
         d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
@@ -171,7 +181,7 @@ class EvaluationTest(unittest.TestCase):
 
         result = EvalResultCollection.calc_combination([d1, d2])
 
-        assert result == 10
+        assert len(result) == 1
 
         d1 = DataFrame()
         d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "none"]), ignore_index=True)
@@ -182,7 +192,7 @@ class EvaluationTest(unittest.TestCase):
         d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
 
         result = EvalResultCollection.calc_combination([d1, d2])
-        assert result == 20
+        assert len(result) == 1
 
         d1 = DataFrame()
         d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "none"]), ignore_index=True)
@@ -193,6 +203,18 @@ class EvaluationTest(unittest.TestCase):
         d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[5, 10, "buy"]), ignore_index=True)
 
         result = EvalResultCollection.calc_combination([d1, d2])
-        assert result == 0
+        assert len(result) == 0
+
+        d1 = DataFrame()
+        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "both"]), ignore_index=True)
+        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "both"]), ignore_index=True)
+
+        d2 = DataFrame()
+        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[4, 10, "both"]), ignore_index=True)
+        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[5, 10, "both"]), ignore_index=True)
+
+        result = EvalResultCollection.calc_combination([d1, d2])
+        assert len(result) == 0
+
 
 

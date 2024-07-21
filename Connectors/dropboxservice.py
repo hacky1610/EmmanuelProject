@@ -31,3 +31,10 @@ class DropBoxService:
         except Exception as e:
             print(f"Error loading file {source} {e}")
             return None
+
+    def exists(self, source:str):
+        try:
+            self._dropbox.files_get_metadata(f"{self._basepath}/{source}")
+            return True
+        except Exception as e:
+            return False

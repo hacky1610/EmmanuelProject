@@ -1,4 +1,5 @@
 import os.path
+import traceback
 from datetime import datetime
 from functools import reduce
 from typing import List
@@ -232,22 +233,36 @@ class EvalResultCollection:
             if len(merged_df) == 0:
                 return merged_df
 
-
-            # Get columns related to 'action'
             action_columns = [col for col in merged_df.columns if col.startswith('action')]
 
-            # Filter rows where all actions are the same and not 'both'
-            common_actions = merged_df[action_columns].apply(lambda row: row.nunique() == 1 and row.iloc[0] != 'both',
-                                                             axis=1)
-            result_df = merged_df[common_actions]
+            # Define a function to check if actions are the same or contain "both"
+            def is_valid_combination(row):
+                if 'none' in row.values:
+                    return False
+
+                actions = [action for action in row if action != TradeAction.BOTH]
+                return len(set(actions)) <= 1
+
+            # Filter rows based on the custom function
+            valid_combinations = merged_df[action_columns].apply(is_valid_combination, axis=1)
+            result_df = merged_df[valid_combinations]
+
+            def determine_action(row):
+                for action in row:
+                    if action != "both":
+                        return action
+                return "both"  # Fallback if all are "both"
+
+            result_df['final_action'] = result_df[action_columns].apply(determine_action, axis=1)
 
             # Create the result DataFrame with required columns
             result = pd.DataFrame({
-                'action': result_df[action_columns[0]],
+                'action': result_df['final_action'],
                 'index': result_df['chart_index']
             })
         except Exception as e:
-            print("Error creating")
+            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+            print(f"Exception: {e} File:{traceback_str}")
 
         return result
 

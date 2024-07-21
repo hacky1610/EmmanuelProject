@@ -14,6 +14,7 @@ from BL.eval_result import EvalResult, EvalResultCollection
 from BL.indicators import Indicators
 from BL import measure_time
 from BL.eval_result import EvalResult
+from Connectors.dropbox_cache import DropBoxCache
 from Connectors.predictore_store import PredictorStore
 from Predictors.utils import FileSystem
 from Predictors.base_predictor import BasePredictor
@@ -23,7 +24,7 @@ from Tracing.Tracer import Tracer
 
 class MatrixTrainer:
 
-    def __init__(self, analytics: Analytics, cache, predictor_store: PredictorStore, check_trainable=False,
+    def __init__(self, analytics: Analytics, cache:DropBoxCache, predictor_store: PredictorStore, check_trainable=False,
                  tracer: Tracer = ConsoleTracer()):
         self._analytics = analytics
         self._cache = cache
@@ -33,20 +34,20 @@ class MatrixTrainer:
 
     def get_signals(self, symbol: str, df: DataFrame, indicators: Indicators, predictor_class):
         for indicator in indicators.get_all_indicator_names():
-            path = f"D:\\tmp\\Signals\\signal_{symbol}_{indicator}.csv"
-            if not os.path.exists(path):
+            path = f"signal_{symbol}_{indicator}.csv"
+            if not self._cache.signal_exist(path):
                 print(f"Create signal for {indicator}")
                 predictor = predictor_class(symbol=symbol, indicators=indicators)
                 predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
                 trades = predictor.get_signals(df, self._analytics)
-                trades.to_csv(path)
+                self._cache.save_signal(trades, path)
 
     @measure_time
     def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict):
-        buy_path = f"D:\\tmp\\Simulations\\simulation_buy{symbol}{current_config['_stop']}{current_config['_limit']}{current_config['_use_isl']}{current_config['_isl_distance']}{current_config['_isl_open_end']}.csv"
-        sell_path = f"D:\\tmp\\Simulations\\simulation_sell{symbol}{current_config['_stop']}{current_config['_limit']}{current_config['_use_isl']}{current_config['_isl_distance']}{current_config['_isl_open_end']}.csv"
+        buy_path = f"simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
+        sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
 
-        if not os.path.exists(buy_path):
+        if not self._cache.simulation_exist(buy_path):
             buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
                                            isl_entry=current_config.get("_isl_entry", 0),
                                            isl_distance=current_config.get("_isl_distance", 0),
@@ -55,10 +56,11 @@ class MatrixTrainer:
                                            limit_euro=current_config["_limit"], df=df, df_eval=df_eval,
                                            symbol=symbol, scaling=scaling)
             if buy is not None:
-                buy.to_csv(buy_path)
+                self._cache.save_simulation(buy,buy_path)
         else:
-            buy = pd.read_csv(buy_path)
-        if not os.path.exists(sell_path):
+            buy = self._cache.load_simulation(buy_path)
+
+        if not self._cache.simulation_exist(sell_path):
             sell = self._analytics.simulate(action="sell", stop_euro=current_config["_stop"],
                                             isl_entry=current_config.get("_isl_entry", 0),
                                             isl_distance=current_config.get("_isl_distance", 0),
@@ -67,9 +69,9 @@ class MatrixTrainer:
                                             limit_euro=current_config["_limit"], df=df, df_eval=df_eval,
                                             symbol=symbol, scaling=scaling)
             if sell is not None:
-                sell.to_csv(sell_path)
+                self._cache.save_simulation(sell,sell_path)
         else:
-            sell = pd.read_csv(sell_path)
+            sell = self._cache.load_simulation(sell_path)
         return buy, sell
 
     @measure_time
@@ -81,7 +83,7 @@ class MatrixTrainer:
         for indicator in indicators.get_all_indicator_names():
             try:
                 indicator_object = {"indicator": indicator,
-                                    "data": pd.read_csv(f"D:\\tmp\\Signals\\signal_{symbol}_{indicator}.csv")}
+                                    "data": self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")}
                 df_list.append(indicator_object)
                 if indicator in current_indicators:
                     current_indicators_objects.append(indicator_object)
@@ -164,7 +166,7 @@ class MatrixTrainer:
         for i in tqdm(indicators.get_all_indicator_names()):
             try:
 
-                signals = pd.read_csv(f"D:\\tmp\\Signals\\signal_{symbol}_{i}.csv")
+                signals = self._cache.load_signal(f"signal_{symbol}_{i}.csv")
                 date_frames.append(self._analytics.simulate_signal(signals, buy_results, sell_results, i))
 
             except Exception as e:
