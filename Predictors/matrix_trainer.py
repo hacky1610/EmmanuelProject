@@ -117,7 +117,7 @@ class MatrixTrainer:
         best_result = -10000
         best_combo = []
         filtered_combos = random.choices(all_combos, k=2000)
-        all_combos = best_combo_object_list + filtered_combos
+        all_combos = best_combo_object_list + filtered_combos + current_indicators_combos
         for combo in tqdm(all_combos):
             signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
             current_result = self._analytics.calculate_overall_result(signals, buy_results, sell_results)
