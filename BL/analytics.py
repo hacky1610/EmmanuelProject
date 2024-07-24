@@ -317,7 +317,7 @@ class Analytics:
                     res = None
 
                 if res:
-                    print(f"Signal {signal['index']} {signal.action} {res['result']} ")
+                    #print(f"Signal {signal['index']} {signal.action} {res['result']} ")
                     overall_result += res['result']
                     next_index = res['next_index']
 
