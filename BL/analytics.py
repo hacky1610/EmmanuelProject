@@ -241,14 +241,14 @@ class Analytics:
                         # Won
                         last_exit = future.date[j]
                         simulation_result = simulation_result.append(Series(index=["action","result","chart_index", "next_index"],
-                                                                            data=[action,high - open_price,i, get_next_index(df,last_exit)]), ignore_index=True)
+                                                                            data=[action,limit_price - open_price,i, get_next_index(df,last_exit)]), ignore_index=True)
                         break
                     elif low < stop_price:
                         # Loss
                         last_exit = future.date[j]
                         simulation_result = simulation_result.append(
                             Series(index=["action", "result", "chart_index", "next_index"],
-                                   data=[action, low - open_price, i,get_next_index(df,last_exit)]),
+                                   data=[action, stop_price - open_price, i,get_next_index(df,last_exit)]),
                             ignore_index=True)
                         break
 
@@ -275,13 +275,13 @@ class Analytics:
                         # Won
                         last_exit = future.date[j]
                         simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - low, i, get_next_index(df,last_exit)]),
+                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - limit_price, i, get_next_index(df,last_exit)]),
                             ignore_index=True)
                         break
                     elif high > stop_price:
                         last_exit = future.date[j]
                         simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - high, i, get_next_index(df,last_exit)]),
+                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - stop_price, i, get_next_index(df,last_exit)]),
                             ignore_index=True)
                         break
 
