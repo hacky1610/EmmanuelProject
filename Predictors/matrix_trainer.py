@@ -42,7 +42,6 @@ class MatrixTrainer:
                 trades = predictor.get_signals(df, self._analytics)
                 self._cache.save_signal(trades, path)
 
-    @measure_time
     def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict):
         buy_path = f"simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
         sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
@@ -91,6 +90,8 @@ class MatrixTrainer:
                 print(f"Error {e}")
                 pass
 
+        result = self.calc_indicator_combo(current_indicators_objects, buy_results, sell_results)
+        return result
         all_combos = list(itertools.combinations(df_list, random.randint(4, 5)))
 
         for i in df_list:

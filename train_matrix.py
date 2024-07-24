@@ -130,8 +130,8 @@ def train_predictor(markets: list,
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-        #if symbol != "AUDSGD":
-        #    continue
+        if symbol != "USDJPY":
+            continue
 
         tracer.info(f"Matrix Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
@@ -159,8 +159,17 @@ def train_predictor(markets: list,
                 trainer.get_signals(symbol, df_train, indicators, predictor)
                 buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config)
 
-                best_combo = trainer.train_combinations(symbol, indicators, all_combos,
+                pred_standard.eval(df_train, eval_df_train, analytics=an, symbol=symbol, scaling=m["scaling"])
+                pred_standard.get_result().get_trade_result_df().to_csv(f"D:\\{symbol}.csv")
+                print(pred_standard.get_result())
+
+                result = trainer.train_combinations(symbol, indicators, all_combos,
                                                         pred_standard._indicator_names, buy_results, sell_results)
+
+                print(f"Current Result {result * m['scaling']}")
+
+                continue
+
                 if best_combo is None or len(best_combo) == 0:
                     print("No best combo found")
                     continue

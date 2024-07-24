@@ -18,14 +18,16 @@ class TradeResult:
         self.open_time = open_time
         self.opening: float = opening
         self.close_time = ''
+        self.chart_index = -1
         self.profit: float = 0
         self.closing: float = 0
         self.intelligent_stop_used: bool = False
 
-    def set_result(self, closing: float, close_time: str, profit: float):
+    def set_result(self, closing: float, close_time: str, profit: float, chart_index: int):
         self.closing = closing
         self.close_time = close_time
         self.profit = profit
+        self.chart_index = chart_index
 
     def set_intelligent_stop_used(self):
         self.intelligent_stop_used = True
@@ -42,7 +44,8 @@ class TradeResult:
             "profit": self.profit,
             "closing": self.closing,
             "won": self.won(),
-            "intelligent_stop_used": self.intelligent_stop_used
+            "intelligent_stop_used": self.intelligent_stop_used,
+            "chart_index": self.chart_index
         }
 
 class EvalResult:

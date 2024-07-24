@@ -104,13 +104,13 @@ class Analytics:
                         # Won
                         last_exit = future.date[j]
                         trade.set_result(profit=market.get_euro_value(limit_price - open_price, scaling), closing=high,
-                                         close_time=last_exit)
+                                         close_time=last_exit, chart_index=i)
                         break
                     elif low < stop_price:
                         # Loss
                         last_exit = future.date[j]
                         trade.set_result(profit=market.get_euro_value(stop_price - open_price, scaling), closing=low,
-                                         close_time=last_exit)
+                                         close_time=last_exit, chart_index=i)
                         break
 
                     if predictor._use_isl:
@@ -139,12 +139,12 @@ class Analytics:
                         # Won
                         last_exit = future.date[j]
                         trade.set_result(profit=market.get_euro_value(open_price - limit_price, scaling), closing=low,
-                                         close_time=last_exit)
+                                         close_time=last_exit, chart_index=i)
                         break
                     elif high > stop_price:
                         last_exit = future.date[j]
                         trade.set_result(profit=market.get_euro_value(open_price - stop_price, scaling), closing=high,
-                                         close_time=last_exit)
+                                         close_time=last_exit,chart_index=i)
                         break
 
                     if predictor._use_isl:
@@ -317,6 +317,7 @@ class Analytics:
                     res = None
 
                 if res:
+                    print(f"Signal {signal['index']} {signal.action} {res['result']} ")
                     overall_result += res['result']
                     next_index = res['next_index']
 
