@@ -114,18 +114,25 @@ class MatrixTrainer:
                     combo_objects.append(indicator)
             best_combo_object_list.append(combo_objects)
 
+
+        filtered_combos = random.choices(all_combos, k=2000)
+        all_combos = best_combo_object_list + filtered_combos + current_indicators_combos
+        return self.find_best_indicator_combo(all_combos,  buy_results, sell_results)
+
+    def find_best_indicator_combo(self, all_combos, buy_results, sell_results):
         best_result = -10000
         best_combo = []
-        filtered_combos = random.choices(all_combos, k=2000)
-        all_combos = best_combo_object_list + filtered_combos
         for combo in tqdm(all_combos):
-            signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
-            current_result = self._analytics.calculate_overall_result(signals, buy_results, sell_results)
+            current_result = self.calc_indicator_combo(combo, buy_results, sell_results)
             if current_result > best_result:
                 best_result = current_result
                 best_combo = [item['indicator'] for item in combo]
-
         return best_combo
+
+    def calc_indicator_combo(self, combo, buy_results, sell_results):
+        signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
+        current_result = self._analytics.calculate_overall_result(signals, buy_results, sell_results)
+        return current_result
 
     @measure_time
     def foo_combinations2(self, symbol: str, indicators: Indicators, best_combo_online: List[str],

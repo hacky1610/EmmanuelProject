@@ -224,11 +224,21 @@ class EvalResultCollection:
 
         return indicator_names
 
+    @staticmethod
+    def remove_empty_dataframes(df_list):
+        """
+        Entfernt leere DataFrames aus einer Liste von DataFrames.
+
+        :param df_list: List of pandas DataFrames
+        :return: List of pandas DataFrames with non-empty DataFrames only
+        """
+        return [df for df in df_list if not df.empty]
 
     @staticmethod
     def calc_combination(dataframes: List[DataFrame]):
         try:
             # Merge all dataframes on 'chart_index' and keep only common indices
+            dataframes = EvalResultCollection.remove_empty_dataframes(dataframes)
             merged_df = reduce(lambda left, right: pd.merge(left, right, on='chart_index', suffixes=('', '_r')), dataframes)
             if len(merged_df) == 0:
                 return merged_df
