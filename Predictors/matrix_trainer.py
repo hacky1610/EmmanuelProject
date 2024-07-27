@@ -42,7 +42,6 @@ class MatrixTrainer:
                 trades = predictor.get_signals(df, self._analytics)
                 self._cache.save_signal(trades, path)
 
-    @measure_time
     def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict):
         buy_path = f"simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
         sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
@@ -76,7 +75,7 @@ class MatrixTrainer:
 
     @measure_time
     def train_combinations(self, symbol: str, indicators: Indicators, best_combo_list: List[List[str]],
-                           current_indicators: List[str], buy_results, sell_results):
+                           current_indicators: List[str], buy_results:dict, sell_results:dict):
         df_list = []
         current_indicators_objects = []
         current_indicators_combos = []
@@ -115,11 +114,11 @@ class MatrixTrainer:
             best_combo_object_list.append(combo_objects)
 
 
-        filtered_combos = random.choices(all_combos, k=2000)
+        filtered_combos = random.choices(all_combos, k=10000)
         all_combos = best_combo_object_list + filtered_combos + current_indicators_combos
         return self.find_best_indicator_combo(all_combos,  buy_results, sell_results)
 
-    def find_best_indicator_combo(self, all_combos, buy_results, sell_results):
+    def find_best_indicator_combo(self, all_combos, buy_results:dict, sell_results:dict):
         best_result = -10000
         best_combo = []
         for combo in tqdm(all_combos):
@@ -129,7 +128,7 @@ class MatrixTrainer:
                 best_combo = [item['indicator'] for item in combo]
         return best_combo
 
-    def calc_indicator_combo(self, combo, buy_results, sell_results):
+    def calc_indicator_combo(self, combo, buy_results:dict, sell_results:dict):
         signals = EvalResultCollection.calc_combination([item['data'] for item in combo])
         current_result = self._analytics.calculate_overall_result(signals, buy_results, sell_results)
         return current_result
