@@ -293,28 +293,17 @@ class Analytics:
 
         return simulation_result
 
-    def calculate_overall_result(self, signals:DataFrame, df_buy_results: DataFrame, df_sell_results: DataFrame):
+    def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict):
 
         overall_result = 0
         next_index = 0
-        buy_results_dict = {}
-        sell_results_dict = {}
-        if len(df_buy_results) > 0:
-            buy_results_dict = df_buy_results.set_index('chart_index').to_dict(orient='index')
-            if df_buy_results['next_index'].nunique() < 4:
-                print(f"Extrem wenige werte {df_buy_results}")
-
-        if len(df_sell_results) > 0:
-            sell_results_dict = df_sell_results.set_index('chart_index').to_dict(orient='index')
-            if df_sell_results['next_index'].nunique() < 4:
-                print(f"Extrem wenige werte {df_sell_results}")
 
         for _, signal in signals.iterrows():
             if signal["index"] > next_index:
                 if signal.action == TradeAction.BUY:
-                    res = buy_results_dict.get(signal["index"])
+                    res = buy_results.get(signal["index"])
                 elif signal.action == TradeAction.SELL:
-                    res = sell_results_dict.get(signal["index"])
+                    res = sell_results.get(signal["index"])
                 else:
                     res = None
 

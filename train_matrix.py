@@ -179,8 +179,20 @@ def train_predictor(markets: list,
                 trainer.get_signals(symbol, df_train, indicators, predictor)
                 buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config)
 
+                buy_results_dict = {}
+                sell_results_dict = {}
+                if len(buy_results) > 0:
+                    buy_results_dict = buy_results.set_index('chart_index').to_dict(orient='index')
+                    if buy_results['next_index'].nunique() < 4:
+                        print(f"Extrem wenige werte {buy_results}")
+
+                if len(sell_results) > 0:
+                    sell_results_dict = sell_results.set_index('chart_index').to_dict(orient='index')
+                    if sell_results['next_index'].nunique() < 4:
+                        print(f"Extrem wenige werte {sell_results}")
+
                 best_combo = trainer.train_combinations(symbol, indicators, all_combos,
-                                                        pred_standard._indicator_names, buy_results, sell_results)
+                                                        pred_standard._indicator_names, buy_results_dict, sell_results_dict)
                 if best_combo is None or len(best_combo) == 0:
                     print("No best combo found")
                     continue
