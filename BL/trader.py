@@ -283,6 +283,7 @@ class Trader:
             self._tracer.debug(f"Spread {config.spread} is greater than {spread_limit} for {config.symbol}")
             return TradeResult.ERROR
 
+
         self._tracer.debug(f"{config.symbol} valid to predict")
         signal = predictor.predict(trade_df)
         market = self._market_store.get_market(config.symbol)
@@ -295,6 +296,19 @@ class Trader:
         if predictor.get_open_limit_isl():
             self._tracer.debug("ISL is used")
             limit = None
+
+        is_manual_stop = False
+        manual_stop = None
+        minimal_stop = self._ig.get_min_stop_distance(config.epic)
+        if stop < minimal_stop:
+            self._tracer.debug(f"Current stop {stop} is lower than min stop distance {minimal_stop}")
+            self._tracer.debugprint("Use manual stop")
+            is_manual_stop = True
+            manual_stop = stop
+            new_stop = minimal_stop * 1.01
+            self._tracer.debug(f"Set stop to {new_stop}")
+            stop = new_stop
+
 
         self._tracer.info(f"Trade {signal} ")
 
@@ -313,6 +327,8 @@ class Trader:
             date_string = date_string.group().replace(" ", "T")
 
             self._deal_storage.save(Deal(ticker=config.symbol,
+                                         manual_stop=manual_stop,
+                                         is_manual_stop=is_manual_stop,
                                          dealReference=deal_response["dealReference"],
                                          dealId=deal_response["dealId"],
                                          epic=config.epic, direction=signal, account_type="DEMO",

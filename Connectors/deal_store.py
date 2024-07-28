@@ -11,6 +11,7 @@ class Deal:
     def __init__(self, ticker: str,
                  dealReference: str, dealId: str,
                  epic: str,
+                 size: float,
                  open_date_ig_str: str,
                  open_date_ig_datetime: datetime,
                  direction: str,
@@ -25,10 +26,13 @@ class Deal:
                  intelligent_stop_level: float = None,
                  predictor_scan_id="",
                  open_level: float = None,
-                 close_level: float = None):
+                 close_level: float = None,
+                 is_manual_stop: bool = False,
+                 manual_stop:float = None):
         self.ticker = ticker
         self.status = status
         self.dealId = dealId
+        self.size = size
         self.direction = direction
         self.dealReference = dealReference
         self.epic = epic
@@ -45,6 +49,8 @@ class Deal:
         self.predictor_scan_id = predictor_scan_id
         self.open_level = open_level
         self.close_level = close_level
+        self.manual_stop = manual_stop
+        self.is_manual_stop = is_manual_stop
 
     @staticmethod
     def Create(data: dict):
@@ -54,6 +60,7 @@ class Deal:
             ticker=data["ticker"],
             dealReference=data["dealReference"],
             epic=data["epic"],
+            size=data["size"],
             status=data["status"],
             account_type=data.get("account_type", "DEMO"),
             profit=data.get("profit", 0.0),
@@ -67,7 +74,9 @@ class Deal:
             intelligent_stop_level=data.get("intelligent_stop_level", None),
             predictor_scan_id=data.get("predictor_scan_id", ""),
             open_level=data.get("open_level", None),
-            close_level=data.get("close_level", None)
+            close_level=data.get("close_level", None),
+            manual_stop=data.get("manual_stop", None),
+            is_manual_stop=data.get("is_manual_stop", False)
         )
 
     def __str__(self):
@@ -100,7 +109,10 @@ class Deal:
             "intelligent_stop_level": self.intelligent_stop_level,
             "predictor_scan_id": self.predictor_scan_id,
             "open_level": self.open_level,
-            "close_level": self.close_level
+            "close_level": self.close_level,
+            "manual_stop":self.manual_stop,
+            "is_manual_stop": self.is_manual_stop,
+            "size": self.size
         }
 
 

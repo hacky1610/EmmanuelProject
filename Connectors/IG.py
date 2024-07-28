@@ -309,6 +309,19 @@ class IG:
         try:
             deal = deal_store.get_deal_by_deal_id(deal_id)
 
+            if deal.manual_stop:
+                self._tracer.debug("Manual Stop")
+
+                if direction == "BUY":
+                    if (open_price - bid_price) * scaling_factor > deal.manual_stop:
+                        self._tracer.debug("Stop reached")
+                        self.close("SELL", deal_id, deal.size)
+                if direction == "SELL": #TODO
+                    if (offer_price - open_price) * scaling_factor > deal.manual_stop:
+                        self._tracer.debug("Stop reached")
+                        self.close("BUY", deal_id, deal.size)
+
+
             p = GenericPredictor(ticker, Indicators(),{},self._tracer)
             p.setup(predictor_store.load_by_id(deal.predictor_scan_id))
             market = market_store.get_market(ticker)

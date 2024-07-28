@@ -376,6 +376,22 @@
         "currency": "MXN"
     },
     {
+        "symbol": "EURTRY",
+        "epic": "CS.D.EURTRY.MINI.IP",
+        "spread": 60.000000000002274,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "TRY"
+    },
+     {
+        "symbol": "USDTRY",
+        "epic": "CS.D.USDTRY.MINI.IP",
+        "spread": 49.999999999954525,
+        "scaling": 10000,
+        "size": 1.0,
+        "currency": "TRY"
+    },
+    {
         "symbol": "EURPLN",
         "epic": "CS.D.EURPLN.MINI.IP",
         "spread": 24.999999999995026,
