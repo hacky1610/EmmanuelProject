@@ -74,16 +74,18 @@ class TestAnalytics(unittest.TestCase):
             "index": [1, 5],
             "action": [TradeAction.BUY, TradeAction.SELL]
         })
-        df_buy_results = pd.DataFrame({
-            "chart_index": [1],
-            "result": [10],
-            "next_index": [3]
-        })
-        df_sell_results = pd.DataFrame({
-            "chart_index": [5],
-            "result": [5],
-            "next_index": [10]
-        })
+        df_buy_results = {
+            1: {
+                "result": 5,
+                "next_index": 3
+            }
+        }
+        df_sell_results = {
+            5: {
+                "result": 10,
+                "next_index": 3
+            }
+        }
 
         result = self._analytics.calculate_overall_result(signals, df_buy_results, df_sell_results)
         self.assertEqual(result, 15)
@@ -93,17 +95,19 @@ class TestAnalytics(unittest.TestCase):
             "index": [1, 2],
             "action": [TradeAction.BUY, TradeAction.SELL]
         })
-        df_buy_results = pd.DataFrame({
-            "chart_index": [1],
-            "result": [10],
-            "next_index": [3]
-        })
-        df_sell_results = pd.DataFrame({
-            "chart_index": [2],
-            "result": [5],
-            "next_index": [10]
-        })
+        df_buy_results = {
+            1 : {
+                "result": 5,
+                "next_index":3
+            }
+        }
+        df_sell_results = {
+            2 : {
+                "result": 5,
+                "next_index": 3
+            }
+        }
 
         result = self._analytics.calculate_overall_result(signals, df_buy_results, df_sell_results)
-        self.assertEqual(result, 10)
+        self.assertEqual(result, 5)
 
