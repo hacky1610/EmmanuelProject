@@ -203,7 +203,7 @@ class Trader:
               Returns:
                   bool: True, wenn die Bewertung aktuell ist, sonst False.
               """
-        return (datetime.utcnow() - last_scan_time).days < 10
+        return (datetime.utcnow() - last_scan_time).days < 30
 
     def _execute_trade(self,
                        symbol,
