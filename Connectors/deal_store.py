@@ -60,7 +60,7 @@ class Deal:
             ticker=data["ticker"],
             dealReference=data["dealReference"],
             epic=data["epic"],
-            size=data["size"],
+            size=data.get("size",1.0),
             status=data["status"],
             account_type=data.get("account_type", "DEMO"),
             profit=data.get("profit", 0.0),
