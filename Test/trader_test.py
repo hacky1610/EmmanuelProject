@@ -21,6 +21,11 @@ class TraderTest(unittest.TestCase):
         self._mock_ig = MagicMock()
         self._mock_ig.buy = MagicMock(return_value=(True, {"date":"2016-03-04T00:00:00"}))
         self._mock_ig.sell = MagicMock(return_value=(True, {"date":"2016-03-04T00:00:00"}))
+        self._mock_ig.get_min_stop_distance = MagicMock(return_value=4)
+        market  = MagicMock()
+        market.get_pip_value = MagicMock(return_value=10)
+        self._mock_market_store = MagicMock()
+        self._mock_market_store.get_market = MagicMock(return_value=market)
         self._trainer = MagicMock()
         self._predictor = MagicMock()
         self._predictor.stop = 2
@@ -42,7 +47,7 @@ class TraderTest(unittest.TestCase):
                               predictor_class_list= self._predictor_class_list,
                               predictor_store=MagicMock(),
                               deal_storage=MagicMock(),
-                              market_storage=MagicMock())
+                              market_storage=self._mock_market_store)
         self._trader._get_spread = MagicMock(return_value=1)
         self._trader._evalutaion_up_to_date = MagicMock(return_value=True)
         # Setzen der Test-Werte für _min_win_loss und _min_trades
@@ -139,9 +144,11 @@ class TraderTest(unittest.TestCase):
             {"dealReference": "Ref",
              "dealId": "id",
              "date": "2016-03-04T00:00:00"}))
+        self._mock_ig.get_min_stop_distance = MagicMock(return_value=4)
         res = self._trader.trade(predictor=self._predictor,
                                  config=self._default_trade_config
                                  )
+
         self._mock_ig.buy.assert_not_called()
         self._mock_ig.sell.assert_not_called()
         assert res == TradeResult.ERROR

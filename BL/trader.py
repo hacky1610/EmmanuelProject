@@ -302,7 +302,7 @@ class Trader:
         minimal_stop = self._ig.get_min_stop_distance(config.epic)
         if stop < minimal_stop:
             self._tracer.debug(f"Current stop {stop} is lower than min stop distance {minimal_stop}")
-            self._tracer.debugprint("Use manual stop")
+            self._tracer.debug("Use manual stop")
             is_manual_stop = True
             manual_stop = stop
             new_stop = minimal_stop * 1.01
@@ -334,5 +334,5 @@ class Trader:
                                          epic=config.epic, direction=signal, account_type="DEMO",
                                          open_date_ig_str=date_string,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
-                                         stop_factor=stop, limit_factor=limit,predictor_scan_id=predictor.get_id()))
+                                         stop_factor=stop, limit_factor=limit,predictor_scan_id=predictor.get_id(), size=config.size))
         return res
