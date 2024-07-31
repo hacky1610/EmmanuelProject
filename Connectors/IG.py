@@ -189,7 +189,10 @@ class IG:
     def get_currency(epic: str):
         m = re.match("[\w]+\.[\w]+\.[\w]{3}([\w]{3})\.", epic)
         if m != None and len(m.groups()) == 1:
-            return m.groups()[0]
+            currency = m.groups()[0]
+            if currency == "TRY":
+                return "TRL"
+            return currency
         return "USD"
 
     def buy(self,

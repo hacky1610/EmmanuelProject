@@ -47,6 +47,9 @@ class IgTest(unittest.TestCase):
         cur = self.ig.get_currency("CS.D.USDEUR.CFD.IP")
         assert cur == "EUR"
 
+        cur = self.ig.get_currency("CS.D.USDTRY.CFD.IP")
+        assert cur == "TRL"
+
 
 
 
