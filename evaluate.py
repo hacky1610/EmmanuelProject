@@ -4,6 +4,7 @@ import traceback
 from typing import Dict
 
 import pymongo
+from pandas import DataFrame
 
 from BL import DataProcessor, ConfigReader
 from BL.analytics import Analytics
@@ -45,12 +46,44 @@ analytics = Analytics(ms, ig)
 trade_type = TradeType.FX
 ps = PredictorStore(db)
 viewer = BaseViewer()
-only_one_position = True
 
 
 # endregion
 
 # region functions
+def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor,  dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
+    hour_df = f"{symbol}_test_1hour.csv"
+    minute_df = f"{symbol}_test_5minute.csv"
+
+    if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(minute_df):
+        df_train = dropbox_cache.load_train_cache(hour_df)
+        eval_df_train = dropbox_cache.load_train_cache(minute_df)
+
+        if "PIVOT" not in df_train.columns:
+            from finta import TA
+            pivot = TA.PIVOT(df_train)
+            df_train["PIVOT"] = pivot["pivot"]
+            df_train["S1"] = pivot["s1"]
+            df_train["S2"] = pivot["s2"]
+            df_train["R1"] = pivot["r1"]
+            df_train["R2"] = pivot["r2"]
+
+        if "PIVOT_FIB" not in df_train.columns:
+            from finta import TA
+            pivot = TA.PIVOT_FIB(df_train)
+            df_train["PIVOT_FIB"] = pivot["pivot"]
+            df_train["S1_FIB"] = pivot["s1"]
+            df_train["S2_FIB"] = pivot["s2"]
+            df_train["R1_FIB"] = pivot["r1"]
+            df_train["R2_FIB"] = pivot["r2"]
+
+    else:
+        df_train, eval_df_train = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
+        dropbox_cache.save_train_cache(df_train, hour_df)
+        dropbox_cache.save_train_cache(eval_df_train, minute_df)
+
+    return df_train, eval_df_train
+
 def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer,
                        only_one_position: bool = True,
                        only_test=False):
@@ -62,7 +95,10 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
     for m in markets:
         try:
             symbol = m["symbol"]
-            df, df_eval = ti.load_test_data(symbol, dp, trade_type)
+            #if symbol != "GBPJPY":
+            #    continue
+
+            df, df_eval = get_test_data(ti, symbol, trade_type, dp, dropbox_cache=df_cache)
 
             if len(df) > 0:
                 predictor:BasePredictor = predictor_class(symbol=symbol, indicators=indicator_logic, viewer=viewer)
@@ -100,5 +136,5 @@ evaluate_predictor(indicators,
                    ti,
                    GenericPredictor,
                    viewer,
-                   only_test=False,
-                   only_one_position=only_one_position)
+                   only_test=True,
+                   only_one_position=True)
