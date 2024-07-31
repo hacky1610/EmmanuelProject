@@ -140,7 +140,7 @@ class EvalResult:
                    ])
 
     def is_good(self):
-        return self.get_average_reward() > 5 and self.get_reward() > 1000 and self.get_win_loss() >= 0.69 and self.get_trades() >= 100
+        return self.get_reward() > 1000 and self.get_win_loss() >= 0.69 and self.get_trades() >= 100
 
     def get_trade_df(self) -> DataFrame:
         df = DataFrame()
