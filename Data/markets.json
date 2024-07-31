@@ -381,7 +381,7 @@
         "spread": 60.000000000002274,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "TRY"
+        "currency": "TRL"
     },
      {
         "symbol": "USDTRY",
@@ -389,7 +389,7 @@
         "spread": 49.999999999954525,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "TRY"
+        "currency": "TRL"
     },
     {
         "symbol": "EURPLN",
