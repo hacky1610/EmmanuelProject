@@ -100,9 +100,11 @@ class Trader:
             return True
 
         deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker,30)
-        if len(deals) > 0:
+        if len(deals) > 7:
             self._tracer.debug(f"Profit {deals.profit.sum() } is greater than 50")
             return deals.profit.sum() > 50
+        else:
+            self._tracer.debug(f"Less than 8 deals")
 
         return False
 
