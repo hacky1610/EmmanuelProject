@@ -7,6 +7,7 @@ from typing import Type
 import dropbox
 import pymongo
 import pandas as pd
+from pandas import DataFrame
 
 from BL.analytics import Analytics
 from BL.data_processor import DataProcessor
@@ -63,6 +64,38 @@ _indicators = Indicators()
 _reporting = Reporting(predictor_store=ps)
 # endregion
 
+def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor,  dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
+    hour_df = f"{symbol}_test_1hour.csv"
+    minute_df = f"{symbol}_test_5minute.csv"
+
+    if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(minute_df):
+        df_train = dropbox_cache.load_train_cache(hour_df)
+        eval_df_train = dropbox_cache.load_train_cache(minute_df)
+
+        if "PIVOT" not in df_train.columns:
+            from finta import TA
+            pivot = TA.PIVOT(df_train)
+            df_train["PIVOT"] = pivot["pivot"]
+            df_train["S1"] = pivot["s1"]
+            df_train["S2"] = pivot["s2"]
+            df_train["R1"] = pivot["r1"]
+            df_train["R2"] = pivot["r2"]
+
+        if "PIVOT_FIB" not in df_train.columns:
+            from finta import TA
+            pivot = TA.PIVOT_FIB(df_train)
+            df_train["PIVOT_FIB"] = pivot["pivot"]
+            df_train["S1_FIB"] = pivot["s1"]
+            df_train["S2_FIB"] = pivot["s2"]
+            df_train["R1_FIB"] = pivot["r1"]
+            df_train["R2_FIB"] = pivot["r2"]
+
+    else:
+        df_train, eval_df_train = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
+        dropbox_cache.save_train_cache(df_train, hour_df)
+        dropbox_cache.save_train_cache(eval_df_train, minute_df)
+
+    return df_train, eval_df_train
 
 def train_predictor(markets:list,
                     trainer: Trainer,
@@ -83,12 +116,15 @@ def train_predictor(markets:list,
     if len(best_indicators) == 0:
         best_indicators.append("RSI")
 
-    for m in random.choices(markets, k=10):
+    for m in markets:
         # for m in markets:
         symbol = m["symbol"]
+        if symbol != "USDTRY" and symbol != "GBPJPY":
+            continue
+
         tracer.info(f"Train {symbol}")
-        df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
-        df_test, eval_df_test = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
+        df_train, eval_df_train = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
+        df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
         if len(df_train) > 0:
             try:
                 p = GenericPredictor(indicators=indicators, symbol=symbol)

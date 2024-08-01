@@ -150,11 +150,11 @@ def train_predictor(markets: list,
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-        #if symbol != "AUDSGD":
-        #    continue
+        if symbol != "USDTRY" and symbol != "GBPJPY":
+            continue
 
         tracer.info(f"Matrix Train {symbol}")
-        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
+        df_train, eval_df_train = get_test_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
         df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
 
         if len(df_train) == 0:

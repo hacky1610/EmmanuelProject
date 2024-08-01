@@ -75,7 +75,7 @@ class Trainer:
             if best_train_result is None:
                 return
 
-            if best_train_result.get_reward() > best_reward and best_train_result.get_win_loss() >= 0.66 and best_train_result.get_trades() >= 15:
+            if best_train_result.get_reward() > best_reward and best_train_result.is_good():
                 best_reward = best_train_result.get_reward()
                 best_win_loss = best_train_result.get_win_loss()
                 best_avg_reward = best_train_result.get_average_reward()
