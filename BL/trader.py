@@ -99,7 +99,7 @@ class Trader:
         if not self._check_ig_performance:
             return True
 
-        deals = self._deal_storage.get_closed_deals_by_ticker_df(ticker)
+        deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker,30)
         if len(deals) > 0:
             self._tracer.debug(f"Profit {deals.profit.sum() } is greater than 50")
             return deals.profit.sum() > 50

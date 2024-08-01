@@ -165,6 +165,15 @@ class DealStore:
         return DataFrame(list(self._collection.find(
             {"status": "Closed", "ticker": ticker})))
 
+    def get_closed_deals_by_ticker_not_older_than_df(self, ticker: str, days:int) -> DataFrame:
+
+
+        return DataFrame(list(self._collection.find(
+            {"status": "Closed",
+             "ticker": ticker,
+             "close_date_ig_datetime": {"$gte": datetime.datetime.now() - datetime.timedelta(days=days)}
+             } )))
+
     def get_closed_deals(self):
         return self._collection.find(
             {"status": "Closed"})
