@@ -41,7 +41,7 @@ ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
 tracer = LogglyTracer(conf_reader.get("loggly_api_key"), account_type, "update_job")
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
-ig = IG(conf_reader=conf_reader, tracer=tracer, live=False)
+ig = IG(conf_reader=conf_reader, tracer=tracer, live=live)
 predictor_class_list = [GenericPredictor]
 client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
