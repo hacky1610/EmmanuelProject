@@ -309,6 +309,10 @@ class IG:
         self._tracer.debug(
             f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
 
+        if bid_price is None or offer_price is None:
+            self._tracer.debug(f"Bid or offer price is none {position}")
+            return
+
         try:
             deal = deal_store.get_deal_by_deal_id(deal_id)
 

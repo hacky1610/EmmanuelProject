@@ -53,7 +53,7 @@ only_one_position = True
 def evaluate_predictor(indicators, ig: IG,predictor_class, viewer: BaseViewer):
     global symbol
     results = EvalResultCollection()
-    markets = ig.get_markets(tradeable=False, trade_type=trade_type)
+    markets = IG.get_markets_offline()
     for m in markets:
         try:
             symbol = m["symbol"]

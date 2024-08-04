@@ -202,7 +202,7 @@ def train_predictor(markets: list,
                 pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
                 pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
 
-                if pred_matrix.get_result().get_reward() > pred_standard.get_result().get_reward():
+                if pred_matrix.get_result().is_better(pred_standard.get_result()):
                     pred_matrix.activate()
                     ps.save(pred_matrix)
                     print(f"****************************************")

@@ -115,12 +115,12 @@ def train_predictor(markets:list,
 
     if len(best_indicators) == 0:
         best_indicators.append("RSI")
+    random.shuffle(markets)
 
     for m in markets:
         # for m in markets:
         symbol = m["symbol"]
-        if symbol != "USDTRY" and symbol != "GBPJPY":
-            continue
+
 
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
@@ -129,7 +129,7 @@ def train_predictor(markets:list,
             try:
                 p = GenericPredictor(indicators=indicators, symbol=symbol)
                 p.setup(ps.load_best_by_symbol(symbol))
-                if p.get_result().get_reward() < 300:
+                if p.get_result().get_reward() < 600:
                     print(f"Skip {symbol} - Reward to low {p.get_result().get_reward()}")
                     continue
                 trainer.train(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, predictor, indicators, best_indicators,

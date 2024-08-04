@@ -80,6 +80,16 @@ class EvalResult:
         self._trades = trades
         self._wins = wins
 
+    def is_better(self, compare_to) -> bool:
+        c:EvalResult = compare_to
+
+        if self.is_good() and not c.is_good():
+            return True
+
+        return self.get_reward() > c.get_reward()
+
+
+
 
     def get_reward(self):
         return self._reward
@@ -140,7 +150,7 @@ class EvalResult:
                    ])
 
     def is_good(self):
-        return self.get_reward() > 1000 and self.get_win_loss() >= 0.69 and self.get_trades() >= 100
+        return self.get_reward() > 1000 and self.get_win_loss() >= 0.66 and self.get_trades() >= 95
 
     def get_trade_df(self) -> DataFrame:
         df = DataFrame()
