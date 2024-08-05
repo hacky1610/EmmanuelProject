@@ -1,6 +1,9 @@
 import copy
 import unittest
+from datetime import datetime
 from unittest.mock import MagicMock, call
+
+import pandas as pd
 
 from BL.datatypes import TradeAction
 from BL.trader import Trader, TradeConfig, TradeResult
@@ -15,6 +18,8 @@ class TraderTest(unittest.TestCase):
 
     def setUp(self):
         self._tracer = ConsoleTracer()
+        self._tracer.debug = MagicMock()
+        self._tracer.warning = MagicMock()
         self._dataProcessor = DataProcessor()
         self.analytics = Analytics(ConsoleTracer(), MagicMock())
         self._tiingo = MagicMock()
@@ -39,6 +44,7 @@ class TraderTest(unittest.TestCase):
             self._stock_data = self._add_data(self._stock_data)
 
         self._tiingo.load_trade_data = MagicMock(return_value=self._stock_data)
+        self._deal_storage = MagicMock()
         self._trader = Trader(ig=self._mock_ig,
                               tiingo=self._tiingo,
                               tracer=self._tracer,
@@ -46,13 +52,13 @@ class TraderTest(unittest.TestCase):
                               analytics=self.analytics,
                               predictor_class_list= self._predictor_class_list,
                               predictor_store=MagicMock(),
-                              deal_storage=MagicMock(),
+                              deal_storage=self._deal_storage,
                               market_storage=self._mock_market_store)
-        self._trader._get_spread = MagicMock(return_value=1)
         self._trader._evalutaion_up_to_date = MagicMock(return_value=True)
         # Setzen der Test-Werte für _min_win_loss und _min_trades
         self._trader._min_win_loss = 0.7
         self._trader._min_trades = 5
+        self._trader._calc_profit = MagicMock()
         self._default_trade_config = TradeConfig(
             symbol="AAPL",
             epic="AAPL-12345",  # Annahme: Stellen Sie eine gültige Epic-Nummer ein.
@@ -101,7 +107,6 @@ class TraderTest(unittest.TestCase):
 
     def test_trade_do_buy(self):
         self._predictor.predict = MagicMock(return_value=TradeAction.BUY)
-        self._trader._get_spread = MagicMock(return_value=1)
         self._trader._execute_trade = MagicMock(return_value = (
             TradeResult.SUCCESS,
             {"dealReference":"Ref",
@@ -123,20 +128,6 @@ class TraderTest(unittest.TestCase):
                                  config=self._default_trade_config)
         self._mock_ig.sell.asser_called()
         assert res == TradeResult.SUCCESS
-
-    def test_trade_spread_to_big(self):
-        self._trader._is_good = MagicMock(return_value=True)
-        self._predictor.predict = MagicMock(return_value="buy")
-        res = self._trader.trade(predictor=self._predictor,
-                                 config=TradeConfig(
-                                     symbol="AAPL",
-                                     epic="AAPL-12345",  # Annahme: Stellen Sie eine gültige Epic-Nummer ein.
-                                     spread=1.5,
-                                     scaling=10)
-                                 )
-        self._mock_ig.buy.assert_not_called()
-        self._mock_ig.sell.assert_not_called()
-        assert res == TradeResult.ERROR
 
     def test_symbol_not_good(self):
         self._trader._execute_trade = MagicMock(return_value=(
@@ -166,7 +157,6 @@ class TraderTest(unittest.TestCase):
     def test_trade_action_none(self):
         self._trader._is_good = MagicMock(return_value=True)
         self._predictor.predict = MagicMock(return_value=TradeAction.NONE)
-        self._trader._get_spread = MagicMock(return_value=1)
         res = self._trader.trade(predictor=self._predictor,
                                  config=self._default_trade_config
                                  )
@@ -209,3 +199,164 @@ class TraderTest(unittest.TestCase):
         self._mock_ig.buy.assert_not_called()
         self._tiingo.load_trade_data.assert_not_called()
         assert res == False
+
+    def test_check_ig_performance_false(self):
+        self._trader._check_ig_performance = False
+        result = self._trader._is_good_ticker("AAPL")
+        self.assertTrue(result, "Result should be True when _check_ig_performance is False.")
+
+    def test_less_than_8_deals(self):
+        deals = MagicMock()
+        deals.__len__.return_value = 7
+        self._trader._tracer.debug = MagicMock()
+        self._trader._check_ig_performance = True
+        self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
+
+        result = self._trader._is_good_ticker("AAPL")
+        self.assertFalse(result, "Result should be False when less than 8 deals are returned.")
+        self._trader._tracer.debug.assert_called_with("Less than 8 deals")
+
+    def test_more_than_7_deals_profit_greater_than_50(self):
+        deals = MagicMock()
+        deals.__len__.return_value = 8
+        deals.profit.sum.return_value = 60
+        self._trader._tracer.debug = MagicMock()
+        self._trader._check_ig_performance = True
+        self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
+
+        result = self._trader._is_good_ticker("AAPL")
+        self.assertTrue(result, "Result should be True when more than 7 deals and profit is greater than 50.")
+        self._trader._tracer.debug.assert_called_with("Profit 60 is greater than 50")
+
+    def test_more_than_7_deals_profit_less_than_50(self):
+        deals = MagicMock()
+        deals.__len__.return_value = 8
+        deals.profit.sum.return_value = 40
+        self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
+        self._trader._check_ig_performance = True
+        self._trader._tracer.debug = MagicMock()
+
+        result = self._trader._is_good_ticker("AAPL")
+        self.assertFalse(result, "Result should be False when more than 7 deals and profit is less than 50.")
+        self._trader._tracer.debug.assert_called_with("Profit 40 is greater than 50")
+
+    def test_empty_transaction_history(self):
+        self._trader._deal_storage.get_deal_by_ig_id = MagicMock()
+        self._trader._ig.get_transaction_history.return_value = pd.DataFrame()
+        self._trader.update_deals()
+        self._trader._deal_storage.get_deal_by_ig_id.assert_not_called()
+
+    def test_no_deal_found(self):
+        data = {
+            'instrumentName': ['EUR/USD'],
+            'openDateUtc': ['2023-08-05T00:00:00'],
+            'profitAndLoss': ['€0'],
+            'openLevel': ['1.1'],
+            'closeLevel': ['1.2'],
+            'dateUtc': ['2023-08-05T12:00:00']
+        }
+        hist = pd.DataFrame(data)
+        self._trader._ig.get_transaction_history.return_value = hist
+        self._trader._deal_storage.get_deal_by_ig_id.return_value = None
+
+        self._trader.update_deals()
+        self._trader._tracer.debug.assert_called_with("No deal for 2023-08-05T00:00:00 and EURUSD")
+
+    def test_deal_found_and_updated(self):
+        data = {
+            'instrumentName': ['EUR/USD'],
+            'openDateUtc': ['2023-08-05T00:00:00'],
+            'profitAndLoss': ['€100'],
+            'openLevel': ['1.1'],
+            'closeLevel': ['1.2'],
+            'dateUtc': ['2023-08-05T12:00:00']
+        }
+        hist = pd.DataFrame(data)
+        self._trader._ig.get_transaction_history.return_value = hist
+
+        deal_mock = MagicMock()
+        self._trader._deal_storage.get_deal_by_ig_id.return_value = deal_mock
+
+        self._trader.update_deals()
+
+        deal_mock.profit = 100
+        deal_mock.open_level = 1.1
+        deal_mock.close_level = 1.2
+        deal_mock.close_date_ig_datetime = datetime.strptime('2023-08-05T12:00:00', '%Y-%m-%dT%H:%M:%S')
+        deal_mock.result = 1
+        deal_mock.close.assert_called_once()
+        self._deal_storage.save.assert_called_with(deal_mock)
+
+    def test_deal_profit_zero(self):
+        data = {
+            'instrumentName': ['EUR/USD'],
+            'openDateUtc': ['2023-08-05T00:00:00'],
+            'profitAndLoss': ['€0'],
+            'openLevel': ['1.1'],
+            'closeLevel': ['1.2'],
+            'dateUtc': ['2023-08-05T12:00:00']
+        }
+        hist = pd.DataFrame(data)
+        self._trader._ig.get_transaction_history.return_value = hist
+
+        deal_mock = MagicMock()
+        self._trader._deal_storage.get_deal_by_ig_id.return_value = deal_mock
+
+        market_details_mock = {'instrument': {'contractSize': '10'}}
+        self._trader._ig.get_market_details.return_value = market_details_mock
+
+        market_mock = MagicMock()
+        self._trader._market_store.get_market.return_value = market_mock
+
+        self._trader._calc_profit.return_value = 50
+
+        self._trader.update_deals()
+
+        self.assertEqual(deal_mock.profit, 50)
+        self._trader._tracer.warning.assert_called_with(
+            f"Problem with IG Calcululation. Profit is 0 Euro. Real profit is {deal_mock.profit} . Deal {deal_mock.dealId}"
+        )
+
+    def test_deal_profit_positive(self):
+        data = {
+            'instrumentName': ['EUR/USD'],
+            'openDateUtc': ['2023-08-05T00:00:00'],
+            'profitAndLoss': ['€100'],
+            'openLevel': ['1.1'],
+            'closeLevel': ['1.2'],
+            'dateUtc': ['2023-08-05T12:00:00']
+        }
+        hist = pd.DataFrame(data)
+        self._trader._ig.get_transaction_history.return_value = hist
+
+        deal_mock = MagicMock()
+        self._trader._deal_storage.get_deal_by_ig_id.return_value = deal_mock
+
+        self._trader.update_deals()
+
+        self.assertEqual(deal_mock.result, 1)
+
+    def test_deal_profit_negative_or_zero(self):
+        data = {
+            'instrumentName': ['EUR/USD'],
+            'openDateUtc': ['2023-08-05T00:00:00'],
+            'profitAndLoss': ['€-100'],
+            'openLevel': ['1.1'],
+            'closeLevel': ['1.2'],
+            'dateUtc': ['2023-08-05T12:00:00']
+        }
+        hist = pd.DataFrame(data)
+        self._trader._ig.get_transaction_history.return_value = hist
+
+        deal_mock = MagicMock()
+        self._trader._deal_storage.get_deal_by_ig_id.return_value = deal_mock
+
+        self._trader.update_deals()
+
+        self.assertEqual(deal_mock.result, -1)
+
+
+
+
+
+

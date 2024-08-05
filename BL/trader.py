@@ -140,7 +140,7 @@ class Trader:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
 
     def _calc_profit(self,  ig_deal, m, scaling) -> float:
-        if int(ig_deal["size"]) == 1:
+        if int(ig_deal["size"]) > 0:
             profit = float(ig_deal["closeLevel"]) - float(ig_deal["openLevel"])
             return m.get_euro_value(profit, scaling)
         else:
@@ -279,12 +279,6 @@ class Trader:
         if len(trade_df) == 0:
             self._tracer.error(f"Could not load train data for {config.symbol}")
             return TradeResult.ERROR
-
-        spread_limit = self._get_spread(trade_df, config.scaling)
-        if config.spread > spread_limit:
-            self._tracer.debug(f"Spread {config.spread} is greater than {spread_limit} for {config.symbol}")
-            return TradeResult.ERROR
-
 
         self._tracer.debug(f"{config.symbol} valid to predict")
         signal = predictor.predict(trade_df)
