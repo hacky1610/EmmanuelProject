@@ -1,5 +1,6 @@
 import json
 import os
+import datetime
 
 from Connectors.dropboxservice import DropBoxService
 import pandas as pd
@@ -99,38 +100,57 @@ class DropBoxCache(BaseCache):
             return json.loads(res)
         return None
 
+    def _get_train_cache_path(self,name) -> str:
+        return f"{self._get_train_folder()}/TrainCache/{name}"
+
+    def _get_signals_path(self, name) -> str:
+        return f"{self._get_train_folder()}/Signals/{name}"
+
+    def _get_simulations_path(self, name) -> str:
+        return f"{self._get_train_folder()}/Simulations/{name}"
+
+    def _get_train_folder(self):
+
+        # Aktuelles Datum und Uhrzeit
+        heute = datetime.datetime.now()
+
+        # Kalenderwoche abrufen
+        kalenderwoche = heute.isocalendar()[1]
+
+        return f"Training/{heute.year}_{kalenderwoche}"
+
     def load_train_cache(self, name: str):
-        res = self.dropbox_servie.load(f"TrainCache/{name}")
+        res = self.dropbox_servie.load(self._get_train_cache_path(name))
         if res is not None:
             return pd.read_csv(io.StringIO(res), sep=",")
         return None
 
     def save_train_cache(self, data: DataFrame, name: str):
-        self.dropbox_servie.upload_data(data.to_csv(), f"TrainCache/{name}")
+        self.dropbox_servie.upload_data(data.to_csv(), self._get_train_cache_path(name))
 
     def train_cache_exist(self, name: str):
-        return self.dropbox_servie.exists(f"TrainCache/{name}")
+        return self.dropbox_servie.exists(self._get_train_cache_path(name))
 
     def signal_exist(self, name: str):
-        return self.dropbox_servie.exists(f"Signals/{name}")
+        return self.dropbox_servie.exists(self._get_signals_path(name))
 
     def save_signal(self, data: DataFrame, name: str):
-        self.dropbox_servie.upload_data(data.to_csv(), f"Signals/{name}")
+        self.dropbox_servie.upload_data(data.to_csv(), self._get_signals_path(name))
 
     def load_signal(self, name: str):
-        res = self.dropbox_servie.load(f"Signals/{name}")
+        res = self.dropbox_servie.load(self._get_signals_path(name))
         if res is not None:
             return pd.read_csv(io.StringIO(res), sep=",")
         return None
 
     def simulation_exist(self, name: str):
-        return self.dropbox_servie.exists(f"Simulations/{name}")
+        return self.dropbox_servie.exists(self._get_simulations_path(name))
 
     def save_simulation(self, data: DataFrame, name: str):
-        self.dropbox_servie.upload_data(data.to_csv(), f"Simulations/{name}")
+        self.dropbox_servie.upload_data(data.to_csv(), self._get_simulations_path(name))
 
     def load_simulation(self, name: str):
-        res = self.dropbox_servie.load(f"Simulations/{name}")
+        res = self.dropbox_servie.load(self._get_simulations_path(name))
         if res is not None:
             return pd.read_csv(io.StringIO(res), sep=",")
         return None
