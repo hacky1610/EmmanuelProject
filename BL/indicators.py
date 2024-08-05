@@ -127,8 +127,9 @@ class Indicators:
     # endregion
 
     # region Constructor
-    def __init__(self, tracer: Tracer = ConsoleTracer()):
+    def __init__(self, tracer: Tracer = ConsoleTracer(), dp = DataProcessor()):
         self._indicators = []
+        self._dp = dp
         self._indicator_confirm_factor = 0.7
         # RSI
         self._add_indicator(self.RSI, self._rsi_predict)
@@ -255,7 +256,7 @@ class Indicators:
         df_4h: DataFrame = one_h_df.groupby(pd.Grouper(key='date_index', freq='4H')).agg({
             'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
             'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
-            'low': 'max',  # Höchster Kurs in der 4-Stunden-Periode
+            'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
             'close': 'last',  # Höchster Kurs in der 4-Stunden-Periode
             'date_index': 'first'  # Erstes Zeitstempel in der 4-Stunden-Periode
         }).reset_index(drop=True)
@@ -263,8 +264,7 @@ class Indicators:
         df_4h.reset_index(inplace=True)
 
         df_4h = df_4h.filter(["open", "low", "high", "close"])
-        dp = DataProcessor()
-        dp.addSignals_big_tf(df_4h)
+        self._dp.addSignals_big_tf(df_4h)
 
         return df_4h.dropna()
 
