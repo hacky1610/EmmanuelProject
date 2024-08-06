@@ -98,11 +98,15 @@ class Trader:
     def _is_good_ticker(self, ticker: str) -> bool:
         if not self._check_ig_performance:
             return True
-
+        min_profit = 50
         deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker,30)
         if len(deals) > 7:
-            self._tracer.debug(f"Profit {deals.profit.sum() } is greater than 50")
-            return deals.profit.sum() > 50
+            if deals.profit.sum() > min_profit:
+                self._tracer.debug(f"Profit {deals.profit.sum()} is greater than {min_profit}")
+                return True
+            else:
+                self._tracer.debug(f"Profit {deals.profit.sum()} is less than {min_profit}")
+                return False
         else:
             self._tracer.debug(f"Less than 8 deals")
 
