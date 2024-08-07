@@ -238,7 +238,7 @@ class TraderTest(unittest.TestCase):
 
         result = self._trader._is_good_ticker("AAPL")
         self.assertFalse(result, "Result should be False when more than 7 deals and profit is less than 50.")
-        self._trader._tracer.debug.assert_called_with("Profit 40 is greater than 50")
+        self._trader._tracer.debug.assert_called_with("Profit 40 is less than 50")
 
     def test_empty_transaction_history(self):
         self._trader._deal_storage.get_deal_by_ig_id = MagicMock()
