@@ -72,13 +72,11 @@ class Reporting:
 
     def get_best_indicators(self):
 
-        best_df = self.reports[self.reports.reward > 100]
-        best_df = best_df[best_df.trades > 15]
+        best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports)/3)]
         indicators = []
         for r in best_df.iterrows():
             indicators = indicators + r[1]._indicator_names
         string_counts = Counter(indicators)
-        #most_common_strings = string_counts.most_common()
 
         return string_counts
 
