@@ -276,7 +276,7 @@ class IG:
                                              scaling_factor=scaling_factor)
 
         if check_min:
-            min_stop_distance = self.get_min_stop_distance(epic) / scaling_factor
+            min_stop_distance = self.get_min_stop_distance(epic) / scaling_factor * 1.05
         else:
             min_stop_distance = 0
 
