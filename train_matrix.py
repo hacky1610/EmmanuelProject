@@ -170,9 +170,9 @@ def train_predictor(markets: list,
 
                 pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
                 pred_standard.setup(config)
-                if pred_standard.get_result().get_reward() < 300:
-                    print(f"Skip {symbol} {pred_standard.get_result().get_reward()}")
-                    continue
+                #if pred_standard.get_result().get_reward() < 300:
+                #    print(f"Skip {symbol} {pred_standard.get_result().get_reward()}")
+                #    continue
                 pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
                 pred_matrix.setup(config)
 

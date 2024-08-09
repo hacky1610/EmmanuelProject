@@ -53,8 +53,11 @@ class Indicators:
     MACDSINGALDIFF = "macd_signal_diff"
     MACD_CONVERGENCE = "macd_convergence"
     MACD_MAX = "macd_max"
+    MACD_MAX_2 = "macd_max_2"
     MACD_MAX_4H = "macd_max_4h"
+    MACD_MAX_12H = "macd_max_12h"
     MACD_SLOPE = "macd_slope"
+    MACD_SLOPE_4H = "macd_slope_4h"
     # EMA
     EMA = "ema"
     EMA_10_SLOPE = "ema_10_slope"
@@ -158,8 +161,11 @@ class Indicators:
         # MACD
         self._add_indicator(self.MACD, self._macd_predict)
         self._add_indicator(self.MACD_SLOPE, self._macd_slope_predict)
+        self._add_indicator(self.MACD_SLOPE_4H, self._macd_slope_predict_4h)
         self._add_indicator(self.MACD_MAX, self._macd_max_predict)
+        self._add_indicator(self.MACD_MAX_2, self._macd_max_predict2)
         self._add_indicator(self.MACD_MAX_4H, self._macd_max_predict_4h)
+        self._add_indicator(self.MACD_MAX_12H, self._macd_max_predict_12h)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
@@ -267,6 +273,27 @@ class Indicators:
         self._dp.addSignals_big_tf(df_4h)
 
         return df_4h.dropna()
+
+    def convert_1h_to_12h(self, one_h_df: DataFrame):
+        if len(one_h_df) == 0:
+            return DataFrame()
+
+        one_h_df['date_index'] = pd.to_datetime(one_h_df['date'])
+        # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
+        df_12h: DataFrame = one_h_df.groupby(pd.Grouper(key='date_index', freq='12H')).agg({
+            'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
+            'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
+            'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
+            'close': 'last',  # Höchster Kurs in der 4-Stunden-Periode
+            'date_index': 'first'  # Erstes Zeitstempel in der 4-Stunden-Periode
+        }).reset_index(drop=True)
+        df_12h.dropna(inplace=True)
+        df_12h.reset_index(inplace=True)
+
+        df_12h = df_12h.filter(["open", "low", "high", "close"])
+        self._dp.addSignals_big_tf(df_12h)
+
+        return df_12h.dropna()
 
     # region Get/Add Indicators
     def _add_indicator(self, name, function):
@@ -1032,8 +1059,11 @@ class Indicators:
     def _macd_max_predict_4h(self, df):
         return self._oszi_min_max(self.convert_1h_to_4h(df), "MACD", 7, 0.9)
 
+    def _macd_max_predict_12h(self, df):
+        return self._oszi_min_max(self.convert_1h_to_12h(df), "MACD", 7, 0.9)
+
     def _macd_max_predict2(self, df):
-        return self._oszi_min_max(df, "MACD", 14, 0.8)
+        return self._oszi_min_max(df, "MACD", 7, 0.8)
 
     def _macd_slope_predict(self, df):
         if len(df) < 2:
@@ -1046,6 +1076,10 @@ class Indicators:
             return TradeAction.BUY
         else:
             return TradeAction.SELL
+
+    def _macd_slope_predict_4h(self, df:DataFrame):
+        return self._macd_slope_predict(self.convert_1h_to_4h(df))
+
 
     def _rsi_smooth_slope_predict(self, df):
         diff = df.RSI_SMOOTH.diff().iloc[-1]
