@@ -98,7 +98,7 @@ class Trader:
     def _is_good_ticker(self, ticker: str) -> bool:
         if not self._check_ig_performance:
             return True
-        min_profit = 50
+        min_profit = 100
         deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker,30)
         if len(deals) > 7:
             if deals.profit.sum() > min_profit:
@@ -143,6 +143,16 @@ class Trader:
             else:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
 
+
+    def _fix_deals(self):
+        opened = self._ig.get_opened_positions()
+        deals = self._deal_storage.get_open_deals()
+        for deal in deals:
+            if deal.dealId not in opened.dealId.values:
+                self._tracer.error(f"Unable to find open {deal.ticker} {deal.open_date_ig_str}")
+                deal.close()
+                self._deal_storage.save(deal)
+
     def _calc_profit(self,  ig_deal, m, scaling) -> float:
         if int(ig_deal["size"]) > 0:
             profit = float(ig_deal["closeLevel"]) - float(ig_deal["openLevel"])
@@ -172,6 +182,8 @@ class Trader:
     def update_markets(self):
         self._intelligent_update()
         self.update_deals()
+        self._fix_deals()
+
 
     def _intelligent_update(self):
         self._tracer.debug("Intelligent Update")
@@ -272,8 +284,8 @@ class Trader:
             return TradeResult.ERROR
 
         open_deals = self._deal_storage.get_open_deals_by_ticker(config.symbol)
-        if len(open_deals) >= 2:
-            self._tracer.debug(f"there are already 2 open position of {config.symbol}")
+        if len(open_deals) >= 3:
+            self._tracer.debug(f"there are already 3 open position of {config.symbol}")
             return TradeResult.ERROR
 
 
