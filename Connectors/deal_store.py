@@ -27,6 +27,7 @@ class Deal:
                  predictor_scan_id="",
                  open_level: float = None,
                  close_level: float = None,
+                 manual_stop_level: float = None,
                  is_manual_stop: bool = False,
                  manual_stop:float = None):
         self.ticker = ticker
@@ -51,6 +52,7 @@ class Deal:
         self.close_level = close_level
         self.manual_stop = manual_stop
         self.is_manual_stop = is_manual_stop
+        self.manual_stop_level = manual_stop_level
 
     @staticmethod
     def Create(data: dict):
@@ -76,7 +78,8 @@ class Deal:
             open_level=data.get("open_level", None),
             close_level=data.get("close_level", None),
             manual_stop=data.get("manual_stop", None),
-            is_manual_stop=data.get("is_manual_stop", False)
+            is_manual_stop=data.get("is_manual_stop", False),
+            manual_stop_level=data.get("manual_stop_level", None),
         )
 
     def __str__(self):
@@ -112,7 +115,8 @@ class Deal:
             "close_level": self.close_level,
             "manual_stop":self.manual_stop,
             "is_manual_stop": self.is_manual_stop,
-            "size": self.size
+            "size": self.size,
+            "manual_stop_level":self.manual_stop_level
         }
 
 
