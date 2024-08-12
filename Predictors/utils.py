@@ -80,24 +80,18 @@ class Reporting:
 
         return string_counts
 
-    def get_best_indicator_names(self, factor: float = 0.36) -> List[str]:
+    def get_best_indicator_names(self) -> List[str]:
 
-        best_df = self.reports[self.reports.reward > self._min_reward]
+        best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports)/3)]
         indicators = []
         for r in best_df.iterrows():
             indicators = indicators + r[1]._indicator_names
-        string_counts = Counter(indicators)
-        most_common_strings = string_counts.most_common(int(len(string_counts) * factor))
 
-        indicators = []
-        for i in most_common_strings:
-            indicators.append(i[0])
+        return list(set(indicators))
 
-        return indicators
+    def get_best_indicator_combos(self) -> List[List[str]]:
 
-    def get_best_indicator_combos(self, n: int = 7) -> List[List[str]]:
-
-        best_df = self.reports[self.reports.reward > self._min_reward]
+        best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports)/3)]
         return best_df['_indicator_names'].tolist()
 
     def get_all_indicators(self):
