@@ -38,7 +38,7 @@ client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db
 db = client["ZuluDB"]
 ms = MarketStore(db)
 ds = DealStore(db, "DEMO")
-analytics = Analytics(ms)
+analytics = Analytics(market_store=ms,ig=ig)
 trade_type = TradeType.FX
 
 only_one_position = True

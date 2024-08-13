@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, date
-from typing import Type, List
+from typing import Type, List, Dict
 from collections import Counter
 from pandas import DataFrame, Series
 from BL.eval_result import EvalResultCollection
@@ -37,7 +37,7 @@ class Reporting:
         self.reports: DataFrame = DataFrame()
         self._min_reward = 600
 
-    def create(self, markets, predictor_class, verbose=False):
+    def create(self, markets:List[Dict], predictor_class, verbose=False):
         self.results, self.reports = self.report_predictors(markets, predictor_class, verbose)
 
     def report_predictor(self, symbol: str, predictor_class: Type, verbose: bool):
@@ -58,7 +58,7 @@ class Reporting:
                                                      "frequence",
                                                      "reward"])
 
-    def report_predictors(self, markets, predictor_class: Type, verbose: bool = True) -> (
+    def report_predictors(self, markets:List[Dict], predictor_class: Type, verbose: bool = True) -> (
     EvalResultCollection, DataFrame):
         results = EvalResultCollection()
         df = DataFrame()

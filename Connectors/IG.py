@@ -2,7 +2,7 @@ import json
 import os.path
 import time
 import traceback
-from typing import Dict
+from typing import Dict, List
 from trading_ig import IGService
 from trading_ig.rest import IGException, ApiExceededException
 from BL import DataProcessor, BaseReader
@@ -612,7 +612,7 @@ class IG:
         return df_results
 
     @staticmethod
-    def get_markets_offline():
+    def get_markets_offline() -> List[Dict]:
         _currency_markets = []
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "Data", "markets.json"),
                   'r') as json_file:

@@ -1,10 +1,8 @@
 import pymongo
-from pandas import DataFrame
 from Connectors.IG import IG
 from BL import ConfigReader
 from Connectors.predictore_store import PredictorStore
 import plotly.express as px
-import pandas as pd
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import Reporting
 
