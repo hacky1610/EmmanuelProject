@@ -98,7 +98,7 @@ class Trader:
     def _is_good_ticker(self, ticker: str) -> bool:
         if not self._check_ig_performance:
             return True
-        min_profit = 50
+        min_profit = 100
         deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker,30)
         if len(deals) > 7:
             if deals.profit.sum() > min_profit:
@@ -143,6 +143,16 @@ class Trader:
             else:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
 
+
+    def _fix_deals(self):
+        opened = self._ig.get_opened_positions()
+        deals = self._deal_storage.get_open_deals()
+        for deal in deals:
+            if deal.dealId not in opened.dealId.values:
+                self._tracer.error(f"Unable to find open {deal.ticker} {deal.open_date_ig_str}")
+                deal.close()
+                self._deal_storage.save(deal)
+
     def _calc_profit(self,  ig_deal, m, scaling) -> float:
         if int(ig_deal["size"]) > 0:
             profit = float(ig_deal["closeLevel"]) - float(ig_deal["openLevel"])
@@ -170,15 +180,18 @@ class Trader:
         self._tracer.debug("End")
 
     def update_markets(self):
-        self._intelligent_update()
+        self._intelligent_update_and_close()
         self.update_deals()
+        self._fix_deals()
 
-    def _intelligent_update(self):
+
+    def _intelligent_update_and_close(self):
         self._tracer.debug("Intelligent Update")
         for _, item in self._ig.get_opened_positions().iterrows():
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
             if deal is not None:
                 self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
+                self._ig.manual_close(item, self._deal_storage)
 
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
@@ -298,13 +311,11 @@ class Trader:
             limit = None
 
         is_manual_stop = False
-        manual_stop = None
         minimal_stop = self._ig.get_min_stop_distance(config.epic)
         if stop < minimal_stop:
             self._tracer.debug(f"Current stop {stop} is lower than min stop distance {minimal_stop}")
             self._tracer.debug("Use manual stop")
             is_manual_stop = True
-            manual_stop = stop
             new_stop = minimal_stop * 1.01
             self._tracer.debug(f"Set stop to {new_stop}")
             stop = new_stop
@@ -325,14 +336,23 @@ class Trader:
             self._tracer.debug("Save Deal in db")
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
             date_string = date_string.group().replace(" ", "T")
+            manual_stop_level = None
+
+            if is_manual_stop:
+                pip_diff = market.get_pip_value(stop,config.scaling)
+                if signal == TradeAction.BUY:
+                    manual_stop_level = deal_response["level"] - pip_diff
+                elif signal == TradeAction.SELL:
+                    manual_stop_level = deal_response["level"] + pip_diff
+                self._tracer.debug(f"set manual stop to {manual_stop_level} - level {deal_response['level']}")
 
             self._deal_storage.save(Deal(ticker=config.symbol,
-                                         manual_stop=manual_stop,
                                          is_manual_stop=is_manual_stop,
                                          dealReference=deal_response["dealReference"],
                                          dealId=deal_response["dealId"],
                                          epic=config.epic, direction=signal, account_type="DEMO",
                                          open_date_ig_str=date_string,
+                                         manual_stop_level=manual_stop_level,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
                                          stop_factor=stop, limit_factor=limit,predictor_scan_id=predictor.get_id(), size=config.size))
         return res

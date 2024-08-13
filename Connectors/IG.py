@@ -2,11 +2,12 @@ import json
 import os.path
 import time
 import traceback
-from typing import  Dict
+from typing import Dict
 from trading_ig import IGService
 from trading_ig.rest import IGException, ApiExceededException
 from BL import DataProcessor, BaseReader
 from BL.analytics import Analytics
+from BL.datatypes import TradeAction
 from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
 from Connectors.market_store import MarketStore, Market
@@ -222,7 +223,8 @@ class IG:
         deal_response: dict = {}
         result = False
         try:
-            self._tracer.debug(f"Open trade for {epic} with {direction} {currency} Size {size} Stop {stop} Limit {limit} ")
+            self._tracer.debug(
+                f"Open trade for {epic} with {direction} {currency} Size {size} Stop {stop} Limit {limit} ")
             response = self.ig_service.create_open_position(
                 currency_code=currency,
                 direction=direction,
@@ -271,7 +273,8 @@ class IG:
             self._tracer.error(f"Error while get limit {e}")
             return -1
 
-    def get_stop_distance(self, market,  epic: str, scaling_factor: int, intelligent_stop_distance:float = 6.0, check_min = True) -> float:
+    def get_stop_distance(self, market, epic: str, scaling_factor: int, intelligent_stop_distance: float = 6.0,
+                          check_min=True) -> float:
         stop_distance = market.get_pip_value(euro=intelligent_stop_distance,
                                              scaling_factor=scaling_factor)
 
@@ -281,21 +284,23 @@ class IG:
             min_stop_distance = 0
 
         if stop_distance <= min_stop_distance:
-            self._tracer.debug(f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")
+            self._tracer.debug(
+                f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")
             return min_stop_distance
 
         self._tracer.debug(f"Calculated stop distance is {stop_distance}")
 
         return stop_distance
 
-    def is_ready_to_set_intelligent_stop(self, diff, limit:float) -> bool:
+    def is_ready_to_set_intelligent_stop(self, diff, limit: float) -> bool:
 
         ready = diff > limit
         if ready:
             self._tracer.debug(f"Current profit {diff} is greate than limit {limit}")
         return ready
 
-    def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore, predictor_store: PredictorStore):
+    def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore,
+                                   predictor_store: PredictorStore):
         open_price = position.level
         bid_price = position.bid
         offer_price = position.offer
@@ -316,20 +321,7 @@ class IG:
         try:
             deal = deal_store.get_deal_by_deal_id(deal_id)
 
-            if deal.manual_stop:
-                self._tracer.debug("Manual Stop")
-
-                if direction == "BUY":
-                    if (open_price - bid_price) * scaling_factor > deal.manual_stop:
-                        self._tracer.debug("Stop reached")
-                        self.close("SELL", deal_id, deal.size)
-                if direction == "SELL": #TODO
-                    if (offer_price - open_price) * scaling_factor > deal.manual_stop:
-                        self._tracer.debug("Stop reached")
-                        self.close("BUY", deal_id, deal.size)
-
-
-            p = GenericPredictor(ticker, Indicators(),{},self._tracer)
+            p = GenericPredictor(ticker, Indicators(), {}, self._tracer)
             p.setup(predictor_store.load_by_id(deal.predictor_scan_id))
             market = market_store.get_market(ticker)
             if not p.use_isl():
@@ -342,23 +334,50 @@ class IG:
             if direction == "BUY":
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
-                    if self.is_ready_to_set_intelligent_stop(diff,p.get_isl_entry()):
+                    if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price - distance
                         if new_stop_level > stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+                        if deal.is_manual_stop:
+                            if new_stop_level > deal.manual_stop_level:
+                                deal.manual_stop_level = new_stop_level
+                                deal_store.save(deal)
             else:
                 if offer_price < open_price:
                     diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
-                    if self.is_ready_to_set_intelligent_stop(diff,p.get_isl_entry()):
+                    if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
                         distance = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price + distance
                         if new_stop_level < stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+                        if deal.is_manual_stop:
+                            if new_stop_level < deal.manual_stop_level:
+                                deal.manual_stop_level = new_stop_level
+                                deal_store.save(deal)
         except Exception as e:
             self._tracer.error(f"Bid or offer price is none {position}")
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
             self._tracer.error(f"MainException: {e} File:{traceback_str}")
+
+    def manual_close(self, position: Series,deal_store: DealStore):
+        bid_price = position.bid
+        offer_price = position.offer
+        direction = position.direction
+        deal_id = position.dealId
+        deal = deal_store.get_deal_by_deal_id(deal_id)
+
+        if deal.is_manual_stop:
+            self._tracer.debug("Manual Stop")
+
+            if direction == TradeAction.BUY:
+                if bid_price < deal.manual_stop_level:
+                    self._tracer.debug(f"Stop reached {deal}")
+                    self.close("SELL", deal_id, deal.size)
+            if direction == TradeAction.SELL:
+                if offer_price > deal.manual_stop_level:
+                    self._tracer.debug(f"Stop reached {deal}")
+                    self.close("BUY", deal_id, deal.size)
 
     def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")
@@ -595,7 +614,8 @@ class IG:
     @staticmethod
     def get_markets_offline():
         _currency_markets = []
-        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "Data", "markets.json"), 'r') as json_file:
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "Data", "markets.json"),
+                  'r') as json_file:
             _currency_markets = json.load(json_file)
 
         return _currency_markets
@@ -640,10 +660,10 @@ class IG:
             # print(df_results.filter(["date","ticker", "wl", "eval_result"]))
             try:
                 wl_eval = len(df_results[df_results.eval_result == 'won']) / (
-                            len(df_results[df_results.eval_result == 'won']) + len(
-                        df_results[df_results.eval_result == 'lost']))
+                        len(df_results[df_results.eval_result == 'won']) + len(
+                    df_results[df_results.eval_result == 'lost']))
                 wl_original = len(df_results[df_results.wl == 'won']) / (
-                            len(df_results[df_results.wl == 'won']) + len(df_results[df_results.wl == 'lost']))
+                        len(df_results[df_results.wl == 'won']) + len(df_results[df_results.wl == 'lost']))
                 print(f"WL   Original: {wl_original} Eval: {wl_eval}")
                 print(
                     f"Lost Original: {len(df_results[df_results.wl == 'lost'])} Eval: {len(df_results[df_results.eval_result == 'lost'])}")

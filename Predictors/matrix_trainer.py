@@ -79,6 +79,8 @@ class MatrixTrainer:
         df_list = []
         current_indicators_objects = []
         current_indicators_combos = []
+
+        #Get all
         for indicator in indicators.get_all_indicator_names():
             try:
                 indicator_object = {"indicator": indicator,
@@ -91,6 +93,8 @@ class MatrixTrainer:
                 pass
 
         all_combos = list(itertools.combinations(df_list, random.randint(4, 5)))
+
+
 
         for i in df_list:
             new_list = current_indicators_objects.copy()
