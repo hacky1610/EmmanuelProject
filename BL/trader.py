@@ -95,11 +95,12 @@ class Trader:
           """
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
 
-    def _is_good_ticker(self, ticker: str, min_profit:float, min_deal_count:int, days:int = 30) -> bool:
+    def _is_good_ticker(self, ticker: str, min_avg_profit:float, min_deal_count:int, days:int = 30) -> bool:
         if not self._check_ig_performance:
             return True
         deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker,days)
         if len(deals) > min_deal_count:
+            min_profit = min_avg_profit * len(deals)
             if deals.profit.sum() > min_profit:
                 self._tracer.debug(f"Profit {deals.profit.sum()} is greater than {min_profit}")
                 return True
@@ -271,11 +272,11 @@ class Trader:
                     TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
                 """
 
-        if not self._is_good_ticker(config.symbol, min_profit=200, min_deal_count=15, days=30):
+        if not self._is_good_ticker(config.symbol, min_avg_profit=5, min_deal_count=15, days=30):
             self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last month" )
             return TradeResult.NOACTION
 
-        if not self._is_good_ticker(config.symbol, min_profit=50, min_deal_count=5, days=14):
+        if not self._is_good_ticker(config.symbol, min_avg_profit=3, min_deal_count=5, days=14):
             self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last 2 weeks")
             return TradeResult.NOACTION
 

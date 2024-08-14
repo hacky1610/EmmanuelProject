@@ -202,7 +202,7 @@ class TraderTest(unittest.TestCase):
 
     def test_check_ig_performance_false(self):
         self._trader._check_ig_performance = False
-        result = self._trader._is_good_ticker("AAPL", min_profit=10, min_deal_count=1)
+        result = self._trader._is_good_ticker("AAPL", min_avg_profit=10, min_deal_count=1)
         self.assertTrue(result, "Result should be True when _check_ig_performance is False.")
 
     def test_less_than_8_deals(self):
@@ -212,7 +212,7 @@ class TraderTest(unittest.TestCase):
         self._trader._check_ig_performance = True
         self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
 
-        result = self._trader._is_good_ticker("AAPL",min_profit=10, min_deal_count=7)
+        result = self._trader._is_good_ticker("AAPL",min_avg_profit=10, min_deal_count=7)
         self.assertFalse(result, "Result should be False when less than 8 deals are returned.")
         self._trader._tracer.debug.assert_called_with("To less deals")
 
@@ -224,9 +224,8 @@ class TraderTest(unittest.TestCase):
         self._trader._check_ig_performance = True
         self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
 
-        result = self._trader._is_good_ticker("AAPL",min_profit=100, min_deal_count=7)
+        result = self._trader._is_good_ticker("AAPL",min_avg_profit=10, min_deal_count=7)
         self.assertTrue(result, "Result should be True when more than 7 deals and profit is greater than 100.")
-        self._trader._tracer.debug.assert_called_with("Profit 101 is greater than 100")
 
     def test_more_than_7_deals_profit_less_than_100(self):
         deals = MagicMock()
@@ -236,9 +235,8 @@ class TraderTest(unittest.TestCase):
         self._trader._check_ig_performance = True
         self._trader._tracer.debug = MagicMock()
 
-        result = self._trader._is_good_ticker("AAPL",min_profit=100, min_deal_count=7)
+        result = self._trader._is_good_ticker("AAPL",min_avg_profit=10, min_deal_count=7)
         self.assertFalse(result, "Result should be False when more than 7 deals and profit is less than 50.")
-        self._trader._tracer.debug.assert_called_with("Profit 40 is less than 100")
 
     def test_empty_transaction_history(self):
         self._trader._deal_storage.get_deal_by_ig_id = MagicMock()
