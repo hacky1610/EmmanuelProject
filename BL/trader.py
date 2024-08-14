@@ -275,8 +275,8 @@ class Trader:
             self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last month" )
             return TradeResult.NOACTION
 
-        if not self._is_good_ticker(config.symbol, min_profit=50, min_deal_count=3, days=7):
-            self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last week")
+        if not self._is_good_ticker(config.symbol, min_profit=50, min_deal_count=5, days=14):
+            self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last 2 weeks")
             return TradeResult.NOACTION
 
         if not self._evalutaion_up_to_date(predictor.get_last_scan_time()):
