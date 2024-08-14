@@ -59,8 +59,6 @@ class Analytics:
 
         distance = self._ig.get_stop_distance(market, "", scaling, check_min=False,
                                               intelligent_stop_distance=predictor.get_isl_distance())
-        stop_pip = market.get_pip_value(predictor.get_stop(), scaling)
-        limit_pip = market.get_pip_value(predictor.get_limit(), scaling)
         isl_entry_pip = market.get_pip_value(predictor.get_isl_entry(), scaling)
 
         for i in tqdm(range(len(df) - 1)):
@@ -72,6 +70,8 @@ class Analytics:
                 continue
 
             action = predictor.predict(df[:current_index])
+            stop_pip = df.iloc[current_index-1:current_index].ATR.item() * predictor.get_stop()
+            limit_pip = df.iloc[current_index - 1:current_index].ATR.item() * predictor.get_limit()
             if action == TradeAction.NONE:
                 continue
 
@@ -180,8 +180,8 @@ class Analytics:
 
     def simulate(self,
                  action:str,
-                 stop_euro:float,
-                 limit_euro:float,
+                 stop_factor:float,
+                 limit_factor:float,
                  isl_entry: float,
                  isl_distance: float,
                  use_isl: bool,
@@ -211,8 +211,6 @@ class Analytics:
 
         print(f"Start simulation for {symbol}")
 
-        stop_pip = market.get_pip_value(stop_euro, scaling)
-        limit_pip = market.get_pip_value(limit_euro, scaling)
         isl_entry_pip = market.get_pip_value(isl_entry, scaling)
         distance = self._ig.get_stop_distance(market, "", scaling, check_min=False,
                                               intelligent_stop_distance=isl_distance)
@@ -222,6 +220,8 @@ class Analytics:
             open_price = df.close[current_index - 1]
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True, drop=True)
+            stop_pip = df.iloc[current_index - 1:current_index].ATR.item() * stop_factor
+            limit_pip = df.iloc[current_index - 1:current_index].ATR.item() * limit_factor
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread

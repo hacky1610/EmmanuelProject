@@ -18,8 +18,8 @@ class BasePredictor:
             """
 
     def __init__(self, symbol: str, indicators, config=None, tracer: Tracer = ConsoleTracer()):
-        self._limit = 10
-        self._stop = 20
+        self._limit = 1.5
+        self._stop = 1.5
         self._id = ""
         self._active = True
         self._use_isl = False
@@ -151,10 +151,10 @@ class BasePredictor:
     def _stop_limit_trainer():
 
         json_objs = []
-        for stop_limit in random.choices(range(15, 65), k=3):
+        for stop_limit in [1.0,1.3,1.5,2.0,2.3]:
             json_objs.append({
                 "stop": stop_limit,
-                "limit": stop_limit * random.choice([0.8, 1.0, 1.2])
+                "limit": stop_limit
             })
         return json_objs
 

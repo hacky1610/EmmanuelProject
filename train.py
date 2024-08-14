@@ -129,9 +129,6 @@ def train_predictor(markets:list,
             try:
                 p = GenericPredictor(indicators=indicators, symbol=symbol)
                 p.setup(ps.load_best_by_symbol(symbol))
-                if p.get_result().get_reward() < 600:
-                    print(f"Skip {symbol} - Reward to low {p.get_result().get_reward()}")
-                    continue
                 trainer.train(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, predictor, indicators, best_indicators,
                               best_online_config=ps.load_best_by_symbol(symbol), best_indicator_combos=best_indicator_combos)
             except Exception as ex:

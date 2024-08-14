@@ -1,7 +1,3 @@
-import datetime
-from typing import List, Optional
-
-from pandas import DataFrame
 from pymongo.database import Database
 from pymongo.results import UpdateResult
 
@@ -12,7 +8,7 @@ class PredictorStore:
 
     def __init__(self, db: Database):
 
-        self._collection = db["Predictors"]
+        self._collection = db["Predictors_2"]
 
     def save(self, predictor: BasePredictor, overwrite: bool = True):
         if predictor.is_active():

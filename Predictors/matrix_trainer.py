@@ -47,12 +47,12 @@ class MatrixTrainer:
         sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
 
         if not self._cache.simulation_exist(buy_path):
-            buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
+            buy = self._analytics.simulate(action="buy", stop_factor=current_config["_stop"],
                                            isl_entry=current_config.get("_isl_entry", 0),
                                            isl_distance=current_config.get("_isl_distance", 0),
                                            isl_open_end=current_config.get("_isl_open_end", False),
                                            use_isl=current_config.get("_use_isl", False),
-                                           limit_euro=current_config["_limit"], df=df, df_eval=df_eval,
+                                           limit_factor=current_config["_limit"], df=df, df_eval=df_eval,
                                            symbol=symbol, scaling=scaling)
             if buy is not None:
                 self._cache.save_simulation(buy,buy_path)
@@ -60,12 +60,12 @@ class MatrixTrainer:
             buy = self._cache.load_simulation(buy_path)
 
         if not self._cache.simulation_exist(sell_path):
-            sell = self._analytics.simulate(action="sell", stop_euro=current_config["_stop"],
+            sell = self._analytics.simulate(action="sell", stop_factor=current_config["_stop"],
                                             isl_entry=current_config.get("_isl_entry", 0),
                                             isl_distance=current_config.get("_isl_distance", 0),
                                             isl_open_end=current_config.get("_isl_open_end", False),
                                             use_isl=current_config.get("_use_isl", False),
-                                            limit_euro=current_config["_limit"], df=df, df_eval=df_eval,
+                                            limit_factor=current_config["_limit"], df=df, df_eval=df_eval,
                                             symbol=symbol, scaling=scaling)
             if sell is not None:
                 self._cache.save_simulation(sell,sell_path)
