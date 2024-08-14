@@ -107,7 +107,7 @@ class Trader:
                 self._tracer.debug(f"Profit {deals.profit.sum()} is less than {min_profit}")
                 return False
         else:
-            self._tracer.debug(f"Less than {min_deal_count} deals")
+            self._tracer.debug("To less deals")
 
         return False
 

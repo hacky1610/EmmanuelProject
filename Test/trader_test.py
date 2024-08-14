@@ -214,7 +214,7 @@ class TraderTest(unittest.TestCase):
 
         result = self._trader._is_good_ticker("AAPL",min_profit=10, min_deal_count=7)
         self.assertFalse(result, "Result should be False when less than 8 deals are returned.")
-        self._trader._tracer.debug.assert_called_with("Less than 8 deals")
+        self._trader._tracer.debug.assert_called_with("To less deals")
 
     def test_more_than_7_deals_profit_greater_than_100(self):
         deals = MagicMock()
