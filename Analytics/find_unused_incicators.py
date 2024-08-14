@@ -39,14 +39,15 @@ indicators = Indicators()
 client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ps = PredictorStore(db)
+ms = MarketStore(db)
 _indicators = Indicators()
-_reporting = Reporting(predictor_store=ps)
-_reporting.create(IG.get_markets_offline(), GenericPredictor)
 
 # endregion
 
-for i in _reporting.get_all_indicators():
-    if i not in _indicators.get_all_indicator_names():
-        print(i)
+
+markets = ig.get_markets_offline()
+for m in markets:
+    if ms.get_market(m["symbol"]) is None:
+        print(m)
 
 

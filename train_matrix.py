@@ -199,8 +199,11 @@ def train_predictor(markets: list,
                     print("No best combo found")
                     continue
 
+                if sorted(best_combo) == sorted(pred_standard.get_indicator_names()):
+                    print("Best indicator is equal to standard")
+                    continue
+
                 pred_matrix.setup({"_indicator_names": best_combo})
-                print("Evaluate")
                 pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
                 pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
 
