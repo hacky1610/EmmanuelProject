@@ -60,16 +60,16 @@ class PlotlyViewer(BaseViewer):
             title=self.title + " " + additional_text
         )
 
-    def _print_sell_buy(self, x, y, name, icon, add_text):
+    def _print_sell_buy(self, x, y, name, icon, add_text, color="Blue"):
         self.fig.add_scatter(x=[x],
                              y=[y],
                              name=name,
                              marker=dict(
-                                 color='Blue',
+                                 color=color,
                                  size=10,
                                  line=dict(
                                      color='Black',
-                                     width=2
+                                     width=1
                                  ),
                                  symbol=icon,
                              ),
@@ -82,8 +82,14 @@ class PlotlyViewer(BaseViewer):
     def print_buy(self, x, y, add_text: str = ""):
         self._print_sell_buy(x, y, "buy", "triangle-up", add_text)
 
+    def print_buy_2(self, x, y, add_text: str = ""):
+        self._print_sell_buy(x, y, "buy", "star-triangle-up-dot", add_text, "Orange")
+
     def print_sell(self, x, y, add_text: str = ""):
         self._print_sell_buy(x, y, "sell", "triangle-down", add_text)
+
+    def print_sell_2(self, x, y, add_text: str = ""):
+        self._print_sell_buy(x, y, "sell", "star-triangle-down-dot", add_text, "Orange")
 
     def print_won(self, x, y):
         self.fig.add_scatter(x=[x],
@@ -100,6 +106,34 @@ class PlotlyViewer(BaseViewer):
                              marker=dict(
                                  color='Red',
                                  size=10
+                             ),
+                             )
+
+    def print_won_2(self, x, y):
+        self.fig.add_scatter(x=[x],
+                             y=[y],
+                             marker=dict(
+                                 color="Green",
+                                 size=10,
+                                 line=dict(
+                                     color='Black',
+                                     width=1
+                                 ),
+                                 symbol="square",
+                             ),
+                             )
+
+    def print_lost_2(self, x, y):
+        self.fig.add_scatter(x=[x],
+                             y=[y],
+                             marker=dict(
+                                 color="Red",
+                                 size=10,
+                                 line=dict(
+                                     color='Black',
+                                     width=1
+                                 ),
+                                 symbol="square",
                              ),
                              )
 

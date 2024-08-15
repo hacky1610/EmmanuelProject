@@ -18,13 +18,25 @@ class BaseViewer:
     def print_buy(self, x, y, add_text: str = ""):
         pass
 
+    def print_buy_2(self, x, y, add_text: str = ""):
+        pass
+
     def print_sell(self, x, y, add_text: str = ""):
+        pass
+
+    def print_sell_2(self, x, y, add_text: str = ""):
         pass
 
     def print_won(self, x, y):
         pass
 
     def print_lost(self, x, y):
+        pass
+
+    def print_won_2(self, x, y):
+        pass
+
+    def print_lost_2(self, x, y):
         pass
 
     def print_text(self, x, y, text):

@@ -83,7 +83,7 @@ class Deal:
         )
 
     def __str__(self):
-        return f"{self.epic} {self.direction}"
+        return f"{self.epic} {self.direction} {self.size} {self.open_date_ig_str} {self.close_date_ig_datetime} {self.profit} "
 
     def close(self):
         self.status = "Closed"
@@ -158,10 +158,17 @@ class DealStore:
             deals.append(Deal.Create(d))
         return deals
 
-    def get_open_deals_by_ticker(self, ticker: str) -> List:
+    def get_open_deals_by_ticker(self, ticker: str) -> List[Deal]:
         deals = []
         for d in self._collection.find(
                 {"status": "open", "ticker": ticker, "account_type": self._account_type}):
+            deals.append(Deal.Create(d))
+        return deals
+
+    def get_closed_deals_by_ticker(self, ticker: str) -> List[Deal]:
+        deals = []
+        for d in self._collection.find(
+                {"status": "Closed", "ticker": ticker, "account_type": self._account_type}):
             deals.append(Deal.Create(d))
         return deals
 

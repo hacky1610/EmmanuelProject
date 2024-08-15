@@ -35,7 +35,6 @@ class Analytics:
                  df_eval: DataFrame,
                  symbol: str,
                  scaling: int,
-                 viewer: BaseViewer = BaseViewer(),
                  only_one_position: bool = True,
                  time_filter=None) -> EvalResult:
 
@@ -47,9 +46,6 @@ class Analytics:
         old_tracer = predictor._tracer
         predictor._tracer = Tracer()
         last_exit = df.date[0]
-        viewer.init(f"Evaluation of  <a href='https://de.tradingview.com/chart/?symbol={symbol}'>{symbol}</a>",
-                    df, df_eval)
-        viewer.print_graph()
         trades = []
         market = self._market_store.get_market(symbol)
 
@@ -157,8 +153,6 @@ class Analytics:
         predictor._tracer = old_tracer
         ev_res = EvalResult(symbol=symbol, trades_results=trades, len_df=len(df), trade_minutes=trading_minutes,
                             scan_time=datetime.datetime.now())
-        viewer.update_title(f"{ev_res}")
-        viewer.show()
 
         return ev_res
 

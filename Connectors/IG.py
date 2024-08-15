@@ -559,7 +559,7 @@ class IG:
                 open_data["wl_ration"] = win_lost
 
                 df_results = df_results.append(open_data)
-                res = analytics.evaluate(predictor, df, df_eval, name, viewer,
+                res = analytics.evaluate(predictor, df, df_eval, name,
                                          time_filter=datetime(dt.year, dt.month, dt.day, dt.hour))
                 for trade in res.get_trade_results():
                     if TimeUtils.get_time_string(datetime(dt.year, dt.month, dt.day, dt.hour)) == trade.open_time:

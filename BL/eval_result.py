@@ -45,6 +45,9 @@ class TradeResult:
             "intelligent_stop_used": self.intelligent_stop_used
         }
 
+    def __str__(self):
+        return f"Action {self.action} Open {self.open_time} {self.opening} Close {self.close_time} {self.closing} Profit {self.profit} ISL {self.intelligent_stop_used}"
+
 class EvalResult:
 
     def __init__(self,
