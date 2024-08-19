@@ -22,6 +22,7 @@ if type_ == "DEMO":
     live = False
 else:
     live = True
+live = False #TODO: Hack
 
 dataProcessor = DataProcessor()
 dbx = dropbox.Dropbox(env_reader.get("dropbox"))

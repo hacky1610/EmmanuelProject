@@ -27,13 +27,12 @@ else:
     account_type = conf_reader.get("Type")
 
 
-
-
-
 if account_type == "DEMO":
     live = False
 else:
     live = True
+
+live = False #TODO: Hack
 
 dataProcessor = DataProcessor()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
