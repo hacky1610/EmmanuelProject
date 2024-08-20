@@ -20,8 +20,10 @@ type_ = env_reader.get("Type")
 
 if type_ == "DEMO":
     live = False
+    check_ig_performance = False
 else:
     live = True
+    check_ig_performance = True
 live = False #TODO: Hack
 
 dataProcessor = DataProcessor()
@@ -50,7 +52,7 @@ trader = Trader(
     predictor_store=ps,
     deal_storage=ds,
     market_storage=ms,
-    check_ig_performance=live
+    check_ig_performance=check_ig_performance
 )
 
 trader.trade_markets(TradeType.FX, indicators)
