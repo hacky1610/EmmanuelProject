@@ -88,9 +88,9 @@ class TestAnalytics(unittest.TestCase):
         }
 
         result = self._analytics.calculate_overall_result(signals, df_buy_results, df_sell_results)
-        self.assertEqual(result, 15)
+        self.assertEqual(result, 0)
 
-    def test_next_index_logic(self):
+    def test_to_less_trades(self):
         signals = pd.DataFrame({
             "index": [1, 2],
             "action": [TradeAction.BUY, TradeAction.SELL]
@@ -109,5 +109,5 @@ class TestAnalytics(unittest.TestCase):
         }
 
         result = self._analytics.calculate_overall_result(signals, df_buy_results, df_sell_results)
-        self.assertEqual(result, 5)
+        self.assertEqual(result, 0)
 

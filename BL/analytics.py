@@ -287,7 +287,7 @@ class Analytics:
 
         return simulation_result
 
-    def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict):
+    def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict) -> float:
 
         overall_result = 0
         next_index = 0
