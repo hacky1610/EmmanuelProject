@@ -292,6 +292,8 @@ class Analytics:
         overall_result = 0
         next_index = 0
 
+        trades = 0
+        wons = 0
         for _, signal in signals.iterrows():
             if signal["index"] > next_index:
                 if signal.action == TradeAction.BUY:
@@ -302,8 +304,12 @@ class Analytics:
                     res = None
 
                 if res:
-                    overall_result += res['result']
+                    trades += 1
+                    if res['result'] > 0:
+                        wons +=1
                     next_index = res['next_index']
+        if trades > 70:
+            overall_result = 100 * wons / trades
 
         return overall_result
 

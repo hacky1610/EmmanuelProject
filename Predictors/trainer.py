@@ -53,8 +53,6 @@ class Trainer:
         self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
         best_win_loss = 0
-        best_reward = 0
-        best_avg_reward = 0
         best_predictor = None
         best_config = {}
 
@@ -75,15 +73,11 @@ class Trainer:
             if best_train_result is None:
                 return
 
-            if best_train_result.get_reward() > best_reward and best_train_result.is_good():
-                best_reward = best_train_result.get_reward()
+            if best_train_result.get_win_loss() > best_win_loss and best_train_result.get_trades() > 70:
                 best_win_loss = best_train_result.get_win_loss()
-                best_avg_reward = best_train_result.get_average_reward()
                 best_predictor = predictor
                 best_config = predictor.get_config()
 
-                #self._tracer.info(f"{symbol} - Result {best_train_result} - Indicators {predictor._indicator_names} "
-                #                  f"{predictor} ")
 
         if best_predictor is not None:
             self._tracer.info(
@@ -96,7 +90,7 @@ class Trainer:
                 self._tracer.info(
                     f"Test:  WL: {test_result.get_win_loss():.2f} - Reward: {test_result.get_reward():.2f} Avg Reward {test_result.get_average_reward():.2f}")
                 self._tracer.info(
-                    f"Train: WL: {best_win_loss:.2f} - Reward: {best_reward:.2f} Avg Reward {best_avg_reward:.2f}")
+                    f"Train: WL: {best_win_loss:.2f} - Reward: {best_predictor.get_result().get_reward():.2f} Avg Reward {best_predictor.get_result().get_average_reward():.2f}")
                 self._tracer.info(f"{best_predictor} ")
             else:
                 self._tracer.info("No good predictor")
