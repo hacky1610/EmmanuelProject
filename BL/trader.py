@@ -272,10 +272,6 @@ class Trader:
                     TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
                 """
 
-        if not self._is_good_ticker(config.symbol, min_avg_profit=5, min_deal_count=15, days=30):
-            self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last month" )
-            return TradeResult.NOACTION
-
         if not self._is_good_ticker(config.symbol, min_avg_profit=3, min_deal_count=5, days=14):
             self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last 2 weeks")
             return TradeResult.NOACTION

@@ -70,9 +70,20 @@ class Reporting:
         df.fillna(0, inplace=True)
         return results, df
 
-    def get_best_indicators(self):
+    def get_best_indicators_by_reward(self):
 
         best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports)/3)]
+        indicators = []
+        for r in best_df.iterrows():
+            indicators = indicators + r[1]._indicator_names
+        string_counts = Counter(indicators)
+
+        return string_counts
+
+    def get_best_indicators(self):
+
+        best_df = self.reports[self.reports.win_los > 0.8]
+        best_df = best_df[best_df.trades > 50]
         indicators = []
         for r in best_df.iterrows():
             indicators = indicators + r[1]._indicator_names
@@ -89,9 +100,34 @@ class Reporting:
 
         return list(set(indicators))
 
-    def get_best_indicator_combos(self) -> List[List[str]]:
+    def get_best_indicator_names_by_reward(self) -> List[str]:
+
+        best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports) / 3)]
+        indicators = []
+        for r in best_df.iterrows():
+            indicators = indicators + r[1]._indicator_names
+
+        return list(set(indicators))
+
+    def get_best_indicator_names(self) -> List[str]:
+
+        best_df = self.reports[self.reports.win_los > 0.8]
+        best_df = best_df[best_df.trades > 50]
+        indicators = []
+        for r in best_df.iterrows():
+            indicators = indicators + r[1]._indicator_names
+
+        return list(set(indicators))
+
+    def get_best_indicator_combos_by_reward(self) -> List[List[str]]:
 
         best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports)/3)]
+        return best_df['_indicator_names'].tolist()
+
+    def get_best_indicator_combos(self) -> List[List[str]]:
+
+        best_df = self.reports[self.reports.win_los > 0.8]
+        best_df = best_df[best_df.trades > 50]
         return best_df['_indicator_names'].tolist()
 
     def get_all_indicators(self):

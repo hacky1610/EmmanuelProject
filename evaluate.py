@@ -168,5 +168,5 @@ evaluate_predictor(indicators,
                    ti,
                    GenericPredictor,
                    viewer,
-                   only_test=True,
+                   only_test=False,
                    only_one_position=True)
