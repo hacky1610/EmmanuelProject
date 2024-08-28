@@ -52,7 +52,7 @@ class Trainer:
               indicators, best_indicators: List, best_online_config: dict, best_indicator_combos: List[List[str]]):
         self._tracer.info(
             f"#####Train {symbol} with {predictor_class.__name__} over {self._get_time_range(df)} days #######################")
-        best_win_loss = 0
+        best_train_result = EvalResult()
         best_predictor = None
         best_config = {}
 
@@ -68,14 +68,14 @@ class Trainer:
                 return
             predictor.setup(training_set)
 
-            best_train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
+            train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
                                                 scaling=scaling)
-            if best_train_result is None:
+            if train_result is None:
                 return
 
-            if best_train_result.get_win_loss() > best_win_loss and best_train_result.get_trades() > 70:
-                best_win_loss = best_train_result.get_win_loss()
+            if best_train_result.is_better(train_result) and train_result.get_trades() > 70:
                 best_predictor = predictor
+                best_train_result = train_result
                 best_config = predictor.get_config()
 
 
@@ -90,7 +90,7 @@ class Trainer:
                 self._tracer.info(
                     f"Test:  WL: {test_result.get_win_loss():.2f} - Reward: {test_result.get_reward():.2f} Avg Reward {test_result.get_average_reward():.2f}")
                 self._tracer.info(
-                    f"Train: WL: {best_win_loss:.2f} - Reward: {best_predictor.get_result().get_reward():.2f} Avg Reward {best_predictor.get_result().get_average_reward():.2f}")
+                    f"Train: WL: {best_train_result.get_win_loss():.2f} - Reward: {best_predictor.get_result().get_reward():.2f} Avg Reward {best_predictor.get_result().get_average_reward():.2f}")
                 self._tracer.info(f"{best_predictor} ")
             else:
                 self._tracer.info("No good predictor")

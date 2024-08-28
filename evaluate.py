@@ -127,8 +127,8 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
     for m in markets:
         try:
             symbol = m["symbol"]
-            #if symbol != "GBPSGD":
-            #    continue
+            if symbol != "GBPUSD":
+                continue
 
             df, df_eval = get_test_data(ti, symbol, trade_type, dp, dropbox_cache=df_cache)
 

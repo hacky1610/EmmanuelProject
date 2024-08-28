@@ -2,6 +2,7 @@ import itertools
 import os.path
 import random
 import traceback
+from collections import namedtuple
 from datetime import datetime
 from typing import List
 
@@ -123,11 +124,13 @@ class MatrixTrainer:
         return self.find_best_indicator_combo(all_combos,  buy_results, sell_results)
 
     def find_best_indicator_combo(self, all_combos, buy_results:dict, sell_results:dict):
-        best_result = -10000
+        result = namedtuple('Result', ['wl', 'reward'])
+        best_result = result(0,-10000)
         best_combo = []
         for combo in tqdm(all_combos):
             current_result = self.calc_indicator_combo(combo, buy_results, sell_results)
-            if current_result > best_result:
+
+            if EvalResult.compare(best_result.wl, best_result.reward, current_result.wl, current_result.reward):
                 best_result = current_result
                 best_combo = [item['indicator'] for item in combo]
         return best_combo

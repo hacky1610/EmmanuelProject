@@ -1,5 +1,6 @@
 import datetime
 import sys
+from collections import namedtuple
 
 from tqdm import tqdm
 
@@ -287,13 +288,15 @@ class Analytics:
 
         return simulation_result
 
-    def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict) -> float:
+    def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict) -> namedtuple:
 
-        overall_result = 0
+        wl = 0
         next_index = 0
 
         trades = 0
         wons = 0
+        result = namedtuple('Result', ['wl', 'reward'])
+        reward = 0
         for _, signal in signals.iterrows():
             if signal["index"] > next_index:
                 if signal.action == TradeAction.BUY:
@@ -307,11 +310,13 @@ class Analytics:
                     trades += 1
                     if res['result'] > 0:
                         wons +=1
+                    reward += res['result']
                     next_index = res['next_index']
         if trades > 70:
-            overall_result = 100 * wons / trades
+            wl = 100 * wons / trades
 
-        return overall_result
+        return result(wl, reward)
+
 
     def simulate_signal(self, signals:DataFrame, df_buy_results: DataFrame, df_sell_results: DataFrame, indicator_name:str) -> DataFrame:
 

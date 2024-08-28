@@ -84,12 +84,15 @@ class EvalResult:
         self._wins = wins
 
     def is_better(self, compare_to) -> bool:
-        c:EvalResult = compare_to
+        return EvalResult.compare(self.get_win_loss(),self.get_reward(),
+                                  compare_to.get_win_loss(), compare_to.get_reward())
 
-
-        return self.get_win_loss() > c.get_win_loss()
-
-
+    @staticmethod
+    def compare(wl1, reward1, wl2, reward2):
+        if (wl1 > 0.8 and wl2 > 0.8 and abs(wl1 - wl2) <= 0.02) or wl1 == wl2:
+            return reward2 > reward1
+        else:
+            return wl2 > wl1
 
 
     def get_reward(self):
