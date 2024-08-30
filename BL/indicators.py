@@ -68,6 +68,8 @@ class Indicators:
     EMA_ALLIGATOR_HIST = "ema_alligator_hist"
     EMA10_50 = "ema_10_50"
     EMA20_CLOSE = "ema_20_close"
+    EMA30_CLOSE = "ema_30_close"
+    EMA50_CLOSE = "ema_50_close"
     SMMA20_CLOSE = "smma_20_close"
     EMA20_SMMA20 = "ema_20_smma_20"
     EMA_20_CHANNEL = "ema_20_channel"
@@ -143,10 +145,10 @@ class Indicators:
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         #self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict) #BAD
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
-        self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
+        #self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
         #self._add_indicator(self.RSI_CONVERGENCE5_30, self._rsi_convergence_predict5_30) #BAD
         self._add_indicator(self.RSI_CONVERGENCE5_40, self._rsi_convergence_predict5_40)
-        self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
+        #self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
         #self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict) #BAD
         self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
         self._add_indicator(self.RSI_BREAK_4H, self._rsi_break_predict_4h)
@@ -184,13 +186,15 @@ class Indicators:
         self._add_indicator(self.EMA_ALLIGATOR_HIST, self._ema_alligator_hist_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
         self._add_indicator(self.EMA20_CLOSE, self._ema_20_close)
+        self._add_indicator(self.EMA30_CLOSE, self._ema_30_close)
+        self._add_indicator(self.EMA50_CLOSE, self._ema_50_close)
         self._add_indicator(self.SMMA20_CLOSE, self._smma_20_close)
         self._add_indicator(self.EMA20_SMMA20, self._ema_20_smma_20)
         self._add_indicator(self.EMA_20_CHANNEL, self._ema_20_channel)
 
         #Pivoting
         self._add_indicator(self.PIVOT_BOUNCE, self._pivot_bounce)
-        self._add_indicator(self.PIVOT_BOUNCE_4H, self._pivot_bounce_4h)
+        #self._add_indicator(self.PIVOT_BOUNCE_4H, self._pivot_bounce_4h)
         self._add_indicator(self.PIVOT_BREAKOUT, self._pivot_breakout)
         self._add_indicator(self.PIVOT_SR_TRADING, self._pivot_sr_trading)
         self._add_indicator(self.PIVOT_SR_TRADING_4H, self._pivot_sr_trading_4h)
@@ -215,9 +219,9 @@ class Indicators:
         #CCI
         self._add_indicator(self.CCI, self._cci_predict)
         self._add_indicator(self.CCI_4h, self._cci_predict_4h)
-        self._add_indicator(self.CCI_CONV, self._cci_convergence)
+        #self._add_indicator(self.CCI_CONV, self._cci_convergence)
         self._add_indicator(self.CCI_CROSS, self._cci_zero_cross)
-        self._add_indicator(self.CCI_CROSS_4H, self._cci_zero_cross_4h)
+        #self._add_indicator(self.CCI_CROSS_4H, self._cci_zero_cross_4h)
 
 
         # Others
@@ -226,8 +230,8 @@ class Indicators:
         self._add_indicator(self.CANDLEPATTERN, self._candle_pattern_predict)
         self._add_indicator(self.CANDLE_4H, self._candle_predict_4h)
         self._add_indicator(self.CANDLE_TYPE, self._candle_type_predict)
-        self._add_indicator(self.CANDLE_TYPE_HAMMER, self._candle_hammer_predict)
-        self._add_indicator(self.CANDLE_TYPE_SS_HM, self._candle_shootingstar_hanging_man_predict)
+        #self._add_indicator(self.CANDLE_TYPE_HAMMER, self._candle_hammer_predict)
+        #self._add_indicator(self.CANDLE_TYPE_SS_HM, self._candle_shootingstar_hanging_man_predict)
         self._add_indicator(self.CANDLE_TYPE_4H, self._candle_type_predict_4h)
 
 
@@ -246,11 +250,11 @@ class Indicators:
         #self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
 
         # ICHIMOKU
-        self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
+        #self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_4H, self._ichimoku_kijun_close_predict_4h)
         self._add_indicator(self.ICHIMOKU_KIJUN_CROSS_CONFIRM, self._ichimoku_kijun_close_cross_predict)
-        self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
+        #self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_THICKNESS, self._ichimoku_cloud_thickness_predict)
 
         self._tracer: Tracer = tracer
@@ -569,15 +573,28 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _ema_30_close(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        period = df[-2:]
+
+        if len(period[period.EMA_30 < period.close]) == len(period):
+            return TradeAction.BUY
+        elif len(period[period.EMA_30 > period.close]) == len(period):
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
     def _ema_50_close(self, df):
         if len(df) < 2:
             return TradeAction.NONE
 
         period = df[-2:]
 
-        if len(period[period.EMA_20 < period.close]) == len(period):
+        if len(period[period.EMA_50 < period.close]) == len(period):
             return TradeAction.BUY
-        elif len(period[period.EMA_20 > period.close]) == len(period):
+        elif len(period[period.EMA_50 > period.close]) == len(period):
             return TradeAction.SELL
 
         return TradeAction.NONE

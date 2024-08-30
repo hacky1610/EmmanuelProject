@@ -159,7 +159,7 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
     for m in markets:
         try:
             symbol = m["symbol"]
-            if symbol != "GBPJPY":
+            if symbol != "AUDCHF":
                 continue
 
             df, df_eval = ti.load_test_data(symbol=symbol, dp=dp, days=60,trade_type=TradeType.FX ,use_cache=True)

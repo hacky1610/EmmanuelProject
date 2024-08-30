@@ -192,7 +192,7 @@ def train_predictor(markets: list,
                         print(f"Extrem wenige werte {sell_results}")
 
 
-                filtered_combos = random.choices(all_combos,k=5000)
+                filtered_combos = random.choices(all_combos,k=20000)
                 best_combo = trainer.train_combinations(symbol, indicators, filtered_combos,
                                                         pred_standard._indicator_names, buy_results_dict, sell_results_dict)
                 if best_combo is None or len(best_combo) == 0:

@@ -13,6 +13,7 @@ from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
+from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import Tiingo, TradeType
 from Predictors.chart_pattern_rectangle import RectanglePredictor
 from Predictors.chart_pattern_triangle import TrianglePredictor
@@ -40,30 +41,30 @@ ms = MarketStore(db)
 ds = DealStore(db, "DEMO")
 analytics = Analytics(market_store=ms,ig=ig)
 trade_type = TradeType.FX
-
+ps = PredictorStore(db)
 only_one_position = True
 
 
 # endregion
 
 # region functions
-def find_bad_indicators(indicators, ig: IG,predictor_class):
+def find_bad_indicators(indicators, ig: IG):
     global symbol
     results = EvalResultCollection()
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     good_indicators = []
     for m in markets:
         try:
-            predictor = predictor_class(indicators=indicators, cache=df_cache)
-            predictor.load(m["symbol"])
+            predictor = GenericPredictor(indicators=indicators, symbol=m["symbol"])
+            predictor.setup(ps.load_active_by_symbol(m["symbol"]))
 
             wl = predictor.get_result().get_win_loss()
-            if wl > 0.6:
+            if wl > 0.75:
                 good_indicators = good_indicators + predictor._indicator_names
 
 
-        except:
-            print("error")
+        except Exception as e:
+            print(f"error {e}")
 
     unique = list(set(good_indicators))
     for i in indicators.get_all_indicator_names():
@@ -72,5 +73,5 @@ def find_bad_indicators(indicators, ig: IG,predictor_class):
 
 # endregion
 
-find_bad_indicators(indicators,ig,GenericPredictor)
+find_bad_indicators(indicators,ig)
 
