@@ -159,10 +159,9 @@ def train_predictor(markets: list,
 
         _reporting.create(markets, predictor)
         best_indicator_combos = reporting.get_best_indicator_combos()
-        best_indicators = reporting.get_best_indicator_names()
-        kombinationen = [list(kombi) for kombi in combinations(best_indicators, 5)]
-        all_combos = best_indicator_combos + kombinationen
-
+        random_best_combos = [list(kombi) for kombi in combinations(reporting.get_best_indicator_names(), 5)]
+        random_all_combos = [list(kombi) for kombi in combinations(indicators.get_all_indicator_names(), 5)]
+        all_combos = random_all_combos + random_best_combos
 
         if len(df_train) > 0:
             try:
@@ -193,8 +192,8 @@ def train_predictor(markets: list,
 
 
                 filtered_combos = random.choices(all_combos,k=20000)
-                best_combo = trainer.train_combinations(symbol, indicators, filtered_combos,
-                                                        pred_standard._indicator_names, buy_results_dict, sell_results_dict)
+                best_combo = trainer.train_combinations(symbol=symbol, indicators=indicators, best_combo_list=best_indicator_combos,
+                                                        buy_results=buy_results_dict, sell_results=sell_results_dict, random_combos=filtered_combos)
                 if best_combo is None or len(best_combo) == 0:
                     print("No best combo found")
                     continue

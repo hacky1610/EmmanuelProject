@@ -75,43 +75,31 @@ class MatrixTrainer:
         return buy, sell
 
     @measure_time
-    def train_combinations(self, symbol: str, indicators: Indicators, best_combo_list: List[List[str]],
-                           current_indicators: List[str], buy_results:dict, sell_results:dict):
-        df_list = []
-        current_indicators_objects = []
-        current_indicators_combos = []
+    def train_combinations(self, symbol: str,
+                           indicators: Indicators,
+                           best_combo_list: List[List[str]],
+                           random_combos : List[List[str]],
+                           buy_results:dict,
+                           sell_results:dict):
+        #Get data
+        df_list = self.create_indicator_data(indicators, symbol)
 
-        #Get all
-        for indicator in indicators.get_all_indicator_names():
-            try:
-                indicator_object = {"indicator": indicator,
-                                    "data": self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")}
-                df_list.append(indicator_object)
-                if indicator in current_indicators:
-                    current_indicators_objects.append(indicator_object)
-            except Exception as e:
-                print(f"Error {e}")
-                pass
 
         all_combos = list(itertools.combinations(df_list, random.randint(4, 5)))
+        all_best_combos = best_combo_list.copy()
 
+        for best_combo in best_combo_list:
+            for i in range(len(best_combo)):
+                for indi in indicators.get_all_indicator_names():
+                    tmp_combo = best_combo.copy()
+                    tmp_combo.pop(i)
+                    tmp_combo.append(indi)
+                    all_best_combos.append(tmp_combo)
 
-
-        for i in df_list:
-            new_list = current_indicators_objects.copy()
-            new_list.append(i)
-            current_indicators_combos.append(new_list)
-
-            new_list = current_indicators_objects.copy()
-            new_list.pop(random.randint(0, len(current_indicators_objects) - 1))
-            new_list.append(i)
-            current_indicators_combos.append(new_list)
-
-        if len(df_list) != len(indicators.get_all_indicator_names()):
-            print("Not all indicators are there")
 
         best_combo_object_list = []
-        for combo in best_combo_list:
+        all = all_best_combos + random_combos
+        for combo in all:
             combo_objects = []
             for indicator in df_list:
                 if indicator["indicator"] in combo:
@@ -120,8 +108,17 @@ class MatrixTrainer:
 
 
         filtered_combos = random.choices(all_combos, k=10000)
-        all_combos = best_combo_object_list + filtered_combos + current_indicators_combos
+        all_combos = best_combo_object_list + filtered_combos
         return self.find_best_indicator_combo(all_combos,  buy_results, sell_results)
+
+    def create_indicator_data(self, indicators:Indicators, symbol:str) -> List[dict]:
+        df_list = []
+
+        for indicator in indicators.get_all_indicator_names():
+            indicator_object = {"indicator": indicator,
+                                "data": self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")}
+            df_list.append(indicator_object)
+        return df_list
 
     def find_best_indicator_combo(self, all_combos, buy_results:dict, sell_results:dict):
         result = namedtuple('Result', ['wl', 'reward'])
