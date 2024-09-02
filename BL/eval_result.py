@@ -188,6 +188,12 @@ class EvalResult:
             f"trades {self.get_trades()} " \
             f"avg_minutes {self.get_average_minutes()} "
 
+    def to_dict_foo(self):
+        return {
+            "trades": self.get_trades(),
+            "wl": self.get_win_loss()
+        }
+
 
 class EvalResultCollection:
 
@@ -199,16 +205,10 @@ class EvalResultCollection:
         self._items.append(r)
 
     def get_avg_profit(self):
-        win_loss_overall = 0
-        market_measures = 0
-        for i in self._items:
-            if i.get_trades() != 0:
-                market_measures = market_measures + 1
-                win_loss_overall = win_loss_overall + i.get_win_loss()
-        if market_measures == 0:
-            return 0
+        df = pd.DataFrame([obj.to_dict_foo() for obj in self._items])
+        df = df[df.trades != 0]
 
-        return win_loss_overall / market_measures
+        return df.wl.median()
 
     def get_avg_trades(self):
         win_loss_trades = 0

@@ -96,6 +96,12 @@ class MatrixTrainer:
                     tmp_combo.append(indi)
                     all_best_combos.append(tmp_combo)
 
+        for best_combo in best_combo_list:
+            for indi in indicators.get_all_indicator_names():
+                tmp_combo = best_combo.copy()
+                tmp_combo.append(indi)
+                all_best_combos.append(tmp_combo)
+
 
         best_combo_object_list = []
         all = all_best_combos + random_combos
