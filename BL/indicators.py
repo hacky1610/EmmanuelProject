@@ -29,7 +29,7 @@ class Indicators:
     RSI_BREAK_4H = "rsi_break_4h"
     RSI_BREAK3070 = "rsi_break_30_70"
     RSI30_70 = "rsi_30_70"
-    RSISLOPE = "rsi_slope"
+    RSI_SLOPE = "rsi_slope"
     RSI_CONVERGENCE = "rsi_convergence"
     RSI_CONVERGENCE5 = "rsi_convergence5"
     RSI_CONVERGENCE5_30 = "rsi_convergence5_30"
@@ -123,6 +123,7 @@ class Indicators:
     BB_MIDDLE_CROSS = "bb_middle_crossing"
     BB_MIDDLE_CROSS_4H = "bb_middle_crossing_4h"
     BB_BORDER_CROSS = "bb_border_crossing"
+    BB_SQUEEZE = "bb_sqeeze"
     # ICHIMOKU
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
@@ -138,6 +139,7 @@ class Indicators:
         self._indicators = []
         self._dp = dp
         self._indicator_confirm_factor = 0.7
+
         # RSI
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
@@ -150,7 +152,7 @@ class Indicators:
         self._add_indicator(self.RSI_CONVERGENCE5_40, self._rsi_convergence_predict5_40)
         #self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
         #self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict) #BAD
-        self._add_indicator(self.RSISLOPE, self._rsi_smooth_slope_predict)
+        self._add_indicator(self.RSI_SLOPE, self._rsi_smooth_slope_predict)
         self._add_indicator(self.RSI_BREAK_4H, self._rsi_break_predict_4h)
 
         #self._add_indicator(self.TII_50, self._tii_50) #BAD
@@ -246,6 +248,7 @@ class Indicators:
         self._add_indicator(self.BB_4H, self._bb_predict_4h)
         self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
         self._add_indicator(self.BB_MIDDLE_CROSS_4H, self._bb_middle_cross_predict_4h)
+        self._add_indicator(self.BB_SQUEEZE, self._bb_squeeze)
 
         #self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
 
@@ -557,8 +560,6 @@ class Indicators:
             return TradeAction.NONE
 
         return TradeAction.BOTH
-
-
 
     def _ema_20_close(self, df):
         if len(df) < 2:
@@ -996,6 +997,37 @@ class Indicators:
             return TradeAction.SELL
 
         return TradeAction.NONE
+
+    def _bb_squeeze(self, df):
+
+        # Parameter
+        keltFactor = 1.5
+        BandsDeviations = 2.0
+        BandsPeriod = 20
+
+        df_bb = df.copy()
+
+        # Keltner Channels Breite (Mitte ± ATR * keltFactor)
+        df_bb['Keltner Width'] = df_bb['ATR'] * keltFactor
+
+        # Bollinger Bands Breite (obere Band - untere Band)
+        df_bb['StdDev'] = df_bb['close'].rolling(window=BandsPeriod).std()
+        df_bb['Bollinger Width'] = BandsDeviations * df_bb['StdDev']
+
+        # Bollinger Bands Squeeze
+        df_bb['BBS'] = df_bb['Bollinger Width'] / df_bb['Keltner Width']
+
+        # Bedingung für Buy- und Sell-Signal
+        df_bb['Buy'] = (df_bb['BBS'] < 1) & (df_bb['CCI'] > 0)
+        df_bb['Sell'] = (df_bb['BBS'] < 1) & (df_bb['CCI'] <= 0)
+
+        # Letzter Wert für die Entscheidung
+        if df_bb.iloc[-1]['Buy']:
+            return TradeAction.BUY
+        elif df_bb.iloc[-1]['Sell']:
+            return TradeAction.SELL
+        else:
+            return TradeAction.NONE
 
     def _adx_predict(self, df):
         adx = df.ADX.iloc[-1]
