@@ -109,6 +109,7 @@ class Indicators:
     ADX_MAX_48 = "adx_max_48"
     PSAR = "psar"
     PSAR_CHANGE = "psar_change"
+    SUPER_TREND = "super_trend"
 
     CANDLE = "candle"
     CANDLEPATTERN = "candle_pattern"
@@ -235,7 +236,7 @@ class Indicators:
         #self._add_indicator(self.CANDLE_TYPE_HAMMER, self._candle_hammer_predict)
         #self._add_indicator(self.CANDLE_TYPE_SS_HM, self._candle_shootingstar_hanging_man_predict)
         self._add_indicator(self.CANDLE_TYPE_4H, self._candle_type_predict_4h)
-
+        self._add_indicator(self.SUPER_TREND, self._super_trend)
 
 
 
@@ -419,6 +420,45 @@ class Indicators:
             return TradeAction.SELL
 
         return TradeAction.NONE
+
+    def _super_trend(self, df):
+        multiplier = 3.0
+        df = df.copy()
+        # Calculate HL2 (average of high and low)
+        df['hl2'] = (df['high'] + df['low']) / 2
+
+        # Calculate the Supertrend levels
+        df['upperband'] = df['hl2'] - (multiplier * df['ATR'])
+        df['lowerband'] = df['hl2'] + (multiplier * df['ATR'])
+
+        # Initialize the trend column
+        df['trend'] = 0
+
+        # Determine the trend direction based on previous close and upper/lower bands
+        for i in range(1, len(df)):
+            if df['close'].iloc[i - 1] > df['upperband'].iloc[i - 1]:
+                df['trend'].iloc[i] = 1  # Uptrend
+            elif df['close'].iloc[i - 1] < df['lowerband'].iloc[i - 1]:
+                df['trend'].iloc[i] = -1  # Downtrend
+            else:
+                df['trend'].iloc[i] = df['trend'].iloc[i - 1]  # No change
+
+            # Adjust the upper and lower bands based on the trend
+            if df['trend'].iloc[i] == 1 and df['upperband'].iloc[i] < df['upperband'].iloc[i - 1]:
+                df['upperband'].iloc[i] = df['upperband'].iloc[i - 1]
+            if df['trend'].iloc[i] == -1 and df['lowerband'].iloc[i] > df['lowerband'].iloc[i - 1]:
+                df['lowerband'].iloc[i] = df['lowerband'].iloc[i - 1]
+
+        # Evaluate the last row for buy/sell signal
+        last_row = df.iloc[-1]
+        prev_row = df.iloc[-2] if len(df) > 1 else last_row
+
+        if last_row['trend'] == 1 and prev_row['trend'] == -1:
+            return TradeAction.BUY
+        elif last_row['trend'] == -1 and prev_row['trend'] == 1:
+            return TradeAction.SELL
+        else:
+            return TradeAction.NONE
 
     def _pivot_bounce(self, df):
         return self._pivot_bounce_bl(df["close"], df["PIVOT"])
