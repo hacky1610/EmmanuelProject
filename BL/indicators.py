@@ -236,7 +236,7 @@ class Indicators:
         #self._add_indicator(self.CANDLE_TYPE_HAMMER, self._candle_hammer_predict)
         #self._add_indicator(self.CANDLE_TYPE_SS_HM, self._candle_shootingstar_hanging_man_predict)
         self._add_indicator(self.CANDLE_TYPE_4H, self._candle_type_predict_4h)
-        self._add_indicator(self.SUPER_TREND, self._super_trend)
+        #self._add_indicator(self.SUPER_TREND, self._super_trend)
 
 
 
