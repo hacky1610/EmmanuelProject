@@ -1,5 +1,6 @@
 from typing import List
 
+import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
@@ -109,6 +110,7 @@ class Indicators:
     ADX_MAX_48 = "adx_max_48"
     PSAR = "psar"
     PSAR_CHANGE = "psar_change"
+    SQUEEZE_MOMENTUM = "squeeze_momentum"
 
     CANDLE = "candle"
     CANDLEPATTERN = "candle_pattern"
@@ -139,6 +141,9 @@ class Indicators:
         self._indicators = []
         self._dp = dp
         self._indicator_confirm_factor = 0.7
+
+        self._add_indicator(self.SQUEEZE_MOMENTUM, self._squeeze_momentum)
+
 
         # RSI
         self._add_indicator(self.RSI, self._rsi_predict)
@@ -417,6 +422,20 @@ class Indicators:
 
         if neg_sloap[-3:].all():
             return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _squeeze_momentum(self, df):
+        # Berechnung des Signals für den letzten Datensatz
+
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        if df['Squeeze_Off'].iloc[-1]:
+            if df['Squeeze_Val'].iloc[-1] > 0 and df['Squeeze_Val'].iloc[-1] > df['Squeeze_Val'].iloc[-2]:
+                return TradeAction.BUY
+            elif df['Squeeze_Val'].iloc[-1] < 0 and df['Squeeze_Val'].iloc[-1] < df['Squeeze_Val'].iloc[-2]:
+                return TradeAction.SELL
 
         return TradeAction.NONE
 

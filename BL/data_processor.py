@@ -1,3 +1,4 @@
+import numpy as np
 from pandas import DataFrame
 from finta import TA
 
@@ -79,6 +80,23 @@ class DataProcessor:
         df["S2_FIB"] = pivot["s2"]
         df["R1_FIB"] = pivot["r1"]
         df["R2_FIB"] = pivot["r2"]
+
+        #Keltner
+        lengthKC = 20
+        kc = TA.KC(df, period=lengthKC, kc_mult=1.5)
+        df['KC_UPPER'] = kc['KC_UPPER']
+        df['KC_LOWER'] = kc['KC_LOWER']
+
+        # Squeeze
+        df['Squeeze_On'] = (df['BB_LOWER'] > df['KC_LOWER']) & (df['BB_UPPER'] < df['KC_UPPER'])
+        df['Squeeze_Off'] = (df['BB_LOWER'] < df['KC_LOWER']) & (df['BB_UPPER'] > df['KC_UPPER'])
+        df['No_Squeeze'] = (~df['Squeeze_Off']) & (~df['Squeeze_On'])
+
+        # Momentum-Berechnung
+        avg_price = (df['high'].rolling(window=lengthKC).max() + df['low'].rolling(window=lengthKC).min()) / 2
+        linreg = df['close'] - avg_price.rolling(window=lengthKC).mean()
+        df['Squeeze_Val'] = linreg.rolling(window=lengthKC).apply(lambda x: np.polyfit(range(len(x)), x, 1)[0], raw=True)
+
         return
 
     @staticmethod
