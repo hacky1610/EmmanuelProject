@@ -159,7 +159,7 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
     for m in markets:
         try:
             symbol = m["symbol"]
-            if symbol != "GBPJPY":
+            if symbol != "NZDJPY":
                 continue
 
             df, df_eval = ti.load_test_data(symbol=symbol, dp=dp, days=60,trade_type=TradeType.FX ,use_cache=True)
@@ -181,19 +181,7 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
                 viewer.print_graph()
 
                 for r in predictor.get_result().get_trade_results():
-                    try:
-                        if r.action == TradeAction.BUY:
-                            viewer.print_buy(df[df.date == r.open_time].index.item(),r.opening, add_text=str(r))
-                        else:
-                            viewer.print_sell(df[df.date == r.open_time].index.item(),r.opening, add_text=str(r))
-
-                        close_time = round(r.close_time)
-                        if r.profit < 0:
-                            viewer.print_lost(df[df.date == close_time].index.item(),r.closing)
-                        else:
-                            viewer.print_won(df[df.date == close_time].index.item(), r.closing)
-                    except Exception as e:
-                        print(e)
+                    viewer.print_trade_result(r, df)
 
                 deals = ds.get_closed_deals_by_ticker(symbol)
                 for d in deals:

@@ -289,31 +289,23 @@ class Analytics:
         return simulation_result
 
     def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict, min_trades = 70) -> namedtuple:
-
-        wl = 0
-        next_index = 0
-
-        trades = 0
-        wons = 0
         result = namedtuple('Result', ['wl', 'reward'])
-        reward = 0
-        for _, signal in signals.iterrows():
-            if signal["index"] > next_index:
-                if signal.action == TradeAction.BUY:
-                    res = buy_results.get(signal["index"])
-                elif signal.action == TradeAction.SELL:
-                    res = sell_results.get(signal["index"])
-                else:
-                    res = None
+        trades = wons = reward = 0
 
-                if res:
-                    trades += 1
-                    if res['result'] > 0:
-                        wons +=1
-                    reward += res['result']
-                    next_index = res['next_index']
-        if trades > min_trades:
-            wl = 100 * wons / trades
+        # Verwende numpy um den iterativen Ansatz zu beschleunigen
+        for signal in signals.itertuples():
+            res = None
+            if signal.action == TradeAction.BUY:
+                res = buy_results.get(signal.index)
+            elif signal.action == TradeAction.SELL:
+                res = sell_results.get(signal.index)
+
+            if res:
+                trades += 1
+                reward += res['result']
+                wons += 1 if res['result'] > 0 else 0
+
+        wl = (100 * wons / trades) if trades > min_trades else 0
 
         return result(wl, reward)
 
