@@ -127,8 +127,8 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
     for m in markets:
         try:
             symbol = m["symbol"]
-            if symbol != "GBPUSD":
-                continue
+            #if symbol != "NZDJPY":
+            #    continue
 
             df, df_eval = get_test_data(ti, symbol, trade_type, dp, dropbox_cache=df_cache)
 
@@ -146,7 +146,13 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
                 if not only_test:
                     predictor.activate()
                     ps.save(predictor)
-                viewer.save(symbol)
+
+                viewer.init(predictor.get_result().get_reward(), df, df_eval)
+                viewer.print_graph()
+                for r in predictor.get_result().get_trade_results():
+                    viewer.print_trade_result(r, df)
+                viewer.show()
+
                 gb = "BAD"
                 if predictor.get_result().is_good():
                     gb = f"GOOD {predictor}"
@@ -160,7 +166,7 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
 
 # endregion
 
-#viewer = PlotlyViewer(cache=df_cache)
+viewer = PlotlyViewer(cache=df_cache)
 
 
 evaluate_predictor(indicators,
@@ -168,5 +174,5 @@ evaluate_predictor(indicators,
                    ti,
                    GenericPredictor,
                    viewer,
-                   only_test=False,
-                   only_one_position=True)
+                   only_test=True,
+                   only_one_position=False)

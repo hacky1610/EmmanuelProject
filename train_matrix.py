@@ -169,7 +169,7 @@ def train_predictor(markets: list,
 
                 pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
                 pred_standard.setup(config)
-                if pred_standard.get_result().get_win_loss() < 0.8:
+                if pred_standard.get_result().get_win_loss() < 0.6:
                    print(f"Skip {symbol} {pred_standard.get_result().get_win_loss() }")
                    continue
                 pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
@@ -203,8 +203,8 @@ def train_predictor(markets: list,
                     continue
 
                 pred_matrix.setup({"_indicator_names": best_combo})
-                pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
-                pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"])
+                pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False)
+                pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False)
 
                 if pred_standard.get_result().is_better(pred_matrix.get_result()):
                     pred_matrix.activate()
@@ -216,6 +216,7 @@ def train_predictor(markets: list,
                     print(f"****************************************")
                 else:
                     print("Standard is better")
+                    print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
                     pred_standard.activate()
                     ps.save(pred_standard)
 

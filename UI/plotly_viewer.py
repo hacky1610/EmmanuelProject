@@ -1,7 +1,10 @@
 from datetime import datetime
 
+from pandas import DataFrame
 from plotly.subplots import make_subplots
 
+from BL.datatypes import TradeAction
+from BL.eval_result import TradeResult
 from Connectors.dropbox_cache import BaseCache
 from UI.base_viewer import BaseViewer
 import plotly.graph_objects as go
@@ -78,6 +81,34 @@ class PlotlyViewer(BaseViewer):
                              '<br><b>X</b>: %{x}<br>' +
                              f'<b>{add_text}</b>',
                              )
+
+    def print_trade_result(self, r: TradeResult, df:DataFrame):
+        try:
+            if r.action == TradeAction.BUY:
+                self.print_buy(df[df.date == r.open_time].index.item(), r.opening, add_text=str(r))
+            else:
+                self.print_sell(df[df.date == r.open_time].index.item(), r.opening, add_text=str(r))
+
+            close_time = self.round(r.close_time)
+            if r.profit < 0:
+                self.print_lost(df[df.date == close_time].index.item(), r.closing)
+            else:
+                self.print_won(df[df.date == close_time].index.item(), r.closing)
+        except Exception as e:
+            print(e)
+
+    def round(self,timestamp_str):
+
+        # String in datetime-Objekt umwandeln
+        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S.%fZ')
+
+        # Prüfen, ob Minuten oder Sekunden größer als Null sind
+        if timestamp.minute > 0 or timestamp.second > 0 or timestamp.microsecond > 0:
+            # Auf die nächste Stunde aufrunden
+            timestamp = timestamp.replace(minute=0, second=0, microsecond=0)
+
+        # Ergebnis zurück in einen String konvertieren
+        return timestamp.strftime('%Y-%m-%dT%H:%M:%S.%fZ')[:-4] + 'Z'
 
     def print_buy(self, x, y, add_text: str = ""):
         self._print_sell_buy(x, y, "buy", "triangle-up", add_text)
