@@ -97,6 +97,8 @@ class DataProcessor:
         linreg = df['close'] - avg_price.rolling(window=lengthKC).mean()
         df['Squeeze_Val'] = linreg.rolling(window=lengthKC).apply(lambda x: np.polyfit(range(len(x)), x, 1)[0], raw=True)
 
+        DataProcessor.prepare_supertrend(df)
+
         return
 
     @staticmethod
@@ -128,6 +130,47 @@ class DataProcessor:
         df["R1_FIB"] = pivot["r1"]
         df["R2_FIB"] = pivot["r2"]
         return
+
+    @staticmethod
+    def prepare_supertrend(df, multiplier=3.0):
+        """
+        Prepares the DataFrame by adding the necessary columns for Supertrend calculation.
+
+        Parameters:
+        df (pd.DataFrame): DataFrame containing OHLC data and an 'ATR' column.
+        multiplier (float): The ATR multiplier used to calculate the Supertrend levels.
+
+        Returns:
+        pd.DataFrame: The DataFrame with additional columns ('hl2', 'upperband', 'lowerband', 'trend').
+        """
+        # Ensure DataFrame has the necessary columns
+        if not all(col in df.columns for col in ['high', 'low', 'close', 'ATR']):
+            raise ValueError("DataFrame must contain 'high', 'low', 'close', and 'ATR' columns")
+
+        # Calculate HL2 (average of high and low)
+        df['hl2'] = (df['high'] + df['low']) / 2
+
+        # Calculate the Supertrend levels
+        df['upperband'] = df['hl2'] - (multiplier * df['ATR'])
+        df['lowerband'] = df['hl2'] + (multiplier * df['ATR'])
+
+        # Initialize the trend column
+        df['trend'] = 0
+
+        # Determine the trend direction based on previous close and upper/lower bands
+        for i in range(1, len(df)):
+            if df['close'].iloc[i - 1] > df['upperband'].iloc[i - 1]:
+                df['trend'].iloc[i] = 1  # Uptrend
+            elif df['close'].iloc[i - 1] < df['lowerband'].iloc[i - 1]:
+                df['trend'].iloc[i] = -1  # Downtrend
+            else:
+                df['trend'].iloc[i] = df['trend'].iloc[i - 1]  # No change
+
+            # Adjust the upper and lower bands based on the trend
+            if df['trend'].iloc[i] == 1 and df['upperband'].iloc[i] < df['upperband'].iloc[i - 1]:
+                df['upperband'].iloc[i] = df['upperband'].iloc[i - 1]
+            if df['trend'].iloc[i] == -1 and df['lowerband'].iloc[i] > df['lowerband'].iloc[i - 1]:
+                df['lowerband'].iloc[i] = df['lowerband'].iloc[i - 1]
 
 
 

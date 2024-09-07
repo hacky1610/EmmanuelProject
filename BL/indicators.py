@@ -441,40 +441,13 @@ class Indicators:
         return TradeAction.NONE
 
     def _super_trend(self, df):
-        multiplier = 3.0
-        df = df.copy()
-        # Calculate HL2 (average of high and low)
-        df['hl2'] = (df['high'] + df['low']) / 2
+        current_row = df.iloc[-1]
+        prev_row = df.iloc[-2]
 
-        # Calculate the Supertrend levels
-        df['upperband'] = df['hl2'] - (multiplier * df['ATR'])
-        df['lowerband'] = df['hl2'] + (multiplier * df['ATR'])
-
-        # Initialize the trend column
-        df['trend'] = 0
-
-        # Determine the trend direction based on previous close and upper/lower bands
-        for i in range(1, len(df)):
-            if df['close'].iloc[i - 1] > df['upperband'].iloc[i - 1]:
-                df['trend'].iloc[i] = 1  # Uptrend
-            elif df['close'].iloc[i - 1] < df['lowerband'].iloc[i - 1]:
-                df['trend'].iloc[i] = -1  # Downtrend
-            else:
-                df['trend'].iloc[i] = df['trend'].iloc[i - 1]  # No change
-
-            # Adjust the upper and lower bands based on the trend
-            if df['trend'].iloc[i] == 1 and df['upperband'].iloc[i] < df['upperband'].iloc[i - 1]:
-                df['upperband'].iloc[i] = df['upperband'].iloc[i - 1]
-            if df['trend'].iloc[i] == -1 and df['lowerband'].iloc[i] > df['lowerband'].iloc[i - 1]:
-                df['lowerband'].iloc[i] = df['lowerband'].iloc[i - 1]
-
-        # Evaluate the last row for buy/sell signal
-        last_row = df.iloc[-1]
-        prev_row = df.iloc[-2] if len(df) > 1 else last_row
-
-        if last_row['trend'] == 1 and prev_row['trend'] == -1:
+        # Determine buy or sell signal
+        if current_row['trend'] == 1 and prev_row['trend'] == -1:
             return TradeAction.BUY
-        elif last_row['trend'] == -1 and prev_row['trend'] == 1:
+        elif current_row['trend'] == -1 and prev_row['trend'] == 1:
             return TradeAction.SELL
         else:
             return TradeAction.NONE
