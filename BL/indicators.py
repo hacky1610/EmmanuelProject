@@ -441,6 +441,9 @@ class Indicators:
         return TradeAction.NONE
 
     def _super_trend(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
         current_row = df.iloc[-1]
         prev_row = df.iloc[-2]
 
