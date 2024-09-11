@@ -125,6 +125,7 @@ class Indicators:
     BB_MIDDLE_CROSS_4H = "bb_middle_crossing_4h"
     BB_BORDER_CROSS = "bb_border_crossing"
     BB_SQUEEZE = "bb_sqeeze"
+    BB_SQUEEZE_BOTH = "bb_sqeeze_both_direction"
     # ICHIMOKU
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
@@ -250,6 +251,7 @@ class Indicators:
         self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
         self._add_indicator(self.BB_MIDDLE_CROSS_4H, self._bb_middle_cross_predict_4h)
         self._add_indicator(self.BB_SQUEEZE, self._bb_squeeze)
+        self._add_indicator(self.BB_SQUEEZE_BOTH, self._bb_squeeze_both)
 
         #self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
 
@@ -1068,6 +1070,32 @@ class Indicators:
             return TradeAction.SELL
         else:
             return TradeAction.NONE
+
+    def _bb_squeeze_both(self, df):
+
+        # Parameter
+        keltFactor = 1.5
+        BandsDeviations = 2.0
+        BandsPeriod = 20
+
+        df_bb = df.copy()
+
+        # Keltner Channels Breite (Mitte ± ATR * keltFactor)
+        df_bb['Keltner Width'] = df_bb['ATR'] * keltFactor
+
+        # Bollinger Bands Breite (obere Band - untere Band)
+        df_bb['StdDev'] = df_bb['close'].rolling(window=BandsPeriod).std()
+        df_bb['Bollinger Width'] = BandsDeviations * df_bb['StdDev']
+
+        # Bollinger Bands Squeeze
+        df_bb['BBS'] = df_bb['Bollinger Width'] / df_bb['Keltner Width']
+
+        # Letzter Wert für die Entscheidung
+        if df_bb.iloc[-1]['BBS'] < 1:
+            return TradeAction.BOTH
+        else:
+            return TradeAction.NONE
+
 
     def _adx_predict(self, df):
         adx = df.ADX.iloc[-1]

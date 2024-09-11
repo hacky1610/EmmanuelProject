@@ -161,7 +161,7 @@ def evaluate_predictors(indicator_logic,
     results = EvalResultCollection()
     markets = IG.get_markets_offline()
     for m in markets:
-        if m["symbol"] != "USDDKK":
+        if m["symbol"] != "GBPSGD":
             continue
         results.add(evaluate_predictor(m["symbol"],
                                        m["scaling"],

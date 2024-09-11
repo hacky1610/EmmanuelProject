@@ -133,7 +133,7 @@ class MatrixTrainer:
         for combo in tqdm(all_combos):
             current_result = self.calc_indicator_combo(combo, buy_results, sell_results)
 
-            if EvalResult.compare(best_result.wl, best_result.reward, current_result.wl, current_result.reward):
+            if EvalResult.compare(best_result.wl / 100, best_result.reward, current_result.wl / 100, current_result.reward):
                 best_result = current_result
                 best_combo = [item['indicator'] for item in combo]
         return best_combo

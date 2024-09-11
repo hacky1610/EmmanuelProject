@@ -169,7 +169,7 @@ def train_predictor(markets: list,
 
                 pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
                 pred_standard.setup(config)
-                if pred_standard.get_result().get_win_loss() < 0.6:
+                if pred_standard.get_result().get_win_loss() < 0.3:
                    print(f"Skip {symbol} {pred_standard.get_result().get_win_loss() }")
                    continue
                 pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)

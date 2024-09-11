@@ -89,7 +89,7 @@ class EvalResult:
 
     @staticmethod
     def compare(wl1, reward1, wl2, reward2):
-        if (wl1 > 0.8 and wl2 > 0.8 and abs(wl1 - wl2) <= 0.02) or wl1 == wl2:
+        if (wl1 > 0.8 and wl2 > 0.8 and abs(wl1 - wl2) <= 0.03) or wl1 == wl2:
             return reward2 > reward1
         else:
             return wl2 > wl1

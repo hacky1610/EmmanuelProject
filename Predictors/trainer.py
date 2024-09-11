@@ -69,7 +69,7 @@ class Trainer:
             predictor.setup(training_set)
 
             train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
-                                                scaling=scaling)
+                                           scaling=scaling)
             if train_result is None:
                 return
 
@@ -77,7 +77,6 @@ class Trainer:
                 best_predictor = predictor
                 best_train_result = train_result
                 best_config = predictor.get_config()
-
 
         if best_predictor is not None:
             self._tracer.info(
@@ -96,7 +95,6 @@ class Trainer:
                 self._tracer.info("No good predictor")
         else:
             self._tracer.info("No Best predictor")
-
 
     def _get_sets(self, predictor_class, best_indicators: List, best_indicator_combos: List[List[str]]):
         sets = predictor_class.get_training_sets(best_indicator_combos)
