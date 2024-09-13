@@ -56,6 +56,7 @@ class BasePredictor:
         self._stop = config.get("stop", self._stop)
         self._result = EvalResult(symbol=config.get("_symbol", self._symbol),len_df=config.get("_len_df", 0),
                                   trade_minutes=config.get("_trade_minutes", 0),
+                                  adapted_isl_distance=config.get("_adapted_isl_distance",False),
                                   scan_time=config.get("_scan_time", datetime(1970, 1, 1)))
         self._result.set_result(config.get("_reward", 0), config.get("_trades", 0), config.get("_wins", 0))
 
@@ -123,7 +124,7 @@ class BasePredictor:
              symbol: str,
              epic: str,
              scaling: int,
-             only_one_position=True) -> EvalResult:
+             only_one_position=False) -> EvalResult:
         ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=only_one_position,
                                                    symbol=symbol, scaling=scaling,epic=epic)
         self._result = ev_result

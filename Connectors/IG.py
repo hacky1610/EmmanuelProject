@@ -274,7 +274,7 @@ class IG:
             return -1
 
     def get_stop_distance(self, market, epic: str, scaling_factor: int, intelligent_stop_distance: float = 6.0,
-                          check_min=True) -> float:
+                          check_min=True) -> (float, bool):
         stop_distance = market.get_pip_value(euro=intelligent_stop_distance,
                                              scaling_factor=scaling_factor)
 
@@ -286,11 +286,12 @@ class IG:
         if stop_distance <= min_stop_distance:
             self._tracer.debug(
                 f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")
-            return min_stop_distance
+            return min_stop_distance, True
 
         self._tracer.debug(f"Calculated stop distance is {stop_distance}")
 
-        return stop_distance
+        return stop_distance, False
+
 
     def is_ready_to_set_intelligent_stop(self, diff, limit: float) -> bool:
 
@@ -335,7 +336,7 @@ class IG:
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
                     if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
-                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
+                        distance, adapted = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price - distance
                         if new_stop_level > stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
@@ -347,7 +348,7 @@ class IG:
                 if offer_price < open_price:
                     diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
                     if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
-                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
+                        distance, adapted = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price + distance
                         if new_stop_level < stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)

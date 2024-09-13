@@ -46,7 +46,7 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T19:15:00.00Z", 900, 950, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T19:20:00.00Z", 900, 950, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T19:25:00.00Z", 900, 950, 850, 900)
-        res = self.a.evaluate(self.predictor, df, df_eval, symbol="f", scaling=1)
+        res = self.a.evaluate(self.predictor, df, df_eval, symbol="f", scaling=1, epic="")
 
         assert res.get_reward() == 0
 
@@ -69,7 +69,7 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 950, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 950, 850, 920)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 950, 850, 900)
-        res  = self.a.evaluate(self.predictor, df, df_eval, symbol="Foo", scaling=1)
+        res  = self.a.evaluate(self.predictor, df, df_eval, symbol="Foo", scaling=1, epic="")
 
         assert res.get_win_loss() == 1.0
         assert res.get_reward() == 10
@@ -94,7 +94,7 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 900, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 900, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 900, 850, 900)
-        res = self.a.evaluate(self.predictor, df, df_eval,symbol="USDEUR", scaling=1)
+        res = self.a.evaluate(self.predictor, df, df_eval,symbol="USDEUR", scaling=1, epic="")
 
         assert res.get_win_loss() == 0.0
         assert res.get_reward() == -20

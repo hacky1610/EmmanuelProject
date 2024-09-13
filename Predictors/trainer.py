@@ -91,6 +91,7 @@ class Trainer:
                 self._tracer.info(
                     f"Train: WL: {best_train_result.get_win_loss():.2f} - Reward: {best_predictor.get_result().get_reward():.2f} Avg Reward {best_predictor.get_result().get_average_reward():.2f}")
                 self._tracer.info(f"{best_predictor} ")
+                self._tracer.info(f"Adapted ISL: {best_predictor.get_result()._adapted_isl_distance}")
             else:
                 self._tracer.info("No good predictor")
         else:

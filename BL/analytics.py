@@ -55,7 +55,7 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
-        distance = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
+        distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=predictor.get_isl_distance())
         stop_pip = market.get_pip_value(predictor.get_stop(), scaling)
         limit_pip = market.get_pip_value(predictor.get_limit(), scaling)
@@ -153,8 +153,9 @@ class Analytics:
                                 trade.set_intelligent_stop_used()
 
         predictor._tracer = old_tracer
-        ev_res = EvalResult(symbol=symbol, trades_results=trades, len_df=len(df), trade_minutes=trading_minutes,
-                            scan_time=datetime.datetime.now())
+        ev_res = EvalResult(symbol=symbol, trades_results=trades,
+                            len_df=len(df), trade_minutes=trading_minutes,
+                            scan_time=datetime.datetime.now(), adapted_isl_distance=adapted)
 
         return ev_res
 
@@ -211,7 +212,7 @@ class Analytics:
         stop_pip = market.get_pip_value(stop_euro, scaling)
         limit_pip = market.get_pip_value(limit_euro, scaling)
         isl_entry_pip = market.get_pip_value(isl_entry, scaling)
-        distance = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
+        isl_stop_distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=isl_distance)
 
         for i in tqdm(range(len(df) - 1)):
@@ -251,7 +252,7 @@ class Analytics:
 
                     if use_isl:
                         if self._ig.is_ready_to_set_intelligent_stop(high - open_price, isl_entry_pip):
-                            new_stop_level = close - distance
+                            new_stop_level = close - isl_stop_distance
                             if new_stop_level > stop_price:
                                 stop_price = new_stop_level
 
@@ -284,7 +285,7 @@ class Analytics:
 
                     if use_isl:
                         if self._ig.is_ready_to_set_intelligent_stop(open_price - low, isl_entry_pip):
-                            new_stop_level = close + distance
+                            new_stop_level = close + isl_stop_distance
                             if new_stop_level < stop_price:
                                 stop_price = new_stop_level
 

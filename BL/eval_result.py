@@ -57,7 +57,8 @@ class EvalResult:
                  trades: int = 0,
                  len_df: int = 0,
                  trade_minutes: int = 0,
-                 scan_time=datetime(1970, 1, 1)):
+                 scan_time=datetime(1970, 1, 1),
+                 adapted_isl_distance: bool = False):
         if trades_results is None:
             trades_results = []
 
@@ -71,6 +72,7 @@ class EvalResult:
         self._trade_minutes = trade_minutes
         self._scan_time = scan_time
         self._trade_results = trades_results
+        self._adapted_isl_distance = adapted_isl_distance
 
         for trade in trades_results:
             self._reward += trade.profit
@@ -142,7 +144,8 @@ class EvalResult:
             self._len_df,
             self._trade_minutes,
             self._scan_time,
-            self.get_win_loss()
+            self.get_win_loss(),
+            self._adapted_isl_distance
         ],
             index=["_reward",
                    "_trades",
@@ -150,7 +153,8 @@ class EvalResult:
                    "_len_df",
                    "_trade_minutes",
                    "_scan_time",
-                   "_wl"
+                   "_wl",
+                   "_adapted_isl_distance"
                    ])
 
     def is_good(self):

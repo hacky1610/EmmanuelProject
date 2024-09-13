@@ -149,7 +149,7 @@ def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: In
         if predictor.get_result().is_good():
             gb = f"GOOD {predictor}"
 
-        print(f"{gb} - {symbol} - {predictor.get_result()} {predictor} ")
+        print(f"{gb} - {symbol} - {predictor.get_result()} {predictor} ISL Adapted {predictor.get_result()._adapted_isl_distance}")
         return predictor.get_result()
     return None
 
@@ -161,7 +161,7 @@ def evaluate_predictors(indicator_logic,
     results = EvalResultCollection()
     markets = IG.get_markets_offline()
     for m in markets:
-        #if m["symbol"] != "USDZAR":
+        #if m["symbol"] != "AUDCHF":
         #    continue
         results.add(evaluate_predictor(m["symbol"],
                                        m["epic"],
@@ -176,7 +176,7 @@ def evaluate_predictors(indicator_logic,
 
 # endregion
 
-_viewer = PlotlyViewer(cache=df_cache)
+#_viewer = PlotlyViewer(cache=df_cache)
 
 evaluate_predictors(indicators,
                     _viewer,
