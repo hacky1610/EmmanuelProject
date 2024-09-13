@@ -47,7 +47,7 @@ class Trainer:
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
     @measure_time
-    def train(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame,
+    def train(self, symbol: str, epic:str,  scaling: int, df: DataFrame, df_eval: DataFrame,
               df_test: DataFrame, df_eval_test: DataFrame, predictor_class,
               indicators, best_indicators: List, best_online_config: dict, best_indicator_combos: List[List[str]]):
         self._tracer.info(
@@ -69,7 +69,7 @@ class Trainer:
             predictor.setup(training_set)
 
             train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
-                                           scaling=scaling)
+                                           scaling=scaling, epic=epic)
             if train_result is None:
                 return
 
@@ -81,7 +81,7 @@ class Trainer:
         if best_predictor is not None:
             self._tracer.info(
                 f"#####Test {symbol}  over {self._get_time_range(df_test)} days #######################")
-            test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
+            test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, epic, scaling)
             if best_predictor.get_result().get_reward() > 0:
                 best_predictor.activate()
                 self._predictor_store.save(best_predictor, overwrite=False)

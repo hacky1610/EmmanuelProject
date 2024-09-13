@@ -176,7 +176,7 @@ def train_predictor(markets: list,
                 pred_matrix.setup(config)
 
                 trainer.get_signals(symbol, df_train, indicators, predictor)
-                buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config)
+                buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
 
                 buy_results_dict = {}
                 sell_results_dict = {}
@@ -203,8 +203,8 @@ def train_predictor(markets: list,
                     continue
 
                 pred_matrix.setup({"_indicator_names": best_combo})
-                pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False)
-                pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False)
+                pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False, epic=m["epic"])
+                pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False, epic=m["epic"])
 
                 if pred_standard.get_result().is_better(pred_matrix.get_result()):
                     pred_matrix.activate()

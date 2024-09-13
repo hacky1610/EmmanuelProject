@@ -43,7 +43,7 @@ indicators = Indicators()
 client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
-ds = DealStore(db, "LIVE")
+ds = DealStore(db, "DEMO")
 analytics = Analytics(ms, ig)
 trade_type = TradeType.FX
 ps = PredictorStore(db)
@@ -149,7 +149,7 @@ def round_datetime(timestamp):
 
 
 def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, viewer: BaseViewer,
-                       only_one_position: bool = True,
+                       only_one_position: bool = False,
                        only_test=False):
     global symbol
 
@@ -159,10 +159,10 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
     for m in markets:
         try:
             symbol = m["symbol"]
-            if symbol != "NZDJPY":
+            if symbol != "USDZAR":
                 continue
 
-            df, df_eval = ti.load_test_data(symbol=symbol, dp=dp, days=60,trade_type=TradeType.FX ,use_cache=True)
+            df, df_eval = ti.load_test_data(symbol=symbol, dp=dp, days=40,trade_type=TradeType.FX ,use_cache=True)
 
             if len(df) > 0:
                 predictor:BasePredictor = predictor_class(symbol=symbol, indicators=indicator_logic, viewer=viewer)
@@ -172,7 +172,7 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
 
                 predictor.eval(df_train=df, df_eval=df_eval,
                                only_one_position=only_one_position, analytics=analytics,
-                               symbol=symbol, scaling=m["scaling"])
+                               symbol=symbol, scaling=m["scaling"], epic=m["epic"])
 
                 if predictor.get_result() is None:
                     continue
@@ -233,4 +233,4 @@ evaluate_predictor(indicators,
                    GenericPredictor,
                    viewer,
                    only_test=True,
-                   only_one_position=True)
+                   only_one_position=False)

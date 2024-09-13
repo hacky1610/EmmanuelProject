@@ -133,7 +133,7 @@ def train_predictor(markets:list,
                     print(f"Skip {symbol} - WL to low {p.get_result().get_win_loss() }")
                     continue
                 print(f"{symbol} - Current WL {p.get_result().get_win_loss()}")
-                trainer.train(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, predictor, indicators, best_indicators,
+                trainer.train(symbol, m["epic"],  m["scaling"], df_train, eval_df_train,df_test, eval_df_test, predictor, indicators, best_indicators,
                               best_online_config=ps.load_best_by_symbol(symbol), best_indicator_combos=best_indicator_combos)
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück

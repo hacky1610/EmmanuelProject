@@ -121,7 +121,7 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
     return df_train, eval_df_train
 
 
-def evaluate_predictor(symbol: str, scaling: int, indicator_logic: Indicators, viewer: BaseViewer,
+def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: Indicators, viewer: BaseViewer,
                        only_one_position: bool = False, only_test=True) -> EvalResult:
     df, df_eval = get_test_data(ti, symbol, trade_type, dp, dropbox_cache=df_cache)
 
@@ -130,7 +130,7 @@ def evaluate_predictor(symbol: str, scaling: int, indicator_logic: Indicators, v
         predictor.setup(ps.load_active_by_symbol(symbol))
         predictor.eval(df_train=df, df_eval=df_eval,
                        only_one_position=only_one_position, analytics=analytics,
-                       symbol=symbol, scaling=scaling)
+                       symbol=symbol, scaling=scaling, epic=epic)
 
         if predictor.get_result() is None:
             return None
@@ -161,9 +161,10 @@ def evaluate_predictors(indicator_logic,
     results = EvalResultCollection()
     markets = IG.get_markets_offline()
     for m in markets:
-        if m["symbol"] != "GBPSGD":
-            continue
+        #if m["symbol"] != "USDZAR":
+        #    continue
         results.add(evaluate_predictor(m["symbol"],
+                                       m["epic"],
                                        m["scaling"],
                                        indicator_logic,
                                        viewer,
@@ -179,5 +180,5 @@ _viewer = PlotlyViewer(cache=df_cache)
 
 evaluate_predictors(indicators,
                     _viewer,
-                    only_test=True,
+                    only_test=False,
                     only_one_position=False)

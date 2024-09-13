@@ -43,12 +43,13 @@ class MatrixTrainer:
                 trades = predictor.get_signals(df, self._analytics)
                 self._cache.save_signal(trades, path)
 
-    def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict):
+    def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict,epic:str):
         buy_path = f"simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
         sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
 
         if not self._cache.simulation_exist(buy_path):
             buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
+                                           epic=epic,
                                            isl_entry=current_config.get("_isl_entry", 0),
                                            isl_distance=current_config.get("_isl_distance", 0),
                                            isl_open_end=current_config.get("_isl_open_end", False),
@@ -62,6 +63,7 @@ class MatrixTrainer:
 
         if not self._cache.simulation_exist(sell_path):
             sell = self._analytics.simulate(action="sell", stop_euro=current_config["_stop"],
+                                            epic=epic,
                                             isl_entry=current_config.get("_isl_entry", 0),
                                             isl_distance=current_config.get("_isl_distance", 0),
                                             isl_open_end=current_config.get("_isl_open_end", False),

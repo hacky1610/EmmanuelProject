@@ -35,6 +35,7 @@ class Analytics:
                  df: DataFrame,
                  df_eval: DataFrame,
                  symbol: str,
+                 epic: str,
                  scaling: int,
                  only_one_position: bool = True,
                  time_filter=None) -> EvalResult:
@@ -54,7 +55,7 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
-        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False,
+        distance = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=predictor.get_isl_distance())
         stop_pip = market.get_pip_value(predictor.get_stop(), scaling)
         limit_pip = market.get_pip_value(predictor.get_limit(), scaling)
@@ -175,6 +176,7 @@ class Analytics:
 
     def simulate(self,
                  action:str,
+                 epic: str,
                  stop_euro:float,
                  limit_euro:float,
                  isl_entry: float,
@@ -209,7 +211,7 @@ class Analytics:
         stop_pip = market.get_pip_value(stop_euro, scaling)
         limit_pip = market.get_pip_value(limit_euro, scaling)
         isl_entry_pip = market.get_pip_value(isl_entry, scaling)
-        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False,
+        distance = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=isl_distance)
 
         for i in tqdm(range(len(df) - 1)):
