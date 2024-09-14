@@ -2,7 +2,7 @@ import json
 import os.path
 import time
 import traceback
-from typing import Dict, List
+from typing import Dict, List, Optional
 from trading_ig import IGService
 from trading_ig.rest import IGException, ApiExceededException
 from BL import DataProcessor, BaseReader
@@ -266,12 +266,17 @@ class IG:
         return self.ig_service.fetch_open_positions()
 
     def get_min_stop_distance(self, epic: str) -> float:
+        market = IG.get_market_by_epic(epic)
+        return market["min_stop_disance"]
+
+    def get_min_stop_distance_online(self, epic: str) -> float:
         try:
             ms = self.get_market_details(epic)
             return ms["dealingRules"]["minNormalStopOrLimitDistance"]["value"]
         except Exception as e:
             self._tracer.error(f"Error while get limit {e}")
             return -1
+
 
     def get_stop_distance(self, market, epic: str, scaling_factor: int, intelligent_stop_distance: float = 6.0,
                           check_min=True) -> (float, bool):
@@ -620,6 +625,23 @@ class IG:
             _currency_markets = json.load(json_file)
 
         return _currency_markets
+
+
+    @staticmethod
+    def get_market_by_epic(market_epic: str) -> Optional[Dict]:
+        _currency_markets = IG.get_markets_offline()
+        for market in _currency_markets:
+            if market.get('epic') == market_epic:
+                return market
+        return None
+
+
+
+    @staticmethod
+    def set_markets_offline(currency_markets:List[Dict]):
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "Data", "markets.json"),
+                  'w') as json_file:
+            json.dump(currency_markets, json_file, indent=4)
 
     def report_last_day(self, ti, cache, dp, analytics, viewer: BaseViewer, days: int = 7):
         start_time = (datetime.now() - timedelta(hours=days * 24))
