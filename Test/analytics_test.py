@@ -12,7 +12,9 @@ class TestAnalytics(unittest.TestCase):
 
 
     def setUp(self):
-        self._analytics = Analytics(MagicMock(),MagicMock())
+        self._ig = MagicMock()
+        self._ig.get_stop_distance = MagicMock(return_value=(1,False))
+        self._analytics = Analytics(MagicMock(),self._ig)
 
     @patch('BL.analytics.MarketStore')
     @patch('BL.analytics.BaseViewer')
@@ -33,8 +35,8 @@ class TestAnalytics(unittest.TestCase):
         df = DataFrame({'date': [datetime(2024,1,1, 10), datetime(2024,1,1, 11)], 'open': [1.0, 1.0], 'close': [2.0,2.0]})
         df_eval = DataFrame({'date': [datetime.now()], 'high': [1.0], 'low': [1.0]})
 
-        analytics = Analytics(mock_market_store, MagicMock())
-        result = analytics.evaluate(mock_predictor, df, df_eval, 'symbol', 1, mock_viewer)
+        analytics = Analytics(mock_market_store,self._ig)
+        result = analytics.evaluate(mock_predictor, df, df_eval, 'symbol',"epic", 1, mock_viewer)
 
         self.assertIsInstance(result, EvalResult)
         self.assertEqual(result.get_trades(), 0)
@@ -61,8 +63,8 @@ class TestAnalytics(unittest.TestCase):
             {'date': [datetime(2024, 1, 1, 10), datetime(2024, 1, 1, 11)], 'open': [1.0, 1.0], 'close': [2.0, 2.0]})
         df_eval = DataFrame({'date': [datetime.now()], 'high': [1.0], 'low': [1.0], 'close': [1.0]})
 
-        analytics = Analytics(mock_market_store, MagicMock())
-        result = analytics.evaluate(mock_predictor, df, df_eval, 'symbol', 1, mock_viewer)
+        analytics = Analytics(mock_market_store,self._ig)
+        result = analytics.evaluate(mock_predictor, df, df_eval, 'symbol', "epic" , 1, mock_viewer)
 
         self.assertIsInstance(result, EvalResult)
         self.assertEqual(result.get_trades(), 1)
