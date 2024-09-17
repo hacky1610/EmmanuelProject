@@ -69,7 +69,7 @@ class Trader:
                  deal_storage:DealStore,
                  market_storage:MarketStore,
                  check_ig_performance: bool = False):
-        self._ig = ig
+        self._ig:IG = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
         self._tracer: Tracer = tracer

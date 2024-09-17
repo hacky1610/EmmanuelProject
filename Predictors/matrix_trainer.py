@@ -34,10 +34,9 @@ class MatrixTrainer:
         self._predictor_store = predictor_store
 
     def get_signals(self, symbol: str, df: DataFrame, indicators: Indicators, predictor_class):
-        for indicator in indicators.get_all_indicator_names():
+        for indicator in tqdm(indicators.get_all_indicator_names()):
             path = f"signal_{symbol}_{indicator}.csv"
             if not self._cache.signal_exist(path):
-                print(f"Create signal for {indicator}")
                 predictor = predictor_class(symbol=symbol, indicators=indicators)
                 predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
                 trades = predictor.get_signals(df, self._analytics)
@@ -76,7 +75,6 @@ class MatrixTrainer:
             sell = self._cache.load_simulation(sell_path)
         return buy, sell
 
-    @measure_time
     def train_combinations(self, symbol: str,
                            indicators: Indicators,
                            best_combo_list: List[List[str]],

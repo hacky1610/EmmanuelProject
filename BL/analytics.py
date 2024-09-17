@@ -207,15 +207,13 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
-        print(f"Start simulation for {symbol}")
-
         stop_pip = market.get_pip_value(stop_euro, scaling)
         limit_pip = market.get_pip_value(limit_euro, scaling)
         isl_entry_pip = market.get_pip_value(isl_entry, scaling)
         isl_stop_distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=isl_distance)
 
-        for i in tqdm(range(len(df) - 1)):
+        for i in range(len(df) - 1):
             current_index = i + 1
             open_price = df.close[current_index - 1]
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
