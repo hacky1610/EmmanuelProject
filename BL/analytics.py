@@ -32,6 +32,7 @@ class Analytics:
 
         return text
 
+    @measure_time
     def evaluate(self, predictor,
                  df: DataFrame,
                  df_eval: DataFrame,
@@ -62,7 +63,7 @@ class Analytics:
         limit_pip = market.get_pip_value(predictor.get_limit(), scaling)
         isl_entry_pip = market.get_pip_value(predictor.get_isl_entry(), scaling)
 
-        for i in tqdm(range(len(df) - 1)):
+        for i in range(len(df) - 1):
             current_index = i + 1
             if time_filter is not None and TimeUtils.get_time_string(time_filter) != df.date[current_index]:
                 continue

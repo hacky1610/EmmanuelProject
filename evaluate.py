@@ -121,6 +121,7 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
     return df_train, eval_df_train
 
 
+
 def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: Indicators, viewer: BaseViewer,
                        only_one_position: bool = False, only_test=True) -> EvalResult:
     df, df_eval = get_test_data(ti, symbol, trade_type, dp, dropbox_cache=df_cache)
@@ -155,7 +156,7 @@ def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: In
     return None
 
 
-@measure_time
+
 def evaluate_predictors(indicator_logic,
                         viewer: BaseViewer,
                         only_one_position: bool = True,

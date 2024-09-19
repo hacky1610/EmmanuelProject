@@ -3,6 +3,8 @@ import random
 from typing import Mapping, List
 
 from pandas import DataFrame, Series
+
+from BL import measure_time
 from BL.eval_result import EvalResult, TradeResult
 from Connectors.dropbox_cache import BaseCache
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -108,6 +110,7 @@ class BasePredictor:
     def get_last_scan_time(self):
         return self._result.get_scan_time()
 
+    @measure_time
     def train(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, epic: str,  scaling: int) -> EvalResult:
         ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=False,
                                                    symbol=symbol, scaling=scaling, epic=epic)
