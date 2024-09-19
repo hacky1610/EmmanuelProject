@@ -31,6 +31,7 @@ class Indicators:
     RSI30_70 = "rsi_30_70"
     RSI_SLOPE = "rsi_slope"
     RSI_CONVERGENCE = "rsi_convergence"
+    RSI_CONVERGENCE_4H = "rsi_convergence_4h"
     RSI_CONVERGENCE5 = "rsi_convergence5"
     RSI_CONVERGENCE5_30 = "rsi_convergence5_30"
     RSI_CONVERGENCE5_40 = "rsi_convergence5_40"
@@ -149,6 +150,7 @@ class Indicators:
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         #self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict) #BAD
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
+        self._add_indicator(self.RSI_CONVERGENCE_4H, self._rsi_convergence_predict3_4h)
         #self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
         #self._add_indicator(self.RSI_CONVERGENCE5_30, self._rsi_convergence_predict5_30) #BAD
         self._add_indicator(self.RSI_CONVERGENCE5_40, self._rsi_convergence_predict5_40)
@@ -755,6 +757,9 @@ class Indicators:
         return TradeAction.NONE
 
     def _convergence_predict(self, df, indicator_name, b4after: int = 3, look_back: int = 20):
+        if len(df) < 3:
+            return TradeAction.NONE
+
         pv = PivotScanner(be4after=b4after, lookback=look_back)
 
         pv.scan(df)
@@ -789,6 +794,10 @@ class Indicators:
 
     def _rsi_convergence_predict3(self, df):
         return self._convergence_predict(df, "RSI")
+
+    def _rsi_convergence_predict3_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+        return self._convergence_predict(df4h, "RSI")
 
     def _cci_predict_4h(self, df):
         df4h = self.convert_1h_to_4h(df)
