@@ -4,6 +4,7 @@ from collections import namedtuple
 
 from tqdm import tqdm
 
+from BL import measure_time
 from BL.eval_result import EvalResult, TradeResult
 from Connectors.market_store import MarketStore
 from Predictors.utils import TimeUtils
@@ -159,6 +160,7 @@ class Analytics:
 
         return ev_res
 
+    @measure_time
     def get_signals(self, predictor,
                  df: DataFrame) -> DataFrame:
 

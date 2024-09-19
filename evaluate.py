@@ -6,7 +6,7 @@ from typing import Dict
 import pymongo
 from pandas import DataFrame
 
-from BL import DataProcessor, ConfigReader
+from BL import DataProcessor, ConfigReader, measure_time
 from BL.analytics import Analytics
 from BL.eval_result import EvalResultCollection, EvalResult
 
@@ -124,6 +124,7 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
 def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: Indicators, viewer: BaseViewer,
                        only_one_position: bool = False, only_test=True) -> EvalResult:
     df, df_eval = get_test_data(ti, symbol, trade_type, dp, dropbox_cache=df_cache)
+    indicators.reset_caches()
 
     if len(df) > 0:
         predictor: BasePredictor = GenericPredictor(symbol=symbol, indicators=indicator_logic, viewer=viewer)
@@ -154,6 +155,7 @@ def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: In
     return None
 
 
+@measure_time
 def evaluate_predictors(indicator_logic,
                         viewer: BaseViewer,
                         only_one_position: bool = True,

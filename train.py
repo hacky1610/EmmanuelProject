@@ -121,10 +121,10 @@ def train_predictor(markets:list,
         # for m in markets:
         symbol = m["symbol"]
 
-
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
         df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
+        indicators.reset_caches()
         if len(df_train) > 0:
             try:
                 p = GenericPredictor(indicators=indicators, symbol=symbol)

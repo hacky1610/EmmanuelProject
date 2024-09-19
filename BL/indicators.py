@@ -9,6 +9,7 @@ from BL.datatypes import TradeAction
 import random
 
 from BL.high_low_scanner import PivotScanner
+from Connectors.dataframe_cache import FourHourDataFrameCache
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 
@@ -140,20 +141,22 @@ class Indicators:
 
     # endregion
 
+
     # region Constructor
-    def __init__(self, tracer: Tracer = ConsoleTracer(), dp = DataProcessor()):
+    def __init__(self, tracer: Tracer = ConsoleTracer(),  dp = DataProcessor() ):
         self._indicators = []
         self._dp = dp
         self._indicator_confirm_factor = 0.7
+        self._df_cache = FourHourDataFrameCache(dp)
 
         # RSI
+        self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
+        self._add_indicator(self.RSI_CONVERGENCE_4H, self._rsi_convergence_predict3_4h)
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
-        self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         #self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict) #BAD
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
-        self._add_indicator(self.RSI_CONVERGENCE_4H, self._rsi_convergence_predict3_4h)
         #self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
         #self._add_indicator(self.RSI_CONVERGENCE5_30, self._rsi_convergence_predict5_30) #BAD
         self._add_indicator(self.RSI_CONVERGENCE5_40, self._rsi_convergence_predict5_40)
@@ -272,26 +275,11 @@ class Indicators:
 
     # endregion
 
+    def reset_caches(self):
+        self._df_cache.reset()
+
     def convert_1h_to_4h(self, one_h_df: DataFrame):
-        if len(one_h_df) == 0:
-            return DataFrame()
-
-        one_h_df['date_index'] = pd.to_datetime(one_h_df['date'])
-        # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
-        df_4h: DataFrame = one_h_df.groupby(pd.Grouper(key='date_index', freq='4H')).agg({
-            'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
-            'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
-            'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
-            'close': 'last',  # Höchster Kurs in der 4-Stunden-Periode
-            'date_index': 'first'  # Erstes Zeitstempel in der 4-Stunden-Periode
-        }).reset_index(drop=True)
-        df_4h.dropna(inplace=True)
-        df_4h.reset_index(inplace=True)
-
-        df_4h = df_4h.filter(["open", "low", "high", "close"])
-        self._dp.addSignals_big_tf(df_4h)
-
-        return df_4h.dropna()
+        return self._df_cache.get_4h_df(one_h_df)
 
     def convert_1h_to_12h(self, one_h_df: DataFrame):
         if len(one_h_df) == 0:

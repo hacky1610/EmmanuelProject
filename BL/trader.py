@@ -196,6 +196,7 @@ class Trader:
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
         self._tracer.set_prefix(symbol_)
+        indicators.reset_caches()
         for predictor_class in self._predictor_class_list:
             self._tracer.debug(f"Try to trade {symbol_} with {predictor_class.__name__}")
             predictor = predictor_class(symbol=symbol_, tracer=self._tracer, indicators=indicators)
