@@ -19,6 +19,9 @@ class Indicator:
         self.function = function
 
 
+
+
+
 class Indicators:
     # region Static Members
     # region RSI
