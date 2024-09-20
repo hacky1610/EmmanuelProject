@@ -675,31 +675,7 @@ class TestIndicators(unittest.TestCase):
         data = self.indicators._ema_20_smma_20(data)
         self.assertEqual(data, TradeAction.BUY)
 
-    def test_empty_dataframe(self):
-        one_h_df = DataFrame()
-        result = self.indicators.convert_1h_to_4h(one_h_df)
-        self.assertTrue(result.empty, "Result should be an empty DataFrame when input is empty.")
 
-    def test_aggregation(self):
-        data = {
-            'date': ['2023-08-05 00:00:00', '2023-08-05 01:00:00', '2023-08-05 02:00:00', '2023-08-05 03:00:00',
-                     '2023-08-05 04:00:00', '2023-08-05 05:00:00', '2023-08-05 06:00:00', '2023-08-05 07:00:00'],
-            'open': [7, 2, 3, 4, 5, 6, 7, 8],
-            'high': [1, 2, 3, 4, 5, 6, 7, 8],
-            'low': [1, 2, 3, 4, 5, 1, 7, 8],
-            'close': [1, 2, 3, 4, 5, 6, 7, 8]
-        }
-        one_h_df = DataFrame(data)
-        result = self.indicators.convert_1h_to_4h(one_h_df)
-
-        expected_data = {
-            'open': [7, 5],
-            'low': [1, 1],
-            'high': [4, 8],
-            'close': [4, 8]
-        }
-        expected_df = DataFrame(expected_data)
-        pd.testing.assert_frame_equal(result.reset_index(drop=True), expected_df.reset_index(drop=True))
 
 
 

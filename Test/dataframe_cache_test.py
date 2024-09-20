@@ -1,5 +1,7 @@
 import unittest
 from unittest.mock import  MagicMock
+
+import pandas as pd
 from pandas import DataFrame
 
 from BL.indicators import Indicators
@@ -69,6 +71,28 @@ class DataFrameCacheTest(unittest.TestCase):
         result_new = self.cache.get_4h_df(test_df)
 
         assert result_old.equals(result_new)
+
+
+    def test_aggregation(self):
+        data = {
+            'date': ['2023-08-05 00:00:00', '2023-08-05 01:00:00', '2023-08-05 02:00:00', '2023-08-05 03:00:00',
+                     '2023-08-05 04:00:00', '2023-08-05 05:00:00', '2023-08-05 06:00:00', '2023-08-05 07:00:00'],
+            'open': [7, 2, 3, 4, 5, 6, 7, 8],
+            'high': [1, 2, 3, 4, 5, 6, 7, 8],
+            'low': [1, 2, 3, 4, 5, 1, 7, 8],
+            'close': [1, 2, 3, 4, 5, 6, 7, 8]
+        }
+        one_h_df = DataFrame(data)
+        result = self.cache.get_4h_df(one_h_df)
+
+        expected_data = {
+            'open': [7, 5],
+            'low': [1, 1],
+            'high': [4, 8],
+            'close': [4, 8]
+        }
+        expected_df = DataFrame(expected_data)
+        pd.testing.assert_frame_equal(result.reset_index(drop=True), expected_df.reset_index(drop=True))
 
 
 
