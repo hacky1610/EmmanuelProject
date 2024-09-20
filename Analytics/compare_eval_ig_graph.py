@@ -159,10 +159,10 @@ def evaluate_predictor(indicator_logic, ig: IG, ti: Tiingo, predictor_class, vie
     for m in markets:
         try:
             symbol = m["symbol"]
-            if symbol != "GBPAUD":
+            if symbol != "CHFJPY":
                 continue
 
-            df, df_eval = ti.load_test_data(symbol=symbol, dp=dp, days=40,trade_type=TradeType.FX ,use_cache=True)
+            df, df_eval = ti.load_test_data(symbol=symbol, dp=dp, days=100,trade_type=TradeType.FX ,use_cache=True)
             indicators.reset_caches()
 
             if len(df) > 0:
