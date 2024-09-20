@@ -9,11 +9,14 @@ from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
+from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.IG import IG
 from BL import EnvReader, DataProcessor
 from BL.trader import Trader
 import dropbox
+
+from Tracing.MultiTracer import MultiTracer
 
 env_reader = EnvReader()
 type_ = env_reader.get("Type")
@@ -30,7 +33,8 @@ dataProcessor = DataProcessor()
 dbx = dropbox.Dropbox(env_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
-tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_, "trade_job")
+loggly_tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_, "trade_job")
+tracer = MultiTracer([loggly_tracer, ConsoleTracer()])
 tiingo = Tiingo(tracer=tracer, conf_reader=env_reader, cache=cache)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
 predictor_class_list = [GenericPredictor]
