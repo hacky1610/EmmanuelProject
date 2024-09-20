@@ -1,11 +1,9 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import  MagicMock
 from pandas import DataFrame
 
 from BL.indicators import Indicators
-from Connectors.dropbox_cache import DropBoxCache
-from Connectors.tiingo import Tiingo, FourHourDataFrameCache
-from Tracing.Tracer import Tracer
+from Connectors.dataframe_cache import FourHourDataFrameCache
 
 
 class DataFrameCacheTest(unittest.TestCase):
@@ -29,7 +27,7 @@ class DataFrameCacheTest(unittest.TestCase):
         }
         self.one_h_df = DataFrame(data)
 
-        self.cache = FourHourDataFrameCache(dataprocessor=self.dp, ohlc_1h_df=self.one_h_df)
+        self.cache = FourHourDataFrameCache(dataprocessor=self.dp)
 
 
     def test_foo(self):
