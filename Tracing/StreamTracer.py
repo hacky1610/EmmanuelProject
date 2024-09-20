@@ -12,7 +12,7 @@ class StreamTracer(Tracer):
         self._logger.info(f"{super()._get_function()} - {message}")
 
     def debug(self, message):
-        self._logger.debug(f"{super()._get_function()} - {message}")
+        self._logger.info(f"{super()._get_function()} - {message}")
 
     def write(self, message):
         self._logger.info(f"{super()._get_function()} - {message}")
