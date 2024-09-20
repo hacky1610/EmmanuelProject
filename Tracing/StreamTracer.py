@@ -18,7 +18,7 @@ class StreamTracer(Tracer):
         self._logger.info(f"{super()._get_function()} - {message}")
 
     def error(self, message):
-        self._logger.error(f"Error:{super()._get_function()} - {message}:")
+        self._logger.error(f"EmmanuelError:{super()._get_function()} - {message}:")
 
     def result(self, message):
         self._logger.info(f"Result:{super()._get_function()} - {message}:")

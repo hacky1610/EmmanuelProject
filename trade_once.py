@@ -47,6 +47,8 @@ analytics = Analytics(ms, tracer)
 indicators = Indicators(tracer=tracer)
 ps = PredictorStore(db)
 
+tracer.error("test")
+
 trader = Trader(
     ig=ig,
     tiingo=tiingo,
