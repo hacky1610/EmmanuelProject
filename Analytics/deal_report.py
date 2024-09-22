@@ -89,7 +89,7 @@ for deal in closed:
             scaling = ig.get_market_details(deal["epic"])["snapshot"]["scalingFactor"]
 
             ev_res = analytics.evaluate(predictor, df=df_train, df_eval=df_eval_train, only_one_position=False,
-                                        symbol=deal["ticker"], scaling=scaling, time_filter=deal["open_date_ig_datetime"])
+                                        symbol=deal["ticker"], scaling=scaling, time_filter=deal["open_date_ig_datetime"], epic=deal["epic"])
 
             trades = ev_res.get_trade_results()
 

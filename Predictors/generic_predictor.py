@@ -1,12 +1,7 @@
-import itertools
 import random
 from typing import List
 
-from BL.candle import Candle, Direction
-from BL.high_low_scanner import PivotScanner
 from BL.indicators import Indicators
-from Connectors.dropbox_cache import BaseCache
-from Connectors.market_store import MarketStore
 from Predictors.base_predictor import BasePredictor
 from pandas import Series, DataFrame
 from Tracing.Tracer import Tracer
@@ -23,7 +18,6 @@ class GenericPredictor(BasePredictor):
                  tracer: Tracer = ConsoleTracer(),
                  viewer: BaseViewer = BaseViewer()
                  ):
-        self._indicator_names = [Indicators.RSI, Indicators.EMA]
         self._additional_indicators:List = []
         self._max_nones: int = 0
         self._viewer = viewer
@@ -44,9 +38,6 @@ class GenericPredictor(BasePredictor):
 
         self._indicator_names = self._clean_list(self._indicator_names)
         super().setup(config)
-
-    def get_indicator_names(self) ->list:
-        return self._indicator_names
 
     def get_config(self) -> Series:
         parent_c = super().get_config()

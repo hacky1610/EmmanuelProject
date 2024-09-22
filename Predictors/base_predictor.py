@@ -6,6 +6,7 @@ from pandas import DataFrame, Series
 
 from BL import measure_time
 from BL.eval_result import EvalResult, TradeResult
+from BL.indicators import Indicators
 from Connectors.dropbox_cache import BaseCache
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
@@ -31,6 +32,8 @@ class BasePredictor:
         self._isl_entry = self._stop * 0.7
         self._symbol = symbol
         self._result: EvalResult = EvalResult()
+        self._indicator_names = [Indicators.RSI, Indicators.EMA]
+
 
         if config is None:
             config = {}
@@ -41,6 +44,8 @@ class BasePredictor:
     def __str__(self):
         return f"Indicatornames {self._indicator_names} Limit {self._limit} Stop {self._stop} ISL {self._use_isl} Open End {self._isl_open_end} Dist {self._isl_distance} Fact {self._isl_entry}"
 
+    def get_indicator_names(self) ->list:
+        return self._indicator_names
 
     def setup(self, config):
 

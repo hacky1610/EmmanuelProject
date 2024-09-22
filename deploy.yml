@@ -21,6 +21,10 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
+    pylint --recursive=y . --errors-only --ignore=venv
+  displayName: 'PyLint'
+
+- script: |
     pip install pytest pytest-azurepipelines coverage
     coverage run -m pytest ./Test
   displayName: 'Test'

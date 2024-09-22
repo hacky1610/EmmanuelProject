@@ -8,7 +8,6 @@ import pandas as pd
 from BL.datatypes import TradeAction
 from BL.trader import Trader, TradeConfig, TradeResult
 from BL.analytics import Analytics
-from Connectors.tiingo import TradeType
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame, Series
 from BL.data_processor import DataProcessor
@@ -197,7 +196,7 @@ class TraderTest(unittest.TestCase):
     def test_more_than_7_deals_profit_greater_than_100(self):
         deals = MagicMock()
         deals.__len__.return_value = 8
-        deals.profit.sum.return_value = 101
+        deals.profit.sum.return_value = 101 # pylint: disable=no-member
         self._trader._tracer.debug = MagicMock()
         self._trader._check_ig_performance = True
         self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
@@ -208,7 +207,7 @@ class TraderTest(unittest.TestCase):
     def test_more_than_7_deals_profit_less_than_100(self):
         deals = MagicMock()
         deals.__len__.return_value = 8
-        deals.profit.sum.return_value = 40
+        deals.profit.sum.return_value = 40 # pylint: disable=no-member
         self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
         self._trader._check_ig_performance = True
         self._trader._tracer.debug = MagicMock()

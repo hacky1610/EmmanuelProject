@@ -545,7 +545,7 @@ class IG:
             if deal_info != None:
                 win_lost = deal_info["_wins"] / deal_info["_trades"]
                 add_text += f"{deal_info['Type']}: WL: {win_lost} - Trades: {deal_info['_trades']}"
-                predictor = GenericPredictor(indicators=Indicators())
+                predictor = GenericPredictor(indicators=Indicators(), symbol="")
                 predictor.setup(deal_info)
                 predictor.setup(predictor_settings)
                 df, df_eval = ti.load_train_data(n, dp, TradeType.FX)

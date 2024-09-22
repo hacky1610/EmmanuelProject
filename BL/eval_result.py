@@ -164,12 +164,9 @@ class EvalResult:
     def get_trade_df(self) -> DataFrame:
         df = DataFrame()
         for i in self._trade_results:
-            df = df.append(Series(data=[i.action, i.result, i.index, self._symbol, self._indicator],
-                                  index=["action", "result", "chart_index", "symbol", "indicator"]), ignore_index=True)
+            df = df.append(Series(data=[i.action, i.profit, self._symbol],
+                                  index=["action", "result",  "symbol"]), ignore_index=True)
         return df
-
-    def save_trade_result(self):
-        self.get_trade_df().to_csv(f"{EvalResult._get_results_dir()}{self._get_trade_result_filename(self._symbol, self._indicator)}")
 
     @staticmethod
     def _get_results_dir():
@@ -312,27 +309,6 @@ class EvalResultCollection:
                 signal_combinations.append({"index": i, "action": actions[0]})
 
         return DataFrame(signal_combinations)
-
-    @staticmethod
-    def final_simulation(combined_signals_df: DataFrame, buy_simulation: DataFrame):
-        common_indices = list(reduce(lambda x, y: x.intersection(y), [set(df["chart_index"]) for df in dataframes]))
-        common_indices.sort()
-        signal_combinations = []
-        for i in common_indices:
-            actions = []
-            for df in dataframes:
-                v = df[df.chart_index == i]
-                action = v["action"].item()
-                if action != "both":
-                    actions.append(action)
-
-            if len(actions) > 0 and len(set(actions)) == 1:
-                signal_combinations.append({"index": i, "action": actions[0]})
-
-        return DataFrame(signal_combinations)
-
-
-
 
 
 

@@ -70,12 +70,6 @@ class DropBoxCache(BaseCache):
         else:
             self.dropbox_servie.upload_data(data.to_csv(), f"Cache/{name}")
 
-    def load_settings(self, name: str):
-        res = self.dropbox_servie.load(f"Settings/{name}")
-        if res is not None:
-            return json.loads(res)
-        return None
-
     def save_settings(self, data: str, name: str):
         self.dropbox_servie.upload_data(data, f"Settings/{name}")
 
