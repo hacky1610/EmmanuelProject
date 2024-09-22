@@ -17,6 +17,7 @@ from BL.trader import Trader
 import dropbox
 
 from Tracing.MultiTracer import MultiTracer
+from Tracing.StreamTracer import StreamTracer
 
 env_reader = EnvReader()
 type_ = env_reader.get("Type")
@@ -34,7 +35,7 @@ dbx = dropbox.Dropbox(env_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
 loggly_tracer = LogglyTracer(env_reader.get("loggly_api_key"), type_, "trade_job")
-tracer = MultiTracer([loggly_tracer, ConsoleTracer()])
+tracer = MultiTracer([loggly_tracer, StreamTracer()])
 tiingo = Tiingo(tracer=tracer, conf_reader=env_reader, cache=cache)
 ig = IG(conf_reader=env_reader, tracer=tracer, live=live)
 predictor_class_list = [GenericPredictor]

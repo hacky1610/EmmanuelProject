@@ -18,6 +18,8 @@ from BL import EnvReader, DataProcessor, ConfigReader
 from BL.trader import Trader
 import dropbox
 
+from Tracing.MultiTracer import MultiTracer
+from Tracing.StreamTracer import StreamTracer
 
 if os.name == 'nt':
     account_type = "DEMO"
@@ -38,7 +40,8 @@ dataProcessor = DataProcessor()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
-tracer = LogglyTracer(conf_reader.get("loggly_api_key"), account_type, "update_job")
+loggly_tracer = LogglyTracer(conf_reader.get("loggly_api_key"), account_type, "update_job")
+tracer = MultiTracer([loggly_tracer, StreamTracer()])
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader, tracer=tracer, live=live)
 predictor_class_list = [GenericPredictor]
