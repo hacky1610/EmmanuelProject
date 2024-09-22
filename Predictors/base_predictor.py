@@ -4,10 +4,8 @@ from typing import Mapping, List
 
 from pandas import DataFrame, Series
 
-from BL import measure_time
-from BL.eval_result import EvalResult, TradeResult
+from BL.eval_result import EvalResult
 from BL.indicators import Indicators
-from Connectors.dropbox_cache import BaseCache
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 from datetime import datetime

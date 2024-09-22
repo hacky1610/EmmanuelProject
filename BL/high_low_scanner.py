@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from pandas import DataFrame
 from scipy.stats import linregress
-from Predictors.base_predictor import BasePredictor
 from UI.base_viewer import BaseViewer
 from Tracing.Tracer import Tracer
 from BL.datatypes import TradeAction
