@@ -44,7 +44,7 @@ indicators = Indicators()
 ps = PredictorStore(db)
 #endregion
 
-trader = Trader(
+trader = Tra der(
     ig=ig,
     tiingo=tiingo,
     tracer=tracer,
