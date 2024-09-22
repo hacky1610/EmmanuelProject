@@ -222,26 +222,7 @@ class TestIndicators(unittest.TestCase):
         action = self.indicators._rsi_smooth_30_70_predict(data)
         self.assertEqual(action, TradeAction.NONE)
 
-    def test_rsi_30_70_predict(self):
-        # Teste Buy-Pfad
-        data = DataFrame()
-        data['RSI_SMOOTH'] = [80]
-        data = self.indicators._rsi_smooth_30_70_predict(data)
-        self.assertEqual(data, TradeAction.BUY)
-
-        # Teste Sell-Pfad
-        data = DataFrame()
-        data['RSI_SMOOTH'] = [20]
-        action = self.indicators._rsi_smooth_30_70_predict(data)
-        self.assertEqual(action, TradeAction.SELL)
-
-        # Teste None-Pfad
-        data = DataFrame()
-        data['RSI_SMOOTH'] = [50]
-        action = self.indicators._rsi_smooth_30_70_predict(data)
-        self.assertEqual(action, TradeAction.NONE)
-
-    def test_rsi_slope_predict(self):
+    def test_rsi_slope_predict_2(self):
         # Teste Buy-Pfad
         data = DataFrame()
         data['RSI_SMOOTH'] = [80, 80, 60, 80]
@@ -380,7 +361,7 @@ class TestIndicators(unittest.TestCase):
 
 
 
-    def test_macd_cross_predict(self):
+    def test_macd_cross_predict_2(self):
         # Teste Buy-Pfad
         data = DataFrame()
         data['MACD'] = [80, 70, 80, 80]
@@ -397,7 +378,7 @@ class TestIndicators(unittest.TestCase):
 
 
 
-    def test_tenkan_kijun_chikou(self):
+    def test_tenkan_kijun_chikou_2(self):
         # Teste Buy-Pfad
         data = DataFrame()
         data['TENKAN'] = [60, 70, 75, 80]

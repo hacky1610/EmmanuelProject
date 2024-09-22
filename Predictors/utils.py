@@ -91,15 +91,6 @@ class Reporting:
 
         return string_counts
 
-    def get_best_indicator_names(self) -> List[str]:
-
-        best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports)/3)]
-        indicators = []
-        for r in best_df.iterrows():
-            indicators = indicators + r[1]._indicator_names
-
-        return list(set(indicators))
-
     def get_best_indicator_names_by_reward(self) -> List[str]:
 
         best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports) / 3)]

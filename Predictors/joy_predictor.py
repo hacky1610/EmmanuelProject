@@ -27,7 +27,7 @@ class JoyPredictor(BasePredictor):
         if config is None:
             config = {}
 
-        super().__init__(indicators, config, tracer=tracer, cache=cache)
+        super().__init__(indicators, config, tracer=tracer)
         self.setup(config)
 
     def setup(self, config: dict):

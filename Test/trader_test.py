@@ -178,28 +178,6 @@ class TraderTest(unittest.TestCase):
         self._trader._save_result(predictor,deal_response,"foo")
 
 
-    def trade_bad_result(self):
-        self._predictor.best_result = 0.1
-        self._predictor.trades = 100
-        self._predictor.predict = MagicMock(return_value=("none", 0, 0))
-        res = self._trader.trade(predictor=self._predictor,
-                                 config=self._default_trade_config
-                                 )
-        self._mock_ig.buy.assert_not_called()
-        self._tiingo.load_trade_data.assert_not_called()
-
-        self._predictor.best_result = 1.0
-        self._predictor.trades = 2
-        self._predictor.predict = MagicMock(return_value=("none", 0, 0))
-        res = self._trader.trade(predictor=self._predictor,
-                                 epic="myepic",
-                                 symbol="mysymbol",
-                                 spread=1.0,
-                                 scaling=10)
-        self._mock_ig.buy.assert_not_called()
-        self._tiingo.load_trade_data.assert_not_called()
-        assert res == False
-
     def test_check_ig_performance_false(self):
         self._trader._check_ig_performance = False
         result = self._trader._is_good_ticker("AAPL", min_avg_profit=10, min_deal_count=1)

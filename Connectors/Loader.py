@@ -1,7 +1,6 @@
 import os.path
 import pandas as pd
 import sklearn.preprocessing
-import yfinance as yf
 from BL.utils import get_project_dir
 from BL.data_processor import DataProcessor
 from datetime import datetime
