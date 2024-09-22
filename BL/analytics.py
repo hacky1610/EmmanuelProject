@@ -32,7 +32,6 @@ class Analytics:
 
         return text
 
-    @measure_time
     def evaluate(self, predictor,
                  df: DataFrame,
                  df_eval: DataFrame,

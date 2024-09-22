@@ -179,7 +179,7 @@ def evaluate_predictors(indicator_logic,
 
 # endregion
 
-#_viewer = PlotlyViewer(cache=df_cache)
+_viewer = PlotlyViewer(cache=df_cache)
 
 evaluate_predictors(indicators,
                     _viewer,
