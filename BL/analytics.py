@@ -160,7 +160,6 @@ class Analytics:
 
         return ev_res
 
-    @measure_time
     def get_signals(self, predictor,
                  df: DataFrame) -> DataFrame:
 

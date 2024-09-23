@@ -111,7 +111,7 @@ class DropBoxCache(BaseCache):
         # Kalenderwoche abrufen
         kalenderwoche = heute.isocalendar()[1]
 
-        return f"TrainingV3/{heute.year}_{kalenderwoche}"
+        return f"Training_V2/{heute.year}_{kalenderwoche}"
 
     def load_train_cache(self, name: str):
         res = self.dropbox_servie.load(self._get_train_cache_path(name))

@@ -120,8 +120,8 @@ def train_predictor(markets:list,
     for m in markets:
         # for m in markets:
         symbol = m["symbol"]
-        if symbol != "EURUSD":
-            continue
+        #if symbol != "EURUSD":
+        #    continue
 
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
