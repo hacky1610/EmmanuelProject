@@ -28,7 +28,6 @@ if type_ == "DEMO":
 else:
     live = True
     check_ig_performance = True
-live = False #TODO: Hack
 
 dataProcessor = DataProcessor()
 dbx = dropbox.Dropbox(env_reader.get("dropbox"))

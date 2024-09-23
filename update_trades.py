@@ -34,7 +34,6 @@ if account_type == "DEMO":
 else:
     live = True
 
-live = False #TODO: Hack
 
 dataProcessor = DataProcessor()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
