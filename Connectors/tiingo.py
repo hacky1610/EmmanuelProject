@@ -1,3 +1,5 @@
+import hashlib
+import math
 from datetime import date, timedelta, datetime
 from BL import DataProcessor, BaseReader
 import requests
@@ -17,7 +19,6 @@ class TradeType(Enum):
     CRYPTO = 3
     IEX = 4
     METAL = 5
-
 
 class Tiingo:
     _BASEURL = "https://api.tiingo.com/tiingo/"

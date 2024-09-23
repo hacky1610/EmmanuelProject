@@ -69,7 +69,7 @@ class Trader:
                  deal_storage:DealStore,
                  market_storage:MarketStore,
                  check_ig_performance: bool = False):
-        self._ig = ig
+        self._ig:IG = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
         self._tracer: Tracer = tracer
@@ -196,6 +196,7 @@ class Trader:
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
         self._tracer.set_prefix(symbol_)
+        indicators.reset_caches()
         for predictor_class in self._predictor_class_list:
             self._tracer.debug(f"Try to trade {symbol_} with {predictor_class.__name__}")
             predictor = predictor_class(symbol=symbol_, tracer=self._tracer, indicators=indicators)
@@ -272,8 +273,8 @@ class Trader:
                     TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
                 """
 
-        if not self._is_good_ticker(config.symbol, min_avg_profit=3, min_deal_count=5, days=7):
-            self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last 2 weeks")
+        if not self._is_good_ticker(config.symbol, min_avg_profit=3, min_deal_count=1, days=10):
+            self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last days")
             return TradeResult.NOACTION
 
         if not self._evalutaion_up_to_date(predictor.get_last_scan_time()):

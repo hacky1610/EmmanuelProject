@@ -3,8 +3,9 @@ import random
 from typing import Mapping, List
 
 from pandas import DataFrame, Series
-from BL.eval_result import EvalResult, TradeResult
-from Connectors.dropbox_cache import BaseCache
+
+from BL.eval_result import EvalResult
+from BL.indicators import Indicators
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 from datetime import datetime
@@ -29,6 +30,8 @@ class BasePredictor:
         self._isl_entry = self._stop * 0.7
         self._symbol = symbol
         self._result: EvalResult = EvalResult()
+        self._indicator_names = [Indicators.RSI, Indicators.EMA]
+
 
         if config is None:
             config = {}
@@ -39,6 +42,8 @@ class BasePredictor:
     def __str__(self):
         return f"Indicatornames {self._indicator_names} Limit {self._limit} Stop {self._stop} ISL {self._use_isl} Open End {self._isl_open_end} Dist {self._isl_distance} Fact {self._isl_entry}"
 
+    def get_indicator_names(self) ->list:
+        return self._indicator_names
 
     def setup(self, config):
 
@@ -56,6 +61,7 @@ class BasePredictor:
         self._stop = config.get("stop", self._stop)
         self._result = EvalResult(symbol=config.get("_symbol", self._symbol),len_df=config.get("_len_df", 0),
                                   trade_minutes=config.get("_trade_minutes", 0),
+                                  adapted_isl_distance=config.get("_adapted_isl_distance",False),
                                   scan_time=config.get("_scan_time", datetime(1970, 1, 1)))
         self._result.set_result(config.get("_reward", 0), config.get("_trades", 0), config.get("_wins", 0))
 
@@ -107,9 +113,9 @@ class BasePredictor:
     def get_last_scan_time(self):
         return self._result.get_scan_time()
 
-    def train(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, scaling: int) -> EvalResult:
-        ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=True,
-                                                   symbol=symbol, scaling=scaling)
+    def train(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, epic: str,  scaling: int) -> EvalResult:
+        ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=False,
+                                                   symbol=symbol, scaling=scaling, epic=epic)
         self._result = ev_result
         return ev_result
 
@@ -117,9 +123,15 @@ class BasePredictor:
         return analytics.get_signals(self, df=df_train)
 
 
-    def eval(self, df_train: DataFrame, df_eval: DataFrame, analytics, symbol: str, scaling: int, only_one_position=True) -> EvalResult:
+    def eval(self, df_train: DataFrame,
+             df_eval: DataFrame,
+             analytics,
+             symbol: str,
+             epic: str,
+             scaling: int,
+             only_one_position=False) -> EvalResult:
         ev_result: EvalResult = analytics.evaluate(self, df=df_train, df_eval=df_eval, only_one_position=only_one_position,
-                                                   symbol=symbol, scaling=scaling)
+                                                   symbol=symbol, scaling=scaling,epic=epic)
         self._result = ev_result
         return ev_result
 

@@ -120,11 +120,13 @@ def train_predictor(markets:list,
     for m in markets:
         # for m in markets:
         symbol = m["symbol"]
-
+        if symbol != "EURUSD":
+            continue
 
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
         df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
+        indicators.reset_caches()
         if len(df_train) > 0:
             try:
                 p = GenericPredictor(indicators=indicators, symbol=symbol)
@@ -133,7 +135,7 @@ def train_predictor(markets:list,
                     print(f"Skip {symbol} - WL to low {p.get_result().get_win_loss() }")
                     continue
                 print(f"{symbol} - Current WL {p.get_result().get_win_loss()}")
-                trainer.train(symbol, m["scaling"], df_train, eval_df_train,df_test, eval_df_test, predictor, indicators, best_indicators,
+                trainer.train(symbol, m["epic"],  m["scaling"], df_train, eval_df_train,df_test, eval_df_test, predictor, indicators, best_indicators,
                               best_online_config=ps.load_best_by_symbol(symbol), best_indicator_combos=best_indicator_combos)
             except Exception as ex:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück

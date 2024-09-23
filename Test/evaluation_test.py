@@ -14,7 +14,9 @@ class EvaluationTest(unittest.TestCase):
     def setUp(self):
         ms = MagicMock()
         ms.get_market.return_value = Market("foo",1)
-        self.a = Analytics(ms, MagicMock())
+        self._ig = MagicMock()
+        self._ig.get_stop_distance = MagicMock(return_value=(1, False))
+        self.a = Analytics(ms,self._ig)
         self.a._create_additional_info = MagicMock()
         self.predictor = BasePredictor("",Indicators())
         self.predictor.predict = MagicMock(side_effect=self.predict_mock)
@@ -46,7 +48,7 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T19:15:00.00Z", 900, 950, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T19:20:00.00Z", 900, 950, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T19:25:00.00Z", 900, 950, 850, 900)
-        res = self.a.evaluate(self.predictor, df, df_eval, symbol="f", scaling=1)
+        res = self.a.evaluate(self.predictor, df, df_eval, symbol="f", scaling=1, epic="")
 
         assert res.get_reward() == 0
 
@@ -69,7 +71,7 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 950, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 950, 850, 920)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 950, 850, 900)
-        res  = self.a.evaluate(self.predictor, df, df_eval, symbol="Foo", scaling=1)
+        res  = self.a.evaluate(self.predictor, df, df_eval, symbol="Foo", scaling=1, epic="")
 
         assert res.get_win_loss() == 1.0
         assert res.get_reward() == 10
@@ -94,7 +96,7 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 900, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 900, 850, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 900, 850, 900)
-        res = self.a.evaluate(self.predictor, df, df_eval,symbol="USDEUR", scaling=1)
+        res = self.a.evaluate(self.predictor, df, df_eval,symbol="USDEUR", scaling=1, epic="")
 
         assert res.get_win_loss() == 0.0
         assert res.get_reward() == -20
@@ -118,7 +120,7 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 900, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 900, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 900, 850, 900)
-        res = self.a.evaluate(self.predictor, df, df_eval,symbol="Foo", scaling=1)
+        res = self.a.evaluate(self.predictor, df, df_eval,symbol="Foo", scaling=1, epic="")
 
         assert res.get_win_loss() == 1.0
         assert res.get_reward() == 50
@@ -143,7 +145,7 @@ class EvaluationTest(unittest.TestCase):
         df_eval = self.add_line(df_eval, "2023-01-01T21:15:00.00Z", 900, 900, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:20:00.00Z", 900, 930, 900, 900)
         df_eval = self.add_line(df_eval, "2023-01-01T21:25:00.00Z", 900, 900, 900, 900)
-        res = self.a.evaluate(self.predictor, df, df_eval, symbol="foo", scaling=1)
+        res = self.a.evaluate(self.predictor, df, df_eval, symbol="foo", scaling=1, epic="")
 
         assert res.get_win_loss() == 0.0
         assert res.get_reward() == -30

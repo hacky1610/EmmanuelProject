@@ -10,6 +10,7 @@ from BL.datatypes import TradeAction
 import random
 
 from BL.high_low_scanner import PivotScanner
+from Connectors.dataframe_cache import FourHourDataFrameCache
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 
@@ -18,6 +19,9 @@ class Indicator:
     def __init__(self, name, function):
         self.name = name
         self.function = function
+
+
+
 
 
 class Indicators:
@@ -32,6 +36,7 @@ class Indicators:
     RSI30_70 = "rsi_30_70"
     RSI_SLOPE = "rsi_slope"
     RSI_CONVERGENCE = "rsi_convergence"
+    RSI_CONVERGENCE_4H = "rsi_convergence_4h"
     RSI_CONVERGENCE5 = "rsi_convergence5"
     RSI_CONVERGENCE5_30 = "rsi_convergence5_30"
     RSI_CONVERGENCE5_40 = "rsi_convergence5_40"
@@ -127,6 +132,7 @@ class Indicators:
     BB_MIDDLE_CROSS_4H = "bb_middle_crossing_4h"
     BB_BORDER_CROSS = "bb_border_crossing"
     BB_SQUEEZE = "bb_sqeeze"
+    BB_SQUEEZE_BOTH = "bb_sqeeze_both_direction"
     # ICHIMOKU
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
@@ -137,18 +143,21 @@ class Indicators:
 
     # endregion
 
+
     # region Constructor
-    def __init__(self, tracer: Tracer = ConsoleTracer(), dp = DataProcessor()):
+    def __init__(self, tracer: Tracer = ConsoleTracer(),  dp = DataProcessor() ):
         self._indicators = []
         self._dp = dp
         self._indicator_confirm_factor = 0.7
+        self._df_cache = FourHourDataFrameCache(dp)
 
 
 
         # RSI
+        self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
+        self._add_indicator(self.RSI_CONVERGENCE_4H, self._rsi_convergence_predict3_4h)
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
-        self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         #self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict) #BAD
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
@@ -255,6 +264,7 @@ class Indicators:
         self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
         self._add_indicator(self.BB_MIDDLE_CROSS_4H, self._bb_middle_cross_predict_4h)
         self._add_indicator(self.BB_SQUEEZE, self._bb_squeeze)
+        self._add_indicator(self.BB_SQUEEZE_BOTH, self._bb_squeeze_both)
 
         #self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
 
@@ -270,26 +280,11 @@ class Indicators:
 
     # endregion
 
+    def reset_caches(self):
+        self._df_cache.reset()
+
     def convert_1h_to_4h(self, one_h_df: DataFrame):
-        if len(one_h_df) == 0:
-            return DataFrame()
-
-        one_h_df['date_index'] = pd.to_datetime(one_h_df['date'])
-        # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
-        df_4h: DataFrame = one_h_df.groupby(pd.Grouper(key='date_index', freq='4H')).agg({
-            'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
-            'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
-            'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
-            'close': 'last',  # Höchster Kurs in der 4-Stunden-Periode
-            'date_index': 'first'  # Erstes Zeitstempel in der 4-Stunden-Periode
-        }).reset_index(drop=True)
-        df_4h.dropna(inplace=True)
-        df_4h.reset_index(inplace=True)
-
-        df_4h = df_4h.filter(["open", "low", "high", "close"])
-        self._dp.addSignals_big_tf(df_4h)
-
-        return df_4h.dropna()
+        return self._df_cache.get_4h_df(one_h_df)
 
     def convert_1h_to_12h(self, one_h_df: DataFrame):
         if len(one_h_df) == 0:
@@ -748,6 +743,9 @@ class Indicators:
         return TradeAction.NONE
 
     def _convergence_predict(self, df, indicator_name, b4after: int = 3, look_back: int = 20):
+        if len(df) < 3:
+            return TradeAction.NONE
+
         pv = PivotScanner(be4after=b4after, lookback=look_back)
 
         pv.scan(df)
@@ -782,6 +780,10 @@ class Indicators:
 
     def _rsi_convergence_predict3(self, df):
         return self._convergence_predict(df, "RSI")
+
+    def _rsi_convergence_predict3_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+        return self._convergence_predict(df4h, "RSI")
 
     def _cci_predict_4h(self, df):
         df4h = self.convert_1h_to_4h(df)
@@ -1063,6 +1065,32 @@ class Indicators:
             return TradeAction.SELL
         else:
             return TradeAction.NONE
+
+    def _bb_squeeze_both(self, df):
+
+        # Parameter
+        keltFactor = 1.5
+        BandsDeviations = 2.0
+        BandsPeriod = 20
+
+        df_bb = df.copy()
+
+        # Keltner Channels Breite (Mitte ± ATR * keltFactor)
+        df_bb['Keltner Width'] = df_bb['ATR'] * keltFactor
+
+        # Bollinger Bands Breite (obere Band - untere Band)
+        df_bb['StdDev'] = df_bb['close'].rolling(window=BandsPeriod).std()
+        df_bb['Bollinger Width'] = BandsDeviations * df_bb['StdDev']
+
+        # Bollinger Bands Squeeze
+        df_bb['BBS'] = df_bb['Bollinger Width'] / df_bb['Keltner Width']
+
+        # Letzter Wert für die Entscheidung
+        if df_bb.iloc[-1]['BBS'] < 1:
+            return TradeAction.BOTH
+        else:
+            return TradeAction.NONE
+
 
     def _adx_predict(self, df):
         adx = df.ADX.iloc[-1]

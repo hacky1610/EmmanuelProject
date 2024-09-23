@@ -8,7 +8,6 @@ import pandas as pd
 from BL.datatypes import TradeAction
 from BL.trader import Trader, TradeConfig, TradeResult
 from BL.analytics import Analytics
-from Connectors.tiingo import TradeType
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame, Series
 from BL.data_processor import DataProcessor
@@ -178,28 +177,6 @@ class TraderTest(unittest.TestCase):
         self._trader._save_result(predictor,deal_response,"foo")
 
 
-    def trade_bad_result(self):
-        self._predictor.best_result = 0.1
-        self._predictor.trades = 100
-        self._predictor.predict = MagicMock(return_value=("none", 0, 0))
-        res = self._trader.trade(predictor=self._predictor,
-                                 config=self._default_trade_config
-                                 )
-        self._mock_ig.buy.assert_not_called()
-        self._tiingo.load_trade_data.assert_not_called()
-
-        self._predictor.best_result = 1.0
-        self._predictor.trades = 2
-        self._predictor.predict = MagicMock(return_value=("none", 0, 0))
-        res = self._trader.trade(predictor=self._predictor,
-                                 epic="myepic",
-                                 symbol="mysymbol",
-                                 spread=1.0,
-                                 scaling=10)
-        self._mock_ig.buy.assert_not_called()
-        self._tiingo.load_trade_data.assert_not_called()
-        assert res == False
-
     def test_check_ig_performance_false(self):
         self._trader._check_ig_performance = False
         result = self._trader._is_good_ticker("AAPL", min_avg_profit=10, min_deal_count=1)
@@ -219,7 +196,7 @@ class TraderTest(unittest.TestCase):
     def test_more_than_7_deals_profit_greater_than_100(self):
         deals = MagicMock()
         deals.__len__.return_value = 8
-        deals.profit.sum.return_value = 101
+        deals.profit.sum.return_value = 101 # pylint: disable=no-member
         self._trader._tracer.debug = MagicMock()
         self._trader._check_ig_performance = True
         self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
@@ -230,7 +207,7 @@ class TraderTest(unittest.TestCase):
     def test_more_than_7_deals_profit_less_than_100(self):
         deals = MagicMock()
         deals.__len__.return_value = 8
-        deals.profit.sum.return_value = 40
+        deals.profit.sum.return_value = 40 # pylint: disable=no-member
         self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
         self._trader._check_ig_performance = True
         self._trader._tracer.debug = MagicMock()

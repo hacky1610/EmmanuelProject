@@ -18,7 +18,7 @@ ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
 tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
-predictor = GenericPredictor(indicators=Indicators())
+predictor = GenericPredictor(indicators=Indicators(),symbol="")
 viewer = PlotlyViewer(cache)
 #viewer = BaseViewer()
 
@@ -27,5 +27,5 @@ ig.create_report(ti=tiingo,
                  predictor=predictor,
                  cache=cache,
                  dp=DataProcessor(),
-                 analytics=Analytics(),
+                 analytics=Analytics(market_store=None,ig=ig),
                  viewer=viewer)

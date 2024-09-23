@@ -47,7 +47,7 @@ class Trainer:
         return (datetime.now() - datetime.strptime(df.iloc[0].date, "%Y-%m-%dT%H:%M:%S.%fZ")).days
 
     @measure_time
-    def train(self, symbol: str, scaling: int, df: DataFrame, df_eval: DataFrame,
+    def train(self, symbol: str, epic:str,  scaling: int, df: DataFrame, df_eval: DataFrame,
               df_test: DataFrame, df_eval_test: DataFrame, predictor_class,
               indicators, best_indicators: List, best_online_config: dict, best_indicator_combos: List[List[str]]):
         self._tracer.info(
@@ -69,7 +69,7 @@ class Trainer:
             predictor.setup(training_set)
 
             train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
-                                                scaling=scaling)
+                                           scaling=scaling, epic=epic)
             if train_result is None:
                 return
 
@@ -78,11 +78,10 @@ class Trainer:
                 best_train_result = train_result
                 best_config = predictor.get_config()
 
-
         if best_predictor is not None:
             self._tracer.info(
                 f"#####Test {symbol}  over {self._get_time_range(df_test)} days #######################")
-            test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, scaling)
+            test_result: EvalResult = best_predictor.eval(df_test, df_eval_test, self._analytics, symbol, epic, scaling)
             if best_predictor.get_result().get_reward() > 0:
                 best_predictor.activate()
                 self._predictor_store.save(best_predictor, overwrite=False)
@@ -92,11 +91,11 @@ class Trainer:
                 self._tracer.info(
                     f"Train: WL: {best_train_result.get_win_loss():.2f} - Reward: {best_predictor.get_result().get_reward():.2f} Avg Reward {best_predictor.get_result().get_average_reward():.2f}")
                 self._tracer.info(f"{best_predictor} ")
+                self._tracer.info(f"Adapted ISL: {best_predictor.get_result()._adapted_isl_distance}")
             else:
                 self._tracer.info("No good predictor")
         else:
             self._tracer.info("No Best predictor")
-
 
     def _get_sets(self, predictor_class, best_indicators: List, best_indicator_combos: List[List[str]]):
         sets = predictor_class.get_training_sets(best_indicator_combos)

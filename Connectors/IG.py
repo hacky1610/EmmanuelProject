@@ -2,7 +2,7 @@ import json
 import os.path
 import time
 import traceback
-from typing import Dict, List
+from typing import Dict, List, Optional
 from trading_ig import IGService
 from trading_ig.rest import IGException, ApiExceededException
 from BL import DataProcessor, BaseReader
@@ -266,6 +266,10 @@ class IG:
         return self.ig_service.fetch_open_positions()
 
     def get_min_stop_distance(self, epic: str) -> float:
+        market = IG.get_market_by_epic(epic)
+        return market["min_stop_disance"]
+
+    def get_min_stop_distance_online(self, epic: str) -> float:
         try:
             ms = self.get_market_details(epic)
             return ms["dealingRules"]["minNormalStopOrLimitDistance"]["value"]
@@ -273,8 +277,9 @@ class IG:
             self._tracer.error(f"Error while get limit {e}")
             return -1
 
+
     def get_stop_distance(self, market, epic: str, scaling_factor: int, intelligent_stop_distance: float = 6.0,
-                          check_min=True) -> float:
+                          check_min=True) -> (float, bool):
         stop_distance = market.get_pip_value(euro=intelligent_stop_distance,
                                              scaling_factor=scaling_factor)
 
@@ -286,11 +291,12 @@ class IG:
         if stop_distance <= min_stop_distance:
             self._tracer.debug(
                 f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")
-            return min_stop_distance
+            return min_stop_distance, True
 
         self._tracer.debug(f"Calculated stop distance is {stop_distance}")
 
-        return stop_distance
+        return stop_distance, False
+
 
     def is_ready_to_set_intelligent_stop(self, diff, limit: float) -> bool:
 
@@ -335,7 +341,7 @@ class IG:
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
                     if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
-                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
+                        distance, adapted = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price - distance
                         if new_stop_level > stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
@@ -347,7 +353,7 @@ class IG:
                 if offer_price < open_price:
                     diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
                     if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
-                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
+                        distance, adapted = self.get_stop_distance(market, position.epic, scaling_factor)
                         new_stop_level = offer_price + distance
                         if new_stop_level < stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
@@ -539,7 +545,7 @@ class IG:
             if deal_info != None:
                 win_lost = deal_info["_wins"] / deal_info["_trades"]
                 add_text += f"{deal_info['Type']}: WL: {win_lost} - Trades: {deal_info['_trades']}"
-                predictor = GenericPredictor(indicators=Indicators())
+                predictor = GenericPredictor(indicators=Indicators(), symbol="")
                 predictor.setup(deal_info)
                 predictor.setup(predictor_settings)
                 df, df_eval = ti.load_train_data(n, dp, TradeType.FX)
@@ -619,6 +625,23 @@ class IG:
             _currency_markets = json.load(json_file)
 
         return _currency_markets
+
+
+    @staticmethod
+    def get_market_by_epic(market_epic: str) -> Optional[Dict]:
+        _currency_markets = IG.get_markets_offline()
+        for market in _currency_markets:
+            if market.get('epic') == market_epic:
+                return market
+        return None
+
+
+
+    @staticmethod
+    def set_markets_offline(currency_markets:List[Dict]):
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "Data", "markets.json"),
+                  'w') as json_file:
+            json.dump(currency_markets, json_file, indent=4)
 
     def report_last_day(self, ti, cache, dp, analytics, viewer: BaseViewer, days: int = 7):
         start_time = (datetime.now() - timedelta(hours=days * 24))

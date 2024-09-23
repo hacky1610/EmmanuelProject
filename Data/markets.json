@@ -5,7 +5,8 @@
         "spread": 0.6000000000006,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "USD"
+        "currency": "USD",
+        "min_stop_disance": 2.0
     },
     {
         "symbol": "EURCHF",
@@ -13,7 +14,8 @@
         "spread": 2.9999999999996696,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CHF"
+        "currency": "CHF",
+        "min_stop_disance": 3.0
     },
     {
         "symbol": "EURGBP",
@@ -21,7 +23,8 @@
         "spread": 0.900000000000345,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "GBP"
+        "currency": "GBP",
+        "min_stop_disance": 2.0
     },
     {
         "symbol": "EURJPY",
@@ -29,7 +32,8 @@
         "spread": 2.1000000000015007,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 4.0
     },
     {
         "symbol": "EURUSD",
@@ -37,7 +41,8 @@
         "spread": 0.9000000000014552,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "USD"
+        "currency": "USD",
+        "min_stop_disance": 2.0
     },
     {
         "symbol": "GBPUSD",
@@ -45,7 +50,8 @@
         "spread": 0.8999999999992347,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "USD"
+        "currency": "USD",
+        "min_stop_disance": 4.0
     },
     {
         "symbol": "USDCAD",
@@ -53,7 +59,8 @@
         "spread": 1.3000000000018552,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CAD"
+        "currency": "CAD",
+        "min_stop_disance": 4.0
     },
     {
         "symbol": "USDCHF",
@@ -61,7 +68,8 @@
         "spread": 1.4999999999998348,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CHF"
+        "currency": "CHF",
+        "min_stop_disance": 4.0
     },
     {
         "symbol": "USDJPY",
@@ -69,7 +77,8 @@
         "spread": 0.7000000000005002,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 2.0
     },
     {
         "symbol": "CADCHF",
@@ -77,7 +86,8 @@
         "spread": 2.4999999999997247,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CHF"
+        "currency": "CHF",
+        "min_stop_disance": 10.0
     },
     {
         "symbol": "CADJPY",
@@ -85,7 +95,8 @@
         "spread": 1.999999999999602,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 8.0
     },
     {
         "symbol": "CHFJPY",
@@ -93,7 +104,8 @@
         "spread": 2.000000000001023,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 4.0
     },
     {
         "symbol": "EURCAD",
@@ -101,7 +113,8 @@
         "spread": 2.4999999999986144,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CAD"
+        "currency": "CAD",
+        "min_stop_disance": 8.0
     },
     {
         "symbol": "EURSGD",
@@ -109,7 +122,8 @@
         "spread": 2.500000000000835,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "SGD"
+        "currency": "SGD",
+        "min_stop_disance": 10.0
     },
     {
         "symbol": "EURZAR",
@@ -117,7 +131,8 @@
         "spread": 150.00000000000568,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "ZAR"
+        "currency": "ZAR",
+        "min_stop_disance": 800.0
     },
     {
         "symbol": "GBPCAD",
@@ -125,7 +140,8 @@
         "spread": 2.9999999999996696,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CAD"
+        "currency": "CAD",
+        "min_stop_disance": 8.0
     },
     {
         "symbol": "GBPCHF",
@@ -133,7 +149,8 @@
         "spread": 2.9999999999996696,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CHF"
+        "currency": "CHF",
+        "min_stop_disance": 4.0
     },
     {
         "symbol": "GBPJPY",
@@ -141,7 +158,8 @@
         "spread": 2.5000000000005684,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 4.0
     },
     {
         "symbol": "GBPSGD",
@@ -149,7 +167,8 @@
         "spread": 2.9999999999996696,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "SGD"
+        "currency": "SGD",
+        "min_stop_disance": 14.0
     },
     {
         "symbol": "GBPZAR",
@@ -157,7 +176,8 @@
         "spread": 199.99999999999574,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "ZAR"
+        "currency": "ZAR",
+        "min_stop_disance": 800.0
     },
     {
         "symbol": "MXNJPY",
@@ -165,7 +185,8 @@
         "spread": 0.7999999999999119,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 2.0
     },
     {
         "symbol": "PLNJPY",
@@ -173,7 +194,8 @@
         "spread": 2.0000000000003126,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 3.0
     },
     {
         "symbol": "SEKJPY",
@@ -181,7 +203,8 @@
         "spread": 0.6000000000000227,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 1.0
     },
     {
         "symbol": "SGDJPY",
@@ -189,7 +212,8 @@
         "spread": 2.000000000001023,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 8.0
     },
     {
         "symbol": "USDHKD",
@@ -197,7 +221,8 @@
         "spread": 4.999999999997229,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "HKD"
+        "currency": "HKD",
+        "min_stop_disance": 10.0
     },
     {
         "symbol": "USDSGD",
@@ -205,7 +230,8 @@
         "spread": 1.9999999999997797,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "SGD"
+        "currency": "SGD",
+        "min_stop_disance": 10.0
     },
     {
         "symbol": "USDZAR",
@@ -213,7 +239,8 @@
         "spread": 89.99999999996788,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "ZAR"
+        "currency": "ZAR",
+        "min_stop_disance": 800.0
     },
     {
         "symbol": "ZARJPY",
@@ -221,7 +248,8 @@
         "spread": 1.9999999999999574,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 5.0
     },
     {
         "symbol": "AUDCAD",
@@ -229,7 +257,8 @@
         "spread": 1.4999999999998348,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CAD"
+        "currency": "CAD",
+        "min_stop_disance": 5.0
     },
     {
         "symbol": "AUDCHF",
@@ -237,7 +266,8 @@
         "spread": 1.9999999999997797,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CHF"
+        "currency": "CHF",
+        "min_stop_disance": 5.0
     },
     {
         "symbol": "AUDJPY",
@@ -245,7 +275,8 @@
         "spread": 1.2999999999991019,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 2.0
     },
     {
         "symbol": "AUDNZD",
@@ -253,7 +284,8 @@
         "spread": 2.4999999999986144,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "NZD"
+        "currency": "NZD",
+        "min_stop_disance": 6.0
     },
     {
         "symbol": "AUDSGD",
@@ -261,7 +293,8 @@
         "spread": 1.9999999999997797,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "SGD"
+        "currency": "SGD",
+        "min_stop_disance": 9.0
     },
     {
         "symbol": "EURAUD",
@@ -269,7 +302,8 @@
         "spread": 1.80000000000069,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "AUD"
+        "currency": "AUD",
+        "min_stop_disance": 10.0
     },
     {
         "symbol": "EURNZD",
@@ -277,7 +311,8 @@
         "spread": 2.9999999999996696,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "NZD"
+        "currency": "NZD",
+        "min_stop_disance": 8.0
     },
     {
         "symbol": "GBPAUD",
@@ -285,7 +320,8 @@
         "spread": 2.20000000000109,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "AUD"
+        "currency": "AUD",
+        "min_stop_disance": 8.0
     },
     {
         "symbol": "GBPNZD",
@@ -293,7 +329,8 @@
         "spread": 4.999999999997229,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "NZD"
+        "currency": "NZD",
+        "min_stop_disance": 10.0
     },
     {
         "symbol": "NZDCAD",
@@ -301,7 +338,8 @@
         "spread": 3.4999999999996145,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CAD"
+        "currency": "CAD",
+        "min_stop_disance": 8.0
     },
     {
         "symbol": "NZDCHF",
@@ -309,7 +347,8 @@
         "spread": 3.9999999999995595,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "CHF"
+        "currency": "CHF",
+        "min_stop_disance": 8.0
     },
     {
         "symbol": "NZDJPY",
@@ -317,7 +356,8 @@
         "spread": 1.999999999999602,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 6.0
     },
     {
         "symbol": "NZDUSD",
@@ -325,7 +365,8 @@
         "spread": 1.7999999999995797,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "USD"
+        "currency": "USD",
+        "min_stop_disance": 4.0
     },
     {
         "symbol": "CNHJPY",
@@ -333,7 +374,8 @@
         "spread": 0.7999999999999119,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 3.0
     },
     {
         "symbol": "EMFX BRLJPY",
@@ -341,7 +383,8 @@
         "spread": 7.499999999999929,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 20.0
     },
     {
         "symbol": "EMFX USDBRL ($1 Contract)",
@@ -349,7 +392,8 @@
         "spread": 80.00000000000007,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "BRL"
+        "currency": "BRL",
+        "min_stop_disance": 65.0
     },
     {
         "symbol": "EURCZK",
@@ -357,7 +401,8 @@
         "spread": 24.99999999999858,
         "scaling": 1000,
         "size": 1.0,
-        "currency": "CZK"
+        "currency": "CZK",
+        "min_stop_disance": 65.0
     },
     {
         "symbol": "EURHUF",
@@ -365,7 +410,8 @@
         "spread": 19.999999999998863,
         "scaling": 100,
         "size": 1.0,
-        "currency": "HUF"
+        "currency": "HUF",
+        "min_stop_disance": 65.0
     },
     {
         "symbol": "EURMXN",
@@ -373,7 +419,8 @@
         "spread": 100.00000000001563,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "MXN"
+        "currency": "MXN",
+        "min_stop_disance": 1000.0
     },
     {
         "symbol": "EURTRY",
@@ -381,15 +428,17 @@
         "spread": 60.000000000002274,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "TRL"
+        "currency": "TRL",
+        "min_stop_disance": 4100.0
     },
-     {
+    {
         "symbol": "USDTRY",
         "epic": "CS.D.USDTRY.MINI.IP",
         "spread": 49.999999999954525,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "TRL"
+        "currency": "TRL",
+        "min_stop_disance": 3760.0
     },
     {
         "symbol": "EURPLN",
@@ -397,7 +446,8 @@
         "spread": 24.999999999995026,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "PLN"
+        "currency": "PLN",
+        "min_stop_disance": 55.0
     },
     {
         "symbol": "GBPCZK",
@@ -405,7 +455,8 @@
         "spread": 30.000000000001137,
         "scaling": 1000,
         "size": 1.0,
-        "currency": "CZK"
+        "currency": "CZK",
+        "min_stop_disance": 26.0
     },
     {
         "symbol": "GBPHUF",
@@ -413,7 +464,8 @@
         "spread": 25.0,
         "scaling": 100,
         "size": 1.0,
-        "currency": "HUF"
+        "currency": "HUF",
+        "min_stop_disance": 26.0
     },
     {
         "symbol": "GBPMXN",
@@ -421,7 +473,8 @@
         "spread": 399.9999999999915,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "MXN"
+        "currency": "MXN",
+        "min_stop_disance": 1000.0
     },
     {
         "symbol": "GBPPLN",
@@ -429,7 +482,8 @@
         "spread": 49.999999999998934,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "PLN"
+        "currency": "PLN",
+        "min_stop_disance": 60.0
     },
     {
         "symbol": "GBPTRY",
@@ -437,7 +491,8 @@
         "spread": 139.99999999995794,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "TRY"
+        "currency": "TRY",
+        "min_stop_disance": 4600.0
     },
     {
         "symbol": "TRYJPY",
@@ -445,7 +500,8 @@
         "spread": 8.000000000000007,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 14.0
     },
     {
         "symbol": "USDCZK",
@@ -453,7 +509,8 @@
         "spread": 24.99999999999858,
         "scaling": 1000,
         "size": 1.0,
-        "currency": "CZK"
+        "currency": "CZK",
+        "min_stop_disance": 45.0
     },
     {
         "symbol": "USDHUF",
@@ -461,7 +518,8 @@
         "spread": 19.999999999998863,
         "scaling": 100,
         "size": 1.0,
-        "currency": "HUF"
+        "currency": "HUF",
+        "min_stop_disance": 65.0
     },
     {
         "symbol": "USDMXN",
@@ -469,7 +527,8 @@
         "spread": 49.99999999999005,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "MXN"
+        "currency": "MXN",
+        "min_stop_disance": 150.0
     },
     {
         "symbol": "USDPLN",
@@ -477,7 +536,8 @@
         "spread": 24.999999999999467,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "PLN"
+        "currency": "PLN",
+        "min_stop_disance": 45.0
     },
     {
         "symbol": "CADNOK",
@@ -485,7 +545,8 @@
         "spread": 25.000000000003908,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "NOK"
+        "currency": "NOK",
+        "min_stop_disance": 85.0
     },
     {
         "symbol": "CHFNOK",
@@ -493,7 +554,8 @@
         "spread": 40.00000000001336,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "NOK"
+        "currency": "NOK",
+        "min_stop_disance": 75.0
     },
     {
         "symbol": "EURDKK",
@@ -501,7 +563,8 @@
         "spread": 15.000000000000568,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "DKK"
+        "currency": "DKK",
+        "min_stop_disance": 35.0
     },
     {
         "symbol": "EURNOK",
@@ -509,7 +572,8 @@
         "spread": 24.999999999995026,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "NOK"
+        "currency": "NOK",
+        "min_stop_disance": 65.0
     },
     {
         "symbol": "EURSEK",
@@ -517,7 +581,8 @@
         "spread": 30.000000000001137,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "SEK"
+        "currency": "SEK",
+        "min_stop_disance": 220.0
     },
     {
         "symbol": "GBPDKK",
@@ -525,7 +590,8 @@
         "spread": 30.000000000001137,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "DKK"
+        "currency": "DKK",
+        "min_stop_disance": 26.0
     },
     {
         "symbol": "GBPNOK",
@@ -533,7 +599,8 @@
         "spread": 49.99999999999005,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "NOK"
+        "currency": "NOK",
+        "min_stop_disance": 40.0
     },
     {
         "symbol": "GBPSEK",
@@ -541,7 +608,8 @@
         "spread": 40.00000000001336,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "SEK"
+        "currency": "SEK",
+        "min_stop_disance": 250.0
     },
     {
         "symbol": "NOKJPY",
@@ -549,7 +617,8 @@
         "spread": 0.9999999999999787,
         "scaling": 100,
         "size": 1.0,
-        "currency": "JPY"
+        "currency": "JPY",
+        "min_stop_disance": 1.0
     },
     {
         "symbol": "NOKSEK",
@@ -557,7 +626,8 @@
         "spread": 5.999999999999339,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "SEK"
+        "currency": "SEK",
+        "min_stop_disance": 20.0
     },
     {
         "symbol": "USDDKK",
@@ -565,7 +635,8 @@
         "spread": 15.000000000000568,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "DKK"
+        "currency": "DKK",
+        "min_stop_disance": 25.0
     },
     {
         "symbol": "USDNOK",
@@ -573,7 +644,8 @@
         "spread": 25.00000000001279,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "NOK"
+        "currency": "NOK",
+        "min_stop_disance": 65.0
     },
     {
         "symbol": "USDSEK",
@@ -581,6 +653,7 @@
         "spread": 24.999999999995026,
         "scaling": 10000,
         "size": 1.0,
-        "currency": "SEK"
+        "currency": "SEK",
+        "min_stop_disance": 200.0
     }
 ]

@@ -4,6 +4,7 @@ from collections import namedtuple
 
 from tqdm import tqdm
 
+from BL import measure_time
 from BL.eval_result import EvalResult, TradeResult
 from Connectors.market_store import MarketStore
 from Predictors.utils import TimeUtils
@@ -35,6 +36,7 @@ class Analytics:
                  df: DataFrame,
                  df_eval: DataFrame,
                  symbol: str,
+                 epic: str,
                  scaling: int,
                  only_one_position: bool = True,
                  time_filter=None) -> EvalResult:
@@ -54,13 +56,13 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
-        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False,
+        distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=predictor.get_isl_distance())
         stop_pip = market.get_pip_value(predictor.get_stop(), scaling)
         limit_pip = market.get_pip_value(predictor.get_limit(), scaling)
         isl_entry_pip = market.get_pip_value(predictor.get_isl_entry(), scaling)
 
-        for i in tqdm(range(len(df) - 1)):
+        for i in range(len(df) - 1):
             current_index = i + 1
             if time_filter is not None and TimeUtils.get_time_string(time_filter) != df.date[current_index]:
                 continue
@@ -152,11 +154,13 @@ class Analytics:
                                 trade.set_intelligent_stop_used()
 
         predictor._tracer = old_tracer
-        ev_res = EvalResult(symbol=symbol, trades_results=trades, len_df=len(df), trade_minutes=trading_minutes,
-                            scan_time=datetime.datetime.now())
+        ev_res = EvalResult(symbol=symbol, trades_results=trades,
+                            len_df=len(df), trade_minutes=trading_minutes,
+                            scan_time=datetime.datetime.now(), adapted_isl_distance=adapted)
 
         return ev_res
 
+    @measure_time
     def get_signals(self, predictor,
                  df: DataFrame) -> DataFrame:
 
@@ -175,6 +179,7 @@ class Analytics:
 
     def simulate(self,
                  action:str,
+                 epic: str,
                  stop_euro:float,
                  limit_euro:float,
                  isl_entry: float,
@@ -204,15 +209,13 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
-        print(f"Start simulation for {symbol}")
-
         stop_pip = market.get_pip_value(stop_euro, scaling)
         limit_pip = market.get_pip_value(limit_euro, scaling)
         isl_entry_pip = market.get_pip_value(isl_entry, scaling)
-        distance = self._ig.get_stop_distance(market, "", scaling, check_min=False,
+        isl_stop_distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=isl_distance)
 
-        for i in tqdm(range(len(df) - 1)):
+        for i in range(len(df) - 1):
             current_index = i + 1
             open_price = df.close[current_index - 1]
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
@@ -249,7 +252,7 @@ class Analytics:
 
                     if use_isl:
                         if self._ig.is_ready_to_set_intelligent_stop(high - open_price, isl_entry_pip):
-                            new_stop_level = close - distance
+                            new_stop_level = close - isl_stop_distance
                             if new_stop_level > stop_price:
                                 stop_price = new_stop_level
 
@@ -282,7 +285,7 @@ class Analytics:
 
                     if use_isl:
                         if self._ig.is_ready_to_set_intelligent_stop(open_price - low, isl_entry_pip):
-                            new_stop_level = close + distance
+                            new_stop_level = close + isl_stop_distance
                             if new_stop_level < stop_price:
                                 stop_price = new_stop_level
 

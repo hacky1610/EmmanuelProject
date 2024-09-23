@@ -21,6 +21,10 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
+    pylint --recursive=y . --errors-only --ignore=venv
+  displayName: 'PyLint'
+
+- script: |
     pip install pytest pytest-azurepipelines coverage
     coverage run -m pytest ./Test
   displayName: 'Test'
@@ -31,4 +35,4 @@ steps:
     repository: 'hacky1610/emmanuel_ti'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v31.00'
+    tags: 'v32.07'

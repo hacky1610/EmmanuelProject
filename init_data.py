@@ -27,7 +27,7 @@ _ti = Tiingo(conf_reader=conf_reader, cache=df_cache)
 client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
-analytics = Analytics(ms)
+analytics = Analytics(ms,_ig)
 trade_type = TradeType.FX
 results = EvalResultCollection()
 viewer = BaseViewer()

@@ -57,7 +57,8 @@ class EvalResult:
                  trades: int = 0,
                  len_df: int = 0,
                  trade_minutes: int = 0,
-                 scan_time=datetime(1970, 1, 1)):
+                 scan_time=datetime(1970, 1, 1),
+                 adapted_isl_distance: bool = False):
         if trades_results is None:
             trades_results = []
 
@@ -71,6 +72,7 @@ class EvalResult:
         self._trade_minutes = trade_minutes
         self._scan_time = scan_time
         self._trade_results = trades_results
+        self._adapted_isl_distance = adapted_isl_distance
 
         for trade in trades_results:
             self._reward += trade.profit
@@ -89,7 +91,7 @@ class EvalResult:
 
     @staticmethod
     def compare(wl1, reward1, wl2, reward2):
-        if (wl1 > 0.8 and wl2 > 0.8 and abs(wl1 - wl2) <= 0.02) or wl1 == wl2:
+        if (wl1 >= 0.95 and wl2 >= 0.95 and abs(wl1 - wl2) <= 0.03) or wl1 == wl2:
             return reward2 > reward1
         else:
             return wl2 > wl1
@@ -142,7 +144,8 @@ class EvalResult:
             self._len_df,
             self._trade_minutes,
             self._scan_time,
-            self.get_win_loss()
+            self.get_win_loss(),
+            self._adapted_isl_distance
         ],
             index=["_reward",
                    "_trades",
@@ -150,7 +153,8 @@ class EvalResult:
                    "_len_df",
                    "_trade_minutes",
                    "_scan_time",
-                   "_wl"
+                   "_wl",
+                   "_adapted_isl_distance"
                    ])
 
     def is_good(self):
@@ -160,12 +164,9 @@ class EvalResult:
     def get_trade_df(self) -> DataFrame:
         df = DataFrame()
         for i in self._trade_results:
-            df = df.append(Series(data=[i.action, i.result, i.index, self._symbol, self._indicator],
-                                  index=["action", "result", "chart_index", "symbol", "indicator"]), ignore_index=True)
+            df = df.append(Series(data=[i.action, i.profit, self._symbol],
+                                  index=["action", "result",  "symbol"]), ignore_index=True)
         return df
-
-    def save_trade_result(self):
-        self.get_trade_df().to_csv(f"{EvalResult._get_results_dir()}{self._get_trade_result_filename(self._symbol, self._indicator)}")
 
     @staticmethod
     def _get_results_dir():
@@ -308,27 +309,6 @@ class EvalResultCollection:
                 signal_combinations.append({"index": i, "action": actions[0]})
 
         return DataFrame(signal_combinations)
-
-    @staticmethod
-    def final_simulation(combined_signals_df: DataFrame, buy_simulation: DataFrame):
-        common_indices = list(reduce(lambda x, y: x.intersection(y), [set(df["chart_index"]) for df in dataframes]))
-        common_indices.sort()
-        signal_combinations = []
-        for i in common_indices:
-            actions = []
-            for df in dataframes:
-                v = df[df.chart_index == i]
-                action = v["action"].item()
-                if action != "both":
-                    actions.append(action)
-
-            if len(actions) > 0 and len(set(actions)) == 1:
-                signal_combinations.append({"index": i, "action": actions[0]})
-
-        return DataFrame(signal_combinations)
-
-
-
 
 
 

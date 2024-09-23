@@ -19,7 +19,7 @@ class ChartPatternPredictor(BasePredictor):
                  tracer: Tracer = ConsoleTracer(),
                  viewer: BaseViewer = BaseViewer(),
                  cache: BaseCache = BaseCache()):
-        super().__init__(indicators, config, tracer=tracer, cache=cache)
+        super().__init__(indicators, config, tracer=tracer)
         # region Members
         self._limit_factor: float = 2
         self._look_back: int = 40

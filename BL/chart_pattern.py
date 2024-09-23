@@ -62,11 +62,4 @@ class ChartPattern:
 
         return False
 
-    def get_pattern(self) -> str:
 
-        self._hl_scanner.scan(self._prices, 6)
-        is_triangel, action = self._is_triangle()
-        if is_triangel:
-            return action
-
-        return TradeAction.NONE

@@ -34,21 +34,21 @@ class MatrixTrainer:
         self._predictor_store = predictor_store
 
     def get_signals(self, symbol: str, df: DataFrame, indicators: Indicators, predictor_class):
-        for indicator in indicators.get_all_indicator_names():
+        for indicator in tqdm(indicators.get_all_indicator_names()):
             path = f"signal_{symbol}_{indicator}.csv"
             if not self._cache.signal_exist(path):
-                print(f"Create signal for {indicator}")
                 predictor = predictor_class(symbol=symbol, indicators=indicators)
                 predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
                 trades = predictor.get_signals(df, self._analytics)
                 self._cache.save_signal(trades, path)
 
-    def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict):
+    def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict,epic:str):
         buy_path = f"simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
         sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
 
         if not self._cache.simulation_exist(buy_path):
             buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
+                                           epic=epic,
                                            isl_entry=current_config.get("_isl_entry", 0),
                                            isl_distance=current_config.get("_isl_distance", 0),
                                            isl_open_end=current_config.get("_isl_open_end", False),
@@ -62,6 +62,7 @@ class MatrixTrainer:
 
         if not self._cache.simulation_exist(sell_path):
             sell = self._analytics.simulate(action="sell", stop_euro=current_config["_stop"],
+                                            epic=epic,
                                             isl_entry=current_config.get("_isl_entry", 0),
                                             isl_distance=current_config.get("_isl_distance", 0),
                                             isl_open_end=current_config.get("_isl_open_end", False),
@@ -74,7 +75,6 @@ class MatrixTrainer:
             sell = self._cache.load_simulation(sell_path)
         return buy, sell
 
-    @measure_time
     def train_combinations(self, symbol: str,
                            indicators: Indicators,
                            best_combo_list: List[List[str]],
@@ -133,7 +133,7 @@ class MatrixTrainer:
         for combo in tqdm(all_combos):
             current_result = self.calc_indicator_combo(combo, buy_results, sell_results)
 
-            if EvalResult.compare(best_result.wl, best_result.reward, current_result.wl, current_result.reward):
+            if EvalResult.compare(best_result.wl / 100, best_result.reward, current_result.wl / 100, current_result.reward):
                 best_result = current_result
                 best_combo = [item['indicator'] for item in combo]
         return best_combo

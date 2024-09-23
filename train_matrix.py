@@ -154,6 +154,8 @@ def train_predictor(markets: list,
         df_train, eval_df_train = get_test_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
         df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
 
+        indicators.reset_caches()
+
         if len(df_train) == 0:
             continue
 
@@ -169,14 +171,14 @@ def train_predictor(markets: list,
 
                 pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
                 pred_standard.setup(config)
-                if pred_standard.get_result().get_win_loss() < 0.6:
+                if pred_standard.get_result().get_win_loss() < 0.3:
                    print(f"Skip {symbol} {pred_standard.get_result().get_win_loss() }")
                    continue
                 pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
                 pred_matrix.setup(config)
 
                 trainer.get_signals(symbol, df_train, indicators, predictor)
-                buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config)
+                buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
 
                 buy_results_dict = {}
                 sell_results_dict = {}
@@ -203,8 +205,8 @@ def train_predictor(markets: list,
                     continue
 
                 pred_matrix.setup({"_indicator_names": best_combo})
-                pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False)
-                pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False)
+                pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False, epic=m["epic"])
+                pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False, epic=m["epic"])
 
                 if pred_standard.get_result().is_better(pred_matrix.get_result()):
                     pred_matrix.activate()
