@@ -10,7 +10,7 @@ from BL.datatypes import TradeAction
 import random
 
 from BL.high_low_scanner import PivotScanner
-from Connectors.dataframe_cache import FourHourDataFrameCache
+from Connectors.dataframe_cache import DataFrameCache
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 
@@ -149,7 +149,7 @@ class Indicators:
         self._indicators = []
         self._dp = dp
         self._indicator_confirm_factor = 0.7
-        self._df_cache = FourHourDataFrameCache(dp)
+        self._df_cache = DataFrameCache(dp)
 
 
 
@@ -287,25 +287,10 @@ class Indicators:
         return self._df_cache.get_4h_df(one_h_df)
 
     def convert_1h_to_12h(self, one_h_df: DataFrame):
-        if len(one_h_df) == 0:
-            return DataFrame()
+        return self._df_cache.get_12h_df(one_h_df)
 
-        one_h_df['date_index'] = pd.to_datetime(one_h_df['date'])
-        # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
-        df_12h: DataFrame = one_h_df.groupby(pd.Grouper(key='date_index', freq='12H')).agg({
-            'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
-            'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
-            'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
-            'close': 'last',  # Höchster Kurs in der 4-Stunden-Periode
-            'date_index': 'first'  # Erstes Zeitstempel in der 4-Stunden-Periode
-        }).reset_index(drop=True)
-        df_12h.dropna(inplace=True)
-        df_12h.reset_index(inplace=True)
-
-        df_12h = df_12h.filter(["open", "low", "high", "close"])
-        self._dp.addSignals_big_tf(df_12h)
-
-        return df_12h.dropna()
+    def convert_1h_to_1d(self, one_h_df: DataFrame):
+        return self._df_cache.get_1d_df(one_h_df)
 
     # region Get/Add Indicators
     def _add_indicator(self, name, function):

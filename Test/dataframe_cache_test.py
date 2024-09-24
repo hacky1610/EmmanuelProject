@@ -5,7 +5,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from BL.indicators import Indicators
-from Connectors.dataframe_cache import FourHourDataFrameCache
+from Connectors.dataframe_cache import DataFrameCache
 
 
 class DataFrameCacheTest(unittest.TestCase):
@@ -29,7 +29,7 @@ class DataFrameCacheTest(unittest.TestCase):
         }
         self.one_h_df = DataFrame(data)
 
-        self.cache = FourHourDataFrameCache(dataprocessor=self.dp)
+        self.cache = DataFrameCache(dataprocessor=self.dp)
 
 
     def test_foo(self):
