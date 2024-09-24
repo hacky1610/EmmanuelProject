@@ -1,5 +1,3 @@
-from _lsprof import profiler_entry
-
 import dropbox
 import pymongo
 
