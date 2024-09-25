@@ -135,16 +135,16 @@ def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataPr
     return df_train, eval_df_train
 
 
-def train_predictor(markets: list,
-                    trainer: MatrixTrainer,
-                    tiingo: Tiingo,
-                    dp: DataProcessor,
-                    predictor: Type,
-                    indicators: Indicators,
-                    reporting: Reporting,
-                    trade_type: TradeType = TradeType.FX,
-                    tracer=ConsoleTracer()
-                    ):
+def train_predictors(markets: list,
+                     trainer: MatrixTrainer,
+                     tiingo: Tiingo,
+                     dp: DataProcessor,
+                     predictor: Type,
+                     indicators: Indicators,
+                     reporting: Reporting,
+                     trade_type: TradeType = TradeType.FX,
+                     tracer=ConsoleTracer()
+                     ):
     tracer.info("Start training")
 
     for m in random.choices(markets, k=10):
@@ -165,81 +165,78 @@ def train_predictor(markets: list,
         random_all_combos = [list(kombi) for kombi in combinations(indicators.get_all_indicator_names(), 5)]
         all_combos = random_all_combos + random_best_combos
 
-        if len(df_train) > 0:
-            try:
-                config = ps.load_active_by_symbol(symbol)
+        try:
+            config = ps.load_active_by_symbol(symbol)
 
-                pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
-                pred_standard.setup(config)
-                if pred_standard.get_result().get_win_loss() < 0.3:
-                   print(f"Skip {symbol} {pred_standard.get_result().get_win_loss() }")
-                   continue
-                pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
-                pred_matrix.setup(config)
+            pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
+            pred_standard.setup(config)
+            if pred_standard.get_result().get_win_loss() < 0.3:
+               print(f"Skip {symbol} {pred_standard.get_result().get_win_loss() }")
+               continue
+            pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
+            pred_matrix.setup(config)
 
-                trainer.get_signals(symbol, df_train, indicators, predictor)
-                buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
+            trainer.get_signals(symbol, df_train, indicators, predictor)
+            buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
 
-                buy_results_dict = {}
-                sell_results_dict = {}
-                if len(buy_results) > 0:
-                    buy_results_dict = buy_results.set_index('chart_index').to_dict(orient='index')
-                    if buy_results['next_index'].nunique() < 4:
-                        print(f"Extrem wenige werte {buy_results}")
+            buy_results_dict = {}
+            sell_results_dict = {}
+            if len(buy_results) > 0:
+                buy_results_dict = buy_results.set_index('chart_index').to_dict(orient='index')
+                if buy_results['next_index'].nunique() < 4:
+                    print(f"Extrem wenige werte {buy_results}")
 
-                if len(sell_results) > 0:
-                    sell_results_dict = sell_results.set_index('chart_index').to_dict(orient='index')
-                    if sell_results['next_index'].nunique() < 4:
-                        print(f"Extrem wenige werte {sell_results}")
+            if len(sell_results) > 0:
+                sell_results_dict = sell_results.set_index('chart_index').to_dict(orient='index')
+                if sell_results['next_index'].nunique() < 4:
+                    print(f"Extrem wenige werte {sell_results}")
 
 
-                filtered_combos = random.choices(all_combos,k=20000)
-                best_combo = trainer.train_combinations(symbol=symbol, indicators=indicators, best_combo_list=best_indicator_combos,
-                                                        buy_results=buy_results_dict, sell_results=sell_results_dict, random_combos=filtered_combos)
-                if best_combo is None or len(best_combo) == 0:
-                    print("No best combo found")
-                    continue
+            filtered_combos = random.choices(all_combos,k=20000)
+            best_combo = trainer.train_combinations(symbol=symbol, indicators=indicators, best_combo_list=best_indicator_combos,
+                                                    buy_results=buy_results_dict, sell_results=sell_results_dict, random_combos=filtered_combos)
+            if best_combo is None or len(best_combo) == 0:
+                print("No best combo found")
+                continue
 
-                if sorted(best_combo) == sorted(pred_standard.get_indicator_names()):
-                    print("Best indicator is equal to standard")
-                    continue
+            if sorted(best_combo) == sorted(pred_standard.get_indicator_names()):
+                print("Best indicator is equal to standard")
+                continue
 
-                pred_matrix.setup({"_indicator_names": best_combo})
-                pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False, epic=m["epic"])
-                pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False, epic=m["epic"])
+            pred_matrix.setup({"_indicator_names": best_combo})
+            pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False, epic=m["epic"])
+            pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=False, epic=m["epic"])
 
-                if pred_standard.get_result().is_better(pred_matrix.get_result()):
-                    pred_matrix.activate()
-                    ps.save(pred_matrix)
-                    print(f"****************************************")
-                    print(f"* Matrix is better {symbol} {best_combo}")
-                    print(f"* Matrix Train {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
-                    print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
-                    print(f"****************************************")
-                else:
-                    print("Standard is better")
-                    print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
-                    pred_standard.activate()
-                    ps.save(pred_standard)
+            if pred_standard.get_result().is_better(pred_matrix.get_result()):
+                pred_matrix.activate()
+                ps.save(pred_matrix)
+                print(f"****************************************")
+                print(f"* Matrix is better {symbol} {best_combo}")
+                print(f"* Matrix Train {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
+                print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
+                print(f"****************************************")
+            else:
+                print("Standard is better")
+                print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
+                pred_standard.activate()
+                ps.save(pred_standard)
 
-            except Exception as ex:
-                traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
-                print(f"MainException: {ex} File:{traceback_str}")
+        except Exception as ex:
+            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+            print(f"MainException: {ex} File:{traceback_str}")
 
-        else:
-            print(f"No Data in {symbol} ")
 
 
 while True:
     try:
-        train_predictor(markets=IG.get_markets_offline(),
-                        trainer=_trainer,
-                        tiingo=_tiingo,
-                        predictor=GenericPredictor,
-                        dp=_dp,
-                        indicators=_indicators,
-                        tracer=_tracer,
-                        reporting=_reporting)
+        train_predictors(markets=IG.get_markets_offline(),
+                         trainer=_trainer,
+                         tiingo=_tiingo,
+                         predictor=GenericPredictor,
+                         dp=_dp,
+                         indicators=_indicators,
+                         tracer=_tracer,
+                         reporting=_reporting)
     except Exception as ex:
         traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
         print(f"MainException: {ex} File:{traceback_str}")

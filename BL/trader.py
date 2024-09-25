@@ -3,6 +3,9 @@ from enum import Enum
 from typing import List, NamedTuple
 import re
 from datetime import datetime
+
+import pandas as pd
+
 from BL import  DataProcessor
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
@@ -335,6 +338,8 @@ class Trader:
         if res == TradeResult.SUCCESS:
             self._save_result(predictor, deal_response, config.symbol)
             self._tracer.debug("Save Deal in db")
+            pd.set_option('display.max_columns', None)
+            self._tracer.debug(trade_df.tail(30))
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
             date_string = date_string.group().replace(" ", "T")
             manual_stop_level = None

@@ -1,6 +1,7 @@
 import datetime
 from typing import List, Optional
 
+from bson import ObjectId
 from pandas import DataFrame
 from pymongo.database import Database
 from pymongo.results import UpdateResult
@@ -34,6 +35,12 @@ class PredictorStore:
 
     def load_active_by_symbol(self, symbol):
         d =  self._collection.find_one({"_symbol": symbol, "_active": True})
+        if d == None:
+            return {}
+        return d
+
+    def load_active_by_id(self, predictor_id:str):
+        d = self._collection.find_one({"_id": ObjectId(predictor_id)})
         if d == None:
             return {}
         return d
