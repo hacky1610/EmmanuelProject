@@ -30,6 +30,7 @@ class Indicators:
     RSI = "rsi"
     RSI_LIMIT = "rsi_limit"
     RSI_LIMIT_4H = "rsi_limit_4h"
+    RSI_LIMIT_12H = "rsi_limit_12h"
     RSI_BREAK = "rsi_break"
     RSI_BREAK_4H = "rsi_break_4h"
     RSI_BREAK3070 = "rsi_break_30_70"
@@ -58,10 +59,12 @@ class Indicators:
     MACDCROSSING = "macd_crossing"
     MACDSINGALDIFF = "macd_signal_diff"
     MACD_CONVERGENCE = "macd_convergence"
+    MACD_CONVERGENCE_4H = "macd_convergence_4h"
     MACD_MAX = "macd_max"
     MACD_MAX_2 = "macd_max_2"
     MACD_MAX_4H = "macd_max_4h"
     MACD_MAX_12H = "macd_max_12h"
+    MACD_MAX_1d = "macd_max_1d"
     MACD_SLOPE = "macd_slope"
     MACD_SLOPE_4H = "macd_slope_4h"
     # EMA
@@ -154,10 +157,12 @@ class Indicators:
 
 
         # RSI
-        self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
+
         self._add_indicator(self.RSI_CONVERGENCE_4H, self._rsi_convergence_predict3_4h)
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
+        self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
+        self._add_indicator(self.RSI_LIMIT_12H, self._rsi_limit_predict_12h)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         #self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict) #BAD
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
@@ -186,9 +191,11 @@ class Indicators:
         self._add_indicator(self.MACD_MAX_2, self._macd_max_predict2)
         self._add_indicator(self.MACD_MAX_4H, self._macd_max_predict_4h)
         self._add_indicator(self.MACD_MAX_12H, self._macd_max_predict_12h)
+        self._add_indicator(self.MACD_MAX_1d, self._macd_max_predict_1d)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
+        self._add_indicator(self.MACD_CONVERGENCE_4H, self._macd_convergence_predict_4h)
         self._add_indicator(self.MACDSINGALDIFF, self._macd_signal_diff_predict)
 
         # EMA
@@ -679,8 +686,10 @@ class Indicators:
         return self._oscillator_limit(df, "RSI", 50, 70, 30)
 
     def _rsi_limit_predict_4h(self, df):
-        df4h = self.convert_1h_to_4h(df)
-        return self._oscillator_limit(df4h, "RSI", 50, 70, 30)
+        return self._oscillator_limit(self.convert_1h_to_4h(df), "RSI", 50, 70, 30)
+
+    def _rsi_limit_predict_12h(self, df):
+        return self._oscillator_limit(self.convert_1h_to_12h(df), "RSI", 50, 70, 30)
 
     def _williams_limit_predict(self, df):
         return self._oscillator_limit(df, "WILLIAMS", -50, -20, -80)
@@ -928,6 +937,9 @@ class Indicators:
 
     def _macd_convergence_predict(self, df):
         return self._convergence_predict(df, "MACD")
+
+    def _macd_convergence_predict_4h(self, df):
+        return self._convergence_predict(self.convert_1h_to_4h(df), "MACD")
 
     def _macd_predict_zero_line(self, df):
         current_macd = df.MACD.iloc[-1]
@@ -1184,6 +1196,9 @@ class Indicators:
 
     def _macd_max_predict_12h(self, df):
         return self._oszi_min_max(self.convert_1h_to_12h(df), "MACD", 7, 0.9)
+
+    def _macd_max_predict_1d(self, df):
+        return self._oszi_min_max(self.convert_1h_to_1d(df), "MACD", 7, 0.9)
 
     def _macd_max_predict2(self, df):
         return self._oszi_min_max(df, "MACD", 7, 0.8)
