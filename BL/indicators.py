@@ -1046,34 +1046,20 @@ class Indicators:
 
     def _bb_squeeze(self, df):
 
+        if len(df) < 1:
+            return TradeAction.NONE
+
         # Parameter
-        keltFactor = 1.5
-        BandsDeviations = 2.0
-        BandsPeriod = 20
-
-        df_bb = df.copy()
-
-        # Keltner Channels Breite (Mitte ± ATR * keltFactor)
-        df_bb['Keltner Width'] = df_bb['ATR'] * keltFactor
-
-        # Bollinger Bands Breite (obere Band - untere Band)
-        df_bb['StdDev'] = df_bb['close'].rolling(window=BandsPeriod).std()
-        df_bb['Bollinger Width'] = BandsDeviations * df_bb['StdDev']
-
-        # Bollinger Bands Squeeze
-        df_bb['BBS'] = df_bb['Bollinger Width'] / df_bb['Keltner Width']
+        bbs = df.iloc[-1]['BBS']
+        cci = df.iloc[-1]['CCI']
 
         # Bedingung für Buy- und Sell-Signal
-        df_bb['Buy'] = (df_bb['BBS'] < 1) & (df_bb['CCI'] > 0)
-        df_bb['Sell'] = (df_bb['BBS'] < 1) & (df_bb['CCI'] <= 0)
-
-        # Letzter Wert für die Entscheidung
-        if df_bb.iloc[-1]['Buy']:
+        if (bbs < 1) & (cci > 0):
             return TradeAction.BUY
-        elif df_bb.iloc[-1]['Sell']:
+        elif (bbs < 1) & (cci > 0):
             return TradeAction.SELL
-        else:
-            return TradeAction.NONE
+
+        return TradeAction.NONE
 
     def _bb_squeeze_both(self, df):
         if len(df) < 1:
