@@ -92,6 +92,21 @@ class DataProcessor:
         df['Squeeze_Off'] = (df['BB_LOWER'] < df['KC_LOWER']) & (df['BB_UPPER'] > df['KC_UPPER'])
         df['No_Squeeze'] = (~df['Squeeze_Off']) & (~df['Squeeze_On'])
 
+        # Parameter
+        keltFactor = 1.5
+        BandsDeviations = 2.0
+        BandsPeriod = 20
+
+        # Keltner Channels Breite (Mitte ± ATR * keltFactor)
+        df['Keltner Width'] = df['ATR'] * keltFactor
+
+        # Bollinger Bands Breite (obere Band - untere Band)
+        df['StdDev'] = df['close'].rolling(window=BandsPeriod).std()
+        df['Bollinger Width'] = BandsDeviations * df['StdDev']
+
+        # Bollinger Bands Squeeze
+        df['BBS'] = df['Bollinger Width'] / df['Keltner Width']
+
         # Momentum-Berechnung
         avg_price = (df['high'].rolling(window=lengthKC).max() + df['low'].rolling(window=lengthKC).min()) / 2
         linreg = df['close'] - avg_price.rolling(window=lengthKC).mean()
@@ -111,6 +126,7 @@ class DataProcessor:
         df['MACD'] = md['MACD']
         df['CCI'] = TA.CCI(df)
         df["ADX"] = TA.ADX(df, period=9)
+        df["ATR"] = TA.ATR(df)
         bb1 = TA.BBANDS(df)
         df['BB_UPPER'] = bb1['BB_UPPER']
         df['BB_MIDDLE'] = bb1['BB_MIDDLE']
@@ -129,6 +145,21 @@ class DataProcessor:
         df["S2_FIB"] = pivot["s2"]
         df["R1_FIB"] = pivot["r1"]
         df["R2_FIB"] = pivot["r2"]
+
+        # Parameter
+        keltFactor = 1.5
+        BandsDeviations = 2.0
+        BandsPeriod = 20
+
+        # Keltner Channels Breite (Mitte ± ATR * keltFactor)
+        df['Keltner Width'] = df['ATR'] * keltFactor
+
+        # Bollinger Bands Breite (obere Band - untere Band)
+        df['StdDev'] = df['close'].rolling(window=BandsPeriod).std()
+        df['Bollinger Width'] = BandsDeviations * df['StdDev']
+
+        # Bollinger Bands Squeeze
+        df['BBS'] = df['Bollinger Width'] / df['Keltner Width']
         return
 
     @staticmethod

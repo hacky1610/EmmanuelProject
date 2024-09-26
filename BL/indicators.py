@@ -131,15 +131,20 @@ class Indicators:
     # Bollinger
     BB = "bb"
     BB_4H = "bb_4h"
+    BB_12H = "bb_12h"
     BB_MIDDLE_CROSS = "bb_middle_crossing"
     BB_MIDDLE_CROSS_4H = "bb_middle_crossing_4h"
     BB_BORDER_CROSS = "bb_border_crossing"
     BB_SQUEEZE = "bb_sqeeze"
     BB_SQUEEZE_BOTH = "bb_sqeeze_both_direction"
+    BB_SQUEEZE_BOTH_4H = "bb_sqeeze_both_direction_4h"
+    BB_SQUEEZE_BOTH_12H = "bb_sqeeze_both_direction_12h"
+
     # ICHIMOKU
     ICHIMOKU = "ichi"
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
     ICHIMOKU_KIJUN_CONFIRM_4H = "ichi_kijun_confirm_4h"
+    ICHIMOKU_KIJUN_CONFIRM_12H = "ichi_kijun_confirm_12h"
     ICHIMOKU_KIJUN_CROSS_CONFIRM = "ichi_kijun_cross_confirm"
     ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
     ICHIMOKU_CLOUD_THICKNESS = "ichi_cloud_thickness"
@@ -155,6 +160,7 @@ class Indicators:
         self._df_cache = DataFrameCache(dp)
 
 
+        self._add_indicator(self.BB_SQUEEZE_BOTH_12H, self._bb_squeeze_both_12h)
 
         # RSI
 
@@ -268,10 +274,12 @@ class Indicators:
         # Bollinger
         self._add_indicator(self.BB, self._bb_predict)
         self._add_indicator(self.BB_4H, self._bb_predict_4h)
+        self._add_indicator(self.BB_12H, self._bb_predict_12h)
         self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
         self._add_indicator(self.BB_MIDDLE_CROSS_4H, self._bb_middle_cross_predict_4h)
         self._add_indicator(self.BB_SQUEEZE, self._bb_squeeze)
         self._add_indicator(self.BB_SQUEEZE_BOTH, self._bb_squeeze_both)
+        self._add_indicator(self.BB_SQUEEZE_BOTH_4H, self._bb_squeeze_both_4h)
 
         #self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
 
@@ -279,6 +287,7 @@ class Indicators:
         #self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_4H, self._ichimoku_kijun_close_predict_4h)
+        self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_12H, self._ichimoku_kijun_close_predict_12h)
         self._add_indicator(self.ICHIMOKU_KIJUN_CROSS_CONFIRM, self._ichimoku_kijun_close_cross_predict)
         #self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_THICKNESS, self._ichimoku_cloud_thickness_predict)
@@ -1000,6 +1009,9 @@ class Indicators:
     def _bb_predict_4h(self, df):
         return self._bb_predict(self.convert_1h_to_4h(df))
 
+    def _bb_predict_12h(self, df):
+        return self._bb_predict(self.convert_1h_to_12h(df))
+
 
     def _bb_middle_cross_predict(self, df):
         if len(df) < 4:
@@ -1064,29 +1076,20 @@ class Indicators:
             return TradeAction.NONE
 
     def _bb_squeeze_both(self, df):
-
-        # Parameter
-        keltFactor = 1.5
-        BandsDeviations = 2.0
-        BandsPeriod = 20
-
-        df_bb = df.copy()
-
-        # Keltner Channels Breite (Mitte ± ATR * keltFactor)
-        df_bb['Keltner Width'] = df_bb['ATR'] * keltFactor
-
-        # Bollinger Bands Breite (obere Band - untere Band)
-        df_bb['StdDev'] = df_bb['close'].rolling(window=BandsPeriod).std()
-        df_bb['Bollinger Width'] = BandsDeviations * df_bb['StdDev']
-
-        # Bollinger Bands Squeeze
-        df_bb['BBS'] = df_bb['Bollinger Width'] / df_bb['Keltner Width']
+        if len(df) < 1:
+            return TradeAction.NONE
 
         # Letzter Wert für die Entscheidung
-        if df_bb.iloc[-1]['BBS'] < 1:
+        if df.iloc[-1]['BBS'] < 1:
             return TradeAction.BOTH
         else:
             return TradeAction.NONE
+
+    def _bb_squeeze_both_4h(self, df):
+        return self._bb_squeeze_both(self.convert_1h_to_4h(df))
+
+    def _bb_squeeze_both_12h(self, df):
+        return self._bb_squeeze_both(self.convert_1h_to_12h(df))
 
 
     def _adx_predict(self, df):
@@ -1294,6 +1297,22 @@ class Indicators:
             return TradeAction.NONE
 
         kijun = df4h.KIJUN.iloc[-1]
+        close = df.close.iloc[-1]
+
+        if close > kijun:
+            return TradeAction.BUY
+        else:
+            return TradeAction.SELL
+
+    def _ichimoku_kijun_close_predict_12h(self, df):
+        # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
+        # Linie nur Long-Trades vorgenommen werden sollten, und unterhalb entsprechend nur Short-Trades.
+        df12h = self.convert_1h_to_12h(df)
+
+        if len(df12h) == 0:
+            return TradeAction.NONE
+
+        kijun = df12h.KIJUN.iloc[-1]
         close = df.close.iloc[-1]
 
         if close > kijun:
