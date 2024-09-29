@@ -58,7 +58,8 @@ class EvalResult:
                  len_df: int = 0,
                  trade_minutes: int = 0,
                  scan_time=datetime(1970, 1, 1),
-                 adapted_isl_distance: bool = False):
+                 adapted_isl_distance: bool = False,
+                 median_profit: float = -10000):
         if trades_results is None:
             trades_results = []
 
@@ -79,6 +80,11 @@ class EvalResult:
             if trade.won():
                 self._wins += 1
         self._trades = len(trades_results)
+
+        df = self.get_trade_df()
+        self._median_profit = median_profit
+        if len(df) > 0:
+            self._median_profit = df.result.median
 
     def set_result(self, reward, trades, wins):
         self._reward = reward
@@ -121,6 +127,9 @@ class EvalResult:
             return 0
         return round(self._reward / self._trades, 7)
 
+    def get_median_reward(self):
+        return self._median_profit
+
     def get_trade_frequency(self):
         if self._len_df == 0:
             return 0
@@ -145,7 +154,8 @@ class EvalResult:
             self._trade_minutes,
             self._scan_time,
             self.get_win_loss(),
-            self._adapted_isl_distance
+            self._adapted_isl_distance,
+            self._median_profit
         ],
             index=["_reward",
                    "_trades",
@@ -154,7 +164,8 @@ class EvalResult:
                    "_trade_minutes",
                    "_scan_time",
                    "_wl",
-                   "_adapted_isl_distance"
+                   "_adapted_isl_distance",
+                   "_median_profit"
                    ])
 
     def is_good(self):
@@ -183,11 +194,10 @@ class EvalResult:
 
     def __repr__(self):
         return f"Reward {self.get_reward()} E " + \
-            f"Avg. Reqard {self.get_average_reward():.2f} E " \
-            f"trade_freq {self.get_trade_frequency():.2f} " \
+            f"Average {self.get_average_reward():.2f} E " \
+            f"Median Reward {self.get_median_reward():.2f} E " \
             f"WL {self.get_win_loss():.2f} " \
-            f"trades {self.get_trades()} " \
-            f"avg_minutes {self.get_average_minutes()} "
+            f"trades {self.get_trades()} "
 
     def to_dict_foo(self):
         return {

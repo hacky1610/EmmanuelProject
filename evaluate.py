@@ -164,8 +164,8 @@ def evaluate_predictors(indicator_logic,
     results = EvalResultCollection()
     markets = IG.get_markets_offline()
     for m in markets:
-        if m["symbol"] != "EURCHF":
-            continue
+        #if m["symbol"] != "EURCHF":
+        #    continue
         results.add(evaluate_predictor(m["symbol"],
                                        m["epic"],
                                        m["scaling"],

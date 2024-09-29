@@ -33,8 +33,8 @@ def evaluate_predictor(indicators,predictor_class, viewer: BaseViewer):
             gb = "BAD"
             if predictor.get_result().is_good():
                 gb = f"GOOD"
+                print(f"{gb} - {symbol} - {predictor} {predictor.get_result()}")
 
-            print(f"{gb} - {symbol} - {predictor.get_result()}")
         except:
             print("error")
     print(f"{results}")

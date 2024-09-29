@@ -68,6 +68,8 @@ class Trainer:
                 return
             predictor.setup(training_set)
 
+            if predictor.get_stop() > 40:
+                predictor.setup({"_stop":predictor.get_stop() * 0.85})
             train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
                                            scaling=scaling, epic=epic)
             if train_result is None:
