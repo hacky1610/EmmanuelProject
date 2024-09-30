@@ -63,6 +63,7 @@ class BasePredictor:
                                   trade_minutes=config.get("_trade_minutes", 0),
                                   adapted_isl_distance=config.get("_adapted_isl_distance",False),
                                   avg_won_result=config.get("_avg_won_result",0),
+                                  avg_trading_hours=config.get("_avg_trading_hours",0),
                                   avg_lost_result=config.get("_avg_lost_result", 0),
                                   scan_time=config.get("_scan_time", datetime(1970, 1, 1)))
         self._result.set_result(config.get("_reward", 0), config.get("_trades", 0), config.get("_wins", 0))

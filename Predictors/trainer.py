@@ -62,14 +62,18 @@ class Trainer:
         for training_set in tqdm(training_sets):
             predictor: BasePredictor = predictor_class(symbol=symbol, indicators=indicators)
             predictor.setup(self._predictor_store.load_active_by_symbol(symbol))
+            lost = predictor.get_result().get_avg_lost()
+            win = predictor.get_result().get_avg_win() * 1.8
             predictor.setup(best_config)
+
+
             if not self._trainable(predictor):
                 self._tracer.info("Predictor is not trainable")
                 return
             predictor.setup(training_set)
 
-            if predictor.get_stop() > 40:
-                predictor.setup({"_stop":predictor.get_stop() * 0.85})
+            if lost > win:
+                predictor.setup({"_stop": lost * 0.9})
             train_result = predictor.train(df_train=df, df_eval=df_eval, analytics=self._analytics, symbol=symbol,
                                            scaling=scaling, epic=epic)
             if train_result is None:

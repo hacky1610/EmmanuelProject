@@ -163,8 +163,9 @@ def evaluate_predictors(indicator_logic,
                         only_test=False):
     results = EvalResultCollection()
     markets = IG.get_markets_offline()
+    random.shuffle(markets)
     for m in markets:
-        #if m["symbol"] != "EURCHF":
+        #if m["symbol"] != "USDHKD":
         #    continue
         results.add(evaluate_predictor(m["symbol"],
                                        m["epic"],
@@ -179,7 +180,7 @@ def evaluate_predictors(indicator_logic,
 
 # endregion
 
-_viewer = PlotlyViewer(cache=df_cache)
+#_viewer = PlotlyViewer(cache=df_cache)
 
 evaluate_predictors(indicators,
                     _viewer,

@@ -33,6 +33,12 @@ class TradeResult:
     def won(self) -> bool:
         return self.profit > 0
 
+    def get_trading_hours(self) -> float:
+        c = datetime.strptime(self.close_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+        o = datetime.strptime(self.open_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+        e = c - o
+        return e.total_seconds() / 3600
+
     def to_dict(self) -> dict:
         return {
             "action": self.action,
@@ -57,6 +63,7 @@ class EvalResult:
                  trades: int = 0,
                  len_df: int = 0,
                  trade_minutes: int = 0,
+                 avg_trading_hours: float = 0,
                  scan_time=datetime(1970, 1, 1),
                  adapted_isl_distance: bool = False,
                  avg_won_result: float = 0,
@@ -85,9 +92,12 @@ class EvalResult:
         df = self.get_trade_df()
         self._avg_won_result = avg_won_result
         self._avg_lost_result = avg_lost_result
+        self._avg_trading_hours = avg_trading_hours
+
         if len(df) > 0:
             self._avg_won_result = df.result[df.result > 0].mean()
             self._avg_lost_result = df.result[df.result < 0].mean()
+            self._avg_lost_result = df.trading_hours.mean()
 
     def set_result(self, reward, trades, wins):
         self._reward = reward
@@ -136,6 +146,9 @@ class EvalResult:
     def get_avg_lost(self):
         return self._avg_lost_result
 
+    def get_avg_trading_hours(self):
+        return self._avg_trading_hours
+
     def get_avg_win_lost(self):
         return self._avg_won_result + self._avg_lost_result
 
@@ -165,7 +178,8 @@ class EvalResult:
             self.get_win_loss(),
             self._adapted_isl_distance,
             self._avg_lost_result,
-            self._avg_won_result
+            self._avg_won_result,
+            self._avg_trading_hours
         ],
             index=["_reward",
                    "_trades",
@@ -176,7 +190,8 @@ class EvalResult:
                    "_wl",
                    "_adapted_isl_distance",
                    "_avg_lost_result",
-                   "_avg_won_result"
+                   "_avg_won_result",
+                   "_avg_trading_hours"
                    ])
 
     def is_good(self):
@@ -186,8 +201,8 @@ class EvalResult:
     def get_trade_df(self) -> DataFrame:
         df = DataFrame()
         for i in self._trade_results:
-            df = df.append(Series(data=[i.action, i.profit, self._symbol],
-                                  index=["action", "result",  "symbol"]), ignore_index=True)
+            df = df.append(Series(data=[i.action, i.profit, self._symbol, i.get_trading_hours()],
+                                  index=["action", "result",  "symbol", "trading_hours"]), ignore_index=True)
         return df
 
     @staticmethod
@@ -206,8 +221,9 @@ class EvalResult:
     def __repr__(self):
         return f"Reward {self.get_reward()} E " + \
             f"Average {self.get_average_reward():.2f} E " \
-            f"Abg Won {self.get_avg_win():.2f} E " \
-            f"Abg Lost {self.get_avg_lost():.2f} E " \
+            f"Avg Won {self.get_avg_win():.2f} E " \
+            f"Avg Lost {self.get_avg_lost():.2f} E " \
+            f"Avg hours {self.get_avg_trading_hours():.2f} " \
             f"WL {self.get_win_loss():.2f} " \
             f"trades {self.get_trades()} "
 
