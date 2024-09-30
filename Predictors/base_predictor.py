@@ -62,7 +62,8 @@ class BasePredictor:
         self._result = EvalResult(symbol=config.get("_symbol", self._symbol),len_df=config.get("_len_df", 0),
                                   trade_minutes=config.get("_trade_minutes", 0),
                                   adapted_isl_distance=config.get("_adapted_isl_distance",False),
-                                  median_profit=config.get("_median_profit",-10000),
+                                  avg_won_result=config.get("_avg_won_result",0),
+                                  avg_lost_result=config.get("_avg_lost_result", 0),
                                   scan_time=config.get("_scan_time", datetime(1970, 1, 1)))
         self._result.set_result(config.get("_reward", 0), config.get("_trades", 0), config.get("_wins", 0))
 

@@ -89,11 +89,10 @@ class Trainer:
                 self._predictor_store.save(best_predictor, overwrite=False)
 
                 self._tracer.info(
-                    f"Test:  WL: {test_result.get_win_loss():.2f} - Reward: {test_result.get_reward():.2f} Avg Reward {test_result.get_average_reward():.2f}")
+                    f"Test:  {test_result}")
                 self._tracer.info(
-                    f"Train: WL: {best_train_result.get_win_loss():.2f} - Reward: {best_predictor.get_result().get_reward():.2f} Avg Reward {best_predictor.get_result().get_average_reward():.2f}")
+                    f"Train: {best_train_result}")
                 self._tracer.info(f"{best_predictor} ")
-                self._tracer.info(f"Adapted ISL: {best_predictor.get_result()._adapted_isl_distance}")
             else:
                 self._tracer.info("No good predictor")
         else:

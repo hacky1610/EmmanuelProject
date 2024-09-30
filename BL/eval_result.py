@@ -59,7 +59,8 @@ class EvalResult:
                  trade_minutes: int = 0,
                  scan_time=datetime(1970, 1, 1),
                  adapted_isl_distance: bool = False,
-                 median_profit: float = -10000):
+                 avg_won_result: float = 0,
+                 avg_lost_result: float = 0):
         if trades_results is None:
             trades_results = []
 
@@ -82,9 +83,11 @@ class EvalResult:
         self._trades = len(trades_results)
 
         df = self.get_trade_df()
-        self._median_profit = median_profit
+        self._avg_won_result = avg_won_result
+        self._avg_lost_result = avg_lost_result
         if len(df) > 0:
-            self._median_profit = df.result.median
+            self._avg_won_result = df.result[df.result > 0].mean()
+            self._avg_lost_result = df.result[df.result < 0].mean()
 
     def set_result(self, reward, trades, wins):
         self._reward = reward
@@ -127,8 +130,14 @@ class EvalResult:
             return 0
         return round(self._reward / self._trades, 7)
 
-    def get_median_reward(self):
-        return self._median_profit
+    def get_avg_win(self):
+        return self._avg_won_result
+
+    def get_avg_lost(self):
+        return self._avg_lost_result
+
+    def get_avg_win_lost(self):
+        return self._avg_won_result + self._avg_lost_result
 
     def get_trade_frequency(self):
         if self._len_df == 0:
@@ -155,7 +164,8 @@ class EvalResult:
             self._scan_time,
             self.get_win_loss(),
             self._adapted_isl_distance,
-            self._median_profit
+            self._avg_lost_result,
+            self._avg_won_result
         ],
             index=["_reward",
                    "_trades",
@@ -165,7 +175,8 @@ class EvalResult:
                    "_scan_time",
                    "_wl",
                    "_adapted_isl_distance",
-                   "_median_profit"
+                   "_avg_lost_result",
+                   "_avg_won_result"
                    ])
 
     def is_good(self):
@@ -195,7 +206,8 @@ class EvalResult:
     def __repr__(self):
         return f"Reward {self.get_reward()} E " + \
             f"Average {self.get_average_reward():.2f} E " \
-            f"Median Reward {self.get_median_reward():.2f} E " \
+            f"Abg Won {self.get_avg_win():.2f} E " \
+            f"Abg Lost {self.get_avg_lost():.2f} E " \
             f"WL {self.get_win_loss():.2f} " \
             f"trades {self.get_trades()} "
 
