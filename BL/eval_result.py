@@ -34,6 +34,9 @@ class TradeResult:
         return self.profit > 0
 
     def get_trading_hours(self) -> float:
+        if self.close_time == "" or self.open_time == "":
+            return 0
+
         c = datetime.strptime(self.close_time, '%Y-%m-%dT%H:%M:%S.%fZ')
         o = datetime.strptime(self.open_time, '%Y-%m-%dT%H:%M:%S.%fZ')
         e = c - o
@@ -97,7 +100,7 @@ class EvalResult:
         if len(df) > 0:
             self._avg_won_result = df.result[df.result > 0].mean()
             self._avg_lost_result = df.result[df.result < 0].mean()
-            self._avg_lost_result = df.trading_hours.mean()
+            self._avg_trading_hours = df.trading_hours.median()
 
     def set_result(self, reward, trades, wins):
         self._reward = reward
@@ -195,8 +198,10 @@ class EvalResult:
                    ])
 
     def is_good(self):
-        check1 = self.get_win_loss() >= 0.95 and self.get_trades() >= 70
-        return check1
+        check0 = self.get_avg_win() * 1.8 > abs(self.get_avg_lost())
+        check1 = (self.get_win_loss() >= 0.95 and self.get_trades() >= 70 and
+                  self.get_avg_trading_hours() != 0 and self.get_avg_trading_hours() < 48)
+        return check0 and check1
 
     def get_trade_df(self) -> DataFrame:
         df = DataFrame()
