@@ -244,7 +244,11 @@ class IG:
                 trailing_stop_increment=None
             )
             if response["dealStatus"] != "ACCEPTED":
-                self._tracer.error(f"could not open trade: {response['reason']} for {epic}. Details {response}")
+                if response['reason'] == "MARKET_OFFLINE":
+                    self._tracer.warning(f"{response['reason']} for {epic}. Details {response}")
+                    result = True
+                else:
+                    self._tracer.error(f"could not open trade: {response['reason']} for {epic}. Details {response}")
             else:
                 self._tracer.write(f"Opened successfull {epic}. Deal details {response}")
                 result = True
