@@ -15,6 +15,7 @@ from BL.datatypes import TradeAction
 import pandas as pd
 from datetime import timedelta
 from UI.base_viewer import BaseViewer
+from dateutil import parser
 
 
 class Analytics:
@@ -159,6 +160,90 @@ class Analytics:
                             scan_time=datetime.datetime.now(), adapted_isl_distance=adapted)
 
         return ev_res
+
+    def evaluate_position(self,
+                 df_eval: DataFrame,
+                 symbol: str,
+                 action:str,
+                 epic: str,
+                 scaling: int,
+                 open_time,
+                 close_time) -> EvalResult:
+
+        assert len(df_eval) > 0
+
+        trading_minutes = 0
+        trades = []
+        market = self._market_store.get_market(symbol)
+
+        if market is None:
+            print(f"There is no market for {symbol}")
+            return None
+
+
+        #distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
+        #                                               intelligent_stop_distance=10)
+        stop_pip = market.get_pip_value(35, scaling)
+        limit_pip = market.get_pip_value(35, scaling)
+        isl_entry_pip = market.get_pip_value(20, scaling)
+
+        open_date_str = open_time.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+
+        df_eval = df_eval[df_eval.date > open_date_str]
+        open_price = df_eval.close.iloc[0]
+        trade = TradeResult(action=action, open_time=df_eval.date.iloc[0], opening=open_price)
+        trades.append(trade)
+
+        if action == TradeAction.BUY:
+            stop_price = open_price - stop_pip
+            limit_price = open_price + limit_pip
+        else:
+            stop_price = open_price + stop_pip
+            limit_price = open_price - limit_pip
+
+        profit = 0
+
+        for i in range(len(df_eval) - 1):
+            current_index = i + 1
+            trading_minutes += 5
+            date_obj = parser.isoparse(df_eval.date.iloc[i])
+            close = df_eval.close.iloc[current_index]
+            high = df_eval.high.iloc[current_index]
+            low = df_eval.low.iloc[current_index]
+
+            if date_obj > close_time:
+                if action == TradeAction.BUY:
+                    profit = market.get_euro_value(close - open_price, scaling)
+                else:
+                    profit = market.get_euro_value(open_price - close, scaling)
+                break
+
+            if action == TradeAction.BUY:
+                if high > limit_price:
+                    # Won
+                    profit = market.get_euro_value(limit_price - open_price, scaling)
+                    break
+                elif low < stop_price:
+                    # Loss
+                    profit = market.get_euro_value(stop_price - open_price, scaling)
+                    break
+
+            elif action == TradeAction.SELL:
+                    if low < limit_price:
+                        #won
+                        profit = market.get_euro_value(open_price - limit_price, scaling)
+                        break
+                    elif high > stop_price:
+                        profit = market.get_euro_value(open_price - stop_price, scaling)
+                        break
+
+        return profit, trading_minutes
+
+
+
+
+
+
 
     def get_signals(self, predictor,
                  df: DataFrame) -> DataFrame:
