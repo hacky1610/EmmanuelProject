@@ -168,7 +168,8 @@ class Analytics:
                  epic: str,
                  scaling: int,
                  open_time,
-                 close_time) -> EvalResult:
+                 close_time,
+                 use_isl:bool = False) -> EvalResult:
 
         assert len(df_eval) > 0
 
@@ -181,15 +182,20 @@ class Analytics:
             return None
 
 
-        #distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
-        #                                               intelligent_stop_distance=10)
+        distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
+                                                       intelligent_stop_distance=10)
         stop_pip = market.get_pip_value(35, scaling)
         limit_pip = market.get_pip_value(35, scaling)
         isl_entry_pip = market.get_pip_value(20, scaling)
 
         open_date_str = open_time.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        close_date_plus_1d_str = (close_time + timedelta(days=1)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
         df_eval = df_eval[df_eval.date > open_date_str]
+        df_eval = df_eval[df_eval.date < close_date_plus_1d_str]
+
+        if len(df_eval) == 0:
+            return 0,0
         open_price = df_eval.close.iloc[0]
         trade = TradeResult(action=action, open_time=df_eval.date.iloc[0], opening=open_price)
         trades.append(trade)
@@ -228,14 +234,28 @@ class Analytics:
                     profit = market.get_euro_value(stop_price - open_price, scaling)
                     break
 
+                if use_isl:
+                    if self._ig.is_ready_to_set_intelligent_stop(high - open_price, isl_entry_pip):
+                        new_stop_level = close - distance
+                        if new_stop_level > stop_price:
+                            stop_price = new_stop_level
+                            trade.set_intelligent_stop_used()
+
             elif action == TradeAction.SELL:
-                    if low < limit_price:
-                        #won
-                        profit = market.get_euro_value(open_price - limit_price, scaling)
-                        break
-                    elif high > stop_price:
-                        profit = market.get_euro_value(open_price - stop_price, scaling)
-                        break
+                if low < limit_price:
+                    #won
+                    profit = market.get_euro_value(open_price - limit_price, scaling)
+                    break
+                elif high > stop_price:
+                    profit = market.get_euro_value(open_price - stop_price, scaling)
+                    break
+
+                if use_isl:
+                    if self._ig.is_ready_to_set_intelligent_stop(open_price - low, isl_entry_pip):
+                        new_stop_level = close + distance
+                        if new_stop_level < stop_price:
+                            stop_price = new_stop_level
+                            trade.set_intelligent_stop_used()
 
         return profit, trading_minutes
 

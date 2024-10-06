@@ -13,6 +13,7 @@ class Deal:
                  epic: str,
                  size: float,
                  open_date_ig_str: str,
+                 close_reason: str,
                  open_date_ig_datetime: datetime,
                  direction: str,
                  stop_factor: int,
@@ -53,6 +54,7 @@ class Deal:
         self.manual_stop = manual_stop
         self.is_manual_stop = is_manual_stop
         self.manual_stop_level = manual_stop_level
+        self.close_reason = close_reason
 
     @staticmethod
     def Create(data: dict):
@@ -80,13 +82,15 @@ class Deal:
             manual_stop=data.get("manual_stop", None),
             is_manual_stop=data.get("is_manual_stop", False),
             manual_stop_level=data.get("manual_stop_level", None),
+            close_reason=data.get("close_reason", "Unknown"),
         )
 
     def __str__(self):
         return f"{self.epic} {self.direction} {self.size} {self.open_date_ig_str} {self.close_date_ig_datetime} {self.profit} "
 
-    def close(self):
+    def close(self, close_reason: str = "Unknown"):
         self.status = "Closed"
+        self.close_reason = close_reason
 
     def set_intelligent_stop_level(self, level: float):
         self.intelligent_stop_used = True
@@ -116,7 +120,8 @@ class Deal:
             "manual_stop":self.manual_stop,
             "is_manual_stop": self.is_manual_stop,
             "size": self.size,
-            "manual_stop_level":self.manual_stop_level
+            "manual_stop_level":self.manual_stop_level,
+            "close_reason": self.close_reason
         }
 
 
@@ -194,3 +199,12 @@ class DealStore:
 
     def clear(self):
         self._collection.delete_many({"account_type": self._account_type})
+
+    def get_deals_of_trader_as_df(self, trader_id: str, consider_account_type: bool = True) -> DataFrame:
+        query = {"trader_id": trader_id}
+        if consider_account_type:
+            query.update({"account_type": self._account_type})
+        deals = self._collection.find(query)
+        df = DataFrame(list(deals))
+
+        return df

@@ -2,6 +2,7 @@ import json
 import os.path
 import time
 import traceback
+from enum import Enum
 from typing import Dict, List, Optional
 from trading_ig import IGService
 from trading_ig.rest import IGException, ApiExceededException
@@ -25,6 +26,12 @@ from datetime import datetime, timedelta
 from Connectors.tiingo import TradeType
 from UI.base_viewer import BaseViewer
 
+
+# Define an enumeration class
+class TradeResult(Enum):
+    SUCCESSFUL = 1
+    NOT_SUCCESSFUL = 2
+    EXCEPTION = 3
 
 class IG:
 

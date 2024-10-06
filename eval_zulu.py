@@ -1,9 +1,10 @@
 # region import
 import random
 import traceback
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict
 
+import pandas as pd
 import pymongo
 from pandas import DataFrame
 
@@ -67,21 +68,18 @@ def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataPr
 
     return eval_df_train
 
-
-markets = IG.get_markets_offline()
-
-for trader in ts.get_all_traders():
-
+def eval_trader(trader):
     try:
         overall_profit_trader = 0
         trader_name = trader.name
         trader_trading_minutes = 0
 
-        for symbol in trader.hist._hist_df.currency.unique():
-            print(f"Eval {trader_name} {symbol}")
+        small_hist_df = trader.hist._hist_df[trader.hist._hist_df.dateOpen_datetime_utc > "2023-10-01"]
+
+        for symbol in small_hist_df.currency.unique():
             overall_profit_trader_symbol = 0
-            for _, i in trader.hist._hist_df[trader.hist._hist_df.currency == symbol].iterrows():
-                s = symbol.replace("/","")
+            for _, i in small_hist_df[small_hist_df.currency == symbol].iterrows():
+                s = symbol.replace("/", "")
                 market = [d for d in markets if d["symbol"] == s][0]
                 df = get_test_data(tiingo=ti, symbol=s, trade_type=trade_type, dp=dp, dropbox_cache=df_cache)
                 if i.tradeType == "BUY":
@@ -89,20 +87,32 @@ for trader in ts.get_all_traders():
                 else:
                     trade_action = TradeAction.SELL
                 profit, trading_minutes = analytics.evaluate_position(df_eval=df, symbol=s, action=trade_action,
-                                            open_time=datetime.utcfromtimestamp(i["dateOpen"] / 1000).replace(tzinfo=timezone.utc),
-                                            close_time=datetime.utcfromtimestamp(i["dateClosed"] / 1000).replace(tzinfo=timezone.utc),
-                                            epic="", scaling=market["scaling"])
+                                                                      open_time=datetime.utcfromtimestamp(
+                                                                          i["dateOpen"] / 1000).replace(
+                                                                          tzinfo=timezone.utc),
+                                                                      close_time=datetime.utcfromtimestamp(
+                                                                          i["dateClosed"] / 1000).replace(
+                                                                          tzinfo=timezone.utc),
+                                                                      epic=market["epic"], scaling=market["scaling"],
+                                                                      use_isl=False)
 
                 if profit == 0:
-                    print("error")
+                    print(f"error {trader_name} {symbol}")
 
                 trader_trading_minutes += trading_minutes
                 overall_profit_trader_symbol += profit
                 overall_profit_trader += profit
 
+            print(f"{trader_name} {symbol} - {overall_profit_trader_symbol:.2f}€")
 
-            print(f"{trader_name} {symbol} - {overall_profit_trader_symbol}")
-
-        print(f"{trader_name} - {overall_profit_trader} {trader_trading_minutes / len(trader.hist._hist_df)}")
+        print(f"*****{trader_name} - {overall_profit_trader:.0f}€ {(trader_trading_minutes / len(trader.hist._hist_df)):.0f}")
     except Exception as e:
         print(f"{trader} error")
+
+markets = IG.get_markets_offline()
+
+trader = ts.get_trader_by_name("ReVeR273")
+eval_trader(trader)
+
+for trader in ts.get_all_traders():
+    eval_trader(trader)

@@ -28,25 +28,32 @@ class BaseReader:
     def get(self, key: str):
         raise NotImplementedError
 
-    def get_float(self, key: str, default:float):
+    def get_bool(self, key: str) -> bool:
+        raise NotImplementedError
+
+    def get_float(self, key:str, default:float):
         raise NotImplementedError
 
 class ConfigReader(BaseReader):
     _config = {}
 
-    def __init__(self,live_config:bool=False):
-        if live_config:
-            path = "Config/live.json"
+
+    def __init__(self, account_type: str = "DEMO"):
+        if account_type == "DEMO":
+            path = "demo.json"
         else:
-            path = "Config/demo.json"
+            path = "live.json"
 
-        with open(os.path.join(get_project_dir(), path)) as f:
-            self._config =  json.load(f)
+        with open(os.path.join(get_project_dir(), "Config", path)) as f:
+            self._config = json.load(f)
 
-    def get(self,key:str):
+    def get(self, key: str):
         return self._config[key]
 
-    def get_float(self, key:str, default:float):
+    def get_bool(self, key: str) -> bool:
+        return self.get(key)
+
+    def get_float(self, key: str, default: float) -> float:
         return self._config.get(key, default)
 
 class EnvReader(BaseReader):
