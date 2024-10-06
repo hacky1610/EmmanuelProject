@@ -111,8 +111,5 @@ def eval_trader(trader):
 
 markets = IG.get_markets_offline()
 
-trader = ts.get_trader_by_name("ReVeR273")
-eval_trader(trader)
-
 for trader in ts.get_all_traders():
     eval_trader(trader)
