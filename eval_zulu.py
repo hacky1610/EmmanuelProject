@@ -117,7 +117,9 @@ def eval_trader(trader, use_isl=False, limit = 40, stop = 40) -> List[Dict]:
                                 "trading_minutes": symbol_trading_minutes,
                                 "avg_profit": profit_per_trade,
                                 "avg_minutes": trading_minutes_per_trade,
-                                "trades": len(symbol_df)})
+                                "trades": len(symbol_df),
+                                "limit": limit,
+                                "stop": stop})
 
     except Exception as e:
         print(f"{trader} error {e}")

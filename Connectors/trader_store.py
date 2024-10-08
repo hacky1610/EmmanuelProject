@@ -67,6 +67,33 @@ class Trader:
 
         return True
 
+    def get_limit(self, symbol):
+
+        if len(self.evaluation) == 0:
+            return 0
+
+        df = DataFrame(self.evaluation)
+        df_symbol = df[df.symbol == symbol]
+
+        if len(df_symbol) == 0:
+            return 0
+
+        return df_symbol.limit.mean()
+
+    def get_stop(self, symbol):
+
+        if len(self.evaluation) == 0:
+            return 0
+
+        df = DataFrame(self.evaluation)
+        df_symbol = df[df.symbol == symbol]
+
+        if len(df_symbol) == 0:
+            return 0
+
+        return df_symbol.stop.mean()
+
+
 
 
 class TraderStore:
