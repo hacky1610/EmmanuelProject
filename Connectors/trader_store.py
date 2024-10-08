@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from pandas import DataFrame, Series
 from pymongo.database import Database
 from BL.trader_history import TraderHistory
@@ -13,6 +13,7 @@ class Trader:
         self.stop = stop
         self.limit = limit
         self.hist: TraderHistory = TraderHistory({})
+        self.evaluation = []
 
     @staticmethod
     def create(data: dict):
@@ -22,6 +23,7 @@ class Trader:
                         limit=data.get("limit", 0)
                         )
         trader.hist = TraderHistory(data.get("history", {}))
+        trader.evaluation = TraderHistory(data.get("evaluation", {}))
         return trader
 
     def to_dict(self):
@@ -29,7 +31,9 @@ class Trader:
                 "name": self.name,
                 "history": self.hist._hist,
                 "stop": self.stop,
-                "limit": self.limit}
+                "limit": self.limit,
+                "evaluation": self.evaluation
+                }
 
     def calc_ig(self, market_store: MarketStore):
         self.stop, self.limit = self.hist.calc_ig_profit(market_store)
@@ -40,6 +44,29 @@ class Trader:
         s["id"] = self.id
 
         return s
+
+    def set_evaluation(self,evaluation:List[Dict]):
+        self.evaluation = evaluation
+
+    def is_good(self, symbol:str):
+        if len(self.evaluation) == 0:
+            return False
+
+        df = DataFrame(self.evaluation)
+        df_symbol = df[df.symbol == symbol]
+
+        if len(df_symbol) == 0:
+            return False
+
+        if df_symbol.trades.sum() < 30:
+            return False
+
+        avg_profit = df_symbol.profit.sum() / df_symbol.trades.sum()
+        if avg_profit < 5:
+            return False
+
+        return True
+
 
 
 class TraderStore:
