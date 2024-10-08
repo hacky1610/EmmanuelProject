@@ -39,8 +39,8 @@ class ZuluTrader:
         self._tracer.debug(f"Check crash: {self._check_for_crash}")
         self._close_open_positions()
         #if not self._is_crash():
-        #    self._open_new_positions()
-        self._intelligent_update()
+        self._open_new_positions()
+        #self._intelligent_update()
         self._update_deals()
 
     def _is_good_ig_trader(self, trader_id: str) -> bool:
@@ -151,27 +151,27 @@ class ZuluTrader:
                         ticker: str, trader_id: str, direction: str):
 
         trader_db = self._trader_store.get_trader_by_id(trader_id)
-        trade, message = trader_db.hist.trader_performance(ticker)
-        if not trade:
-            self._tracer.warning(f"Trader {trader_id} has bad performance with {ticker}. {message}")
-            return
+        #trade, message = trader_db.hist.trader_performance(ticker)
+        #if not trade:
+        #    self._tracer.warning(f"Trader {trader_id} has bad performance with {ticker}. {message}")
+        #    return
 
-        if not self._is_good_ig_trader(trader_id):
-            self._tracer.warning(f"Trader {trader_id} is a bad trader based of Results of last IG trades")
-            return
+        #if not self._is_good_ig_trader(trader_id):
+        #    self._tracer.warning(f"Trader {trader_id} is a bad trader based of Results of last IG trades")
+        #    return
 
-        if self._deal_storage.has_id(position_id):
-            self._tracer.warning(f"Position {position_id} - {ticker} by {trader_id} is already open")
-            return
+        #if self._deal_storage.has_id(position_id):
+        #    self._tracer.warning(f"Position {position_id} - {ticker} by {trader_id} is already open")
+        #    return
 
-        if self._deal_storage.get_opened_positions(ticker) >= self._max_open_positions:
-            self._tracer.warning(f"More than {self._max_open_positions:} of {ticker} opened")
-            return
+        #if self._deal_storage.get_opened_positions(ticker) >= self._max_open_positions:
+        #    self._tracer.warning(f"More than {self._max_open_positions:} of {ticker} opened")
+        #    return
 
-        open_positions_of_trader = self._deal_storage.positions_of_same_trader(ticker=ticker, trader_id=trader_id)
-        if open_positions_of_trader >= 2:
-            self._tracer.warning(f"This trader {trader_id} has already open positions of {ticker} ")
-            return
+        #open_positions_of_trader = self._deal_storage.positions_of_same_trader(ticker=ticker, trader_id=trader_id)
+        #if open_positions_of_trader >= 2:
+        #    self._tracer.warning(f"This trader {trader_id} has already open positions of {ticker} ")
+        #    return
 
         m = self._get_market_by_ticker_or_none(markets, ticker)
         if m is None:
@@ -180,8 +180,8 @@ class ZuluTrader:
 
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
         market = self._market_store.get_market(ticker)
-        stop_pips = int(market.get_pip_value(trader_db.stop))
-        limit_pips = int(market.get_pip_value(trader_db.limit))
+        stop_pips = int(market.get_pip_value(40))
+        limit_pips = int(market.get_pip_value(40))
 
         self._tracer.debug(
             f"StopLoss {stop_pips} pips {trader_db.stop} Euro - Limit {limit_pips}  pips {trader_db.limit}€")
@@ -239,7 +239,7 @@ class ZuluTrader:
 
     @staticmethod
     def _get_newest_positions(positions: DataFrame) -> DataFrame:
-        return positions[positions.time >= datetime.now() - timedelta(minutes=20)]
+        return positions[positions.time >= datetime.now() - timedelta(minutes=60*24)]
 
     def _get_positions(self) -> DataFrame:
         positions = self._zulu_ui.get_my_open_positions()
@@ -253,8 +253,12 @@ class ZuluTrader:
             self._tracer.debug("All positions are to old")
             return positions
 
+
         positions["wl_ratio"] = positions.apply(self._calc_hist, axis=1)
         positions["trader_id"] = positions.apply(self._get_trader_id, axis=1)
+
+        return positions
+
 
         # Filter for quality
         good_positions = positions[positions.wl_ratio > self._min_wl_ration]

@@ -25,6 +25,9 @@ class ZuluTradeUI:
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, "login-content")))
 
         login_form = self._driver.find_element(By.CLASS_NAME, "login-content")
+        banner = self._driver.find_element(By.CLASS_NAME, "advertisingCookies")
+        buttons = banner.find_elements(By.TAG_NAME, "a")
+        buttons[3].click()
         inputs = login_form.find_elements(By.TAG_NAME, "input")
         inputs[0].send_keys("daniel.hackbarth@siemens.com")
         inputs[1].send_keys("Daytona1610!")

@@ -10,5 +10,7 @@ pymongo==4.5.0
 tqdm==4.66.4
 scipy
 pylint==2.17.7
+selenium==4.11.2
+webdriver_manager
 
 
