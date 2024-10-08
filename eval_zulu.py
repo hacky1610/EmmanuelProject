@@ -2,7 +2,7 @@
 import random
 import traceback
 from datetime import datetime, timezone, timedelta
-from typing import Dict
+from typing import Dict, List
 
 import pandas as pd
 import pymongo
@@ -68,48 +68,93 @@ def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataPr
 
     return eval_df_train
 
-def eval_trader(trader):
-    try:
-        overall_profit_trader = 0
-        trader_name = trader.name
-        trader_trading_minutes = 0
+def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False):
+    symbol_profit = 0
+    symbol_trading_minutes = 0
+    df_5_minute_ohlc = get_test_data(tiingo=ti, symbol=symbol, trade_type=trade_type, dp=dp, dropbox_cache=df_cache)
+    filtered_market = [d for d in markets if d["symbol"] == symbol]
+    if len(filtered_market) == 0 or df_5_minute_ohlc is None:
+        return 0, 0, 0, 0
+    market = filtered_market[0]
+    for _, i in df.iterrows():
 
+        if i.tradeType == "BUY":
+            trade_action = TradeAction.BUY
+        else:
+            trade_action = TradeAction.SELL
+        profit, trading_minutes = analytics.evaluate_position(df_eval=df_5_minute_ohlc, symbol=symbol, action=trade_action,
+                                                              open_time=datetime.utcfromtimestamp(
+                                                                  i["dateOpen"] / 1000).replace(
+                                                                  tzinfo=timezone.utc),
+                                                              close_time=datetime.utcfromtimestamp(
+                                                                  i["dateClosed"] / 1000).replace(
+                                                                  tzinfo=timezone.utc),
+                                                              epic=market["epic"], scaling=market["scaling"],
+                                                              use_isl=use_isl, limit=limit, stop=stop)
+
+        if profit == 0:
+            #print(f"error {symbol} {df_5_minute_ohlc.date} {i}")
+            pass
+
+        symbol_profit += profit
+        symbol_trading_minutes += trading_minutes
+
+    return symbol_profit, symbol_trading_minutes, symbol_profit / len(df), symbol_trading_minutes / len(df)
+
+def eval_trader(trader, use_isl=False, limit = 40, stop = 40) -> List[Dict]:
+    result_list = []
+
+    try:
         small_hist_df = trader.hist._hist_df[trader.hist._hist_df.dateOpen_datetime_utc > "2023-10-01"]
 
-        for symbol in small_hist_df.currency.unique():
-            overall_profit_trader_symbol = 0
-            for _, i in small_hist_df[small_hist_df.currency == symbol].iterrows():
-                s = symbol.replace("/", "")
-                market = [d for d in markets if d["symbol"] == s][0]
-                df = get_test_data(tiingo=ti, symbol=s, trade_type=trade_type, dp=dp, dropbox_cache=df_cache)
-                if i.tradeType == "BUY":
-                    trade_action = TradeAction.BUY
-                else:
-                    trade_action = TradeAction.SELL
-                profit, trading_minutes = analytics.evaluate_position(df_eval=df, symbol=s, action=trade_action,
-                                                                      open_time=datetime.utcfromtimestamp(
-                                                                          i["dateOpen"] / 1000).replace(
-                                                                          tzinfo=timezone.utc),
-                                                                      close_time=datetime.utcfromtimestamp(
-                                                                          i["dateClosed"] / 1000).replace(
-                                                                          tzinfo=timezone.utc),
-                                                                      epic=market["epic"], scaling=market["scaling"],
-                                                                      use_isl=False)
+        for symbol in small_hist_df.currency_clean.unique():
 
-                if profit == 0:
-                    print(f"error {trader_name} {symbol}")
+            symbol_df = small_hist_df[small_hist_df.currency_clean == symbol]
+            symbol_profit, symbol_trading_minutes, profit_per_trade, trading_minutes_per_trade = eval_symbol(symbol, symbol_df, limit, stop, use_isl)
 
-                trader_trading_minutes += trading_minutes
-                overall_profit_trader_symbol += profit
-                overall_profit_trader += profit
+            result_list.append({"symbol": symbol,
+                                "profit": symbol_profit,
+                                "trading_minutes": symbol_trading_minutes,
+                                "avg_profit": profit_per_trade,
+                                "avg_minutes": trading_minutes_per_trade,
+                                "trades": len(symbol_df)})
 
-            print(f"{trader_name} {symbol} - {overall_profit_trader_symbol:.2f}€")
-
-        print(f"*****{trader_name} - {overall_profit_trader:.0f}€ {(trader_trading_minutes / len(trader.hist._hist_df)):.0f}")
     except Exception as e:
-        print(f"{trader} error")
+        print(f"{trader} error {e}")
+        traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+        print(f"Error: {e} File:{traceback_str}")
+
+    return result_list
 
 markets = IG.get_markets_offline()
 
-for trader in ts.get_all_traders():
-    eval_trader(trader)
+traders = list(ts.get_all_traders())
+random.shuffle(traders)
+
+for trader in traders:
+    best_overall_profit = -100000
+    best_result = None
+    best_result_df = None
+    best_combo = ""
+    for limit in [30,45,60, 75]:
+        for stop in [30, 45, 60, 75]:
+            result_list = eval_trader(trader, limit=limit, stop=stop)
+            if len(result_list) > 0:
+                df_result = DataFrame(result_list)
+                if df_result.profit.sum() > best_overall_profit:
+                    best_overall_profit = df_result.profit.sum()
+                    best_result = result_list
+                    best_result_df = df_result
+                    best_combo = f"Limit {limit} Stop {stop}"
+
+    if best_result is not None:
+        avg_profit = best_result_df.profit.sum() / best_result_df.trades.sum()
+        if avg_profit > 5:
+            print(f"++++++++++++++++++++++++++++++")
+            print(f"{trader.name} has good result {best_combo} {avg_profit}€")
+            print(best_result)
+            trader.set_evaluation(best_result)
+            ts.save(trader)
+        else:
+            print(f"{trader.name} has BAD result {avg_profit}€ Avg")
+

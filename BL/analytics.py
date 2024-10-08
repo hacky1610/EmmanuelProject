@@ -169,7 +169,9 @@ class Analytics:
                  scaling: int,
                  open_time,
                  close_time,
-                 use_isl:bool = False) -> EvalResult:
+                 use_isl:bool = False,
+                 limit = 40,
+                 stop = 40) -> EvalResult:
 
         assert len(df_eval) > 0
 
@@ -184,9 +186,9 @@ class Analytics:
 
         distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                                        intelligent_stop_distance=10)
-        stop_pip = market.get_pip_value(35, scaling)
-        limit_pip = market.get_pip_value(35, scaling)
-        isl_entry_pip = market.get_pip_value(20, scaling)
+        stop_pip = market.get_pip_value(stop, scaling)
+        limit_pip = market.get_pip_value(limit, scaling)
+        isl_entry_pip = market.get_pip_value(15, scaling)
 
         open_date_str = open_time.strftime('%Y-%m-%dT%H:%M:%S.000Z')
         close_date_plus_1d_str = (close_time + timedelta(days=1)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
