@@ -23,7 +23,7 @@ class Trader:
                         limit=data.get("limit", 0)
                         )
         trader.hist = TraderHistory(data.get("history", {}))
-        trader.evaluation = TraderHistory(data.get("evaluation", {}))
+        trader.evaluation = data.get("evaluation", {})
         return trader
 
     def to_dict(self):

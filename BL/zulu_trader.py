@@ -173,6 +173,10 @@ class ZuluTrader:
         #    self._tracer.warning(f"This trader {trader_id} has already open positions of {ticker} ")
         #    return
 
+        if not trader_db.is_good(ticker):
+            self._tracer.debug(f"Trader {trader_id} is not good enouth {ticker}")
+            return
+
         m = self._get_market_by_ticker_or_none(markets, ticker)
         if m is None:
             self._tracer.warning(f"Could not find market for {ticker}")
