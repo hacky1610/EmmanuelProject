@@ -33,7 +33,7 @@ def trade(conf_reader: BaseReader, account_type: str = "DEMO"):
     ############################################################
     ig = IG(tracer=tracer, conf_reader=conf_reader)
     options = Options()
-    options.add_argument('--headless')
+    #options.add_argument('--headless')
     service = Service(ChromeDriverManager().install())
 
     check_crash = conf_reader.get_bool("check_crash")
