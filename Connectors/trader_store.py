@@ -93,6 +93,9 @@ class Trader:
 
         return df_symbol.stop.mean()
 
+    def get_eval(self):
+        return self.evaluation
+
 
 
 
@@ -114,16 +117,19 @@ class TraderStore:
         else:
             self._collection.insert_one(trader.to_dict())
 
-    def get_trader_by_id(self, trader_id) -> Trader:
-        return Trader.create(self._collection.find_one({"id": trader_id}))
+    def get_trader_by_id(self, trader_id, load_history = False) -> Trader:
+        if load_history:
+            return Trader.create(self._collection.find_one({"id": trader_id}))
+        else:
+            return Trader.create(self._collection.find_one({"id": trader_id}, {"history":0}))
 
     def get_trader_by_name(self, name) -> Trader:
         return Trader.create(self._collection.find_one({"name": name}))
 
-    def get_all_traders(self) -> List[Trader]:
+    def get_all_traders(self, load_history = False) -> List[Trader]:
         ids = list(self._collection.find({}, {'id': 1}))
         for trader_id in ids:
-            yield self.get_trader_by_id(trader_id["id"])
+            yield self.get_trader_by_id(trader_id["id"], load_history)
 
     def get_all_trades_df(self) -> DataFrame:
         df = DataFrame()
