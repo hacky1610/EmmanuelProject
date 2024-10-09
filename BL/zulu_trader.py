@@ -244,7 +244,7 @@ class ZuluTrader:
 
     @staticmethod
     def _get_newest_positions(positions: DataFrame) -> DataFrame:
-        return positions[positions.time >= datetime.now() - timedelta(minutes=60*24)]
+        return positions[positions.time >= datetime.now() - timedelta(minutes=10)]
 
     def _get_positions(self) -> DataFrame:
         positions = self._zulu_ui.get_my_open_positions()
@@ -258,8 +258,6 @@ class ZuluTrader:
             self._tracer.debug("All positions are to old")
             return positions
 
-
-        positions["wl_ratio"] = positions.apply(self._calc_hist, axis=1)
         positions["trader_id"] = positions.apply(self._get_trader_id, axis=1)
 
         return positions

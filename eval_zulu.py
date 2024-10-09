@@ -130,7 +130,7 @@ def eval_trader(trader, use_isl=False, limit = 40, stop = 40) -> List[Dict]:
 
 markets = IG.get_markets_offline()
 
-traders = list(ts.get_all_traders())
+traders = list(ts.get_all_traders(True))
 random.shuffle(traders)
 
 for trader in traders:
