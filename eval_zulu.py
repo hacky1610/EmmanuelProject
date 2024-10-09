@@ -101,25 +101,35 @@ def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False
 
     return symbol_profit, symbol_trading_minutes, symbol_profit / len(df), symbol_trading_minutes / len(df)
 
-def eval_trader(trader, use_isl=False, limit = 40, stop = 40) -> List[Dict]:
+def eval_trader(trader, use_isl=False) -> List[Dict]:
     result_list = []
 
     try:
         small_hist_df = trader.hist._hist_df[trader.hist._hist_df.dateOpen_datetime_utc > "2023-10-01"]
 
         for symbol in small_hist_df.currency_clean.unique():
+            best_overall_profit = -100000
+            best_result = None
+            for limit in [30, 45, 60, 75]:
+                for stop in [30, 45, 60, 75]:
+                    symbol_df = small_hist_df[small_hist_df.currency_clean == symbol]
+                    symbol_profit, symbol_trading_minutes, profit_per_trade, trading_minutes_per_trade = eval_symbol(symbol, symbol_df, limit, stop, use_isl)
 
-            symbol_df = small_hist_df[small_hist_df.currency_clean == symbol]
-            symbol_profit, symbol_trading_minutes, profit_per_trade, trading_minutes_per_trade = eval_symbol(symbol, symbol_df, limit, stop, use_isl)
+                    if symbol_profit > best_overall_profit:
+                        best_overall_profit = symbol_profit
+                        best_result = {"symbol": symbol,
+                         "profit": symbol_profit,
+                         "trading_minutes": symbol_trading_minutes,
+                         "avg_profit": profit_per_trade,
+                         "avg_minutes": trading_minutes_per_trade,
+                         "trades": len(symbol_df),
+                         "limit": limit,
+                         "stop": stop}
 
-            result_list.append({"symbol": symbol,
-                                "profit": symbol_profit,
-                                "trading_minutes": symbol_trading_minutes,
-                                "avg_profit": profit_per_trade,
-                                "avg_minutes": trading_minutes_per_trade,
-                                "trades": len(symbol_df),
-                                "limit": limit,
-                                "stop": stop})
+            if best_result is not None:
+                result_list.append(best_result)
+
+
 
     except Exception as e:
         print(f"{trader} error {e}")
@@ -134,29 +144,10 @@ traders = list(ts.get_all_traders())
 random.shuffle(traders)
 
 for trader in traders:
-    best_overall_profit = -100000
-    best_result = None
-    best_result_df = None
-    best_combo = ""
-    for limit in [30,45,60, 75]:
-        for stop in [30, 45, 60, 75]:
-            result_list = eval_trader(trader, limit=limit, stop=stop)
-            if len(result_list) > 0:
-                df_result = DataFrame(result_list)
-                if df_result.profit.sum() > best_overall_profit:
-                    best_overall_profit = df_result.profit.sum()
-                    best_result = result_list
-                    best_result_df = df_result
-                    best_combo = f"Limit {limit} Stop {stop}"
 
-    if best_result is not None:
-        avg_profit = best_result_df.profit.sum() / best_result_df.trades.sum()
-        if avg_profit > 5:
-            print(f"++++++++++++++++++++++++++++++")
-            print(f"{trader.name} has good result {best_combo} {avg_profit}€")
-            print(best_result)
+
+            result_list = eval_trader(trader)
             trader.set_evaluation(best_result)
             ts.save(trader)
-        else:
-            print(f"{trader.name} has BAD result {avg_profit}€ Avg")
+
 
