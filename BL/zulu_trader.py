@@ -177,6 +177,7 @@ class ZuluTrader:
             self._tracer.debug(f"Trader {trader_id} is not good enouth {ticker}")
             return
 
+
         m = self._get_market_by_ticker_or_none(markets, ticker)
         if m is None:
             self._tracer.warning(f"Could not find market for {ticker}")
@@ -184,8 +185,8 @@ class ZuluTrader:
 
         self._tracer.write(f"Try to open position {position_id} - {ticker} by {trader_id}")
         market = self._market_store.get_market(ticker)
-        stop_pips = int(market.get_pip_value(40))
-        limit_pips = int(market.get_pip_value(40))
+        stop_pips = int(market.get_pip_value(trader_db.get_stop(ticker)))
+        limit_pips = int(market.get_pip_value(trader_db.get_limit(ticker)))
 
         self._tracer.debug(
             f"StopLoss {stop_pips} pips {trader_db.stop} Euro - Limit {limit_pips}  pips {trader_db.limit}€")
