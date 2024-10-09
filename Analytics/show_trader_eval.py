@@ -59,6 +59,6 @@ traders = ts.get_all_traders()
 for trader in traders:
     evals = trader.get_eval()
     for e in evals:
+        print(f"{trader.name} - {trader.id}")
         if trader.is_good(e["symbol"]):
-            print(trader.name)
             print(e)
