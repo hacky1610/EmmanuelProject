@@ -133,7 +133,7 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
                          "trading_minutes": result.trading_minutes,
                          "avg_profit": result.avg_profit,
                          "avg_minutes": result.avg_minutes,
-                         "newest_trade": result.avg_minutes,
+                         "newest_trade": result.newest_trade,
                          "trades": len(symbol_df),
                          "limit": limit,
                          "stop": stop}
@@ -154,6 +154,7 @@ markets = IG.get_markets_offline()
 
 traders = ts.get_all_traders(True)
 for trader in traders:
+    print(f"Train {trader.name}")
     result_list = eval_trader(trader)
     trader.set_evaluation(result_list)
     ts.save(trader)
