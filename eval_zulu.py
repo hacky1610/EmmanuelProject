@@ -76,6 +76,7 @@ def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False
     if len(filtered_market) == 0 or df_5_minute_ohlc is None:
         return 0, 0, 0, 0
     market = filtered_market[0]
+    newest_trade = datetime(1970,1,1)
     for _, i in df.iterrows():
 
         if i.tradeType == "BUY":
@@ -96,10 +97,16 @@ def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False
             #print(f"error {symbol} {df_5_minute_ohlc.date} {i}")
             pass
 
+        trade_time = (datetime.utcfromtimestamp(
+            i["dateOpen"] / 1000))
+
+        if trade_time > newest_trade:
+            newest_trade = trade_time
+
         symbol_profit += profit
         symbol_trading_minutes += trading_minutes
 
-    return symbol_profit, symbol_trading_minutes, symbol_profit / len(df), symbol_trading_minutes / len(df)
+    return symbol_profit, symbol_trading_minutes, symbol_profit / len(df), symbol_trading_minutes / len(df), newest_trade
 
 def eval_trader(trader, use_isl=False) -> List[Dict]:
     result_list = []
@@ -113,7 +120,7 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
             for limit in [30, 45, 60, 75]:
                 for stop in [30, 45, 60, 75]:
                     symbol_df = small_hist_df[small_hist_df.currency_clean == symbol]
-                    symbol_profit, symbol_trading_minutes, profit_per_trade, trading_minutes_per_trade = eval_symbol(symbol, symbol_df, limit, stop, use_isl)
+                    symbol_profit, symbol_trading_minutes, profit_per_trade, trading_minutes_per_trade, newest_trade = eval_symbol(symbol, symbol_df, limit, stop, use_isl)
 
                     if symbol_profit > best_overall_profit:
                         best_overall_profit = symbol_profit
@@ -122,6 +129,7 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
                          "trading_minutes": symbol_trading_minutes,
                          "avg_profit": profit_per_trade,
                          "avg_minutes": trading_minutes_per_trade,
+                         "newest_trade": newest_trade,
                          "trades": len(symbol_df),
                          "limit": limit,
                          "stop": stop}
@@ -140,14 +148,10 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
 
 markets = IG.get_markets_offline()
 
-traders = list(ts.get_all_traders(True))
-random.shuffle(traders)
-
+traders = ts.get_all_traders(True)
 for trader in traders:
-
-
-            result_list = eval_trader(trader)
-            trader.set_evaluation(best_result)
-            ts.save(trader)
+    result_list = eval_trader(trader)
+    trader.set_evaluation(result_list)
+    ts.save(trader)
 
 

@@ -1,3 +1,5 @@
+import random
+from datetime import datetime
 from typing import List, Dict
 from pandas import DataFrame, Series
 from pymongo.database import Database
@@ -52,10 +54,20 @@ class Trader:
         if len(self.evaluation) == 0:
             return False
 
+
+
         df = DataFrame(self.evaluation)
         df_symbol = df[df.symbol == symbol]
 
         if len(df_symbol) == 0:
+            return False
+
+        if "newest_trade" not in df_symbol.columns:
+            return False
+
+        time = df_symbol["newest_trade"].item()
+        delta = datetime.now() - time
+        if delta.days > 7:
             return False
 
         if df_symbol.trades.sum() < 30:
@@ -64,6 +76,8 @@ class Trader:
         avg_profit = df_symbol.profit.sum() / df_symbol.trades.sum()
         if avg_profit < 5:
             return False
+
+
 
         return True
 
@@ -126,8 +140,10 @@ class TraderStore:
     def get_trader_by_name(self, name) -> Trader:
         return Trader.create(self._collection.find_one({"name": name}))
 
-    def get_all_traders(self, load_history = False) -> List[Trader]:
+    def get_all_traders(self, load_history = False, shuffled:bool = False) -> List[Trader]:
         ids = list(self._collection.find({}, {'id': 1}))
+        if shuffled:
+            random.shuffle(ids)
         for trader_id in ids:
             yield self.get_trader_by_id(trader_id["id"], load_history)
 
