@@ -9,7 +9,7 @@ import pymongo
 from pandas import DataFrame
 
 from BL import DataProcessor, ConfigReader, measure_time
-from BL.analytics import Analytics
+from BL.analytics import Analytics, PositionEvalResult
 from BL.datatypes import TradeAction
 from BL.eval_result import EvalResultCollection, EvalResult
 
@@ -68,13 +68,16 @@ def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataPr
 
     return eval_df_train
 
-def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False):
+
+
+
+def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False) -> PositionEvalResult:
     symbol_profit = 0
     symbol_trading_minutes = 0
     df_5_minute_ohlc = get_test_data(tiingo=ti, symbol=symbol, trade_type=trade_type, dp=dp, dropbox_cache=df_cache)
     filtered_market = [d for d in markets if d["symbol"] == symbol]
     if len(filtered_market) == 0 or df_5_minute_ohlc is None:
-        return 0, 0, 0, 0
+        return PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1))
     market = filtered_market[0]
     newest_trade = datetime(1970,1,1)
     for _, i in df.iterrows():
@@ -105,8 +108,9 @@ def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False
 
         symbol_profit += profit
         symbol_trading_minutes += trading_minutes
-
-    return symbol_profit, symbol_trading_minutes, symbol_profit / len(df), symbol_trading_minutes / len(df), newest_trade
+    return PositionEvalResult(symbol_profit, symbol_trading_minutes,
+                              symbol_profit / len(df),
+                              symbol_trading_minutes / len(df), newest_trade)
 
 def eval_trader(trader, use_isl=False) -> List[Dict]:
     result_list = []
@@ -115,21 +119,21 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
         small_hist_df = trader.hist._hist_df[trader.hist._hist_df.dateOpen_datetime_utc > "2023-10-01"]
 
         for symbol in small_hist_df.currency_clean.unique():
-            best_overall_profit = -100000
+            best_overall_profit = PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1))
             best_result = None
             for limit in [30, 45, 60, 75]:
                 for stop in [30, 45, 60, 75]:
                     symbol_df = small_hist_df[small_hist_df.currency_clean == symbol]
-                    symbol_profit, symbol_trading_minutes, profit_per_trade, trading_minutes_per_trade, newest_trade = eval_symbol(symbol, symbol_df, limit, stop, use_isl)
+                    result = eval_symbol(symbol, symbol_df, limit, stop, use_isl)
 
-                    if symbol_profit > best_overall_profit:
-                        best_overall_profit = symbol_profit
+                    if result.profit > best_overall_profit.profit:
+                        best_overall_profit = result
                         best_result = {"symbol": symbol,
-                         "profit": symbol_profit,
-                         "trading_minutes": symbol_trading_minutes,
-                         "avg_profit": profit_per_trade,
-                         "avg_minutes": trading_minutes_per_trade,
-                         "newest_trade": newest_trade,
+                         "profit": result.profit,
+                         "trading_minutes": result.trading_minutes,
+                         "avg_profit": result.avg_profit,
+                         "avg_minutes": result.avg_minutes,
+                         "newest_trade": result.avg_minutes,
                          "trades": len(symbol_df),
                          "limit": limit,
                          "stop": stop}

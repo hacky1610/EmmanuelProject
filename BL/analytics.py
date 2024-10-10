@@ -1,6 +1,7 @@
 import datetime
 import sys
 from collections import namedtuple
+from typing import NamedTuple
 
 from tqdm import tqdm
 
@@ -16,6 +17,18 @@ import pandas as pd
 from datetime import timedelta
 from UI.base_viewer import BaseViewer
 from dateutil import parser
+
+class PositionEvalResult(NamedTuple):
+    """Konfigurationsdaten für den Handel.
+
+  symbol_profit, symbol_trading_minutes, symbol_profit / len(df), symbol_trading_minutes / len(df), newest_trade
+    """
+    profit: float
+    trading_minutes: int
+    avg_profit: float
+    avg_minutes: float
+    newest_trade: datetime.datetime
+
 
 
 class Analytics:
