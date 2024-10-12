@@ -14,7 +14,7 @@ client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db
 
 db = client["ZuluDB"]
 options = Options()
-options.add_argument('--headless')
+#options.add_argument('--headless') 
 service = Service(ChromeDriverManager().install())
 ts = TraderStore(db)
 driver = webdriver.Chrome(options=options, service=service)

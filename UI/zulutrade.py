@@ -20,18 +20,18 @@ class ZuluTradeUI:
 
     def login(self):
         self._driver.get("https://www.zulutrade.com/login")
-        wait = WebDriverWait(self._driver, 4)
+        wait = WebDriverWait(self._driver, 20)
 
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "login-content")))
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "placeholderName")))
 
-        login_form = self._driver.find_element(By.CLASS_NAME, "login-content")
-        banner = self._driver.find_element(By.CLASS_NAME, "advertisingCookies")
-        buttons = banner.find_elements(By.TAG_NAME, "a")
-        buttons[3].click()
+        login_form = self._driver.find_element(By.TAG_NAME, "form")
+        #banner = self._driver.find_element(By.CLASS_NAME, "advertisingCookies")
+        #buttons = banner.find_elements(By.TAG_NAME, "a")
+        #buttons[3].click()
         inputs = login_form.find_elements(By.TAG_NAME, "input")
-        inputs[0].send_keys("daniel.hackbarth@siemens.com")
+        inputs[0].send_keys("Hacky1610@gmx.de")
         inputs[1].send_keys("Daytona1610!")
-        login = self._driver.find_element(By.CLASS_NAME, "fillBtn")
+        login = self._driver.find_element(By.CLASS_NAME, "btnAccount")
         login.click()
         time.sleep(5)
 
@@ -68,6 +68,9 @@ class ZuluTradeUI:
     def get_leaders(self):
 
         self._driver.get("https://www.zulutrade.com/traders/list/75932")
+        banner = self._driver.find_element(By.CLASS_NAME, "advertisingCookies")
+        buttons = banner.find_elements(By.TAG_NAME, "a")
+        buttons[3].click()
         tabs = self._driver.find_element(By.CLASS_NAME, "zuluTabs")
         links = tabs.find_elements(By.TAG_NAME, "a")
 
@@ -103,6 +106,9 @@ class ZuluTradeUI:
         page_source = self._driver.page_source
         soup = BeautifulSoup(page_source, "html.parser")
         table = soup.find("table", {"id": "example"})
+
+        if table is None:
+            return DataFrame()
         rows = table.findAll("tr")[1:]
 
         data = []
