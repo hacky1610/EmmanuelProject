@@ -186,7 +186,7 @@ class TraderHistory:
         return True, "OK"
 
     def __str__(self):
-        return f"{self.get_wl_ratio()} - {self.get_ig_profit()}"
+        return f"{self.get_wl_ratio()}"
 
     def calc_ig_profit(self, market_store: MarketStore) -> (int, int):
 
@@ -261,10 +261,6 @@ class TraderHistory:
                             self.median_open_hours(),
                             self.open_hours_ratio(),
                             self.get_median_invested_amount(),
-                            self._hist_df["drawdown"].min(),
-                            self._hist_df["drawdown"].median(),
-                            self._hist_df["ig_custom"].sum(),
-                            self._hist_df["ig_custom_name"].iloc[0],
                             rating,
                             text],
                       index=["wl_ratio",
@@ -278,9 +274,5 @@ class TraderHistory:
                              "open_hours",
                              "open_hours_ratio",
                              "invested_amount",
-                             "drawdown_min",
-                             "drawdown_median",
-                             "ig_custom",
-                             "ig_custom_name",
                              "rating",
                              "comment"])
