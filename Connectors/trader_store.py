@@ -65,9 +65,12 @@ class Trader:
         if "newest_trade" not in df_symbol.columns:
             return False
 
-        time = df_symbol["newest_trade"].item()
-        delta = datetime.now() - time
-        if delta.days > 7:
+        try:
+            time = df_symbol["newest_trade"].item()
+            delta = datetime.now() - time
+            if delta.days > 7:
+                return False
+        except Exception:
             return False
 
         if df_symbol.trades.sum() < 30:

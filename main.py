@@ -1,3 +1,5 @@
+import time
+
 from BL import ConfigReader, EnvReader
 from zulu_trade import trade
 import sys
@@ -23,7 +25,9 @@ def main():
         account_type = conf_reader.get("Type")
 
     print(f"Trade {account_type} account")
-    trade(conf_reader, account_type)
+    while True:
+        trade(conf_reader, account_type)
+        time.sleep(60 * 8)
 
 
 if __name__ == "__main__":
