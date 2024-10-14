@@ -59,6 +59,9 @@ traders = ts.get_all_traders()
 for trader in traders:
     evals = trader.get_eval()
     for e in evals:
-        if trader.is_good(e["symbol"]):
-            print(f"{trader.name} -  https://www.zulutrade.com/trader/{trader.id}/trading?t=10000&m=1")
-            print(e)
+        try:
+            if trader.is_good(e["symbol"]):
+                print(f"{trader.name} -  https://www.zulutrade.com/trader/{trader.id}/trading?t=10000&m=1")
+                print(e)
+        except Exception:
+            pass

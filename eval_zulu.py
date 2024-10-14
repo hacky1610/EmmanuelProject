@@ -152,7 +152,7 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
 
 markets = IG.get_markets_offline()
 
-traders = ts.get_all_traders(True)
+traders = ts.get_all_traders(True, True)
 for trader in traders:
     print(f"Train {trader.name}")
     result_list = eval_trader(trader)
