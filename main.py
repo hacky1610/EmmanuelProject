@@ -27,7 +27,7 @@ def main():
     print(f"Trade {account_type} account")
     while True:
         trade(conf_reader, account_type)
-        time.sleep(60 * 8)
+        time.sleep(60 * 7)
 
 
 if __name__ == "__main__":
