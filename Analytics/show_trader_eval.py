@@ -56,9 +56,16 @@ ts = TraderStore(db)
 
 traders = ts.get_all_traders()
 
+eval_list = []
 for trader in traders:
     evals = trader.get_eval()
     for e in evals:
         if trader.is_good(e["symbol"]):
-            print(f"{trader.name} -  https://www.zulutrade.com/trader/{trader.id}/trading?t=10000&m=1")
-            print(e)
+            e["name"] = trader.name
+            e["link"] = f"https://www.zulutrade.com/trader/{trader.id}/trading?t=10000&m=1"
+            eval_list.append(e)
+
+df = DataFrame(eval_list)
+df = df.sort_values(by='profit', ascending=False)
+df.to_html("/home/daniel/Documents/evals.html")
+print(df)

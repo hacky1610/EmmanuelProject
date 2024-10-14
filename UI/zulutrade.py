@@ -34,6 +34,17 @@ class ZuluTradeUI:
         login = self._driver.find_element(By.CLASS_NAME, "btnAccount")
         login.click()
         time.sleep(5)
+        icon = self._driver.find_element(By.CLASS_NAME, "userIcon")
+        icon.click()
+        register = self._driver.find_element(By.CLASS_NAME, "loginRegister")
+        menu = register.find_element(By.CLASS_NAME,"dropdown_menu")
+        c = menu.find_element(By.XPATH,  "preceding-sibling::*[1]")
+        c.click()
+        radios = menu.find_elements(By.TAG_NAME, "label")
+        radios[1].click()
+        pass
+
+
 
     def close(self):
         self._driver.close()
