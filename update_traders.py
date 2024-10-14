@@ -42,7 +42,7 @@ ts = TraderStore(db)
 ms = MarketStore(db)
 df = DataFrame()
 
-for trader in ts.get_all_traders():
+for trader in ts.get_all_traders(True, True):
     try:
         update_trader(trader, False)
         df = df.append(trader.get_statistic(), ignore_index=True)
