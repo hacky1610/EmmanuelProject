@@ -12,14 +12,13 @@ import pandas as pd
 
 class PlotlyViewer(BaseViewer):
 
-    def __init__(self, cache: BaseCache):
+    def __init__(self):
         super().__init__()
         self.fig = None
         self.df = None
         self.df_eval = None
         self.title = ""
         self._level_list = []
-        self._cache = cache
 
     def init(self, title, df, df_eval):
         self.df = df

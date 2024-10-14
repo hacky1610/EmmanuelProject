@@ -1,7 +1,7 @@
 import datetime
 import sys
 from collections import namedtuple
-from typing import NamedTuple
+from typing import NamedTuple, List
 
 from tqdm import tqdm
 
@@ -28,6 +28,8 @@ class PositionEvalResult(NamedTuple):
     avg_profit: float
     avg_minutes: float
     newest_trade: datetime.datetime
+    trades: List
+    incorrect_trades: int
 
 
 
@@ -184,12 +186,11 @@ class Analytics:
                  close_time,
                  use_isl:bool = False,
                  limit = 40,
-                 stop = 40) -> EvalResult:
+                 stop = 40) -> (int, int, TradeResult):
 
         assert len(df_eval) > 0
 
         trading_minutes = 0
-        trades = []
         market = self._market_store.get_market(symbol)
 
         if market is None:
@@ -210,10 +211,9 @@ class Analytics:
         df_eval = df_eval[df_eval.date < close_date_plus_1d_str]
 
         if len(df_eval) == 0:
-            return 0,0
+            return 0,0, []
         open_price = df_eval.close.iloc[0]
         trade = TradeResult(action=action, open_time=df_eval.date.iloc[0], opening=open_price)
-        trades.append(trade)
 
         if action == TradeAction.BUY:
             stop_price = open_price - stop_pip
@@ -235,18 +235,22 @@ class Analytics:
             if date_obj > close_time:
                 if action == TradeAction.BUY:
                     profit = market.get_euro_value(close - open_price, scaling)
+                    trade.set_result(df_eval.close.iloc[current_index], df_eval.date.iloc[current_index], profit)
                 else:
                     profit = market.get_euro_value(open_price - close, scaling)
+                    trade.set_result(df_eval.close.iloc[current_index], df_eval.date.iloc[current_index], profit)
                 break
 
             if action == TradeAction.BUY:
                 if high > limit_price:
                     # Won
                     profit = market.get_euro_value(limit_price - open_price, scaling)
+                    trade.set_result(limit_price, df_eval.date.iloc[current_index], profit)
                     break
                 elif low < stop_price:
                     # Loss
                     profit = market.get_euro_value(stop_price - open_price, scaling)
+                    trade.set_result(stop_price, df_eval.date.iloc[current_index],profit)
                     break
 
                 if use_isl:
@@ -260,9 +264,11 @@ class Analytics:
                 if low < limit_price:
                     #won
                     profit = market.get_euro_value(open_price - limit_price, scaling)
+                    trade.set_result(limit_price, df_eval.date.iloc[current_index], profit)
                     break
                 elif high > stop_price:
                     profit = market.get_euro_value(open_price - stop_price, scaling)
+                    trade.set_result(limit_price, df_eval.date.iloc[current_index], profit)
                     break
 
                 if use_isl:
@@ -272,7 +278,7 @@ class Analytics:
                             stop_price = new_stop_level
                             trade.set_intelligent_stop_used()
 
-        return profit, trading_minutes
+        return profit, trading_minutes, trade
 
 
 

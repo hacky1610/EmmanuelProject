@@ -67,5 +67,6 @@ for trader in traders:
 
 df = DataFrame(eval_list)
 df = df.sort_values(by='profit', ascending=False)
-df.to_html("/home/daniel/Documents/evals.html")
+
 print(df)
+df.to_html("/home/daniel/Documents/evals.html")

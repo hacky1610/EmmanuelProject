@@ -50,7 +50,7 @@ ds = DealStore(db, "DEMO")
 analytics = Analytics(ms, ig)
 trade_type = TradeType.FX
 ps = PredictorStore(db)
-_viewer = BaseViewer()
+_viewer = PlotlyViewer()
 
 ts = TraderStore(db)
 
@@ -71,22 +71,24 @@ def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataPr
 
 
 
-def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False) -> PositionEvalResult:
+def eval_symbol(symbol, df:DataFrame, df_5_minute_ohlc: DataFrame, limit:float, stop:float,use_isl:bool=False) -> PositionEvalResult:
     symbol_profit = 0
     symbol_trading_minutes = 0
-    df_5_minute_ohlc = get_test_data(tiingo=ti, symbol=symbol, trade_type=trade_type, dp=dp, dropbox_cache=df_cache)
     filtered_market = [d for d in markets if d["symbol"] == symbol]
     if len(filtered_market) == 0 or df_5_minute_ohlc is None:
-        return PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1))
+        return PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1), [])
     market = filtered_market[0]
     newest_trade = datetime(1970,1,1)
+    trades = []
+    good_trades = 0
+    incorrect_trades = 0
     for _, i in df.iterrows():
 
         if i.tradeType == "BUY":
             trade_action = TradeAction.BUY
         else:
             trade_action = TradeAction.SELL
-        profit, trading_minutes = analytics.evaluate_position(df_eval=df_5_minute_ohlc, symbol=symbol, action=trade_action,
+        profit, trading_minutes, trade = analytics.evaluate_position(df_eval=df_5_minute_ohlc, symbol=symbol, action=trade_action,
                                                               open_time=datetime.utcfromtimestamp(
                                                                   i["dateOpen"] / 1000).replace(
                                                                   tzinfo=timezone.utc),
@@ -96,9 +98,12 @@ def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False
                                                               epic=market["epic"], scaling=market["scaling"],
                                                               use_isl=use_isl, limit=limit, stop=stop)
 
-        if profit == 0:
-            #print(f"error {symbol} {df_5_minute_ohlc.date} {i}")
-            pass
+        if profit != 0:
+            good_trades += 1
+            trades.append(trade)
+        else:
+            incorrect_trades += 0
+
 
         trade_time = (datetime.utcfromtimestamp(
             i["dateOpen"] / 1000))
@@ -109,8 +114,8 @@ def eval_symbol(symbol, df:DataFrame, limit:float, stop:float,use_isl:bool=False
         symbol_profit += profit
         symbol_trading_minutes += trading_minutes
     return PositionEvalResult(symbol_profit, symbol_trading_minutes,
-                              symbol_profit / len(df),
-                              symbol_trading_minutes / len(df), newest_trade)
+                              symbol_profit / good_trades,
+                              symbol_trading_minutes / good_trades, newest_trade, trades, incorrect_trades)
 
 def eval_trader(trader, use_isl=False) -> List[Dict]:
     result_list = []
@@ -119,13 +124,14 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
         small_hist_df = trader.hist._hist_df[trader.hist._hist_df.dateOpen_datetime_utc > "2023-10-01"]
 
         for symbol in small_hist_df.currency_clean.unique():
-            best_overall_profit = PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1))
+            best_overall_profit = PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1), [], 0)
+            test_data = get_test_data(tiingo=ti, symbol=symbol, trade_type=trade_type, dp=dp, dropbox_cache=df_cache)
+            symbol_df = small_hist_df[small_hist_df.currency_clean == symbol]
             best_result = None
             for limit in [30, 45, 60, 75]:
                 for stop in [30, 45, 60, 75]:
-                    symbol_df = small_hist_df[small_hist_df.currency_clean == symbol]
-                    result = eval_symbol(symbol, symbol_df, limit, stop, use_isl)
 
+                    result = eval_symbol(symbol, symbol_df, test_data,  limit, stop, use_isl)
                     if result.profit > best_overall_profit.profit:
                         best_overall_profit = result
                         best_result = {"symbol": symbol,
@@ -139,8 +145,16 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
                          "stop": stop}
 
             if best_result is not None:
+                _viewer.init("Foo", test_data, DataFrame())
+                _viewer.print_graph()
+                for r in best_overall_profit.trades:
+                    _viewer.print_trade_result(r,test_data )
+                _viewer.show()
                 result_list.append(best_result)
 
+                print(f"{trader.name} - {symbol} - {best_overall_profit.profit} - {best_overall_profit.trading_minutes} - {best_overall_profit.avg_profit} - {best_overall_profit.avg_minutes} - {best_overall_profit.newest_trade}")
+                if best_overall_profit.incorrect_trades > 2:
+                    print(f"Too many incorrect trades {best_overall_profit.incorrect_trades}")
 
 
     except Exception as e:
@@ -151,6 +165,9 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
     return result_list
 
 markets = IG.get_markets_offline()
+
+trader = ts.get_trader_by_name("DREAMWORKS FX")
+result_list = eval_trader(trader)
 
 traders = ts.get_all_traders(True, True)
 for trader in traders:

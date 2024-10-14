@@ -225,10 +225,10 @@ class IG:
              stop: int = 25,
              limit: int = 25,
              size: float = 1.0,
-             currency: str = "USD") -> (bool, dict):
+             currency: str = "USD") -> (TradeResult, dict):
 
         deal_response: dict = {}
-        result = False
+        result = TradeResult.NOT_SUCCESSFUL
         try:
             self._tracer.debug(
                 f"Open trade for {epic} with {direction} {currency} Size {size} Stop {stop} Limit {limit} ")
@@ -253,15 +253,16 @@ class IG:
             if response["dealStatus"] != "ACCEPTED":
                 if response['reason'] == "MARKET_OFFLINE":
                     self._tracer.warning(f"{response['reason']} for {epic}. Details {response}")
-                    result = True
+                    result = TradeResult.SUCCESSFUL
                 else:
                     self._tracer.error(f"could not open trade: {response['reason']} for {epic}. Details {response}")
             else:
                 self._tracer.write(f"Opened successfull {epic}. Deal details {response}")
-                result = True
+                result = TradeResult.SUCCESSFUL
             deal_response = response
         except IGException as ex:
             self._tracer.error(f"Error during open a position. {ex} for {epic}")
+            result = TradeResult.EXCEPTION
 
         return result, deal_response
 
