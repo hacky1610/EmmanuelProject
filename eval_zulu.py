@@ -50,7 +50,7 @@ ds = DealStore(db, "DEMO")
 analytics = Analytics(ms, ig)
 trade_type = TradeType.FX
 ps = PredictorStore(db)
-_viewer = PlotlyViewer()
+_viewer = BaseViewer()
 
 ts = TraderStore(db)
 
@@ -76,11 +76,12 @@ def eval_symbol(symbol, df:DataFrame, df_5_minute_ohlc: DataFrame, limit:float, 
     symbol_trading_minutes = 0
     filtered_market = [d for d in markets if d["symbol"] == symbol]
     if len(filtered_market) == 0 or df_5_minute_ohlc is None:
-        return PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1), [])
+        return PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1), [], 0, 0)
     market = filtered_market[0]
     newest_trade = datetime(1970,1,1)
     trades = []
     good_trades = 0
+    wins = 0
     incorrect_trades = 0
     for _, i in df.iterrows():
 
@@ -102,7 +103,10 @@ def eval_symbol(symbol, df:DataFrame, df_5_minute_ohlc: DataFrame, limit:float, 
             good_trades += 1
             trades.append(trade)
         else:
-            incorrect_trades += 0
+            incorrect_trades += 1
+
+        if profit > 0:
+            wins += 1
 
 
         trade_time = (datetime.utcfromtimestamp(
@@ -113,9 +117,17 @@ def eval_symbol(symbol, df:DataFrame, df_5_minute_ohlc: DataFrame, limit:float, 
 
         symbol_profit += profit
         symbol_trading_minutes += trading_minutes
+
+    avg_symbol_profit = 0
+    avg_symbol_trading_minutes = 0
+    wl = 0
+    if good_trades > 0:
+        avg_symbol_profit = symbol_profit / good_trades
+        avg_symbol_trading_minutes = symbol_trading_minutes / good_trades
+        wl = wins * 100 / good_trades
     return PositionEvalResult(symbol_profit, symbol_trading_minutes,
-                              symbol_profit / good_trades,
-                              symbol_trading_minutes / good_trades, newest_trade, trades, incorrect_trades)
+                              avg_symbol_profit,
+                              avg_symbol_trading_minutes, newest_trade, trades, incorrect_trades, wl)
 
 def eval_trader(trader, use_isl=False) -> List[Dict]:
     result_list = []
@@ -124,12 +136,12 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
         small_hist_df = trader.hist._hist_df[trader.hist._hist_df.dateOpen_datetime_utc > "2023-10-01"]
 
         for symbol in small_hist_df.currency_clean.unique():
-            best_overall_profit = PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1), [], 0)
+            best_overall_profit = PositionEvalResult(0, 0, 0, 0, datetime(1970,1,1), [], 0,0)
             test_data = get_test_data(tiingo=ti, symbol=symbol, trade_type=trade_type, dp=dp, dropbox_cache=df_cache)
             symbol_df = small_hist_df[small_hist_df.currency_clean == symbol]
             best_result = None
-            for limit in [30, 45, 60, 75]:
-                for stop in [30, 45, 60, 75]:
+            for limit in range(20,75,5):
+                for stop in range(20,75,5):
 
                     result = eval_symbol(symbol, symbol_df, test_data,  limit, stop, use_isl)
                     if result.profit > best_overall_profit.profit:
@@ -152,7 +164,7 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
                 _viewer.show()
                 result_list.append(best_result)
 
-                print(f"{trader.name} - {symbol} - {best_overall_profit.profit} - {best_overall_profit.trading_minutes} - {best_overall_profit.avg_profit} - {best_overall_profit.avg_minutes} - {best_overall_profit.newest_trade}")
+                print(f"{trader.name} - {symbol} - Profit {best_overall_profit.profit} - Avg {best_overall_profit.avg_profit} -  WL {best_overall_profit.win_loss}")
                 if best_overall_profit.incorrect_trades > 2:
                     print(f"Too many incorrect trades {best_overall_profit.incorrect_trades}")
 
@@ -165,10 +177,6 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
     return result_list
 
 markets = IG.get_markets_offline()
-
-trader = ts.get_trader_by_name("DREAMWORKS FX")
-result_list = eval_trader(trader)
-
 traders = ts.get_all_traders(True, True)
 for trader in traders:
     print(f"Train {trader.name}")

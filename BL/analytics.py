@@ -30,6 +30,7 @@ class PositionEvalResult(NamedTuple):
     newest_trade: datetime.datetime
     trades: List
     incorrect_trades: int
+    win_loss:float
 
 
 
@@ -205,7 +206,7 @@ class Analytics:
         isl_entry_pip = market.get_pip_value(15, scaling)
 
         open_date_str = open_time.strftime('%Y-%m-%dT%H:%M:%S.000Z')
-        close_date_plus_1d_str = (close_time + timedelta(days=1)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        close_date_plus_1d_str = (close_time + timedelta(days=10)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
 
         df_eval = df_eval[df_eval.date > open_date_str]
         df_eval = df_eval[df_eval.date < close_date_plus_1d_str]
