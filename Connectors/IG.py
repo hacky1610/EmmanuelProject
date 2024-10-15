@@ -90,6 +90,19 @@ class IG:
                 }
         }
 
+
+    def get_size_of_deal(self, deal_id: str):
+        positions = self.ig_service.fetch_open_positions()
+        pos = positions[positions.dealId == deal_id]
+        return pos["size"].item()
+
+    @staticmethod
+    def get_inverse(direction: str) -> str:
+        if direction == "SELL":
+            return "BUY"
+        else:
+            return "SELL"
+
     def _get_markets_by_id(self, id):
 
         counter = 0
@@ -433,6 +446,15 @@ class IG:
         if balance == None:
             return 0
         return balance
+
+    def get_deals(self) -> DataFrame:
+
+        try:
+            response = self.ig_service.fetch_open_positions()
+            return response
+        except IGException as ex:
+            self._tracer.error(f"Error during getting Deal Ids {ex}")
+        return DataFrame()
 
     def close(self,
               direction: str,
