@@ -19,30 +19,38 @@ class ZuluTradeUI:
         self._tracer = tracer
 
     def login(self):
-        self._driver.get("https://www.zulutrade.com/login")
-        wait = WebDriverWait(self._driver, 20)
+        try:
 
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "placeholderName")))
+            self._driver.get("https://www.zulutrade.com/login")
+            wait = WebDriverWait(self._driver, 20)
 
-        login_form = self._driver.find_element(By.TAG_NAME, "form")
-        #banner = self._driver.find_element(By.CLASS_NAME, "advertisingCookies")
-        #buttons = banner.find_elements(By.TAG_NAME, "a")
-        #buttons[3].click()
-        inputs = login_form.find_elements(By.TAG_NAME, "input")
-        inputs[0].send_keys("Hacky1610@gmx.de")
-        inputs[1].send_keys("Daytona1610!")
-        login = self._driver.find_element(By.CLASS_NAME, "btnAccount")
-        login.click()
-        time.sleep(5)
-        icon = self._driver.find_element(By.CLASS_NAME, "userIcon")
-        icon.click()
-        register = self._driver.find_element(By.CLASS_NAME, "loginRegister")
-        menu = register.find_element(By.CLASS_NAME,"dropdown_menu")
-        c = menu.find_element(By.XPATH,  "preceding-sibling::*[1]")
-        c.click()
-        radios = menu.find_elements(By.TAG_NAME, "label")
-        radios[1].click()
-        pass
+            wait.until(EC.presence_of_element_located((By.CLASS_NAME, "placeholderName")))
+
+            login_form = self._driver.find_element(By.TAG_NAME, "form")
+            #banner = self._driver.find_element(By.CLASS_NAME, "advertisingCookies")
+            #buttons = banner.find_elements(By.TAG_NAME, "a")
+            #buttons[3].click()
+            inputs = login_form.find_elements(By.TAG_NAME, "input")
+            inputs[0].send_keys("Hacky1610@gmx.de")
+            inputs[1].send_keys("Daytona1610!")
+            login = self._driver.find_element(By.CLASS_NAME, "btnAccount")
+            login.click()
+            time.sleep(5)
+            icon = self._driver.find_element(By.CLASS_NAME, "userIcon")
+            icon.click()
+            time.sleep(5)
+            register = self._driver.find_element(By.CLASS_NAME, "loginRegister")
+            menu = register.find_element(By.CLASS_NAME,"dropdown_menu")
+            c = menu.find_element(By.XPATH,  "preceding-sibling::*[1]")
+            c.click()
+            time.sleep(5)
+            radios = menu.find_elements(By.TAG_NAME, "label")
+            radios[1].click()
+            time.sleep(5)
+        except Exception as e:
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            self._driver.save_screenshot(f'screenshot_{timestamp}.png')
+            raise e
 
 
 

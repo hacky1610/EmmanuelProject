@@ -19,7 +19,7 @@ class ZuluTrader:
     def __init__(self, deal_storage: DealStore, market_storage: MarketStore, zulu_api: ZuluApi, zulu_ui: ZuluTradeUI,
                  ig: IG, trader_store: TraderStore, tracer: Tracer,
                  account_type: str, trading_size: float = 1.0, check_for_crash: bool = True,
-                 check_trader_quality: bool = False, max_open_positions = 5):
+                 check_trader_quality: bool = False, max_open_positions = 20):
         self._deal_storage = deal_storage
         self._zulu_api = zulu_api
         self._ig = ig
@@ -80,9 +80,6 @@ class ZuluTrader:
         start = time.time()
         open_deals_db = self._deal_storage.get_open_deals()
         self._tracer.debug(f"Open Deals from DB {open_deals_db} Needed time {time.time() - start}")
-
-        if len(open_deals_db) == 0 and len(open_ig_deals) > 0:
-            self._tracer.error("Something is wrong")
 
         for open_deal in open_deals_db:
             if len(open_ig_deals[open_ig_deals.dealId == open_deal.dealId]) == 0:
@@ -156,22 +153,18 @@ class ZuluTrader:
         #    self._tracer.warning(f"Trader {trader_id} has bad performance with {ticker}. {message}")
         #    return
 
-        #if not self._is_good_ig_trader(trader_id):
-        #    self._tracer.warning(f"Trader {trader_id} is a bad trader based of Results of last IG trades")
-        #    return
+        if self._deal_storage.has_id(position_id):
+            self._tracer.warning(f"Position {position_id} - {ticker} by {trader_id} is already open")
+            return
 
-        #if self._deal_storage.has_id(position_id):
-        #    self._tracer.warning(f"Position {position_id} - {ticker} by {trader_id} is already open")
-        #    return
+        if self._deal_storage.get_opened_positions(ticker) >= self._max_open_positions:
+            self._tracer.warning(f"More than {self._max_open_positions:} of {ticker} opened")
+            return
 
-        #if self._deal_storage.get_opened_positions(ticker) >= self._max_open_positions:
-        #    self._tracer.warning(f"More than {self._max_open_positions:} of {ticker} opened")
-        #    return
-
-        #open_positions_of_trader = self._deal_storage.positions_of_same_trader(ticker=ticker, trader_id=trader_id)
-        #if open_positions_of_trader >= 2:
-        #    self._tracer.warning(f"This trader {trader_id} has already open positions of {ticker} ")
-        #    return
+        open_positions_of_trader = self._deal_storage.positions_of_same_trader(ticker=ticker, trader_id=trader_id)
+        if open_positions_of_trader >= 2:
+            self._tracer.warning(f"This trader {trader_id} has already open positions of {ticker} ")
+            return
 
         if not trader_db.is_good(ticker):
             self._tracer.debug(f"Trader {trader_id} is not good enouth {ticker}")
@@ -189,7 +182,7 @@ class ZuluTrader:
         limit_pips = int(market.get_pip_value(trader_db.get_limit(ticker)))
 
         self._tracer.debug(
-            f"StopLoss {stop_pips} pips {trader_db.stop} Euro - Limit {limit_pips}  pips {trader_db.limit}€")
+            f"StopLoss {stop_pips} pips {trader_db.stop} Euro - Limit {limit_pips}  pips {trader_db.limit} Euro")
 
         result, deal_response = self._ig.open(epic=m["epic"], direction=direction,
                                               currency=m["currency"], limit=limit_pips,
