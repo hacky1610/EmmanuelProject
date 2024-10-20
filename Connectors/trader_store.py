@@ -80,7 +80,11 @@ class Trader:
         if avg_profit < 5:
             return False
 
+        if "wl" not in df_symbol.columns:
+            return False
 
+        if df_symbol["wl"].item() < 68:
+            return False
 
         return True
 

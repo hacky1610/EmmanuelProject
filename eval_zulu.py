@@ -154,7 +154,8 @@ def eval_trader(trader, use_isl=False) -> List[Dict]:
                          "newest_trade": result.newest_trade,
                          "trades": len(symbol_df),
                          "limit": limit,
-                         "stop": stop}
+                         "stop": stop,
+                         "wl": result.win_loss}
 
             if best_result is not None:
                 _viewer.init("Foo", test_data, DataFrame())
