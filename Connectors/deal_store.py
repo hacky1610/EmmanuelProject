@@ -185,6 +185,14 @@ class DealStore:
              "close_date_ig_datetime": {"$gte": datetime.datetime.now() - datetime.timedelta(days=days)}
              } )))
 
+    def get_open_deals_by_ticker_older_than(self, ticker, minutes:int):
+        return self._collection.find(
+            {"status": "open",
+             "ticker": ticker,
+             "open_date_ig_datetime": {"$lte": datetime.datetime.utcnow() - datetime.timedelta(minutes=minutes)}
+             })
+
+
     def get_closed_deals(self):
         return self._collection.find(
             {"status": "Closed"})

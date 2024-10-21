@@ -176,20 +176,18 @@ def train_predictors(markets: list,
             pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
             pred_matrix.setup(config)
 
-            trainer.get_signals(symbol, df_train, indicators, predictor)
             buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
+
+            trainer.get_signals(symbol, df_train, indicators, predictor)
 
             buy_results_dict = {}
             sell_results_dict = {}
             if len(buy_results) > 0:
                 buy_results_dict = buy_results.set_index('chart_index').to_dict(orient='index')
-                if buy_results['next_index'].nunique() < 4:
-                    print(f"Extrem wenige werte {buy_results}")
-
+    
             if len(sell_results) > 0:
                 sell_results_dict = sell_results.set_index('chart_index').to_dict(orient='index')
-                if sell_results['next_index'].nunique() < 4:
-                    print(f"Extrem wenige werte {sell_results}")
+
 
 
             filtered_combos = random.choices(all_combos,k=20000)

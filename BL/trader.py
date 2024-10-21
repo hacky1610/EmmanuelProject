@@ -196,6 +196,14 @@ class Trader:
                 self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
                 self._ig.manual_close(item, self._deal_storage)
 
+    def _close_after_minutes(self, ticker: str,  minutes:int = 160):
+        for deal in self._deal_storage.get_open_deals_by_ticker_older_than(ticker, minutes):
+            self._tracer.debug(f"close deal {deal} after {minutes} minutes")
+            if deal.direction == TradeAction.BUY:
+                self._ig.close("SELL", deal.dealId, deal.size)
+            else:
+                self._ig.close("BUY", deal.dealId, deal.size)
+
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
         self._tracer.set_prefix(symbol_)

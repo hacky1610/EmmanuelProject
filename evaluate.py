@@ -123,7 +123,7 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
 
 
 def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: Indicators, viewer: BaseViewer,
-                       only_one_position: bool = False, only_test=True) -> EvalResult:
+                       only_one_position: bool = False, save_results=False) -> EvalResult:
     df, df_eval = get_test_data(ti, symbol, trade_type, dp, dropbox_cache=df_cache)
     indicators.reset_caches()
 
@@ -137,7 +137,7 @@ def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: In
         if predictor.get_result() is None:
             return None
 
-        if not only_test:
+        if save_results:
             predictor.activate()
             ps.save(predictor)
 
@@ -159,8 +159,8 @@ def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: In
 
 def evaluate_predictors(indicator_logic,
                         viewer: BaseViewer,
-                        only_one_position: bool = True,
-                        only_test=False):
+                        only_one_position: bool = False,
+                        save_results=False):
     results = EvalResultCollection()
     markets = IG.get_markets_offline()
     random.shuffle(markets)
@@ -172,7 +172,7 @@ def evaluate_predictors(indicator_logic,
                                        m["scaling"],
                                        indicator_logic,
                                        viewer,
-                                       only_one_position, only_test)
+                                       only_one_position, save_results)
                     )
 
     print(f"{results}")
@@ -184,5 +184,4 @@ def evaluate_predictors(indicator_logic,
 
 evaluate_predictors(indicators,
                     _viewer,
-                    only_test=False,
-                    only_one_position=False)
+                    save_results=True)
