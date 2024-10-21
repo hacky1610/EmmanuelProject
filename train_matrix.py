@@ -176,8 +176,9 @@ def train_predictors(markets: list,
             pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
             pred_matrix.setup(config)
 
-            trainer.get_signals(symbol, df_train, indicators, predictor)
             buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
+            trainer.get_signals(symbol, df_train, indicators, predictor)
+
 
             buy_results_dict = {}
             sell_results_dict = {}

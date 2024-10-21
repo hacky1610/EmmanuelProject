@@ -165,8 +165,8 @@ def evaluate_predictors(indicator_logic,
     markets = IG.get_markets_offline()
     random.shuffle(markets)
     for m in markets:
-        #if m["symbol"] != "USDHKD":
-        #    continue
+        if m["symbol"] != "EURUSD":
+            continue
         results.add(evaluate_predictor(m["symbol"],
                                        m["epic"],
                                        m["scaling"],
