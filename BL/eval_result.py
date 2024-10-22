@@ -198,10 +198,9 @@ class EvalResult:
                    ])
 
     def is_good(self):
-        check0 = self.get_avg_win() * 1.8 > abs(self.get_avg_lost())
-        check1 = (self.get_win_loss() >= 0.95 and self.get_trades() >= 70 and
+        check1 = (self.get_win_loss() >= 0.75 and self.get_trades() >= 70 and
                   self.get_avg_trading_hours() != 0 and self.get_avg_trading_hours() < 48)
-        return check0 and check1
+        return check1
 
     def get_trade_df(self) -> DataFrame:
         df = DataFrame()
