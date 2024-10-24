@@ -381,10 +381,12 @@ class IG:
             self._tracer.debug("Manual Stop")
 
             if direction == TradeAction.BUY:
+                self._tracer.debug(f"Bid {bid_price} Stop {deal.manual_stop_level}")
                 if bid_price < deal.manual_stop_level:
                     self._tracer.debug(f"Stop reached {deal}")
                     self.close("SELL", deal_id, deal.size)
             if direction == TradeAction.SELL:
+                self._tracer.debug(f"Offer {offer_price} Stop {deal.manual_stop_level}")
                 if offer_price > deal.manual_stop_level:
                     self._tracer.debug(f"Stop reached {deal}")
                     self.close("BUY", deal_id, deal.size)
