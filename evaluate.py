@@ -165,15 +165,19 @@ def evaluate_predictors(indicator_logic,
     markets = IG.get_markets_offline()
     random.shuffle(markets)
     for m in markets:
-        #if m["symbol"] != "EURUSD":
+        #if m["symbol"] != "GBPMXN":
         #    continue
-        results.add(evaluate_predictor(m["symbol"],
-                                       m["epic"],
-                                       m["scaling"],
-                                       indicator_logic,
-                                       viewer,
-                                       only_one_position, only_test)
-                    )
+        try:
+            results.add(evaluate_predictor(m["symbol"],
+                                           m["epic"],
+                                           m["scaling"],
+                                           indicator_logic,
+                                           viewer,
+                                              only_one_position, only_test)
+                        )
+        except Exception as e:
+            print("Error")
+
 
     print(f"{results}")
 
@@ -185,4 +189,4 @@ def evaluate_predictors(indicator_logic,
 evaluate_predictors(indicators,
                     _viewer,
                     only_test=False,
-                    only_one_position=False)
+                    only_one_position=True)
