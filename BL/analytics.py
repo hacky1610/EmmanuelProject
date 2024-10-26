@@ -290,7 +290,7 @@ class Analytics:
 
         return simulation_result
 
-    def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict, min_trades = 70) -> namedtuple:
+    def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict, min_trades = 50) -> namedtuple:
         result = namedtuple('Result', ['wl', 'reward'])
         trades = wons = reward = 0
         next_index = 0

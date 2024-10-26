@@ -151,7 +151,7 @@ def train_predictors(markets: list,
         symbol = m["symbol"]
 
         tracer.info(f"Matrix Train {symbol}")
-        df_train, eval_df_train = get_test_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
+        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
         df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
 
         indicators.reset_caches()
@@ -217,8 +217,10 @@ def train_predictors(markets: list,
                 print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
                 print(f"****************************************")
             else:
-                print("Standard is better")
+                print("-----------------Standard is better---------")
+                print(f"* Matrix Train {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
                 print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
+                print(f"---------------------")
                 pred_standard.activate()
                 ps.save(pred_standard)
 
