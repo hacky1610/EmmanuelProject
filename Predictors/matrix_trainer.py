@@ -43,8 +43,8 @@ class MatrixTrainer:
                 self._cache.save_signal(trades, path)
 
     def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict,epic:str):
-        buy_path = f"simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
-        sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}{current_config.get('_use_isl', False)}{current_config.get('_isl_distance', 20)}{current_config.get('_isl_open_end', False)}.csv"
+        buy_path = f"simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}.csv"
+        sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}.csv"
 
         if not self._cache.simulation_exist(buy_path):
             buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
@@ -113,8 +113,17 @@ class MatrixTrainer:
             best_combo_object_list.append(combo_objects)
 
 
-        filtered_combos = random.choices(all_combos, k=10000)
+        filtered_combos = random.choices(all_combos, k=80000)
         all_combos = best_combo_object_list + filtered_combos
+
+        for indicator in df_list:
+            if indicator["indicator"] == Indicators.EMA_50_100 or indicator["indicator"] == Indicators.ADX_4H:
+                for i in range(len(all_combos) -1):
+                    l = list(all_combos[i])
+                    l.append(indicator)
+                    all_combos[i] = l
+
+
         return self.find_best_indicator_combo(all_combos,  buy_results, sell_results)
 
     def create_indicator_data(self, indicators:Indicators, symbol:str) -> List[dict]:

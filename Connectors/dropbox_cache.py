@@ -110,9 +110,9 @@ class DropBoxCache(BaseCache):
 
         # Kalenderwoche abrufen
         day_of_year = heute.timetuple().tm_yday
-        index = day_of_year - (day_of_year % 3)
+        index = day_of_year - (day_of_year % 10)
 
-        return f"Training_V12/{heute.year}_D{index}"
+        return f"Training_V16/{heute.year}_D{index}"
 
     def load_train_cache(self, name: str):
         res = self.dropbox_servie.load(self._get_train_cache_path(name))

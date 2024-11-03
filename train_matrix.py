@@ -97,6 +97,8 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
         dropbox_cache.save_train_cache(df_train,hour_df)
         dropbox_cache.save_train_cache(eval_df_train,minute_df)
 
+    df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
+    eval_df_train = eval_df_train.astype({col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
     return df_train, eval_df_train
 
 
@@ -132,6 +134,9 @@ def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataPr
         dropbox_cache.save_train_cache(df_train, hour_df)
         dropbox_cache.save_train_cache(eval_df_train, minute_df)
 
+    df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
+    eval_df_train = eval_df_train.astype(
+        {col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
     return df_train, eval_df_train
 
 
@@ -149,6 +154,8 @@ def train_predictors(markets: list,
 
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
+        #if symbol != "CHFJPY":
+        #    continue
 
         tracer.info(f"Matrix Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
@@ -170,9 +177,6 @@ def train_predictors(markets: list,
 
             pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
             pred_standard.setup(config)
-            if pred_standard.get_result().get_win_loss() < 0.3:
-               print(f"Skip {symbol} {pred_standard.get_result().get_win_loss() }")
-               continue
             pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
             pred_matrix.setup(config)
 
@@ -193,36 +197,24 @@ def train_predictors(markets: list,
                     print(f"Extrem wenige werte {sell_results}")
 
 
-            filtered_combos = random.choices(all_combos,k=20000)
+            filtered_combos = random.choices(all_combos,k=80000)
+            best_indicator_combos.append(pred_standard.get_indicator_names())
             best_combo = trainer.train_combinations(symbol=symbol, indicators=indicators, best_combo_list=best_indicator_combos,
                                                     buy_results=buy_results_dict, sell_results=sell_results_dict, random_combos=filtered_combos)
             if best_combo is None or len(best_combo) == 0:
                 print("No best combo found")
                 continue
 
-            if sorted(best_combo) == sorted(pred_standard.get_indicator_names()):
-                print("Best indicator is equal to standard")
-                continue
-
             pred_matrix.setup({"_indicator_names": best_combo})
             pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=True, epic=m["epic"])
-            pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=True, epic=m["epic"])
 
-            if pred_standard.get_result().is_better(pred_matrix.get_result()):
-                pred_matrix.activate()
-                ps.save(pred_matrix)
-                print(f"****************************************")
-                print(f"* Matrix is better {symbol} {best_combo}")
-                print(f"* Matrix Train {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
-                print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
-                print(f"****************************************")
-            else:
-                print("-----------------Standard is better---------")
-                print(f"* Matrix Train {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
-                print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
-                print(f"---------------------")
-                pred_standard.activate()
-                ps.save(pred_standard)
+            pred_matrix.activate()
+            ps.save(pred_matrix)
+            print(f"****************************************")
+            print(f"* New {symbol} {best_combo}")
+            print(f"* Matrix Eval {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
+            print(f"****************************************")
+
 
         except Exception as ex:
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück

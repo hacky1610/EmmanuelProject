@@ -58,8 +58,8 @@ class Analytics:
 
         distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=predictor.get_isl_distance())
-        stop_pip = df.ATR.iloc[-1] * 1.7
-        limit_pip = df.ATR.iloc[-1] * 1.7
+        stop_pip = df.ATR.iloc[-1] * 2.5
+        limit_pip = df.ATR.iloc[-1] * 2.5
         isl_entry_pip = market.get_pip_value(predictor.get_isl_entry(), scaling)
 
         for i in range(len(df) - 1):
@@ -208,8 +208,8 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
-        stop_pip = df.ATR.iloc[-1] * 1.7
-        limit_pip = df.ATR.iloc[-1] * 1.7
+        stop_pip = df.ATR.iloc[-1] * 2.5
+        limit_pip = df.ATR.iloc[-1] * 2.5
         isl_entry_pip = market.get_pip_value(isl_entry, scaling)
         isl_stop_distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=isl_distance)
@@ -291,7 +291,7 @@ class Analytics:
         return simulation_result
 
     def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict, min_trades = 50) -> namedtuple:
-        result = namedtuple('Result', ['wl', 'reward'])
+        result = namedtuple('Result', ['wl', 'reward', "trades", 'wons'])
         trades = wons = reward = 0
         next_index = 0
 
@@ -312,7 +312,7 @@ class Analytics:
 
         wl = (100 * wons / trades) if trades > min_trades else 0
 
-        return result(wl, reward)
+        return result(wl, reward, trades, wons)
 
 
 

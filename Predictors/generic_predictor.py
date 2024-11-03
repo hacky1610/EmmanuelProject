@@ -54,7 +54,7 @@ class GenericPredictor(BasePredictor):
 
     def predict(self, df: DataFrame) -> str:
         all = self._indicator_names + []
-        action = self._indicators.predict_some(df, all, self._max_nones)
+        action = self._indicators.predict_some(df, all, max_none=0)
         return action
 
     def _clean_list(self, l):
