@@ -160,24 +160,13 @@ def train_predictors(markets: list,
             continue
 
         _reporting.create(markets, predictor)
-        best_indicator_combos = reporting.get_best_indicator_combos()
-        random_best_combos = [list(kombi) for kombi in combinations(reporting.get_best_indicator_names(), 5)]
-        random_all_combos = [list(kombi) for kombi in combinations(indicators.get_all_indicator_names(), 5)]
-        all_combos = random_all_combos + random_best_combos
 
         try:
             config = ps.load_active_by_symbol(symbol)
-
-            pred_standard = GenericPredictor(symbol=symbol, indicators=indicators)
-            pred_standard.setup(config)
-            if pred_standard.get_result().get_win_loss() < 0.3:
-               print(f"Skip {symbol} {pred_standard.get_result().get_win_loss() }")
-               continue
-            pred_matrix = GenericPredictor(symbol=symbol, indicators=indicators)
-            pred_matrix.setup(config)
-
             buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
             trainer.get_signals(symbol, df_train, indicators, predictor)
+
+            df = trainer.create_indicator_data(indicators, symbol)
 
 
             buy_results_dict = {}
