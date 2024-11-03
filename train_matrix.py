@@ -97,6 +97,8 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
         dropbox_cache.save_train_cache(df_train,hour_df)
         dropbox_cache.save_train_cache(eval_df_train,minute_df)
 
+    df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
+    eval_df_train = eval_df_train.astype({col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
     return df_train, eval_df_train
 
 
@@ -132,6 +134,9 @@ def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataPr
         dropbox_cache.save_train_cache(df_train, hour_df)
         dropbox_cache.save_train_cache(eval_df_train, minute_df)
 
+    df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
+    eval_df_train = eval_df_train.astype(
+        {col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
     return df_train, eval_df_train
 
 
@@ -151,7 +156,7 @@ def train_predictors(markets: list,
         symbol = m["symbol"]
 
         tracer.info(f"Matrix Train {symbol}")
-        df_train, eval_df_train = get_test_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
+        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
         df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
 
         indicators.reset_caches()

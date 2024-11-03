@@ -129,7 +129,9 @@ def evaluate_predictor(symbol: str, epic: str, scaling: int, indicator_logic: In
 
     if len(df) > 0:
         predictor: BasePredictor = GenericPredictor(symbol=symbol, indicators=indicator_logic, viewer=viewer)
-        predictor.setup(ps.load_active_by_symbol(symbol))
+        c = ps.load_active_by_symbol(symbol)
+        predictor.setup(c)
+
         predictor.eval(df_train=df, df_eval=df_eval,
                        only_one_position=only_one_position, analytics=analytics,
                        symbol=symbol, scaling=scaling, epic=epic)
@@ -165,8 +167,8 @@ def evaluate_predictors(indicator_logic,
     markets = IG.get_markets_offline()
     random.shuffle(markets)
     for m in markets:
-        #if m["symbol"] != "GBPMXN":
-        #    continue
+        if m["symbol"] != "CNHJPY":
+            continue
         try:
             results.add(evaluate_predictor(m["symbol"],
                                            m["epic"],
@@ -184,7 +186,7 @@ def evaluate_predictors(indicator_logic,
 
 # endregion
 
-#_viewer = PlotlyViewer(cache=df_cache)
+_viewer = PlotlyViewer(cache=df_cache)
 
 evaluate_predictors(indicators,
                     _viewer,

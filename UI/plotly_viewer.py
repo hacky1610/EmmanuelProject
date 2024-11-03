@@ -39,8 +39,8 @@ class PlotlyViewer(BaseViewer):
                            low=self.df['low'],
                            close=self.df['close']))
 
-        # self.fig.add_trace(self._print_line("EMA_10", "Red"))
-        # self.fig.add_trace(self._print_line("EMA_20", "Orange"))
+        self.fig.add_trace(self._print_line("EMA_50", "Red"))
+        self.fig.add_trace(self._print_line("EMA_100", "Blue"))
         # self.fig.add_trace(self._print_line("EMA_30", "Blue"))
         # self.fig.add_trace(go.Line(x=self.df.index,
         #                            y=self.df["MACD"],

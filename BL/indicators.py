@@ -79,9 +79,11 @@ class Indicators:
     EMA20_CLOSE = "ema_20_close"
     EMA30_CLOSE = "ema_30_close"
     EMA50_CLOSE = "ema_50_close"
+    EMA100_CLOSE = "ema_100_close"
     SMMA20_CLOSE = "smma_20_close"
     EMA20_SMMA20 = "ema_20_smma_20"
     EMA_20_CHANNEL = "ema_20_channel"
+    EMA_50_100 = "ema_50_100"
 
     #PIVOT
     PIVOT_BOUNCE = "pivot_bounce"
@@ -107,6 +109,7 @@ class Indicators:
 
     # Others
     ADX = "adx"
+    ADX_4H = "adx_4h"
     ADX_SLOPE = "adx_slope"
     ADX_SLOPE_21 = "adx_slope_21"
     ADX_SLOPE_48 = "adx_slope_48"
@@ -217,9 +220,11 @@ class Indicators:
         self._add_indicator(self.EMA20_CLOSE, self._ema_20_close)
         self._add_indicator(self.EMA30_CLOSE, self._ema_30_close)
         self._add_indicator(self.EMA50_CLOSE, self._ema_50_close)
+        self._add_indicator(self.EMA100_CLOSE, self._ema_100_close)
         self._add_indicator(self.SMMA20_CLOSE, self._smma_20_close)
         self._add_indicator(self.EMA20_SMMA20, self._ema_20_smma_20)
         self._add_indicator(self.EMA_20_CHANNEL, self._ema_20_channel)
+        self._add_indicator(self.EMA_50_100, self._ema_50_100)
 
         #Pivoting
         self._add_indicator(self.PIVOT_BOUNCE, self._pivot_bounce)
@@ -235,6 +240,7 @@ class Indicators:
 
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
+        self._add_indicator(self.ADX_4H, self._adx_predict_4h)
         self._add_indicator(self.ADX_SLOPE, self._adx_slope_predict)
         #self._add_indicator(self.ADX_SLOPE_21, self._adx_slope_predict_21) #BAD
         #self._add_indicator(self.ADX_SLOPE_48, self._adx_slope_predict_48) #BAD
@@ -567,6 +573,16 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _ema_50_100(self, df):
+        current_ema_50 = df.EMA_50.iloc[-1]
+        current_ema_100 = df.EMA_100.iloc[-1]
+
+        if current_ema_50 > current_ema_100:
+            return TradeAction.BUY
+        else:
+            return TradeAction.SELL
+
+
     def _ema_10_50_diff(self, df):
         period = df[-3:]
         ema_diff = period.EMA_10 - period.EMA_50
@@ -579,6 +595,8 @@ class Indicators:
                 return TradeAction.SELL
 
         return TradeAction.NONE
+
+
 
     def _ema_10_30_diff_max(self, df:DataFrame):
         return self._line_diff_max(df.EMA_10,df.EMA_30)
@@ -627,6 +645,19 @@ class Indicators:
         if len(period[period.EMA_50 < period.close]) == len(period):
             return TradeAction.BUY
         elif len(period[period.EMA_50 > period.close]) == len(period):
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _ema_100_close(self, df):
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        period = df[-2:]
+
+        if len(period[period.EMA_100 < period.close]) == len(period):
+            return TradeAction.BUY
+        elif len(period[period.EMA_100 > period.close]) == len(period):
             return TradeAction.SELL
 
         return TradeAction.NONE
@@ -1079,12 +1110,19 @@ class Indicators:
 
 
     def _adx_predict(self, df):
+        if len(df) < 1:
+            return TradeAction.NONE
+        
         adx = df.ADX.iloc[-1]
 
         if adx > 25:
             return TradeAction.BOTH
 
         return TradeAction.NONE
+    
+    def _adx_predict_4h(self, df):
+        df4h = self.convert_1h_to_4h(df)
+        return self._adx_predict(df4h)       
 
     def _adx_slope_predict(self, df):
         if len(df) < 2:
