@@ -101,11 +101,11 @@ def train_and_save_model(df, model_path='trading_model.h5'):
     model.compile(optimizer=RMSprop(learning_rate=0.0005), loss='binary_crossentropy', metrics=['accuracy'])
 
     # Early stopping
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=8, restore_best_weights=True)
 
     # Modell trainieren
     history = model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=100, batch_size=32,
-                        callbacks=[early_stopping], verbose=0)
+                        callbacks=[early_stopping])
 
     # Zugriff auf val_loss und val_accuracy
     val_loss = history.history['val_loss'][-1]
@@ -232,8 +232,8 @@ def train_predictors(markets: list,
 
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
-        #if symbol != "EURGBP":
-        #    continue
+        if symbol != "NOKJPY":
+            continue
 
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
@@ -275,7 +275,6 @@ def train_predictors(markets: list,
             model = train_and_save_model(merged_df)
 
             train_and_save_model(merged_df.drop(columns=bad_features))
-            continue
 
             df_test = trainer.create_combined_indicator_data_test(indicators, symbol)
             df_test = df_test.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
