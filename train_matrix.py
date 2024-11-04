@@ -4,17 +4,20 @@ import random
 import traceback
 from itertools import combinations
 from typing import Type
-
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestClassifier
 import dropbox
 import pymongo
 import pandas as pd
 from pandas import DataFrame
-
+from tensorflow.keras.optimizers import Adam, RMSprop
 from BL.analytics import Analytics
 from BL.data_processor import DataProcessor
 from BL.indicators import Indicators
 from BL.utils import ConfigReader, EnvReader
 from Connectors.IG import IG
+from sklearn.model_selection import cross_val_score
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
@@ -25,7 +28,15 @@ from Predictors.matrix_trainer import MatrixTrainer
 from Predictors.utils import Reporting
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
+from tensorflow.keras.regularizers import l2
 
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.callbacks import EarlyStopping
+import joblib
 # endregion
 
 type_ = "DEMO"
@@ -66,6 +77,44 @@ _reporting = Reporting(predictor_store=ps)
 
 # endregion
 
+
+def train_and_save_model(df, model_path='trading_model.h5'):
+    # Spalten "Profit" muss die Zielvariable sein
+
+    df = df.drop('chart_index', axis=1)
+    X = df.drop(columns=['result'])  # Features: Alle Spalten außer 'Profit'
+    y = df['result']  # Zielvariable: Spalte 'Profit'
+
+    # Splitte die Daten in Trainings- und Testdaten (80% Training, 20% Test)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Erstelle das neuronale Netzwerk
+    model = Sequential([
+        Dense(16, activation='relu', kernel_regularizer=l2(0.01), input_shape=(X_train.shape[1],)),
+        Dropout(0.2),  # 30% der Neuronen werden zufällig deaktiviert
+        Dense(8, activation='relu', kernel_regularizer=l2(0.01)),
+        Dropout(0.2),
+        Dense(1, activation='sigmoid')  # Sigmoid für binäre Klassifikation
+    ])
+
+    # Modell kompilieren
+    model.compile(optimizer=RMSprop(learning_rate=0.0005), loss='binary_crossentropy', metrics=['accuracy'])
+
+    # Early stopping
+    early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+
+    # Modell trainieren
+    history = model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=100, batch_size=32,
+                        callbacks=[early_stopping], verbose=0)
+
+    # Zugriff auf val_loss und val_accuracy
+    val_loss = history.history['val_loss'][-1]
+    val_accuracy = history.history['val_accuracy'][-1]
+
+    # Modell speichern
+    model.save(model_path)
+    print(f"Accurace {val_accuracy}")
+    return model
 
 def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor, dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
     hour_df = f"{symbol}_train_1hour.csv"
@@ -139,6 +188,36 @@ def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataPr
         {col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
     return df_train, eval_df_train
 
+def preprocess_data(df):
+    df = df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell':0})
+    return df
+
+def feature_importance(merged_df):
+    X = merged_df.drop(columns=["chart_index", "result"])
+    y = merged_df['result']
+
+    # Random Forest Modell
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X, y)
+
+    # Feature Importance
+    feature_importances = pd.Series(model.feature_importances_, index=X.columns)
+    feature_importances = feature_importances.sort_values(ascending=False)
+
+    # Visualisierung der Feature-Wichtigkeiten
+    plt.figure(figsize=(12, 6))
+    sns.barplot(x=feature_importances, y=feature_importances.index)
+    plt.title("Feature-Importance basierend auf Random Forest")
+    plt.xlabel("Feature-Importance Score")
+   #plt.show()
+
+    bad_features = feature_importances[feature_importances < 0.01]
+    print("bad Features", bad_features.index.tolist())
+
+    return bad_features.index.tolist()
+
+
+
 
 def train_predictors(markets: list,
                      trainer: MatrixTrainer,
@@ -150,12 +229,13 @@ def train_predictors(markets: list,
                      trade_type: TradeType = TradeType.FX,
                      tracer=ConsoleTracer()
                      ):
-    tracer.info("Start training")
 
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
+        #if symbol != "EURGBP":
+        #    continue
 
-        tracer.info(f"Matrix Train {symbol}")
+        tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
         df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
 
@@ -169,52 +249,53 @@ def train_predictors(markets: list,
         try:
             config = ps.load_active_by_symbol(symbol)
             buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
-            trainer.get_signals(symbol, df_train, indicators, predictor)
+            buy_results_test, sell_results_test = trainer.simulate_test(df_test, eval_df_test, symbol, m["scaling"], config,
+                                                         epic=m["epic"])
+            trainer.get_signals(symbol, df_test, indicators, predictor)
+            trainer.get_signals_test(symbol, df_test, indicators, predictor)
 
-            df = trainer.create_indicator_data(indicators, symbol)
+            df = trainer.create_combined_indicator_data(indicators, symbol)
 
-
-            buy_results_dict = {}
-            sell_results_dict = {}
-            if len(buy_results) > 0:
-                buy_results_dict = buy_results.set_index('chart_index').to_dict(orient='index')
-                if buy_results['next_index'].nunique() < 4:
-                    print(f"Extrem wenige werte {buy_results}")
-
-            if len(sell_results) > 0:
-                sell_results_dict = sell_results.set_index('chart_index').to_dict(orient='index')
-                if sell_results['next_index'].nunique() < 4:
-                    print(f"Extrem wenige werte {sell_results}")
+            df = df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell':0})
 
 
-            filtered_combos = random.choices(all_combos,k=20000)
-            best_combo = trainer.train_combinations(symbol=symbol, indicators=indicators, best_combo_list=best_indicator_combos,
-                                                    buy_results=buy_results_dict, sell_results=sell_results_dict, random_combos=filtered_combos)
-            if best_combo is None or len(best_combo) == 0:
-                print("No best combo found")
-                continue
 
-            if sorted(best_combo) == sorted(pred_standard.get_indicator_names()):
-                print("Best indicator is equal to standard")
-                continue
+            buy_results = buy_results[['chart_index', 'result']]
+            buy_results['result'] = buy_results['result'].apply(lambda x: 1 if x > 0 else 0)
+            merged_df = pd.merge(df, buy_results, on='chart_index', how='left')
+            merged_df['result'].fillna(0, inplace=True)
+            merged_df = merged_df.dropna()
 
-            pred_matrix.setup({"_indicator_names": best_combo})
-            pred_matrix.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=True, epic=m["epic"])
-            pred_standard.eval(df_test, eval_df_test, analytics=an, symbol=symbol, scaling=m["scaling"], only_one_position=True, epic=m["epic"])
+            #Feature
 
-            if pred_standard.get_result().is_better(pred_matrix.get_result()):
-                pred_matrix.activate()
-                ps.save(pred_matrix)
-                print(f"****************************************")
-                print(f"* Matrix is better {symbol} {best_combo}")
-                print(f"* Matrix Train {pred_matrix.get_result().get_reward()} - {pred_matrix.get_result()}")
-                print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
-                print(f"****************************************")
-            else:
-                print("Standard is better")
-                print(f"* Standard Train {pred_standard.get_result().get_reward()} - {pred_standard.get_result()}")
-                pred_standard.activate()
-                ps.save(pred_standard)
+            bad_features = feature_importance(merged_df)
+
+            # Fülle eventuelle fehlende Werte in der `result`-Spalte mit 0 oder einem gewünschten Wert
+
+            model = train_and_save_model(merged_df)
+
+            train_and_save_model(merged_df.drop(columns=bad_features))
+            continue
+
+            df_test = trainer.create_combined_indicator_data_test(indicators, symbol)
+            df_test = df_test.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
+            buy_results_test = buy_results_test[['chart_index', 'result']]
+            buy_results_test['result'] = buy_results_test['result'].apply(lambda x: 1 if x > 0 else 0)
+            merged_df_test = pd.merge(df_test, buy_results_test, on='chart_index', how='left')
+            merged_df_test['result'].fillna(0, inplace=True)
+            merged_df_test = merged_df_test.dropna()
+
+            predictions = model.predict(merged_df_test.drop(columns=['result', 'chart_index']))
+            predictions_binary = (predictions > 0.5).astype(int)  # Schwellenwert 0.5
+
+
+
+            merged_df_test['predicted_profit'] = predictions_binary
+            accuracy = (merged_df_test['predicted_profit'] == merged_df_test['result']).mean()
+            print(f"Genauigkeit: {accuracy * 100:.2f}%")
+
+            # Optional: Die ersten Zeilen ausgeben, um die Ergebnisse zu überprüfen
+            print(merged_df_test[['profit', 'predicted_profit']].head())
 
         except Exception as ex:
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück

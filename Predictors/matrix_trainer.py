@@ -42,6 +42,15 @@ class MatrixTrainer:
                 trades = predictor.get_signals(df, self._analytics)
                 self._cache.save_signal(trades, path)
 
+    def get_signals_test(self, symbol: str, df: DataFrame, indicators: Indicators, predictor_class):
+        for indicator in tqdm(indicators.get_all_indicator_names()):
+            path = f"signal_{symbol}_{indicator}_test.csv"
+            if not self._cache.signal_exist(path):
+                predictor = predictor_class(symbol=symbol, indicators=indicators)
+                predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
+                trades = predictor.get_signals(df, self._analytics)
+                self._cache.save_signal(trades, path)
+
     def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict,epic:str):
         buy_path = f"simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}.csv"
         sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}.csv"
@@ -71,6 +80,39 @@ class MatrixTrainer:
                                             symbol=symbol, scaling=scaling)
             if sell is not None:
                 self._cache.save_simulation(sell,sell_path)
+        else:
+            sell = self._cache.load_simulation(sell_path)
+        return buy, sell
+
+    def simulate_test(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict, epic: str):
+        buy_path = f"simulation_buy{symbol}{current_config.get('_stop')}{current_config.get('_limit')}_test.csv"
+        sell_path = f"simulation_sell{symbol}{current_config.get('_stop')}{current_config.get('_limit')}_test.csv"
+
+        if not self._cache.simulation_exist(buy_path):
+            buy = self._analytics.simulate(action="buy", stop_euro=current_config["_stop"],
+                                           epic=epic,
+                                           isl_entry=current_config.get("_isl_entry", 0),
+                                           isl_distance=current_config.get("_isl_distance", 0),
+                                           isl_open_end=current_config.get("_isl_open_end", False),
+                                           use_isl=current_config.get("_use_isl", False),
+                                           limit_euro=current_config["_limit"], df=df, df_eval=df_eval,
+                                           symbol=symbol, scaling=scaling)
+            if buy is not None:
+                self._cache.save_simulation(buy, buy_path)
+        else:
+            buy = self._cache.load_simulation(buy_path)
+
+        if not self._cache.simulation_exist(sell_path):
+            sell = self._analytics.simulate(action="sell", stop_euro=current_config["_stop"],
+                                            epic=epic,
+                                            isl_entry=current_config.get("_isl_entry", 0),
+                                            isl_distance=current_config.get("_isl_distance", 0),
+                                            isl_open_end=current_config.get("_isl_open_end", False),
+                                            use_isl=current_config.get("_use_isl", False),
+                                            limit_euro=current_config["_limit"], df=df, df_eval=df_eval,
+                                            symbol=symbol, scaling=scaling)
+            if sell is not None:
+                self._cache.save_simulation(sell, sell_path)
         else:
             sell = self._cache.load_simulation(sell_path)
         return buy, sell
@@ -126,14 +168,53 @@ class MatrixTrainer:
 
         return self.find_best_indicator_combo(all_combos,  buy_results, sell_results)
 
-    def create_indicator_data(self, indicators:Indicators, symbol:str) -> List[dict]:
+    def create_combined_indicator_data(self, indicators: Indicators, symbol: str) -> DataFrame:
+        # Liste für DataFrames mit einem gemeinsamen Index 'chart_index'
         df_list = []
 
+        # Durchlaufe alle Indikatornamen und lade die entsprechenden DataFrames
         for indicator in indicators.get_all_indicator_names():
-            indicator_object = {"indicator": indicator,
-                                "data": self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")}
-            df_list.append(indicator_object)
-        return df_list
+            df = self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")
+
+            # Füge eine Spalte für den Indikatornamen hinzu
+            df = df.rename(columns={"action": indicator})
+            df = df[["chart_index", indicator]]
+
+            # Setze 'chart_index' als Index
+            df.set_index("chart_index", inplace=True)
+
+            # Hänge den DataFrame zur Liste hinzu
+            df_list.append(df)
+
+        # Konkateniere alle DataFrames anhand des Index 'chart_index', fülle fehlende Werte mit 'none'
+        merged_df = pd.concat(df_list, axis=1, join="outer").fillna("none")
+
+        return merged_df
+
+    def create_combined_indicator_data_test(self, indicators: Indicators, symbol: str) -> DataFrame:
+        # Liste für DataFrames mit einem gemeinsamen Index 'chart_index'
+        df_list = []
+
+        # Durchlaufe alle Indikatornamen und lade die entsprechenden DataFrames
+        for indicator in indicators.get_all_indicator_names():
+            df = self._cache.load_signal(f"signal_{symbol}_{indicator}_test.csv")
+
+            # Füge eine Spalte für den Indikatornamen hinzu
+            df = df.rename(columns={"action": indicator})
+            df = df[["chart_index", indicator]]
+
+            # Setze 'chart_index' als Index
+            df.set_index("chart_index", inplace=True)
+
+            # Hänge den DataFrame zur Liste hinzu
+            df_list.append(df)
+
+        # Konkateniere alle DataFrames anhand des Index 'chart_index', fülle fehlende Werte mit 'none'
+        merged_df = pd.concat(df_list, axis=1, join="outer").fillna("none")
+
+        return merged_df
+
+
 
     def find_best_indicator_combo(self, all_combos, buy_results:dict, sell_results:dict):
         result = namedtuple('Result', ['wl', 'reward'])
