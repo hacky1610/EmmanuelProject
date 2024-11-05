@@ -91,7 +91,7 @@ class Indicators:
     PIVOT_BREAKOUT = "pivot_breakout"
     PIVOT_SR_TRADING = "privot_sr_trading"
     PIVOT_SR_TRADING_4H = "privot_sr_trading_4h"
-    PIVOT_EMA_20_CROSS = "pivot_bounce"
+    PIVOT_EMA_20_CROSS = "pivot_ema_20_cross"
 
     #Fibonacci
     PIVOT_FIB_BOUNCE = "pivot_fib_bounce"
@@ -381,6 +381,12 @@ class Indicators:
             predict_values.append(indicator.function(df))
 
         return self._predict(predict_values, max_none)
+
+    def predict_single(self, df:DataFrame, indicator_name:str):
+        indicator = self._get_indicator_by_name(indicator_name)
+
+        return indicator.function(df)
+
 
     def predict_all(self, df, factor: float = 0.7, exclude: list = []):
         predict_values = []

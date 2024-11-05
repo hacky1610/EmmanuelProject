@@ -6,7 +6,8 @@ from Connectors.dropboxservice import DropBoxService
 import pandas as pd
 import io
 from pandas import DataFrame
-
+import tensorflow as tf
+import pickle
 
 class BaseCache:
 
@@ -97,6 +98,9 @@ class DropBoxCache(BaseCache):
     def _get_train_cache_path(self,name) -> str:
         return f"{self._get_train_folder()}/TrainCache/{name}"
 
+    def _get_model_cache_path(self, name) -> str:
+        return f"Models/{name}"
+
     def _get_signals_path(self, name) -> str:
         return f"{self._get_train_folder()}/Signals/{name}"
 
@@ -112,7 +116,7 @@ class DropBoxCache(BaseCache):
         day_of_year = heute.timetuple().tm_yday
         index = day_of_year - (day_of_year % 10)
 
-        return f"Training_V16/{heute.year}_D{index}"
+        return f"Training_V21/{heute.year}_D{index}"
 
     def load_train_cache(self, name: str):
         res = self.dropbox_servie.load(self._get_train_cache_path(name))
@@ -149,4 +153,22 @@ class DropBoxCache(BaseCache):
         if res is not None:
             return pd.read_csv(io.StringIO(res), sep=",")
         return None
+
+    def load_model_cache(self, name: str):
+        res = self.dropbox_servie.load_bytes(self._get_model_cache_path(name))
+        if res is not None:
+            buffer = io.BytesIO(res.content)
+            return pickle.load(buffer)
+        return None
+
+    def save_model_cache(self, model, name: str):
+
+        buffer = io.BytesIO()
+        pickle.dump(model, buffer)
+        buffer.seek(0)
+
+        self.dropbox_servie.upload_bytes(buffer.read(), self._get_model_cache_path(name))
+
+    def model_cache_exist(self, name: str):
+        return self.dropbox_servie.exists(self._get_model_cache_path(name))
 

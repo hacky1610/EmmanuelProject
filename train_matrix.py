@@ -2,7 +2,10 @@
 import os
 import random
 import traceback
+from sklearn.model_selection import ParameterSampler
 from itertools import combinations
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import RandomizedSearchCV
 from typing import Type
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -25,6 +28,7 @@ from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.matrix_trainer import MatrixTrainer
+from Predictors.deep_predictor import DeepPredictor
 from Predictors.utils import Reporting
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
@@ -116,6 +120,51 @@ def train_and_save_model(df, model_path='trading_model.h5'):
     print(f"Accurace {val_accuracy}")
     return model
 
+def train_and_save_model_random(df, model_path='trading_model.h5') -> (RandomForestClassifier, float):
+    # Spalten "Profit" muss die Zielvariable sein
+
+    df = df.drop('chart_index', axis=1)
+    X = df.drop(columns=['result'])  # Features: Alle Spalten außer 'Profit'
+    y = df['result']  # Zielvariable: Spalte 'Profit'
+
+    # Splitte die Daten in Trainings- und Testdaten (80% Training, 20% Test)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Hyperparameter-Raster
+    param_grid = {
+        'n_estimators': [50, 100, 200],  # Anzahl der Bäume im Wald
+        'max_depth': [None, 10, 20, 30],  # Maximale Tiefe der Bäume
+        'min_samples_split': [2, 5, 10, 15, 20],  # Mindestanzahl von Samples, um einen Knoten zu splitten
+        'min_samples_leaf': [1, 2, 4, 8, 12],  # Mindestanzahl von Samples in einem Blatt
+        'max_features': ['auto', 'sqrt'],  # Anzahl der Merkmale, die beim Splitten berücksichtigt werden
+        'bootstrap': [True, False],  # Ob Bootstrap-Sampling verwendet werden soll
+        'criterion': ['gini', 'entropy'],  # Split-Kriterium
+        'class_weight': ['balanced', 'balanced_subsample', None],  # Gewichtung der Klassen
+        'min_impurity_decrease': [0.0, 0.01, 0.1, 0.2],  # Mindestv. der Impurität für einen Split
+        'max_leaf_nodes': [None, 10, 20, 50, 100],  # Maximale Anzahl an Blättern
+    }
+
+
+    # Modell und RandomizedSearchCV-Objekt erstellen
+    rf = RandomForestClassifier()
+    random_search = RandomizedSearchCV(estimator=rf, param_distributions=param_grid,
+                                       n_iter=50, cv=5, verbose=0, n_jobs=-1)
+
+    # Suche starten
+    random_search.fit(X_train, y_train)
+
+    # Genauigkeit des besten Modells anzeigen
+    print("Best cross-validation accuracy:", random_search.best_score_)
+
+    best_model = random_search.best_estimator_
+    test_accuracy = best_model.score(X_test, y_test)
+    print("Test accuracy with best parameters:", test_accuracy)
+
+    validate_model(best_model, X_test, y_test)
+
+    return best_model, test_accuracy
+
+
 def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor, dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
     hour_df = f"{symbol}_train_1hour.csv"
     minute_df = f"{symbol}_train_5minute.csv"
@@ -142,7 +191,7 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
             df_train["R1_FIB"] = pivot["r1"]
             df_train["R2_FIB"] = pivot["r2"]
     else:
-        df_train, eval_df_train = tiingo.load_train_data(symbol, dp, trade_type=trade_type)
+        df_train, eval_df_train = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
         dropbox_cache.save_train_cache(df_train,hour_df)
         dropbox_cache.save_train_cache(eval_df_train,minute_df)
 
@@ -205,17 +254,28 @@ def feature_importance(merged_df):
     feature_importances = feature_importances.sort_values(ascending=False)
 
     # Visualisierung der Feature-Wichtigkeiten
-    plt.figure(figsize=(12, 6))
-    sns.barplot(x=feature_importances, y=feature_importances.index)
-    plt.title("Feature-Importance basierend auf Random Forest")
-    plt.xlabel("Feature-Importance Score")
-   #plt.show()
+    #plt.figure(figsize=(12, 6))
+    #sns.barplot(x=feature_importances, y=feature_importances.index)
+    #plt.title("Feature-Importance basierend auf Random Forest")
+    #plt.xlabel("Feature-Importance Score")
+    #plt.show()
 
     bad_features = feature_importances[feature_importances < 0.01]
     print("bad Features", bad_features.index.tolist())
 
     return bad_features.index.tolist()
 
+def validate_model(model, X, y):
+    predictions = model.predict(X)
+    predictions_binary = (predictions > 0.5).astype(int)  # Schwellenwert 0.5
+    train_df_new = X.copy()
+
+
+    train_df_new['predicted_profit'] = predictions_binary
+    train_df_new['result'] = y
+    train_df_new = train_df_new[train_df_new['predicted_profit'] == 1]
+    accuracy = (train_df_new['predicted_profit'] == train_df_new['result']).mean()
+    print(f"++++++++++++++++++++++Genauigkeit: {accuracy * 100:.2f}%")
 
 
 
@@ -232,69 +292,61 @@ def train_predictors(markets: list,
 
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
-        if symbol != "NOKJPY":
-            continue
+        #if symbol != "AUDCHF":
+        #    continue
 
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
-        df_test, eval_df_test = get_test_data(tiingo, symbol, trade_type, dp, dropbox_cache=cache)
 
         indicators.reset_caches()
 
         if len(df_train) == 0:
             continue
 
-        _reporting.create(markets, predictor)
-
         try:
             config = ps.load_active_by_symbol(symbol)
             buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
-            buy_results_test, sell_results_test = trainer.simulate_test(df_test, eval_df_test, symbol, m["scaling"], config,
-                                                         epic=m["epic"])
-            trainer.get_signals(symbol, df_test, indicators, predictor)
-            trainer.get_signals_test(symbol, df_test, indicators, predictor)
-
-            df = trainer.create_combined_indicator_data(indicators, symbol)
-
-            df = df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell':0})
+            trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
+            train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
+            train_signals_df = train_signals_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell':-1})
 
 
 
             buy_results = buy_results[['chart_index', 'result']]
             buy_results['result'] = buy_results['result'].apply(lambda x: 1 if x > 0 else 0)
-            merged_df = pd.merge(df, buy_results, on='chart_index', how='left')
-            merged_df['result'].fillna(0, inplace=True)
-            merged_df = merged_df.dropna()
+            signal_result_df = pd.merge(train_signals_df, buy_results, on='chart_index', how='left')
+            signal_result_df['result'].fillna(0, inplace=True)
+            signal_result_df = signal_result_df.dropna()
 
-            #Feature
 
-            bad_features = feature_importance(merged_df)
+            model, accuracy = train_and_save_model_random(signal_result_df)
 
-            # Fülle eventuelle fehlende Werte in der `result`-Spalte mit 0 oder einem gewünschten Wert
-
-            model = train_and_save_model(merged_df)
-
-            train_and_save_model(merged_df.drop(columns=bad_features))
-
-            df_test = trainer.create_combined_indicator_data_test(indicators, symbol)
-            df_test = df_test.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
-            buy_results_test = buy_results_test[['chart_index', 'result']]
-            buy_results_test['result'] = buy_results_test['result'].apply(lambda x: 1 if x > 0 else 0)
-            merged_df_test = pd.merge(df_test, buy_results_test, on='chart_index', how='left')
-            merged_df_test['result'].fillna(0, inplace=True)
-            merged_df_test = merged_df_test.dropna()
-
-            predictions = model.predict(merged_df_test.drop(columns=['result', 'chart_index']))
-            predictions_binary = (predictions > 0.5).astype(int)  # Schwellenwert 0.5
+            print("Features removed")
+            #bad_features = feature_importance(train_df)
+            #model = train_and_save_model_random(train_df.drop(columns=bad_features))
 
 
 
-            merged_df_test['predicted_profit'] = predictions_binary
-            accuracy = (merged_df_test['predicted_profit'] == merged_df_test['result']).mean()
-            print(f"Genauigkeit: {accuracy * 100:.2f}%")
+            dp = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer, indicators=indicators)
+            dp.set_model_buy(model)
+            dp.save()
+            dp.set_buy_validation(accuracy)
+            dp.activate()
+            ps.save(dp)
 
-            # Optional: Die ersten Zeilen ausgeben, um die Ergebnisse zu überprüfen
-            print(merged_df_test[['profit', 'predicted_profit']].head())
+            #action = dp.predict(df_train)
+            #print(f"Action: {action}")
+
+            continue
+
+            model = train_and_save_model(signal_result_df)
+
+            print("Features removed")
+            bad_features = feature_importance(signal_result_df)
+            model = train_and_save_model_random(signal_result_df.drop(columns=bad_features))
+            pass
+
+
 
         except Exception as ex:
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück

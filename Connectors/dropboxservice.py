@@ -16,11 +16,16 @@ class DropBoxService:
         except Exception as e:
             print("Error uploading file")
 
-    def upload_data(self, data:str, destination):
+    def upload_data(self, data, destination):
 
         byte_data = bytes(data, encoding='utf-8')
+        self.upload_bytes(byte_data, destination)
+
+    def upload_bytes(self, data, destination):
+
         try:
-            self._dropbox.files_upload(byte_data, f"{self._basepath}/{destination}", mode=dropbox.files.WriteMode("overwrite"))
+            self._dropbox.files_upload(data, f"{self._basepath}/{destination}",
+                                       mode=dropbox.files.WriteMode("overwrite"))
         except Exception as e:
             print("Error uploading file")
 
@@ -31,6 +36,16 @@ class DropBoxService:
         except Exception as e:
             print(f"Error loading file {source} {e}")
             return None
+
+    def load_bytes(self, source: str):
+        try:
+            meta, res = self._dropbox.files_download(f"{self._basepath}/{source}")
+            return res
+        except Exception as e:
+            print(f"Error loading file {source} {e}")
+            return None
+
+
 
     def exists(self, source:str):
         try:

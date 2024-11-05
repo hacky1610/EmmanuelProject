@@ -18,6 +18,7 @@ from Connectors.tiingo import TradeType
 from Tracing import Tracer
 from pandas import DataFrame, Series
 from Predictors.base_predictor import BasePredictor
+from Predictors.deep_predictor import DeepPredictor
 
 
 class TradeConfig(NamedTuple):
@@ -68,6 +69,7 @@ class Trader:
                  predictor_class_list: List[type],
                  dataprocessor: DataProcessor,
                  analytics: Analytics,
+                 cache: DropBoxCache,
                  predictor_store: PredictorStore,
                  deal_storage:DealStore,
                  market_storage:MarketStore,
@@ -83,6 +85,7 @@ class Trader:
         self._predictor_store = predictor_store
         self._deal_storage = deal_storage
         self._market_store = market_storage
+        self._cache = cache
         self._check_ig_performance = check_ig_performance
 
     @staticmethod
@@ -200,21 +203,20 @@ class Trader:
         symbol_ = market["symbol"]
         self._tracer.set_prefix(symbol_)
         indicators.reset_caches()
-        for predictor_class in self._predictor_class_list:
-            self._tracer.debug(f"Try to trade {symbol_} with {predictor_class.__name__}")
-            predictor = predictor_class(symbol=symbol_, tracer=self._tracer, indicators=indicators)
-            predictor.setup(self._predictor_store.load_active_by_symbol(symbol_))
-            self.trade(
-                predictor=predictor,
-                config=TradeConfig(
-                    symbol=symbol_,
-                    epic=market["epic"],
-                    spread=market["spread"],
-                    scaling=market["scaling"],
-                    trade_type=TradeType.FX,
-                    size=market["size"],
-                    currency=market["currency"])
-            )
+        self._tracer.debug(f"Try to trade {symbol_}")
+        predictor = DeepPredictor(symbol=symbol_, tracer=self._tracer, indicators=indicators, cache=self._cache)
+        predictor.setup(self._predictor_store.load_active_by_symbol(symbol_))
+        self.trade(
+            predictor=predictor,
+            config=TradeConfig(
+                symbol=symbol_,
+                epic=market["epic"],
+                spread=market["spread"],
+                scaling=market["scaling"],
+                trade_type=TradeType.FX,
+                size=market["size"],
+                currency=market["currency"])
+        )
 
     @staticmethod
     def _evalutaion_up_to_date(last_scan_time):
@@ -264,7 +266,7 @@ class Trader:
         pass
 
     def trade(self,
-              predictor: BasePredictor,
+              predictor: DeepPredictor,
               config: TradeConfig) -> TradeResult:
         """Führt den Handel für ein bestimmtes Symbol und einen Predictor durch.
 
@@ -280,12 +282,9 @@ class Trader:
             self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last days")
             return TradeResult.NOACTION
 
-        if not self._evalutaion_up_to_date(predictor.get_last_scan_time()):
-            self._tracer.debug(f"{config.symbol} Last evaluation too old")
-            return TradeResult.ERROR
 
-        if not predictor.get_result().is_good():
-            self._tracer.debug(f"{config.symbol} has bad result {predictor.get_result()}")
+        if not predictor.is_good():
+            self._tracer.debug(f"{config.symbol}")
             return TradeResult.ERROR
 
         open_deals = self._deal_storage.get_open_deals_by_ticker(config.symbol)
@@ -302,6 +301,7 @@ class Trader:
             return TradeResult.ERROR
 
         self._tracer.debug(f"{config.symbol} valid to predict")
+        predictor.load_model()
         signal = predictor.predict(trade_df)
         market = self._market_store.get_market(config.symbol)
         stop = trade_df.ATR.iloc[-1] * 2.5 * config.scaling
@@ -328,13 +328,21 @@ class Trader:
         self._tracer.info(f"Trade {signal} ")
 
         if signal == TradeAction.BUY:
-            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
-                                                     config.currency,
-                                                     self._ig.buy)
+            if predictor.is_good_buy():
+                res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
+                                                         config.currency,
+                                                         self._ig.buy)
+            else:
+                self._tracer.debug("No good buy")
+                return TradeResult.NOACTION
         else:
-            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
-                                                     config.currency,
-                                                     self._ig.sell)
+            if predictor.is_good_sell():
+                res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
+                                                         config.currency,
+                                                         self._ig.sell)
+            else:
+                self._tracer.debug("No good sell")
+                return TradeResult.NOACTION
         if res == TradeResult.SUCCESS:
             self._save_result(predictor, deal_response, config.symbol)
             self._tracer.debug("Save Deal in db")

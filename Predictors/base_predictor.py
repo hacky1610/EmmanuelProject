@@ -217,4 +217,4 @@ class BasePredictor:
         return self._result
 
     def get_save_data(self) -> Mapping:
-        return self.get_config().append(self._result.get_data()).to_dict()
+        return self.get_config().to_dict()

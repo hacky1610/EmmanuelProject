@@ -193,7 +193,7 @@ class Tiingo:
         self._load_long_period(symbol=symbol, trade_type=trade_type,
                                days=days, resolution="5min", use_cache=False, suffix=suffix)
 
-    def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days_start: int = 365 * 2, days_end:int = 180):
+    def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days_start: int = 365 * 1.5, days_end= None):
 
         start_time = self._get_start_time(days=days_start)
         end_time = self._get_start_time(days=days_end)
@@ -214,7 +214,7 @@ class Tiingo:
                                          validate=False)
         return df, df_eval
 
-    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 180, use_cache=True):
+    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 365 * 1.5, use_cache=True):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,

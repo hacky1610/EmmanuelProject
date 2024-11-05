@@ -179,8 +179,6 @@ class Analytics:
     def simulate(self,
                  action:str,
                  epic: str,
-                 stop_euro:float,
-                 limit_euro:float,
                  isl_entry: float,
                  isl_distance: float,
                  use_isl: bool,
