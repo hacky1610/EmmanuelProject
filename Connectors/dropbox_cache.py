@@ -6,7 +6,6 @@ from Connectors.dropboxservice import DropBoxService
 import pandas as pd
 import io
 from pandas import DataFrame
-import tensorflow as tf
 import pickle
 
 class BaseCache:
