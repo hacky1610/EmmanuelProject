@@ -57,7 +57,8 @@ trader = Trader(
     predictor_store=ps,
     deal_storage=ds,
     market_storage=ms,
-    check_ig_performance=check_ig_performance
+    check_ig_performance=check_ig_performance,
+    cache=cache
 )
 
 trader.trade_markets(TradeType.FX, indicators)
