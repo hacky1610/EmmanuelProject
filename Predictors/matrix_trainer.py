@@ -123,7 +123,6 @@ class MatrixTrainer:
                            buy_results:dict,
                            sell_results:dict):
         #Get data
-        df_list = self.create_indicator_data(indicators, symbol)
 
 
         all_combos = list(itertools.combinations(df_list, random.randint(4, 5)))

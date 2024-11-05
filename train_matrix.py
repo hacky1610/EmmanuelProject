@@ -311,21 +311,17 @@ def train_predictors(markets: list,
             train_signals_df = train_signals_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell':-1})
 
 
-
             buy_results = buy_results[['chart_index', 'result']]
             buy_results['result'] = buy_results['result'].apply(lambda x: 1 if x > 0 else 0)
             signal_result_df = pd.merge(train_signals_df, buy_results, on='chart_index', how='left')
             signal_result_df['result'].fillna(0, inplace=True)
             signal_result_df = signal_result_df.dropna()
 
-
             model, accuracy = train_and_save_model_random(signal_result_df)
 
             print("Features removed")
             #bad_features = feature_importance(train_df)
             #model = train_and_save_model_random(train_df.drop(columns=bad_features))
-
-
 
             dp = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer, indicators=indicators)
             dp.set_model_buy(model)
@@ -334,17 +330,7 @@ def train_predictors(markets: list,
             dp.activate()
             ps.save(dp)
 
-            #action = dp.predict(df_train)
-            #print(f"Action: {action}")
 
-            continue
-
-            model = train_and_save_model(signal_result_df)
-
-            print("Features removed")
-            bad_features = feature_importance(signal_result_df)
-            model = train_and_save_model_random(signal_result_df.drop(columns=bad_features))
-            pass
 
 
 
