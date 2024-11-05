@@ -68,6 +68,13 @@ class DeepPredictor(BasePredictor):
     def set_buy_validation(self, accuracy:float):
         self._buy_accuracy = accuracy
 
+    def set_model_sell(self, model):
+        self._sell_model = model
+        self._sell_model_id = f"{uuid.uuid4()}"
+
+    def set_sell_validation(self, accuracy: float):
+        self._sell_accuracy = accuracy
+
     def is_good(self):
         return self.is_good_buy() or self.is_good_sell()
 
@@ -87,13 +94,19 @@ class DeepPredictor(BasePredictor):
             action = self._indicators.predict_single(df, indicator_name)
             actions[indicator_name] = action
         actions_df =  DataFrame([actions])
-        actions_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell': -1})
+        actions_buy_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell': -1})
 
         if self._buy_model is not None:
-            prediction = self._buy_model.predict(actions_df)
+            prediction = self._buy_model.predict(actions_buy_df)
             if prediction[-1]  == 1:
                 return TradeAction.BUY
 
+        actions_sell_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': -1, 'sell': 1})
+
+        if self._sell_model is not None:
+            prediction = self._sell_model.predict(actions_sell_df)
+            if prediction[-1] == 1:
+                return TradeAction.SELL
 
         return TradeAction.NONE
 

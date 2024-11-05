@@ -304,29 +304,47 @@ def train_predictors(markets: list,
             continue
 
         try:
+            #General
             config = ps.load_active_by_symbol(symbol)
             buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
             trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
             train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
-            train_signals_df = train_signals_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell':-1})
 
+            #Buy
+            print("Buy")
+            train_signals_df_buy = train_signals_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell':-1})
 
             buy_results = buy_results[['chart_index', 'result']]
             buy_results['result'] = buy_results['result'].apply(lambda x: 1 if x > 0 else 0)
-            signal_result_df = pd.merge(train_signals_df, buy_results, on='chart_index', how='left')
+            signal_result_df = pd.merge(train_signals_df_buy, buy_results, on='chart_index', how='left')
             signal_result_df['result'].fillna(0, inplace=True)
             signal_result_df = signal_result_df.dropna()
 
             model, accuracy = train_and_save_model_random(signal_result_df)
 
-            print("Features removed")
-            #bad_features = feature_importance(train_df)
-            #model = train_and_save_model_random(train_df.drop(columns=bad_features))
-
             dp = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer, indicators=indicators)
             dp.set_model_buy(model)
-            dp.save()
             dp.set_buy_validation(accuracy)
+
+            # Sell
+            print("Sell")
+            train_signals_df_sell = train_signals_df.replace({'none': -0.5, 'both': 1, 'buy': -1, 'sell': 1})
+
+            sell_results = sell_results[['chart_index', 'result']]
+            sell_results['result'] = sell_results['result'].apply(lambda x: 1 if x > 0 else 0)
+            signal_result_df = pd.merge(train_signals_df_sell, sell_results, on='chart_index', how='left')
+            signal_result_df['result'].fillna(0, inplace=True)
+            signal_result_df = signal_result_df.dropna()
+
+            model, accuracy = train_and_save_model_random(signal_result_df)
+
+            dp = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer, indicators=indicators)
+            dp.set_model_sell(model)
+            dp.set_sell_validation(accuracy)
+
+
+
+            dp.save()
             dp.activate()
             ps.save(dp)
 
