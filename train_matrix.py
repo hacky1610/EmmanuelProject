@@ -5,8 +5,15 @@ import traceback
 from sklearn.model_selection import ParameterSampler
 from itertools import combinations
 from sklearn.ensemble import RandomForestClassifier
+
 from sklearn.model_selection import RandomizedSearchCV
 from typing import Type
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split, RandomizedSearchCV, StratifiedKFold
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
@@ -121,45 +128,59 @@ def train_and_save_model(df, model_path='trading_model.h5'):
     return model
 
 def train_and_save_model_random(df, model_path='trading_model.h5') -> (RandomForestClassifier, float):
-    # Spalten "Profit" muss die Zielvariable sein
-
+    # Vorbereiten der Features und Zielvariable
     df = df.drop('chart_index', axis=1)
-    X = df.drop(columns=['result'])  # Features: Alle Spalten außer 'Profit'
-    y = df['result']  # Zielvariable: Spalte 'Profit'
+    X = df.drop(columns=['result'])  # Features: Alle Spalten außer 'result'
+    y = df['result']  # Zielvariable
 
     # Splitte die Daten in Trainings- und Testdaten (80% Training, 20% Test)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
 
     # Hyperparameter-Raster
     param_grid = {
-        'n_estimators': [50, 100, 200],  # Anzahl der Bäume im Wald
-        'max_depth': [None, 10, 20, 30],  # Maximale Tiefe der Bäume
-        'min_samples_split': [2, 5, 10, 15, 20],  # Mindestanzahl von Samples, um einen Knoten zu splitten
-        'min_samples_leaf': [1, 2, 4, 8, 12],  # Mindestanzahl von Samples in einem Blatt
-        'max_features': ['auto', 'sqrt'],  # Anzahl der Merkmale, die beim Splitten berücksichtigt werden
-        'bootstrap': [True, False],  # Ob Bootstrap-Sampling verwendet werden soll
-        'criterion': ['gini', 'entropy'],  # Split-Kriterium
-        'class_weight': ['balanced', 'balanced_subsample', None],  # Gewichtung der Klassen
-        'min_impurity_decrease': [0.0, 0.01, 0.1, 0.2],  # Mindestv. der Impurität für einen Split
-        'max_leaf_nodes': [None, 10, 20, 50, 100],  # Maximale Anzahl an Blättern
+        'classifier__n_estimators': [50, 100, 200],  # Anzahl der Bäume im Wald
+        'classifier__max_depth': [None, 10, 20, 30],  # Maximale Tiefe der Bäume
+        'classifier__min_samples_split': [2, 5, 10],  # Mindestanzahl von Samples, um einen Knoten zu splitten
+        'classifier__min_samples_leaf': [1, 2, 4],  # Mindestanzahl von Samples in einem Blatt
+        'classifier__max_features': ['sqrt'],  # Anzahl der Merkmale, die beim Splitten berücksichtigt werden
+        'classifier__bootstrap': [True, False],  # Ob Bootstrap-Sampling verwendet werden soll
+        'classifier__criterion': ['gini', 'entropy'],  # Split-Kriterium
+        'classifier__class_weight': ['balanced', None],  # Gewichtung der Klassen
     }
 
+    # Pipeline: Optionaler StandardScaler und RandomForestClassifier
+    pipeline = Pipeline([
+        ('scaler', StandardScaler()),  # Skaliere nur, wenn nötig
+        ('classifier', RandomForestClassifier(random_state=42))
+    ])
 
-    # Modell und RandomizedSearchCV-Objekt erstellen
-    rf = RandomForestClassifier()
-    random_search = RandomizedSearchCV(estimator=rf, param_distributions=param_grid,
-                                       n_iter=50, cv=5, verbose=0, n_jobs=-1)
+    # Stratified K-Fold für stabilere Kreuzvalidierung bei Klassenungleichgewicht
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+    # RandomizedSearchCV mit reduzierten Parametern
+    random_search = RandomizedSearchCV(
+        estimator=pipeline,
+        param_distributions=param_grid,
+        n_iter=50,
+        cv=cv,
+        verbose=0,
+        n_jobs=-1,
+        random_state=42
+    )
 
     # Suche starten
     random_search.fit(X_train, y_train)
 
-    # Genauigkeit des besten Modells anzeigen
+    # Beste cross-validation accuracy und Testgenauigkeit anzeigen
     print("Best cross-validation accuracy:", random_search.best_score_)
-
     best_model = random_search.best_estimator_
-    test_accuracy = best_model.score(X_test, y_test)
+
+    # Test-Genauigkeit des besten Modells
+    y_pred = best_model.predict(X_test)
+    test_accuracy = accuracy_score(y_test, y_pred)
     print("Test accuracy with best parameters:", test_accuracy)
 
+    # Optionale Validierungsfunktion für weitere Auswertung
     validate_model(best_model, X_test, y_test)
 
     return best_model, test_accuracy
@@ -292,8 +313,8 @@ def train_predictors(markets: list,
 
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
-        #if symbol != "AUDCHF":
-        #    continue
+        if symbol != "AUDCAD":
+            continue
 
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor, dropbox_cache=cache)
