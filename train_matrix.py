@@ -66,17 +66,17 @@ client = pymongo.MongoClient(
     f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
-ps = PredictorStore(db)
+predictor_store = PredictorStore(db)
 an = Analytics(market_store=ms, ig=IG(conf_reader=conf_reader))
 _trainer = MatrixTrainer(analytics=an,
-                   cache=cache,
-                   check_trainable=False,
-                   predictor_store=ps)
+                         cache=cache,
+                         check_trainable=False,
+                         predictor_store=predictor_store)
 _tiingo = Tiingo(conf_reader=conf_reader, cache=cache, tracer=_tracer)
 _dp = DataProcessor()
 _trade_type = TradeType.FX
 _indicators = Indicators()
-_reporting = Reporting(predictor_store=ps)
+_reporting = Reporting(predictor_store=predictor_store)
 
 
 # endregion
@@ -165,7 +165,7 @@ def train_and_save_model_random(df, model_path='trading_model.h5') -> (RandomFor
     return best_model, test_accuracy
 
 
-def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor, dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
+def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor, dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
     hour_df = f"{symbol}_train_1hour.csv"
     minute_df = f"{symbol}_train_5minute.csv"
 
@@ -191,7 +191,7 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
             df_train["R1_FIB"] = pivot["r1"]
             df_train["R2_FIB"] = pivot["r2"]
     else:
-        df_train, eval_df_train = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
+        df_train, eval_df_train = tiingo.load_test_data(symbol, data_processor, trade_type=trade_type)
         dropbox_cache.save_train_cache(df_train,hour_df)
         dropbox_cache.save_train_cache(eval_df_train,minute_df)
 
@@ -200,7 +200,7 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataP
     return df_train, eval_df_train
 
 
-def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataProcessor,  dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
+def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor,  dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
     hour_df = f"{symbol}_test_1hour.csv"
     minute_df = f"{symbol}_test_5minute.csv"
 
@@ -228,7 +228,7 @@ def get_test_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, dp: DataPr
 
 
     else:
-        df_train, eval_df_train = tiingo.load_test_data(symbol, dp, trade_type=trade_type)
+        df_train, eval_df_train = tiingo.load_test_data(symbol, data_processor, trade_type=trade_type)
         dropbox_cache.save_train_cache(df_train, hour_df)
         dropbox_cache.save_train_cache(eval_df_train, minute_df)
 
@@ -282,7 +282,7 @@ def validate_model(model, X, y):
 def train_predictors(markets: list,
                      trainer: MatrixTrainer,
                      tiingo: Tiingo,
-                     dp: DataProcessor,
+                     data_processor: DataProcessor,
                      predictor: Type,
                      indicators: Indicators,
                      reporting: Reporting,
@@ -296,7 +296,7 @@ def train_predictors(markets: list,
         #    continue
 
         tracer.info(f"Train {symbol}")
-        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, dp,dropbox_cache=cache)
+        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor, dropbox_cache=cache)
 
         indicators.reset_caches()
 
@@ -305,7 +305,7 @@ def train_predictors(markets: list,
 
         try:
             #General
-            config = ps.load_active_by_symbol(symbol)
+            config = predictor_store.load_active_by_symbol(symbol)
             buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config, epic=m["epic"])
             trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
             train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
@@ -322,9 +322,9 @@ def train_predictors(markets: list,
 
             model, accuracy = train_and_save_model_random(signal_result_df)
 
-            dp = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer, indicators=indicators)
-            dp.set_model_buy(model)
-            dp.set_buy_validation(accuracy)
+            deep_predictor = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer, indicators=indicators)
+            deep_predictor.set_model_buy(model)
+            deep_predictor.set_buy_validation(accuracy)
 
             # Sell
             print("Sell")
@@ -338,15 +338,15 @@ def train_predictors(markets: list,
 
             model, accuracy = train_and_save_model_random(signal_result_df)
 
-            dp = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer, indicators=indicators)
-            dp.set_model_sell(model)
-            dp.set_sell_validation(accuracy)
+            deep_predictor = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer, indicators=indicators)
+            deep_predictor.set_model_sell(model)
+            deep_predictor.set_sell_validation(accuracy)
 
 
 
-            dp.save()
-            dp.activate()
-            ps.save(dp)
+            deep_predictor.save()
+            deep_predictor.activate()
+            predictor_store.save(deep_predictor)
 
 
 
@@ -364,7 +364,7 @@ while True:
                          trainer=_trainer,
                          tiingo=_tiingo,
                          predictor=GenericPredictor,
-                         dp=_dp,
+                         data_processor=_dp,
                          indicators=_indicators,
                          tracer=_tracer,
                          reporting=_reporting)
