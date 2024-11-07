@@ -27,4 +27,4 @@ steps:
     repository: 'hacky1610/emmanuel_ti'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v50.03'
+    tags: 'v50.04'
