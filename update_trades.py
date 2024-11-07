@@ -62,7 +62,8 @@ trader = Trader(
     analytics=analytics,
     predictor_store=ps,
     deal_storage=ds,
-    market_storage=ms
+    market_storage=ms,
+    cache=cache
 )
 tracer.debug(f"Update markets {account_type}")
 trader.update_markets()
