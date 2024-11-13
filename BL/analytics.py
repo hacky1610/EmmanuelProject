@@ -206,17 +206,23 @@ class Analytics:
             print(f"There is no market for {symbol}")
             return None
 
-        stop_pip = df.ATR.iloc[-1] * 2.5
-        limit_pip = df.ATR.iloc[-1] * 2.5
+        stop_pip = df.ATR.iloc[-1] * 1.5
+        limit_pip = df.ATR.iloc[-1] * 1.5
         isl_entry_pip = market.get_pip_value(isl_entry, scaling)
         isl_stop_distance, adapted = self._ig.get_stop_distance(market, epic, scaling, check_min=True,
                                               intelligent_stop_distance=isl_distance)
+
+        max_hold_time = timedelta(hours=12)
 
         for i in range(len(df) - 1):
             current_index = i + 1
             open_price = df.close[current_index - 1]
             future = df_eval[pd.to_datetime(df_eval["date"]) > pd.to_datetime(df.date[i]) + timedelta(hours=1)]
             future.reset_index(inplace=True, drop=True)
+
+            # Filter the future dataframe based on max_hold_time
+            future = future[pd.to_datetime(future["date"]) <= pd.to_datetime(df.date[i]) + max_hold_time]
+
 
             if action == TradeAction.BUY:
                 open_price = open_price + spread
@@ -225,6 +231,8 @@ class Analytics:
                 else:
                     limit_price = open_price + limit_pip
                 stop_price = open_price - stop_pip
+
+                n  = None
 
                 for j in range(len(future)):
                     trading_minutes += 5
@@ -235,16 +243,15 @@ class Analytics:
                     if high > limit_price:
                         # Won
                         last_exit = future.date[j]
-                        simulation_result = simulation_result.append(Series(index=["action","result","chart_index", "next_index"],
-                                                                            data=[action,limit_price - open_price,i, get_next_index(df,last_exit)]), ignore_index=True)
+
+                        n = Series(index=["action","result","chart_index", "next_index"],
+                                                                            data=[action,limit_price - open_price,i, get_next_index(df,last_exit)])
                         break
                     elif low < stop_price:
                         # Loss
                         last_exit = future.date[j]
-                        simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"],
-                                   data=[action, stop_price - open_price, i,get_next_index(df,last_exit)]),
-                            ignore_index=True)
+                        n = Series(index=["action", "result", "chart_index", "next_index"],
+                                   data=[action, stop_price - open_price, i,get_next_index(df,last_exit)])
                         break
 
                     if use_isl:
@@ -253,6 +260,18 @@ class Analytics:
                             if new_stop_level > stop_price:
                                 stop_price = new_stop_level
 
+                if n is not None:
+                    simulation_result = pd.concat([simulation_result, pd.DataFrame([n])], ignore_index=True)
+                else:
+                    new_row = pd.DataFrame([{"action": action, "result": -1, "chart_index": i, "next_index": -1}])
+
+                    # Verwenden von pd.concat, um die neue Zeile hinzuzufügen
+                    simulation_result = pd.concat([simulation_result, new_row], ignore_index=True)
+
+
+
+
+
             elif action == TradeAction.SELL:
                 open_price = open_price - spread
                 if isl_open_end:
@@ -260,6 +279,8 @@ class Analytics:
                 else:
                     limit_price = open_price - limit_pip
                 stop_price = open_price + stop_pip
+
+                n = None
                 for j in range(len(future)):
                     trading_minutes += 5
                     high = future.high[j]
@@ -269,15 +290,11 @@ class Analytics:
                     if low < limit_price:
                         # Won
                         last_exit = future.date[j]
-                        simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - limit_price, i, get_next_index(df,last_exit)]),
-                            ignore_index=True)
+                        n = Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - limit_price, i, get_next_index(df,last_exit)])
                         break
                     elif high > stop_price:
                         last_exit = future.date[j]
-                        simulation_result = simulation_result.append(
-                            Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - stop_price, i, get_next_index(df,last_exit)]),
-                            ignore_index=True)
+                        n = Series(index=["action", "result", "chart_index", "next_index"], data=[action, open_price - stop_price, i, get_next_index(df,last_exit)])
                         break
 
                     if use_isl:
@@ -285,6 +302,15 @@ class Analytics:
                             new_stop_level = close + isl_stop_distance
                             if new_stop_level < stop_price:
                                 stop_price = new_stop_level
+            if n is not None:
+                simulation_result = pd.concat([simulation_result, pd.DataFrame([n])], ignore_index=True)
+            else:
+                new_row = pd.DataFrame([{"action": action, "result": -1, "chart_index": i, "next_index": -1}])
+
+                # Verwenden von pd.concat, um die neue Zeile hinzuzufügen
+                simulation_result = pd.concat([simulation_result, new_row], ignore_index=True)
+
+
 
         return simulation_result
 

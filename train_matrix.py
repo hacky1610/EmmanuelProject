@@ -110,6 +110,10 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
                   tracer=ConsoleTracer()):
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
+
+
+        #if symbol != "AUDUSD":
+        #    continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                  dropbox_cache=cache)

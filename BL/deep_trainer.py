@@ -1,19 +1,24 @@
 # region import
+import warnings
 from typing import List
 import numpy as np
-from sklearn.feature_selection import VarianceThreshold
-from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
+from imblearn.over_sampling import SMOTE
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif, SelectFromModel
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, TimeSeriesSplit, GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import make_scorer, precision_score
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, VotingClassifier, GradientBoostingClassifier
 import pandas as pd
-from tensorflow.keras.optimizers import RMSprop
-from tensorflow.keras.regularizers import l2
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from tensorflow.keras.callbacks import EarlyStopping
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures, MinMaxScaler
+from xgboost import XGBClassifier
 
 
 # endregion
@@ -23,74 +28,147 @@ class DeepTrainer:
     def train(self, df) -> (RandomForestClassifier, float):
         rf, accuracy = self._train_random_forest(df)
 
-        #_, accuracy_with_less_features = self._train_random_forest(df.drop(columns=self.feature_importance(df)))
-
-        #if accuracy_with_less_features > accuracy:
-        #    print(f"!Warning: Accuracy with less features {accuracy_with_less_features} "
-        #          f"is better than with all features {accuracy}!")
-
         return rf, accuracy
 
-    def _train_random_forest(self, df) -> (RandomForestClassifier, float):
-        # Vorbereiten der Features und Zielvariable
-        df = df.drop('chart_index', axis=1)
-        _X = df.drop(columns=['result'])  # Features: Alle Spalten außer 'result'
-        y = df['result']  # Zielvariable
 
-        # Splitte die Daten in Trainings- und Testdaten (80% Training, 20% Test)
-        _X_train, _X_test, y_train, y_test = train_test_split(_X, y, test_size=0.2, stratify=y, random_state=42)
+    # Benutzerdefinierte Bewertungsfunktion für `1`-Vorhersagen
+    def trade_precision(self, y_true, y_pred):
+        # Filter nur für die Trades (y_pred == 1)
+        y_pred_filtered = y_pred[y_pred == 1]
+        y_true_filtered = y_true[y_pred == 1]
 
-        # Hyperparameter-Raster
-        param_grid = {
-            'classifier__n_estimators': [50, 100, 200],  # Anzahl der Bäume im Wald
-            'classifier__max_depth': [None, 10, 20, 30],  # Maximale Tiefe der Bäume
-            'classifier__min_samples_split': [2, 5, 10],  # Mindestanzahl von Samples, um einen Knoten zu splitten
-            'classifier__min_samples_leaf': [1, 2, 4],  # Mindestanzahl von Samples in einem Blatt
-            'classifier__max_features': ['sqrt'],  # Anzahl der Merkmale, die beim Splitten berücksichtigt werden
-            'classifier__bootstrap': [True, False],  # Ob Bootstrap-Sampling verwendet werden soll
-            'classifier__criterion': ['gini', 'entropy'],  # Split-Kriterium
-            'classifier__class_weight': ['balanced', None],  # Gewichtung der Klassen
+        # Falls keine Trades vorhergesagt wurden
+        if len(y_pred_filtered) == 0:
+            return 0
+
+        # Berechnung der Präzision für Trades
+        return precision_score(y_true_filtered, y_pred_filtered)
+
+    # Scorer für die Cross-Validation
+
+    def get_pipeline_variants(self,model):
+        # Definiere verschiedene Pipelines mit unterschiedlichen Konfigurationen
+        pipeline_variants = [
+            Pipeline([
+                ('scaler', MinMaxScaler()),  # Variante 1: MinMaxScaler
+                ('classifier', model)
+            ]),
+            Pipeline([
+                ('scaler', StandardScaler()),  # Variante 2: StandardScaler
+                ('classifier', model)
+            ]),
+            Pipeline([
+                ('scaler', MinMaxScaler()),  # Variante 3: MinMaxScaler + PCA
+                ('pca', PCA(n_components=10)),
+                ('classifier', model)
+            ]),
+            Pipeline([
+                ('scaler', StandardScaler()),  # Variante 4: StandardScaler + PCA
+                ('pca', PCA(n_components=10)),
+                ('classifier', model)
+            ]),
+            Pipeline(
+            [('scaler', MinMaxScaler()),
+             ('feature_selection_model', SelectFromModel(RandomForestClassifier(n_estimators=50, random_state=42))),
+            ('classifier', model)]),
+            Pipeline(
+                [('scaler', MinMaxScaler()),
+                 ('variance_threshold', VarianceThreshold(threshold=0.0)),
+                 ('classifier', model)])
+        ]
+
+    def _train_random_forest(self, df):
+        # Suppress warnings
+        warnings.filterwarnings("ignore")
+
+        # Split dataset into training and test sets
+        df_train = df[:int(len(df) * 0.9)]
+        df_test = df[int(len(df) * 0.9):]
+        X_train, y_train = df_train.drop(columns=['result']), df_train['result']
+        X_test, y_test = df_test.drop(columns=['result']), df_test['result']
+
+        # Apply SMOTE only on the training set
+        smote = SMOTE(random_state=42)
+        X_train, y_train = smote.fit_resample(X_train, y_train)
+
+        # Models and parameter grids
+        models = {
+            'Random Forest': (RandomForestClassifier(random_state=42), {
+                'classifier__n_estimators': [100, 200, 300],
+                'classifier__max_depth': [10, 20],
+            }),
+            'Gradient Boosting': (GradientBoostingClassifier(random_state=42), {
+                'classifier__n_estimators': [50, 100, 200],
+                'classifier__max_depth': [3, 5, 7],
+                'classifier__learning_rate': [0.01, 0.1, 0.2],
+            }),
+            # Add other models similarly
         }
 
-        # Pipeline: Optionaler StandardScaler und RandomForestClassifier
-        pipeline = Pipeline([
-            ('scaler', StandardScaler()),  # Skaliere nur, wenn nötig
-            ('classifier', RandomForestClassifier(random_state=42))
-        ])
+        # Cross-validation
+        tscv = TimeSeriesSplit(n_splits=5)
 
-        # Stratified K-Fold für stabilere Kreuzvalidierung bei Klassenungleichgewicht
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        def evaluate_model(model, X, y, thresholds, min_positive_predictions=10) -> float:
+            y_proba = model.predict_proba(X)[:, 1]
+            best_threshold, best_precision = 0.5, 0.0
+            for threshold in thresholds:
+                y_pred_thresholded = (y_proba >= threshold).astype(int)
+                positive_predictions = y_pred_thresholded.sum()
 
-        # RandomizedSearchCV mit reduzierten Parametern
-        random_search = RandomizedSearchCV(
-            estimator=pipeline,
-            param_distributions=param_grid,
-            n_iter=50,
-            cv=cv,
-            verbose=0,
-            n_jobs=-1,
-            random_state=42
-        )
+                # Überprüfe, ob die Anzahl positiver Vorhersagen das Minimum erreicht
+                if positive_predictions < min_positive_predictions:
+                    # Rückgabe von 0, wenn zu wenige positive Vorhersagen gemacht wurden
+                    precision = 0.0
+                else:
+                    print(f"Positive Predictions: {positive_predictions}")
+                    precision = precision_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
+                if precision > best_precision:
+                    best_precision, best_threshold = precision, threshold
+            return best_precision, best_threshold
 
-        # Suche starten
-        random_search.fit(_X_train, y_train)
 
-        # Beste cross-validation accuracy und Testgenauigkeit anzeigen
-        print("Best Score:", random_search.best_score_)
-        self.analyze_cv_scores(random_search.cv_results_['mean_test_score'])
+        results = {}
+        for model_name, (model, param_grid) in models.items():
+            print(f"Training {model_name}...")
 
-        best_model = random_search.best_estimator_
+            # Hole die verschiedenen Pipeline-Varianten
+            pipeline_variants = self.get_pipeline_variants(model)
 
-        # Test-Genauigkeit des besten Modells
-        y_prediction = best_model.predict(_X_test)
-        test_accuracy = accuracy_score(y_test, y_prediction)
+            for i, pipeline in enumerate(pipeline_variants):
+                print(f"\nTesting pipeline variant {i + 1} for {model_name}")
 
-        print("Test accuracy with best parameters:", test_accuracy)
+                random_search = RandomizedSearchCV(
+                    estimator=pipeline,
+                    param_distributions=param_grid,
+                    n_iter=66,
+                    cv=tscv,
+                    verbose=0,
+                    n_jobs=3,
+                    random_state=42
+                )
 
-        # Optionale Validierungsfunktion für weitere Auswertung
-        self.validate_model(best_model, _X_test, y_test)
+                # Führe RandomizedSearch durch und speichere das beste Modell
+                random_search.fit(X_train, y_train)
 
-        return best_model, test_accuracy
+                best_cv_score = random_search.best_score_
+                best_model = random_search.best_estimator_
+
+                train_precision, best_train_threshold = evaluate_model(best_model, X_train, y_train,
+                                                                       thresholds=np.arange(0.45, 0.95, 0.05).tolist())
+                test_precision, best_test_threshold = evaluate_model(best_model, X_test, y_test,
+                                                                     thresholds=np.arange(0.45, 0.95, 0.05).tolist())
+
+                print(
+                    f"Model: {model_name} - Variant {i + 1}, CV: {best_cv_score:.4f}, Train Threshold: {best_train_threshold}, Test Precision : {test_precision:.4f} - {best_test_threshold}"
+                )
+                results[f"{model_name} - Variant {i + 1}"] = (test_precision, train_precision, best_model)
+
+        # Ausgabe des besten Modells basierend auf Test-Precision
+        best_model_name = max(results, key=lambda k: results[k][0])
+        best_test_precision, train_precision, best_model = results[best_model_name]
+
+        print(f"\nBest Model: {best_model_name} with Test Precision: {best_test_precision:.4f}")
+        return best_model, best_test_precision
 
     @staticmethod
     def analyze_cv_scores(cv_scores, threshold=0.7, warning_threshold=0.05):
@@ -127,53 +205,39 @@ class DeepTrainer:
             print("ACHTUNG: Das Modell zeigt möglicherweise inkonsistente oder schlechte Leistung!")
 
     @staticmethod
-    def validate_model(model, X, y):
-        predictions = model.predict(X)
-        predictions_binary = (predictions > 0.5).astype(int)  # Schwellenwert 0.5
-        train_df_new = X.copy()
+    # Methode zur konservativen Vorhersage (keine 1 vorhersagen, wenn y=0 ist)
+    def conservative_predict(model, X, threshold=0.9):
+        probabilities = model.predict_proba(X)[:, 1]
+        return (probabilities >= threshold).astype(int)
 
-        train_df_new['predicted_profit'] = predictions_binary
-        train_df_new['result'] = y
-        train_df_new = train_df_new[train_df_new['predicted_profit'] == 1]
-        accuracy = (train_df_new['predicted_profit'] == train_df_new['result']).mean()
-        print(f"++++++++++++++++++++++Genauigkeit: {accuracy * 100:.2f}%")
+    @staticmethod
+    # Angepasste Validierungsfunktion, die Präzision bei 1 misst
+    def validate_model(model, X_test, y_test, thresholds=[0.5, 0.6, 0.7, 0.8, 0.9]):
+        best_pred = 0
+        for threshold in thresholds:
+            y_pred = DeepTrainer.conservative_predict(model, X_test, threshold)
 
-    def train_and_save_model(self,df, model_path='trading_model.h5'):
-        # Spalten "Profit" muss die Zielvariable sein
+            # Anzahl der Vorhersagen mit 1 und wie viele korrekt waren
+            total_pred_1 = np.sum(y_pred)
+            correct_pred_1 = np.sum((y_pred == 1) & (y_test == 1))
 
-        df = df.drop('chart_index', axis=1)
-        X = df.drop(columns=['result'])  # Features: Alle Spalten außer 'Profit'
-        y = df['result']  # Zielvariable: Spalte 'Profit'
+            print(f"Anzahl der '1'-Vorhersagen: {total_pred_1}")
+            print(f"Erfolgreiche '1'-Vorhersagen: {correct_pred_1}")
 
-        # Splitte die Daten in Trainings- und Testdaten (80% Training, 20% Test)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            print("-" * 40)
 
-        # Erstelle das neuronale Netzwerk
-        model = Sequential([
-            Dense(16, activation='relu', kernel_regularizer=l2(0.01), input_shape=(X_train.shape[1],)),
-            Dropout(0.2),  # 30% der Neuronen werden zufällig deaktiviert
-            Dense(8, activation='relu', kernel_regularizer=l2(0.01)),
-            Dropout(0.2),
-            Dense(1, activation='sigmoid')  # Sigmoid für binäre Klassifikation
-        ])
+            pred_acc = correct_pred_1  / total_pred_1 if total_pred_1 > 0 else 0
+            if pred_acc > best_pred:
+                best_pred = pred_acc
 
-        # Modell kompilieren
-        model.compile(optimizer=RMSprop(learning_rate=0.0005), loss='binary_crossentropy', metrics=['accuracy'])
+            print(f"Accuracy: {pred_acc}")
 
-        # Early stopping
-        early_stopping = EarlyStopping(monitor='val_loss', patience=8, restore_best_weights=True)
+        return best_pred
 
-        # Modell trainieren
-        history = model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=100, batch_size=32,
-                            callbacks=[early_stopping])
 
-        # Zugriff auf val_loss und val_accuracy
-        val_loss = history.history['val_loss'][-1]
-        val_accuracy = history.history['val_accuracy'][-1]
 
-        # Modell speichern
-        print(f"Accurace {val_accuracy}")
-        return model
+
+
 
     def feature_importance(self, merged_df) -> List:
         X = merged_df.drop(columns=["chart_index", "result"])

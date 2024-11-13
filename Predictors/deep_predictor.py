@@ -29,6 +29,8 @@ class DeepPredictor(BasePredictor):
         self._sell_model_id = ""
         self._buy_accuracy = 0.0
         self._sell_accuracy = 0.0
+        self._buy_features = []
+        self._sell_features = []
         self._indicators = indicators
         if config is None:
             config = {}
@@ -41,6 +43,8 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_sell_accuracy")
         self._set_att(config, "_buy_model_id")
         self._set_att(config, "_sell_model_id")
+        self._set_att(config, "_buy_features")
+        self._set_att(config, "_sell_features")
 
         super().setup(config)
 
@@ -50,16 +54,20 @@ class DeepPredictor(BasePredictor):
             self._buy_accuracy,
             self._sell_accuracy,
             self._buy_model_id,
-            self._sell_model_id
+            self._sell_model_id,
+            self._buy_features,
+            self._sell_features
 
         ],
             index=[
                 "_buy_accuracy",
                 "_sell_accuracy",
                 "_buy_model_id",
-                "_sell_model_id"
+                "_sell_model_id",
+                "_buy_features",
+                "_sell_features"
             ])
-        return parent_c.append(my_conf)
+        return parent_c.concat(my_conf)
 
     def set_model_buy(self, model):
         self._buy_model = model

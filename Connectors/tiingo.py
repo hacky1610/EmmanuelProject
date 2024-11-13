@@ -91,7 +91,12 @@ class Tiingo:
             elif end is None:
                 res = self._send_history_request(ticker, TimeUtils.get_date_string(lastchached), end, resolution,
                                                  trade_type)
-                res = cached.append(res[res.date > cached[-1:].date.item()])
+                # Sicherstellen, dass das Datum im letzten Eintrag von 'cached' als Wert extrahiert wird
+                last_date = cached.iloc[-1].date  # Letztes Datum aus 'cached' extrahieren
+
+                # Nur die Einträge in 'res' auswählen, die ein späteres Datum haben
+                new_rows = res[res.date > last_date]
+                res = pd.concat([cached, new_rows], ignore_index=True)
             else:
                 start_str = TimeUtils.get_time_string(datetime.strptime(start, "%Y-%m-%d"))
                 end_str = TimeUtils.get_time_string(datetime.strptime(end, "%Y-%m-%d"))
@@ -214,7 +219,7 @@ class Tiingo:
                                          validate=False)
         return df, df_eval
 
-    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 365 * 1.5, use_cache=True):
+    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 365 * 0.75, use_cache=True):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,

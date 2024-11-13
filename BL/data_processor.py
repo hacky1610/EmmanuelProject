@@ -1,6 +1,9 @@
 import numpy as np
 from pandas import DataFrame
+import pandas
 from finta import TA
+import warnings
+warnings.simplefilter(action="ignore", category=pandas.errors.ChainedAssignmentError)
 
 
 class DataProcessor:
