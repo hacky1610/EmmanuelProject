@@ -195,17 +195,19 @@ class DataProcessor:
         # Determine the trend direction based on previous close and upper/lower bands
         for i in range(1, len(df)):
             if df['close'].iloc[i - 1] > df['upperband'].iloc[i - 1]:
-                df['trend'].iloc[i] = 1  # Uptrend
+                df.at[i, 'trend'] = 1   # Uptrend
             elif df['close'].iloc[i - 1] < df['lowerband'].iloc[i - 1]:
-                df['trend'].iloc[i] = -1  # Downtrend
+                df.at[i, 'trend'] = -1  # Downtrend
             else:
-                df['trend'].iloc[i] = df['trend'].iloc[i - 1]  # No change
+                df.at[i, 'trend'] = df.at[i - 1, 'trend']
 
             # Adjust the upper and lower bands based on the trend
             if df['trend'].iloc[i] == 1 and df['upperband'].iloc[i] < df['upperband'].iloc[i - 1]:
-                df['upperband'].iloc[i] = df['upperband'].iloc[i - 1]
+                df.at[i, 'upperband'] = df.at[i - 1, 'upperband']  # Correct assignment with .at
+
+            # Check if trend is -1 (downtrend)
             if df['trend'].iloc[i] == -1 and df['lowerband'].iloc[i] > df['lowerband'].iloc[i - 1]:
-                df['lowerband'].iloc[i] = df['lowerband'].iloc[i - 1]
+                df.at[i, 'lowerband'] = df.at[i - 1, 'lowerband']  # Correct assignment with .at
 
 
 

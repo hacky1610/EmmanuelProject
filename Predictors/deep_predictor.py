@@ -1,6 +1,8 @@
 import random
 from typing import List
 
+import pandas as pd
+
 from BL.indicators import Indicators
 from Predictors.base_predictor import BasePredictor
 from pandas import Series, DataFrame
@@ -67,7 +69,7 @@ class DeepPredictor(BasePredictor):
                 "_buy_features",
                 "_sell_features"
             ])
-        return parent_c.concat(my_conf)
+        return pd.concat([parent_c, my_conf])
 
     def set_model_buy(self, model):
         self._buy_model = model

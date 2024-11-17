@@ -172,7 +172,13 @@ class Analytics:
             action = predictor.predict(df[:current_index])
 
             if action != TradeAction.NONE:
-                trades = trades.append(Series(index=["action","chart_index"], data=[action, i]), ignore_index=True)
+                new_trade = pd.Series(
+                    data=[action, i],
+                    index=["action", "chart_index"]
+                )
+
+                # Concatenate the new trade to the existing trades DataFrame
+                trades = pd.concat([trades, new_trade.to_frame().T], ignore_index=True)
 
         return trades
 

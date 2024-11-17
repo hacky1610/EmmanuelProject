@@ -77,7 +77,7 @@ class DataFrameCache:
 
         df_1h_ohlc['date_index'] = pd.to_datetime(df_1h_ohlc['date'])
         # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
-        df_12h: DataFrame = df_1h_ohlc.groupby(pd.Grouper(key='date_index', freq='12H')).agg({
+        df_12h: DataFrame = df_1h_ohlc.groupby(pd.Grouper(key='date_index', freq='12h')).agg({
             'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
             'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
             'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
@@ -98,7 +98,7 @@ class DataFrameCache:
 
         df_1h_ohlc['date_index'] = pd.to_datetime(df_1h_ohlc['date'])
         # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
-        df_12h: DataFrame = df_1h_ohlc.groupby(pd.Grouper(key='date_index', freq='24H')).agg({
+        df_12h: DataFrame = df_1h_ohlc.groupby(pd.Grouper(key='date_index', freq='24h')).agg({
             'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
             'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
             'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
@@ -123,7 +123,7 @@ class DataFrameCache:
 
         one_h_df['date_index'] = pd.to_datetime(one_h_df['date'])
         # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
-        df_4h: DataFrame = one_h_df.groupby(pd.Grouper(key='date_index', freq='4H')).agg({
+        df_4h: DataFrame = one_h_df.groupby(pd.Grouper(key='date_index', freq='4h')).agg({
             'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
             'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
             'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode

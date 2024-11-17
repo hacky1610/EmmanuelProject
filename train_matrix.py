@@ -89,6 +89,8 @@ def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, 
     elif trade_mode == "sell":
         train_signals_df = train_signals_df.replace({'none': -0.5, 'both': 1, 'buy': -1, 'sell': 1})
 
+    train_signals_df = train_signals_df.infer_objects(copy=False)
+
     # Prepare results data
     trade_results = trade_results[['chart_index', 'result']]
     trade_results['result'] = trade_results['result'].apply(lambda x: 1 if x > 0 else 0)
@@ -112,7 +114,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
         symbol = m["symbol"]
 
 
-        #if symbol != "AUDUSD":
+        #if symbol != "CNHJPY":
         #    continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
