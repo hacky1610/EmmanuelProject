@@ -343,15 +343,17 @@ class DeepTrainer:
 
     def custom_scoring(self,y_true, y_pred):
         """
-        Custom scoring function to penalize false positives (1 predicted when y_true is 0).
+         Custom scoring function to penalize false positives (1 predicted when y_true is 0)
+         and control the percentage of positive predictions.
 
-        Parameters:
-        y_true (array-like): True labels (binary, 0 or 1).
-        y_pred (array-like): Predicted labels (binary, 0 or 1).
+         Parameters:
+         y_true (array-like): True labels (binary, 0 or 1).
+         y_pred (array-like): Predicted labels (binary, 0 or 1).
+         target_positive_rate (float): Desired proportion of positive predictions (default is 0.1).
 
-        Returns:
-        float: Precision score.
-        """
+         Returns:
+         float: Adjusted precision score considering false positives and positive prediction rate.
+         """
         # Flatten y_pred if it's a 2D array
         y_pred = y_pred.ravel() if len(y_pred.shape) > 1 else y_pred
 
@@ -369,7 +371,15 @@ class DeepTrainer:
 
         # Calculate precision
         precision = true_positives / (true_positives + false_positives)
-        return precision
+
+        print((y_pred == 1).sum())
+        print((y_true == 1).sum())
+        f = 0
+        if (y_pred == 1).sum() < (y_true == 1).sum():
+            f = (y_pred == 1).sum() / (y_true == 1).sum()
+
+        # Return the precision adjusted by the penalty
+        return precision - (1 - f) * 0.5
 
     def _train_random_forest(self, df):
         # Suppress warnings
@@ -448,7 +458,7 @@ class DeepTrainer:
                     })
 
                     # Aktualisiere die besten Metriken basierend auf dem F1-Score
-                    if f1 > results["Best F1-Score"]:
+                    if precision > results["Best Precision"]:
                         results["Best F1-Score"] = f1
                         results["Best Precision"] = precision
                         results["Best Recall"] = recall
@@ -485,7 +495,6 @@ class DeepTrainer:
 
             return results
 
-        voting_clf = self.create_voting_classifier(self._get_models())
 
         custom_scorer = make_scorer(self.custom_scoring, greater_is_better=True)
 
