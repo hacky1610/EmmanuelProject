@@ -208,17 +208,17 @@ class Indicators:
         self._add_indicator(self.MACDSINGALDIFF, self._macd_signal_diff_predict)
 
         # EMA
-        self._add_indicator(self.EMA, self._ema_predict)
+        #self._add_indicator(self.EMA, self._ema_predict)
         self._add_indicator(self.EMA_10_SLOPE, self._ema_10_slope)
         self._add_indicator(self.EMA_30_SLOPE, self._ema_30_slope)
-        self._add_indicator(self.EMA_50_SLOPE, self._ema_50_slope)
+        #self._add_indicator(self.EMA_50_SLOPE, self._ema_50_slope)
 
         self._add_indicator(self.EMA_ALLIGATOR, self._ema_alligator_predict)
         self._add_indicator(self.EMA_HIST, self._ema_hist_predict)
         self._add_indicator(self.EMA_ALLIGATOR_HIST, self._ema_alligator_hist_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
         self._add_indicator(self.EMA20_CLOSE, self._ema_20_close)
-        self._add_indicator(self.EMA30_CLOSE, self._ema_30_close)
+        #self._add_indicator(self.EMA30_CLOSE, self._ema_30_close)
         self._add_indicator(self.EMA50_CLOSE, self._ema_50_close)
         self._add_indicator(self.EMA100_CLOSE, self._ema_100_close)
         self._add_indicator(self.SMMA20_CLOSE, self._smma_20_close)
@@ -227,7 +227,7 @@ class Indicators:
         self._add_indicator(self.EMA_50_100, self._ema_50_100)
 
         #Pivoting
-        self._add_indicator(self.PIVOT_BOUNCE, self._pivot_bounce)
+        #self._add_indicator(self.PIVOT_BOUNCE, self._pivot_bounce)
         #self._add_indicator(self.PIVOT_BOUNCE_4H, self._pivot_bounce_4h)
         self._add_indicator(self.PIVOT_BREAKOUT, self._pivot_breakout)
         self._add_indicator(self.PIVOT_SR_TRADING, self._pivot_sr_trading)

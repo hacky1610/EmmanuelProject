@@ -320,6 +320,64 @@ class Analytics:
 
         return simulation_result
 
+    def simulate_fixed_timeframe(self,
+                                 action: str,
+                                 df: DataFrame,
+                                 df_eval: DataFrame,
+                                 timeframe_hours: int = 4) -> DataFrame:
+        """
+        Simuliert Trades mit einem festen Zeitrahmen, um diese zu schließen.
+
+        Parameters:
+            action (str): "BUY" oder "SELL".
+            df (DataFrame): DataFrame mit den Einstiegsdaten.
+            df_eval (DataFrame): DataFrame mit den zukünftigen Kursdaten.
+            timeframe_hours (int): Zeitrahmen in Stunden, nach dem der Trade geschlossen wird.
+
+        Returns:
+            DataFrame: Ergebnisse der Simulation mit den Profiten.
+        """
+        assert len(df) > 0
+        assert len(df_eval) > 0
+
+        simulation_result = []
+
+        for i in range(len(df) - 1):
+            entry_time = pd.to_datetime(df.date[i])
+            entry_price = df.close[i]
+
+            # Filter future prices within the timeframe
+            future = df_eval[
+                (pd.to_datetime(df_eval["date"]) > entry_time) &
+                (pd.to_datetime(df_eval["date"]) <= entry_time + timedelta(hours=timeframe_hours))
+                ]
+
+            if len(future) > 0:
+                # Closing price is the last available price in the timeframe
+                closing_price = future.iloc[-1].close
+
+                # Calculate profit/loss based on action
+                if action == TradeAction.BUY:
+                    profit = closing_price - entry_price
+                elif action == TradeAction.SELL:
+                    profit = entry_price - closing_price
+                else:
+                    raise ValueError(f"Unknown action: {action}")
+
+                # Store the result
+                simulation_result.append({
+                    "action": action,
+                    "entry_time": entry_time,
+                    "exit_time": future.iloc[-1].date,
+                    "entry_price": entry_price,
+                    "exit_price": closing_price,
+                    "profit": profit,
+                    "chart_index": i,
+                    "next_index": i + 1
+                })
+
+        return pd.DataFrame(simulation_result)
+
     def calculate_overall_result(self, signals:DataFrame, buy_results: dict, sell_results: dict, min_trades = 50) -> namedtuple:
         result = namedtuple('Result', ['wl', 'reward', "trades", 'wons'])
         trades = wons = reward = 0

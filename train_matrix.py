@@ -114,8 +114,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
         symbol = m["symbol"]
 
 
-        #if symbol != "CNHJPY":
-        #    continue
+        if symbol != "AUDUSD":
+            continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                  dropbox_cache=cache)

@@ -1,4 +1,5 @@
 # region import
+import math
 import warnings
 from typing import List
 import numpy as np
@@ -11,6 +12,13 @@ from keras.src.optimizers import Adam
 from keras.src.optimizers.schedules import ExponentialDecay
 from sklearn.decomposition import PCA
 import tensorflow as tf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LinearRegression
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_iris
@@ -115,35 +123,34 @@ class DeepTrainer:
             # ]),
             Pipeline([
                 ('scaler', MinMaxScaler()),
-                ('variance_threshold', VarianceThreshold(threshold=0.01)),
                 # Small threshold to remove low variance features
                 ('classifier', model)
             ]),
-            Pipeline([
-                ('scaler', MinMaxScaler()),  # Skaliert die Features auf einen Bereich [0, 1]
-                ('variance_threshold', VarianceThreshold(threshold=0.01)),  # Entfernt Features mit geringer Varianz
-                ('feature_selection', SelectFromModel(estimator=gradient_model, threshold="median")),
-                # Wählt wichtige Features basierend auf Feature-Wichtigkeit
-                ('classifier', model)  # Klassifikator
-            ]),
+            # Pipeline([
+            #     ('scaler', MinMaxScaler()),  # Skaliert die Features auf einen Bereich [0, 1]
+            #     ('variance_threshold', VarianceThreshold(threshold=0.01)),  # Entfernt Features mit geringer Varianz
+            #     ('feature_selection', SelectFromModel(estimator=gradient_model, threshold="median")),
+            #     # Wählt wichtige Features basierend auf Feature-Wichtigkeit
+            #     ('classifier', model)  # Klassifikator
+            # ]),
             # Pipeline([
             #     ('scaler', MinMaxScaler()),
             #     ('variance_threshold', VarianceThreshold(threshold=0.1)),
             #     # Higher threshold for more aggressive filtering
             #     ('classifier', model)
             # ]),
-            Pipeline([
-                ('scaler', MinMaxScaler()),
-                ('rfe', RFE(estimator=RandomForestClassifier(random_state=42), n_features_to_select=10)),
-                # Keep top 10 features
-                ('classifier', model)
-            ]),
-            Pipeline([
-                ('scaler', MinMaxScaler()),
-                ('feature_selection', SelectKBest(score_func=f_classif, k=30)),
-                # Keep top 10 features
-                ('classifier', model)
-            ]),
+            # Pipeline([
+            #     ('scaler', MinMaxScaler()),
+            #     ('rfe', RFE(estimator=RandomForestClassifier(random_state=42), n_features_to_select=10)),
+            #     # Keep top 10 features
+            #     ('classifier', model)
+            # ]),
+            # Pipeline([
+            #     ('scaler', MinMaxScaler()),
+            #     ('feature_selection', SelectKBest(score_func=f_classif, k=30)),
+            #     # Keep top 10 features
+            #     ('classifier', model)
+            # ]),
             # Pipeline([
             #     ('scaler', MinMaxScaler()),
             #     ('rfe', RFE(estimator=RandomForestClassifier(random_state=42), n_features_to_select=15)),
@@ -156,7 +163,7 @@ class DeepTrainer:
         lr_schedule = ExponentialDecay(
             initial_learning_rate=0.01, decay_steps=100000, decay_rate=0.96, staircase=True
         )
-        return {
+        models =  {
             # 'Random Forest': (RandomForestClassifier(random_state=42), {
             #     'classifier__n_estimators': [100, 200, 300],
             #     'classifier__max_depth': [10, 20],
@@ -314,6 +321,8 @@ class DeepTrainer:
             }),
         }
 
+        return models
+
     def create_voting_classifier(self, models):
 
         # Erstelle eine Liste von Modellen für den VotingClassifier
@@ -340,6 +349,78 @@ class DeepTrainer:
         model.add(Dense(1, activation='sigmoid'))  # Binary classification
         model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
         return model
+
+    def evaluate_features(self, df, target):
+        # 1. Korrelation mit Zielwert berechnen
+        correlation = self.correlation_with_target(df, target)
+        print("Top 10 Features basierend auf der Korrelation zum Ziel:")
+        print(correlation.sort_values(ascending=False).head(15))
+
+        # 2. Feature-Importance mit RandomForest berechnen
+        importance_df = self.feature_importance(df, target)
+        print("\nTop 10 Features basierend auf der Feature Importance (RandomForest):")
+        print(importance_df.head(15))
+
+        # 3. VIF (Variance Inflation Factor) berechnen
+        vif_df = self.calculate_vif(df.drop(columns=[target]))
+        print("\nTop 10 Features mit dem höchsten VIF:")
+        top_vif = vif_df.sort_values(by='VIF', ascending=False).head(15)
+        print(top_vif)
+
+        correlation_matrix = df.corr()
+        for a, b in top_vif.iterrows():
+            correlated_features = correlation_matrix[b.Variable].sort_values(ascending=False)
+            # print(f"\nFeatures, die stark mit {b.Variable} korrelieren:")
+            # print(correlated_features[abs(correlated_features) > 0.8])
+
+        # Kombinierte Bewertung
+        print("\nKombinierte Rangliste der besten Features:")
+
+        # Kombinierte Score-Berechnung: Korrelation + Feature-Importance - (1/VIF)
+        combined_scores = pd.DataFrame({
+            'Feature': df.columns,
+            'Correlation': correlation,
+            'Importance': importance_df.set_index('Feature')['Importance'].reindex(df.columns).fillna(0),
+        })
+
+        # VIF hinzufügen und kombinierte Bewertung berechnen (niedrigere VIF-Werte besser, daher invertiert)
+        combined_scores['VIF'] = combined_scores['Feature'].map(vif_df.set_index('Variable')['VIF'])
+        combined_scores['Score'] = combined_scores['Correlation'] + combined_scores['Importance']
+        combined_scores = combined_scores.sort_values('Score', ascending=False)
+        high_score_threshold = combined_scores['Score'].quantile(0.75)
+        top_features = combined_scores[combined_scores['Score'] > high_score_threshold]
+
+        # Zeige die besten Features
+        print(top_features[['Feature', 'Score']])
+
+        return top_features['Feature'].tolist()
+
+    def correlation_with_target(self, df, target):
+        correlation = df.corr()[target]
+        return correlation
+
+    def calculate_vif(self, df):
+        vif_data = pd.DataFrame()
+        vif_data['Variable'] = df.columns
+        vif_data['VIF'] = [variance_inflation_factor(df.values, i) for i in range(df.shape[1])]
+        return vif_data
+
+    def feature_importance(self, df, target):
+        # Features und Ziel trennen
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        # RandomForest-Modell trainieren
+        model = RandomForestClassifier(random_state=42)
+        model.fit(X, y)
+
+        # Feature-Importances extrahieren
+        importance_df = pd.DataFrame({
+            'Feature': X.columns,
+            'Importance': model.feature_importances_
+        }).sort_values(by='Importance', ascending=False)
+
+        return importance_df
 
     def custom_scoring(self,y_true, y_pred):
         """
@@ -389,6 +470,11 @@ class DeepTrainer:
         # Split dataset into training and test sets
         df_train = df[:int(len(df) * 0.9)]
         df_test = df[int(len(df) * 0.9):]
+
+        good_featurs = self.evaluate_features(df_train, "result")
+        df_train = df_train[good_featurs]
+        df_test = df_test[good_featurs]
+
         X_train, y_train = df_train.drop(columns=['result']), df_train['result']
         X_test, y_test = df_test.drop(columns=['result']), df_test['result']
 
@@ -496,7 +582,6 @@ class DeepTrainer:
             return results
 
 
-        custom_scorer = make_scorer(self.custom_scoring, greater_is_better=True)
 
         param_grid = {}
 
@@ -534,7 +619,7 @@ class DeepTrainer:
                 print(
                     f"Model: {model_name} - Variant {i + 1}, CV: {best_cv_score:.4f}, {test_result}"
                 )
-                results[f"{model_name} - Variant {i + 1}"] = (test_result["Best F1-Score"], best_model)
+                results[f"{model_name} - Variant {i + 1}"] = (test_result["Best Precision"], best_model)
 
         # Ausgabe des besten Modells basierend auf Test-Precision
         best_model_name = max(results, key=lambda k: results[k][0])
@@ -678,40 +763,35 @@ class DeepTrainer:
 
         return results
 
+    def reduce_multicollinearity(self,features_df, vif_threshold=10):
+        from statsmodels.stats.outliers_influence import variance_inflation_factor
+        import numpy as np
+
+        X = features_df.drop(columns=['Score']).copy()
+
+        # Ungültige Werte behandeln
+        X = X.fillna(0)
+        X = X.replace([np.inf, -np.inf], np.nan).dropna(axis=1)
+
+        while True:
+            vif_data = pd.DataFrame()
+            vif_data["Feature"] = X.columns
+            vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+
+            max_vif = vif_data["VIF"].max()
+            if max_vif <= vif_threshold:
+                break
+
+            # Feature mit dem höchsten VIF und niedrigstem Score entfernen
+            max_vif_feature = vif_data.loc[vif_data["VIF"].idxmax(), "Feature"]
+            features_df = features_df[features_df["Feature"] != max_vif_feature]
+            X = features_df.drop(columns=['Score'])
+
+        return features_df
 
 
 
 
 
-    def feature_importance(self, merged_df) -> List:
-        X = merged_df.drop(columns=["chart_index", "result"])
-        y = merged_df['result']
-
-        # Random Forest Modell
-        model = RandomForestClassifier(n_estimators=100, random_state=42)
-        model.fit(X, y)
-
-        # Feature Importance
-        feature_importances = pd.Series(model.feature_importances_, index=X.columns)
-        feature_importances = feature_importances.sort_values(ascending=False)
-
-        # Visualisierung der Feature-Wichtigkeiten
-        # plt.figure(figsize=(12, 6))
-        # sns.barplot(x=feature_importances, y=feature_importances.index)
-        # plt.title("Feature-Importance basierend auf Random Forest")
-        # plt.xlabel("Feature-Importance Score")
-        # plt.show()
-
-        correlation_matrix = X.corr().abs()
-        upper_triangle = correlation_matrix.where(np.triu(np.ones(correlation_matrix.shape), k=1).astype(bool))
-        high_correlation_features = [column for column in upper_triangle.columns if any(upper_triangle[column] > 0.9)]
-        print(f"Highly correlated features: {high_correlation_features}")
 
 
-        selector = VarianceThreshold(threshold=0.01)
-        selector.fit(X)
-        low_variance_features = [column for column in X.columns if column not in X.columns[selector.get_support()]]
-        print(f"Low variance features: {low_variance_features}")
-
-        bad_features = feature_importances[feature_importances < 0.01]
-        return bad_features.index.tolist() + high_correlation_features + low_variance_features
