@@ -51,32 +51,21 @@ class MatrixTrainer:
                 trades = predictor.get_signals(df, self._analytics)
                 self._cache.save_signal(trades, path)
 
-    def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, scaling: int, current_config: dict,epic:str):
-        buy_path = f"simulation_buy{symbol}.csv"
-        sell_path = f"simulation_sell{symbol}.csv"
+    def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, time_frame: int = 4):
+        buy_path = f"simulation_buy{symbol}_{time_frame}h.csv"
+        sell_path = f"simulation_sell{symbol}_{time_frame}h.csv"
 
         if not self._cache.simulation_exist(buy_path):
-            buy = self._analytics.simulate(action="buy",
-                                           epic=epic,
-                                           isl_entry=current_config.get("_isl_entry", 0),
-                                           isl_distance=current_config.get("_isl_distance", 0),
-                                           isl_open_end=current_config.get("_isl_open_end", False),
-                                           use_isl=current_config.get("_use_isl", False), df=df, df_eval=df_eval,
-                                           symbol=symbol, scaling=scaling)
+            buy = self._analytics.simulate_fixed_timeframe(action="buy",
+                                                            df=df, df_eval=df_eval, timeframe_hours=time_frame)
             if buy is not None:
                 self._cache.save_simulation(buy,buy_path)
         else:
             buy = self._cache.load_simulation(buy_path)
 
         if not self._cache.simulation_exist(sell_path):
-            sell = self._analytics.simulate(action="sell",
-                                            epic=epic,
-                                            isl_entry=current_config.get("_isl_entry", 0),
-                                            isl_distance=current_config.get("_isl_distance", 0),
-                                            isl_open_end=current_config.get("_isl_open_end", False),
-                                            use_isl=current_config.get("_use_isl", False),
-                                            df=df, df_eval=df_eval,
-                                            symbol=symbol, scaling=scaling)
+            sell = self._analytics.simulate_fixed_timeframe(action="sell",
+                                            df=df, df_eval=df_eval,  timeframe_hours=time_frame)
             if sell is not None:
                 self._cache.save_simulation(sell,sell_path)
         else:

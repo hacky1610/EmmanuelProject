@@ -196,8 +196,8 @@ class Trader:
         for _, item in self._ig.get_opened_positions().iterrows():
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
             if deal is not None:
-                self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
-                self._ig.manual_close(item, self._deal_storage)
+                #self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
+                self._ig.manual_close_after_time(item, self._deal_storage, self._predictor_store)
 
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
@@ -278,9 +278,9 @@ class Trader:
                     TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
                 """
 
-        if not self._is_good_ticker(config.symbol, min_avg_profit=3, min_deal_count=1, days=10):
-            self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last days")
-            return TradeResult.NOACTION
+        # if not self._is_good_ticker(config.symbol, min_avg_profit=3, min_deal_count=1, days=10):
+        #     self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last days")
+        #     return TradeResult.NOACTION
 
 
         if not predictor.is_good():

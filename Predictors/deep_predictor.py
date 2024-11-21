@@ -33,6 +33,10 @@ class DeepPredictor(BasePredictor):
         self._sell_accuracy = 0.0
         self._buy_features = []
         self._sell_features = []
+        self._buy_trading_hours = 4
+        self._sell_trading_hours = 4
+        self._buy_threshold = 0.5
+        self._sell_threshold = 0.5
         self._indicators = indicators
         if config is None:
             config = {}
@@ -47,6 +51,10 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_sell_model_id")
         self._set_att(config, "_buy_features")
         self._set_att(config, "_sell_features")
+        self._set_att(config, "_buy_trading_hours")
+        self._set_att(config, "_sell_trading_hours")
+        self._set_att(config, "_buy_threshold")
+        self._set_att(config, "_sell_threshold")
 
         super().setup(config)
 
@@ -58,7 +66,11 @@ class DeepPredictor(BasePredictor):
             self._buy_model_id,
             self._sell_model_id,
             self._buy_features,
-            self._sell_features
+            self._sell_features,
+            self._buy_trading_hours,
+            self._sell_trading_hours,
+            self._buy_threshold,
+            self._sell_threshold
 
         ],
             index=[
@@ -67,7 +79,11 @@ class DeepPredictor(BasePredictor):
                 "_buy_model_id",
                 "_sell_model_id",
                 "_buy_features",
-                "_sell_features"
+                "_sell_features",
+                "_buy_trading_hours",
+                "_sell_trading_hours",
+                "_buy_threshold",
+                "_sell_threshold",
             ])
         return pd.concat([parent_c, my_conf])
 
@@ -75,24 +91,42 @@ class DeepPredictor(BasePredictor):
         self._buy_model = model
         self._buy_model_id =f"{uuid.uuid4()}"
 
-    def set_buy_validation(self, accuracy:float):
+    def set_buy_validation(self, accuracy:float, trading_hours:int, threshold:float, features:List):
         self._buy_accuracy = accuracy
+        self._buy_trading_hours = trading_hours
+        self._buy_threshold = threshold
+        self._buy_features = features
+
+    def get_buy_trading_hours(self):
+        return self._buy_trading_hours
+
+    def get_buy_threshold(self):
+        return self._buy_threshold
+
+    def get_sell_trading_hours(self):
+        return self._sell_trading_hours
+
+    def get_sell_threshold(self):
+        return self._sell_threshold
 
     def set_model_sell(self, model):
         self._sell_model = model
         self._sell_model_id = f"{uuid.uuid4()}"
 
-    def set_sell_validation(self, accuracy: float):
+    def set_sell_validation(self, accuracy: float,  trading_hours:int,threshold:float, features):
         self._sell_accuracy = accuracy
+        self._sell_trading_hours = trading_hours
+        self._sell_threshold = threshold
+        self._sell_features = features
 
     def is_good(self):
         return self.is_good_buy() or self.is_good_sell()
 
     def is_good_buy(self):
-        return self._buy_accuracy > 0.7
+        return self._buy_accuracy > 0.63
 
     def is_good_sell(self):
-        return self._sell_accuracy > 0.7
+        return self._sell_accuracy > 0.63
 
     def save(self):
         self._cache.save_model_cache(self._buy_model, self._buy_model_id)
@@ -100,22 +134,35 @@ class DeepPredictor(BasePredictor):
 
     def predict(self, df: DataFrame):
         actions = {}
-        for indicator_name in  self._indicators.get_all_indicator_names():
-            action = self._indicators.predict_single(df, indicator_name)
-            actions[indicator_name] = action
-        actions_df =  DataFrame([actions])
-        actions_buy_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell': -1})
+
 
         if self._buy_model is not None:
-            prediction = self._buy_model.predict(actions_buy_df)
-            if prediction[-1]  == 1:
+            for indicator_name in self._buy_features:
+                action = self._indicators.predict_single(df, indicator_name)
+                actions[indicator_name] = action
+            actions_df = DataFrame([actions])
+            actions_buy_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell': -1})
+            probabilities = self._buy_model.predict_proba(actions_buy_df)
+            # Nehme die Wahrscheinlichkeit für die positive Klasse (1)
+            positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
+
+            # Vergleiche mit dem Threshold
+            if positive_prob >= self._buy_threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
                 return TradeAction.BUY
 
-        actions_sell_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': -1, 'sell': 1})
 
         if self._sell_model is not None:
-            prediction = self._sell_model.predict(actions_sell_df)
-            if prediction[-1] == 1:
+            for indicator_name in self._sell_features:
+                action = self._indicators.predict_single(df, indicator_name)
+                actions[indicator_name] = action
+            actions_df = DataFrame([actions])
+            actions_sell_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': -1, 'sell': 1})
+            probabilities = self._sell_model.predict_proba(actions_sell_df)
+            # Nehme die Wahrscheinlichkeit für die positive Klasse (1)
+            positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
+
+            # Vergleiche mit dem Threshold
+            if positive_prob >= self._sell_threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
                 return TradeAction.SELL
 
         return TradeAction.NONE

@@ -337,44 +337,66 @@ class Analytics:
         Returns:
             DataFrame: Ergebnisse der Simulation mit den Profiten.
         """
-        assert len(df) > 0
-        assert len(df_eval) > 0
+        # Absicherungen
+        required_columns = {"date", "close"}
+        assert required_columns.issubset(df.columns), "df is missing required columns"
+        assert required_columns.issubset(df_eval.columns), "df_eval is missing required columns"
+
+        if len(df) == 0 or len(df_eval) == 0:
+            raise ValueError("Input DataFrames must not be empty")
+
+        # Konvertiere Datumsspalten vor der Schleife
+        df["date"] = pd.to_datetime(df["date"])
+        df_eval["date"] = pd.to_datetime(df_eval["date"])
 
         simulation_result = []
 
-        for i in range(len(df) - 1):
-            entry_time = pd.to_datetime(df.date[i])
-            entry_price = df.close[i]
+        for i in range(len(df)):
+            entry_time = df.date.iloc[i]
+            entry_price = df.close.iloc[i]
 
-            # Filter future prices within the timeframe
+            # Filter future prices ab der nächsten Stunde
             future = df_eval[
-                (pd.to_datetime(df_eval["date"]) > entry_time) &
-                (pd.to_datetime(df_eval["date"]) <= entry_time + timedelta(hours=timeframe_hours))
-                ]
+                (df_eval["date"] >= entry_time + timedelta(hours=1)) &  # Ab der nächsten Stunde
+                (df_eval["date"] <= entry_time + timedelta(hours=timeframe_hours + 1))
+            ]
 
-            if len(future) > 0:
-                # Closing price is the last available price in the timeframe
-                closing_price = future.iloc[-1].close
-
-                # Calculate profit/loss based on action
-                if action == TradeAction.BUY:
-                    profit = closing_price - entry_price
-                elif action == TradeAction.SELL:
-                    profit = entry_price - closing_price
-                else:
-                    raise ValueError(f"Unknown action: {action}")
-
-                # Store the result
+            if len(future) == 0:
+                # Kein zukünftiger Preis verfügbar
                 simulation_result.append({
                     "action": action,
                     "entry_time": entry_time,
-                    "exit_time": future.iloc[-1].date,
+                    "exit_time": None,
                     "entry_price": entry_price,
-                    "exit_price": closing_price,
-                    "profit": profit,
+                    "exit_price": None,
+                    "result": None,
                     "chart_index": i,
                     "next_index": i + 1
                 })
+                continue
+
+            # Schlusspreis ist der letzte Preis im Zeitrahmen
+            closing_price = future.iloc[-1].close
+
+            # Berechne Gewinn/Verlust basierend auf der Aktion
+            if action == TradeAction.BUY:
+                profit = closing_price - entry_price
+            elif action == TradeAction.SELL:
+                profit = entry_price - closing_price
+            else:
+                raise ValueError(f"Unknown action: {action}")
+
+            # Speichere das Ergebnis
+            simulation_result.append({
+                "action": action,
+                "entry_time": entry_time,
+                "exit_time": future.iloc[-1].date,
+                "entry_price": entry_price,
+                "exit_price": closing_price,
+                "result": profit,
+                "chart_index": i,
+                "next_index": i + 1
+            })
 
         return pd.DataFrame(simulation_result)
 

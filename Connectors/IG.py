@@ -12,6 +12,7 @@ from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
 from Connectors.market_store import MarketStore, Market
 from Connectors.predictore_store import PredictorStore
+from Predictors.deep_predictor import DeepPredictor
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import TimeUtils
 from Tracing.ConsoleTracer import ConsoleTracer
@@ -390,6 +391,52 @@ class IG:
                 if offer_price > deal.manual_stop_level:
                     self._tracer.debug(f"Stop reached {deal}")
                     self.close("BUY", deal_id, deal.size)
+
+    def manual_close_after_time(self, position: Series,deal_store: DealStore, predictor_store: PredictorStore, time_threshold_minutes=10):
+        """
+          Schließt Trades manuell, wenn die Zeit die Handelszeit (plus Threshold) überschreitet.
+
+          Args:
+              position (Series): Die aktuelle Position mit Details wie bid, offer, direction, und dealId.
+              deal_store (DealStore): Speicher für die Handelsdetails.
+              predictor_store (PredictorStore): Speicher für die Vorhersageparameter.
+              time_threshold_minutes (int): Zeit-Threshold in Minuten, standardmäßig 10 Minuten.
+          """
+        # Extrahiere Position-Details
+        direction = position.direction
+        deal_id = position.dealId
+
+        # Lade das zugehörige Deal-Objekt
+        deal = deal_store.get_deal_by_deal_id(deal_id)
+        open_time = deal.get_open_time()  # Öffnungszeit des Trades
+        p_id = deal.get_predictor_scan_id()
+
+        # Setup des Predictors
+        predictor = DeepPredictor(cache=None, config=None,  indicators=Indicators(),symbol="")
+        predictor.setup(predictor_store.load_by_id(p_id))
+
+        # Handelsrichtung überprüfen
+        if direction == TradeAction.BUY:
+            # Erlaubte Handelszeit und Threshold berechnen
+            trading_hours = predictor.get_buy_trading_hours()
+            close_time = open_time + timedelta(hours=trading_hours)
+            close_time_with_threshold = close_time - timedelta(minutes=time_threshold_minutes)
+
+            # Überprüfen, ob die Zeit überschritten wurde
+            if datetime.utcnow() > close_time_with_threshold:
+                print(f"Schließe Kauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
+                self.close("SELL", deal_id, deal.size)
+
+        elif direction == TradeAction.SELL:
+            # Erlaubte Handelszeit und Threshold berechnen
+            trading_hours = predictor.get_sell_trading_hours()
+            close_time = open_time + timedelta(hours=trading_hours)
+            close_time_with_threshold = close_time - timedelta(minutes=time_threshold_minutes)
+
+            # Überprüfen, ob die Zeit überschritten wurde
+            if datetime.utcnow() > close_time_with_threshold:
+                print(f"Schließe Verkaufs-Trade {deal_id}, da die Zeit überschritten ist.")
+                self.close("BUY", deal_id, deal.size)
 
     def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")

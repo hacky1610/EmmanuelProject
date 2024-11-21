@@ -51,7 +51,8 @@ trader = Trader(
     analytics=analytics,
     predictor_store=ps,
     deal_storage=ds,
-    market_storage=ms
+    market_storage=ms,
+    cache=cache
 )
 
 trader.trade_markets(TradeType.FX, indicators)

@@ -39,6 +39,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures, MinMaxScaler
 from xgboost import XGBClassifier
 
+from BL import measure_time
+
 
 # endregion
 
@@ -75,10 +77,9 @@ class MyKerasClassifier(BaseEstimator, ClassifierMixin):
 
 class DeepTrainer:
 
-    def train(self, df) -> (RandomForestClassifier, float):
-        rf, accuracy = self._train_random_forest(df)
+    def train(self, df, hours,quantile,iterations) -> List:
 
-        return rf, accuracy
+        return self._train_random_forest(df, hours,quantile,iterations)
 
 
     # Benutzerdefinierte Bewertungsfunktion für `1`-Vorhersagen
@@ -135,7 +136,7 @@ class DeepTrainer:
             # ]),
             # Pipeline([
             #     ('scaler', MinMaxScaler()),
-            #     ('variance_threshold', VarianceThreshold(threshold=0.1)),
+            #     ('variance_threshold', VarianceThreshold(threshold=0.01)),
             #     # Higher threshold for more aggressive filtering
             #     ('classifier', model)
             # ]),
@@ -174,54 +175,56 @@ class DeepTrainer:
         #         'classifier__dropout_rate': [0.2, 0.3, 0.4],
         #         'classifier__epochs': [10, 20],  # Reduziere für schnelle Tests
         #         'classifier__batch_size': [32, 64],
-        # }),
-            'Gradient Boosting': (GradientBoostingClassifier(random_state=42), {
-                'classifier__n_estimators': [50, 100, 200],
-                'classifier__max_depth': [3, 5, 7],
-                'classifier__learning_rate': [0.01, 0.1, 0.2],
-            }),
-            'Gradient Boosting 2': (GradientBoostingClassifier(random_state=42), {
-                'classifier__n_estimators': [50, 100, 200],
-                'classifier__max_depth': [3, 5, 7],
-                'classifier__learning_rate': [0.01, 0.1, 0.2],
-                'classifier__subsample': [0.8, 1.0],
-            }),
-            'Gradient Boosting 3': (GradientBoostingClassifier(random_state=42), {
-                'classifier__n_estimators': [50, 100, 200],
-                'classifier__max_depth': [3, 5, 7],
-                'classifier__learning_rate': [0.01, 0.1, 0.2],
-                'classifier__subsample': [0.8, 1.0],
-                'classifier__min_samples_split': [2, 5, 10],
-                'classifier__min_samples_leaf': [1, 3, 5],
-                'classifier__max_features': ['auto', 'sqrt', 'log2'],
-                'classifier__max_leaf_nodes': [None, 10, 20, 30],
-                'classifier__warm_start': [True, False],
-                'classifier__validation_fraction': [0.1, 0.2],
-                'classifier__n_iter_no_change': [None, 5, 10]
-            }),
-            'Random Forest Balanced': (RandomForestClassifier(random_state=42, class_weight='balanced'), {
-                'classifier__n_estimators': [50, 100, 200],
-                'classifier__max_depth': [10, 20],
-                'classifier__min_samples_split': [2, 5],
-                'classifier__min_samples_leaf': [1, 2, 4],
-                'classifier__max_features': ['sqrt'],
-                'classifier__bootstrap': [True, False],
-            }),
-            'XGBoost': (XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss',  verbosity=0), {
-                   'classifier__max_depth': [3, 5, 7, 10, 12],             # Explore shallower to deeper trees
-                    'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],   # Test smaller learning rates
-                    'classifier__n_estimators': [50, 100, 200, 300, 500],   # Cover a wider range of estimators
-                    'classifier__subsample': [0.6, 0.8, 1.0],               # Tweak sampling rate to control overfitting
-                    'classifier__colsample_bytree': [0.6, 0.8, 1.0]         # Contr
-            }),
+        # # }),
+        #     'Gradient Boosting': (GradientBoostingClassifier(random_state=42), {
+        #         'classifier__n_estimators': [50, 100, 200],
+        #         'classifier__max_depth': [3, 5, 7],
+        #         'classifier__learning_rate': [0.01, 0.1, 0.2],
+        #     }),
+            # 'Gradient Boosting 2': (GradientBoostingClassifier(random_state=42), {
+            #     'classifier__n_estimators': [50, 100, 200],
+            #     'classifier__max_depth': [3, 5, 7],
+            #     'classifier__learning_rate': [0.01, 0.1, 0.2],
+            #     'classifier__subsample': [0.8, 1.0],
+            # }),
+            # 'Gradient Boosting 3': (GradientBoostingClassifier(random_state=42), {
+            #     'classifier__n_estimators': [50, 100, 200],
+            #     'classifier__max_depth': [3, 5, 7],
+            #     'classifier__learning_rate': [0.01, 0.1, 0.2],
+            #     'classifier__subsample': [0.8, 1.0],
+            #     'classifier__min_samples_split': [2, 5, 10],
+            #     'classifier__min_samples_leaf': [1, 3, 5],
+            #     'classifier__max_features': ['auto', 'sqrt', 'log2'],
+            #     'classifier__max_leaf_nodes': [None, 10, 20, 30],
+            #     'classifier__warm_start': [True, False],
+            #     'classifier__validation_fraction': [0.1, 0.2],
+            #     'classifier__n_iter_no_change': [None, 5, 10]
+            # }),
+            # 'Random Forest Balanced': (RandomForestClassifier(random_state=42, class_weight='balanced'), {
+            #     'classifier__n_estimators': [50, 100, 200],
+            #     'classifier__max_depth': [10, 20],
+            #     'classifier__min_samples_split': [2, 5],
+            #     'classifier__min_samples_leaf': [1, 2, 4],
+            #     'classifier__max_features': ['sqrt'],
+            #     'classifier__bootstrap': [True, False],
+            # }),
+            # 'XGBoost': (XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss',  verbosity=0), {
+            #        'classifier__max_depth': [3, 5, 7, 10, 12],             # Explore shallower to deeper trees
+            #         'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],   # Test smaller learning rates
+            #         'classifier__n_estimators': [50, 100, 200, 300, 500],   # Cover a wider range of estimators
+            #         'classifier__subsample': [0.6, 0.8, 1.0],               # Tweak sampling rate to control overfitting
+            #         'classifier__colsample_bytree': [0.6, 0.8, 1.0]         # Contr
+            # }),
             'XGBoost Weighted': (
             XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', verbosity=0), {
                 'classifier__max_depth': [3, 5, 7],
                 'classifier__learning_rate': [0.01, 0.1, 0.2],
                 'classifier__n_estimators': [100, 200],
+                'classifier__gamma': [0, 0.1, 0.5, 1],
                 'classifier__subsample': [0.8, 1.0],
                 'classifier__colsample_bytree': [0.8, 1.0],
-                'classifier__scale_pos_weight': [5, 10, 20]  # Teste verschiedene Gewichtungen für Klasse 1
+                'classifier__min_child_weight': [1, 5, 10],  # Minimale Anforderungen an Split
+                'classifier__scale_pos_weight':  [0.1, 0.5, 1, 5, 10,20,50]  # Teste verschiedene Gewichtungen für Klasse 1
             }),
             'Random Forest Balanced Weighted': (RandomForestClassifier(random_state=42, class_weight={0: 1, 1: 10}), {
                 'classifier__n_estimators': [50, 100, 200],
@@ -231,27 +234,27 @@ class DeepTrainer:
                 'classifier__max_features': ['sqrt'],
                 'classifier__bootstrap': [True, False],
             }),
-            'LightGBM': (lgb.LGBMClassifier(random_state=42, verbose=-1),
-                         {
-                             'classifier__max_depth': [3, 5, 7, 10, 12],
-                             # Ähnlich wie XGBoost, tiefere und flachere Bäume testen
-                             'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],  # Geringere Lernraten ausprobieren
-                             'classifier__n_estimators': [50, 100, 200, 300, 500],
-                             # Größerer Bereich für die Anzahl der Bäume
-                             'classifier__subsample': [0.6, 0.8, 1.0],
-                             # Sampling-Rate zum Überanpassungskontrolle anpassen
-                             'classifier__colsample_bytree': [0.6, 0.8, 1.0]  # Anteil der Spalten für Baumaufbau
-                         }),
-            'LightGBM Weighted (is_unbalance)': (
-            lgb.LGBMClassifier(random_state=42, is_unbalance=True, verbose=-1),
-            {
-                'classifier__max_depth': [3, 5, 7],
-                'classifier__learning_rate': [0.01, 0.1],
-                'classifier__n_estimators': [100, 200],
-                'classifier__subsample': [0.8, 1.0],
-                'classifier__colsample_bytree': [0.8, 1.0],
-            }
-        ),
+            # 'LightGBM': (lgb.LGBMClassifier(random_state=42, verbose=-1),
+            #              {
+            #                  'classifier__max_depth': [3, 5, 7, 10, 12],
+            #                  # Ähnlich wie XGBoost, tiefere und flachere Bäume testen
+            #                  'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],  # Geringere Lernraten ausprobieren
+            #                  'classifier__n_estimators': [50, 100, 200, 300, 500],
+            #                  # Größerer Bereich für die Anzahl der Bäume
+            #                  'classifier__subsample': [0.6, 0.8, 1.0],
+            #                  # Sampling-Rate zum Überanpassungskontrolle anpassen
+            #                  'classifier__colsample_bytree': [0.6, 0.8, 1.0]  # Anteil der Spalten für Baumaufbau
+            #              }),
+        #     'LightGBM Weighted (is_unbalance)': (
+        #     lgb.LGBMClassifier(random_state=42, is_unbalance=True, verbose=-1),
+        #     {
+        #         'classifier__max_depth': [3, 5, 7],
+        #         'classifier__learning_rate': [0.01, 0.1],
+        #         'classifier__n_estimators': [100, 200],
+        #         'classifier__subsample': [0.8, 1.0],
+        #         'classifier__colsample_bytree': [0.8, 1.0],
+        #     }
+        # ),
             'LightGBM Weighted (scale_pos_weight)': (
                 lgb.LGBMClassifier(random_state=42, verbose=-1),
                 {
@@ -263,62 +266,62 @@ class DeepTrainer:
                     'classifier__scale_pos_weight': [5, 10, 20],  # Experimentiere mit Werten
                 }
             ),
-            'CatBoost': (CatBoostClassifier(random_seed=42, verbose=0),
-                         {
-                             'classifier__depth': [3, 5, 7, 10, 12],  # Baumtiefe
-                             'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],  # Lernrate
-                             'classifier__iterations': [50, 100, 200, 300, 500],
-                             # Anzahl der Iterationen (entspricht n_estimators)
-                             'classifier__subsample': [0.6, 0.8, 1.0],  # Sampling-Rate
-                             'classifier__colsample_bylevel': [0.6, 0.8, 1.0]  # Anteil der Spalten auf Ebene
-                         }),
+        #     'CatBoost': (CatBoostClassifier(random_seed=42, verbose=0),
+        #                  {
+        #                      'classifier__depth': [3, 5, 7, 10, 12],  # Baumtiefe
+        #                      'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],  # Lernrate
+        #                      'classifier__iterations': [50, 100, 200, 300, 500],
+        #                      # Anzahl der Iterationen (entspricht n_estimators)
+        #                      'classifier__subsample': [0.6, 0.8, 1.0],  # Sampling-Rate
+        #                      'classifier__colsample_bylevel': [0.6, 0.8, 1.0]  # Anteil der Spalten auf Ebene
+        #                  }),
             'CatBoost Weighted': (CatBoostClassifier(random_seed=42, verbose=0, class_weights=[1, 10]), {
                 'classifier__depth': [3, 5, 7],
                 'classifier__learning_rate': [0.01, 0.1],
                 'classifier__iterations': [100, 200],
                 'classifier__subsample': [0.8, 1.0],
             }),
-            'CatBoost Weighted 2': (CatBoostClassifier(random_seed=42, verbose=0, class_weights=[10, 1]), {
-                'classifier__depth': [3, 5, 7],
-                'classifier__learning_rate': [0.01, 0.1],
-                'classifier__iterations': [100, 200],
-                'classifier__subsample': [0.8, 1.0],
-            }),
+        #     'CatBoost Weighted 2': (CatBoostClassifier(random_seed=42, verbose=0, class_weights=[10, 1]), {
+        #         'classifier__depth': [3, 5, 7],
+        #         'classifier__learning_rate': [0.01, 0.1],
+        #         'classifier__iterations': [100, 200],
+        #         'classifier__subsample': [0.8, 1.0],
+        #     }),
 
-            'Logistic Regression': (LogisticRegression(random_state=42, max_iter=1000), {
-                'classifier__C': [0.1, 1, 10],
-                'classifier__penalty': ['l2'],
-                'classifier__solver': ['lbfgs', 'saga'],
-            }),
-            'Logistic Regression Weighted': (
-            LogisticRegression(random_state=42, max_iter=1000, class_weight={0: 1, 1: 10}), {
-                'classifier__C': [0.1, 1, 10],
-                'classifier__penalty': ['l2'],
-                'classifier__solver': ['lbfgs', 'saga'],
-            }),
-            'Logistic Regression Weighted 2': (
-                LogisticRegression(random_state=42, max_iter=1000, class_weight={0: 10, 1: 1}), {
-                    'classifier__C': [0.1, 1, 10],
-                    'classifier__penalty': ['l2'],
-                    'classifier__solver': ['lbfgs', 'saga'],
-                }),
+            # 'Logistic Regression': (LogisticRegression(random_state=42, max_iter=1000), {
+            #     'classifier__C': [0.1, 1, 10],
+            #     'classifier__penalty': ['l2'],
+            #     'classifier__solver': ['lbfgs', 'saga'],
+            # }),
+            # 'Logistic Regression Weighted': (
+            # LogisticRegression(random_state=42, max_iter=1000, class_weight={0: 1, 1: 10}), {
+            #     'classifier__C': [0.1, 1, 10],
+            #     'classifier__penalty': ['l2'],
+            #     'classifier__solver': ['lbfgs', 'saga'],
+            # }),
+            # 'Logistic Regression Weighted 2': (
+            #     LogisticRegression(random_state=42, max_iter=1000, class_weight={0: 10, 1: 1}), {
+            #         'classifier__C': [0.1, 1, 10],
+            #         'classifier__penalty': ['l2'],
+            #         'classifier__solver': ['lbfgs', 'saga'],
+            #     }),
 
-            'Support Vector Machine': (SVC(probability=True, random_state=42), {
-                'classifier__C': [0.1, 1, 10],
-                'classifier__kernel': ['linear', 'rbf'],
-                'classifier__gamma': ['scale', 'auto'],
-            }),
+            # 'Support Vector Machine': (SVC(probability=True, random_state=42), {
+            #     'classifier__C': [0.1, 1, 10],
+            #     'classifier__kernel': ['linear', 'rbf'],
+            #     'classifier__gamma': ['scale', 'auto'],
+            # }),
             'Support Vector Machine Weighted': (SVC(probability=True, random_state=42, class_weight={0: 1, 1: 10}), {
                 'classifier__C': [0.1, 1, 10],
                 'classifier__kernel': ['linear', 'rbf'],
                 'classifier__gamma': ['scale', 'auto'],
             }),
-
-            'Support Vector Machine Weighted 2': (SVC(probability=True, random_state=42, class_weight={0: 10, 1: 1}), {
-                'classifier__C': [0.1, 1, 10],
-                'classifier__kernel': ['linear', 'rbf'],
-                'classifier__gamma': ['scale', 'auto'],
-            }),
+            #
+            # 'Support Vector Machine Weighted 2': (SVC(probability=True, random_state=42, class_weight={0: 10, 1: 1}), {
+            #     'classifier__C': [0.1, 1, 10],
+            #     'classifier__kernel': ['linear', 'rbf'],
+            #     'classifier__gamma': ['scale', 'auto'],
+            # }),
         }
 
         return models
@@ -350,22 +353,22 @@ class DeepTrainer:
         model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
         return model
 
-    def evaluate_features(self, df, target):
+    def evaluate_features(self, df, target, quantile=0.75):
         # 1. Korrelation mit Zielwert berechnen
-        correlation = self.correlation_with_target(df, target)
-        print("Top 10 Features basierend auf der Korrelation zum Ziel:")
-        print(correlation.sort_values(ascending=False).head(15))
+        correlation = self.correlation_with_target(df, target, )
+        #print("Top 10 Features basierend auf der Korrelation zum Ziel:")
+        #print(correlation.sort_values(ascending=False).head(15))
 
         # 2. Feature-Importance mit RandomForest berechnen
         importance_df = self.feature_importance(df, target)
-        print("\nTop 10 Features basierend auf der Feature Importance (RandomForest):")
-        print(importance_df.head(15))
+        #print("\nTop 10 Features basierend auf der Feature Importance (RandomForest):")
+        #print(importance_df.head(15))
 
         # 3. VIF (Variance Inflation Factor) berechnen
         vif_df = self.calculate_vif(df.drop(columns=[target]))
-        print("\nTop 10 Features mit dem höchsten VIF:")
+        #print("\nTop 10 Features mit dem höchsten VIF:")
         top_vif = vif_df.sort_values(by='VIF', ascending=False).head(15)
-        print(top_vif)
+        #print(top_vif)
 
         correlation_matrix = df.corr()
         for a, b in top_vif.iterrows():
@@ -374,7 +377,7 @@ class DeepTrainer:
             # print(correlated_features[abs(correlated_features) > 0.8])
 
         # Kombinierte Bewertung
-        print("\nKombinierte Rangliste der besten Features:")
+        #print("\nKombinierte Rangliste der besten Features:")
 
         # Kombinierte Score-Berechnung: Korrelation + Feature-Importance - (1/VIF)
         combined_scores = pd.DataFrame({
@@ -391,9 +394,10 @@ class DeepTrainer:
         top_features = combined_scores[combined_scores['Score'] > high_score_threshold]
 
         # Zeige die besten Features
-        print(top_features[['Feature', 'Score']])
-
-        return top_features['Feature'].tolist()
+        #print(top_features[['Feature', 'Score']])
+        featurues = top_features['Feature'].tolist()
+        featurues.remove(target)
+        return featurues
 
     def correlation_with_target(self, df, target):
         correlation = df.corr()[target]
@@ -453,42 +457,64 @@ class DeepTrainer:
         # Calculate precision
         precision = true_positives / (true_positives + false_positives)
 
-        print((y_pred == 1).sum())
-        print((y_true == 1).sum())
         f = 0
         if (y_pred == 1).sum() < (y_true == 1).sum():
             f = (y_pred == 1).sum() / (y_true == 1).sum()
 
         # Return the precision adjusted by the penalty
-        return precision - (1 - f) * 0.5
+        return precision - (1 - f) * 0.2
 
-    def _train_random_forest(self, df):
-        # Suppress warnings
-        warnings.filterwarnings("ignore")
+    @measure_time
+    def _train_model(self,pipeline_index,model_name, pipeline, param_grid, tscv, X_train, y_train, X_test, y_test, good_featurs, quantile, hours, iterations):
+        print(f"\nTesting pipeline variant {pipeline_index + 1} for {model_name}")
+        scorer = make_scorer(precision_score, pos_label=1, zero_division=0)
+        random_search = RandomizedSearchCV(
+            estimator=pipeline,
+            param_distributions=param_grid,
+            n_iter=iterations,
+            cv=tscv,
+            verbose=0,
+            scoring=scorer,
+            n_jobs=3,
+            random_state=42
+        )
 
-        df = df.drop(columns=["chart_index"])
-        # Split dataset into training and test sets
-        df_train = df[:int(len(df) * 0.9)]
-        df_test = df[int(len(df) * 0.9):]
+        # Führe RandomizedSearch durch und speichere das beste Modell
+        random_search.fit(X_train, y_train)
 
-        good_featurs = self.evaluate_features(df_train, "result")
-        df_train = df_train[good_featurs]
-        df_test = df_test[good_featurs]
+        best_cv_score = random_search.best_score_
+        best_model = random_search.best_estimator_
 
-        X_train, y_train = df_train.drop(columns=['result']), df_train['result']
-        X_test, y_test = df_test.drop(columns=['result']), df_test['result']
+        train_result = self.evaluate_model(best_model, X_train, y_train,
+                                      thresholds=np.arange(0.45, 0.95, 0.05).tolist())
+        test_result = self.evaluate_model(best_model, X_test, y_test,
+                                     thresholds=np.arange(0.45, 0.95, 0.05).tolist())
 
-        # Apply SMOTE only on the training set
-        smote = SMOTE(random_state=42)
-        X_train, y_train = smote.fit_resample(X_train, y_train)
+        return random_search.best_params_ | {
+            "Model": model_name,
+            "Pipeline Variant": pipeline_index + 1,
+            "Pipeline Name": f"{pipeline}",
+            "CV Score": best_cv_score,
+            "Trading Houres": hours,
+            "Best Precision": test_result["Best Precision"],
+            "Best Recall": test_result["Best Recall"],
+            "Best F1-Score": test_result["Best F1-Score"],
+            "Best Threshold": test_result["Best Threshold"],
+            "Positive Predictions Count": test_result["Positive Predictions Count"],
+            "Best Train Precision": train_result["Best Precision"],
+            "Best Train Recall": train_result["Best Recall"],
+            "Best Train F1-Score": train_result["Best F1-Score"],
+            "Best Train Threshold": train_result["Best Threshold"],
+            "Positive Predictions Count Train": train_result["Positive Predictions Count"],
+            "Best Model": best_model,
+            "Good Features": good_featurs,
+            "Quantile": quantile,
+            "Iterations": iterations
+        }
 
-        # Models and parameter grids
-        models = self._get_models()
 
-        # Cross-validation
-        tscv = TimeSeriesSplit(n_splits=5)
 
-        def evaluate_model(model, X, y, thresholds=None, min_positive_predictions=10):
+    def evaluate_model(self, model, X, y, thresholds=None, min_positive_predictions=25):
             """
             Bewertet ein Modell basierend auf Precision, Recall und F1-Score.
             - Falls das Modell `predict_proba` unterstützt, wird eine Schwellenwertanalyse durchgeführt.
@@ -581,11 +607,33 @@ class DeepTrainer:
 
             return results
 
+    def _train_random_forest(self, df, hours, quantile, iterations):
+        # Suppress warnings
+        warnings.filterwarnings("ignore")
 
+        df = df.drop(columns=["chart_index"])
+        # Split dataset into training and test sets
+        df_train = df[:int(len(df) * 0.9)]
+        df_test = df[int(len(df) * 0.9):]
 
-        param_grid = {}
+        good_featurs = self.evaluate_features(df_train, "result", quantile)
+        X_train = df_train.drop(columns=['result'])[good_featurs]
+        X_test = df_test.drop(columns=['result'])[good_featurs]
 
-        results = {}
+        y_train = df_train['result']
+        y_test = df_test['result']
+
+        # Apply SMOTE only on the training set
+        smote = SMOTE(random_state=42)
+        X_train, y_train = smote.fit_resample(X_train, y_train)
+
+        # Models and parameter grids
+        models = self._get_models()
+
+        # Cross-validation
+        tscv = TimeSeriesSplit(n_splits=5)
+        best_results = []
+
         for model_name, (model, param_grid) in models.items():
             print(f"Training {model_name}...")
 
@@ -593,40 +641,20 @@ class DeepTrainer:
             pipeline_variants = self.get_pipeline_variants(model)
 
             for i, pipeline in enumerate(pipeline_variants):
-                print(f"\nTesting pipeline variant {i + 1} for {model_name}")
+                res = self._train_model(pipeline_index=1, model_name=model_name,pipeline=pipeline,
+                                        param_grid=param_grid, tscv=tscv, X_train=X_train, y_train=y_train,
+                                        X_test=X_test, y_test=y_test, good_featurs=good_featurs, quantile=quantile, hours=hours, iterations=iterations)
 
-                random_search = RandomizedSearchCV(
-                    estimator=pipeline,
-                    param_distributions=param_grid,
-                    n_iter=66,
-                    cv=tscv,
-                    verbose=0,
-                    n_jobs=3,
-                    random_state=42
-                )
+                best_results.append(res)
 
-                # Führe RandomizedSearch durch und speichere das beste Modell
-                random_search.fit(X_train, y_train)
-
-                best_cv_score = random_search.best_score_
-                best_model = random_search.best_estimator_
-
-                train_result = evaluate_model(best_model, X_train, y_train,
-                                                                       thresholds=np.arange(0.45, 0.95, 0.05).tolist())
-                test_result = evaluate_model(best_model, X_test, y_test,
-                                                                     thresholds=np.arange(0.45, 0.95, 0.05).tolist())
-
-                print(
-                    f"Model: {model_name} - Variant {i + 1}, CV: {best_cv_score:.4f}, {test_result}"
-                )
-                results[f"{model_name} - Variant {i + 1}"] = (test_result["Best Precision"], best_model)
 
         # Ausgabe des besten Modells basierend auf Test-Precision
-        best_model_name = max(results, key=lambda k: results[k][0])
-        best_test_precision, best_model = results[best_model_name]
+        #best_model_name = max(results, key=lambda k: results[k][0])
+        #best_test_precision, best_model = results[best_model_name]
 
-        print(f"\nBest Model: {best_model_name} with Test Precision: {best_test_precision:.4f}")
-        return best_model, best_test_precision
+        best_item = max(best_results, key=lambda x: x['Best Precision'])
+        print(f"{best_item['Best Precision']} from {best_item['Model']} - {best_item['Pipeline Name']}")
+        return best_results
 
     @staticmethod
     def analyze_cv_scores(cv_scores, threshold=0.7, warning_threshold=0.05):

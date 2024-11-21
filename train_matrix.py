@@ -2,6 +2,8 @@
 import os
 import random
 import traceback
+from datetime import datetime
+
 import dropbox
 import pymongo
 import pandas as pd
@@ -23,6 +25,7 @@ from Predictors.deep_predictor import DeepPredictor
 from Predictors.utils import Reporting
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
+
 # endregion
 
 type_ = "DEMO"
@@ -64,7 +67,8 @@ _deep_trainer = DeepTrainer()
 
 # endregion
 
-def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor, dropbox_cache:DropBoxCache) -> (DataFrame, DataFrame):
+def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor,
+                   dropbox_cache: DropBoxCache) -> (DataFrame, DataFrame):
     hour_df = f"{symbol}_train_1hour.csv"
     minute_df = f"{symbol}_train_5minute.csv"
 
@@ -73,15 +77,16 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_proc
         eval_df_train = dropbox_cache.load_train_cache(minute_df)
     else:
         df_train, eval_df_train = tiingo.load_test_data(symbol, data_processor, trade_type=trade_type)
-        dropbox_cache.save_train_cache(df_train,hour_df)
-        dropbox_cache.save_train_cache(eval_df_train,minute_df)
+        dropbox_cache.save_train_cache(df_train, hour_df)
+        dropbox_cache.save_train_cache(eval_df_train, minute_df)
 
     df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
-    eval_df_train = eval_df_train.astype({col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
+    eval_df_train = eval_df_train.astype(
+        {col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
     return df_train, eval_df_train
 
 
-def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, deep_predictor, trade_mode):
+def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, trade_mode, hours, quantile,iterations):
     print(f"Train {symbol} for {trade_mode}")
     # Set specific replacement values for each trade type
     if trade_mode == "buy":
@@ -99,13 +104,7 @@ def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, 
     signal_result_df = signal_result_df.dropna()
 
     # Train model and set predictor
-    model, accuracy = deep_trainer.train(signal_result_df)
-    if trade_mode == "buy":
-        deep_predictor.set_model_buy(model)
-        deep_predictor.set_buy_validation(accuracy)
-    elif trade_mode == "sell":
-        deep_predictor.set_model_sell(model)
-        deep_predictor.set_sell_validation(accuracy)
+    return deep_trainer.train(signal_result_df, hours, quantile,iterations)
 
 
 def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indicators, trade_type=TradeType.FX,
@@ -113,9 +112,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-
-        if symbol != "AUDUSD":
-            continue
+        #if symbol != "AUDUSD":
+        #    continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                  dropbox_cache=cache)
@@ -127,21 +125,52 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
         try:
             # General configuration and data processing
             config = predictor_store.load_active_by_symbol(symbol)
-            buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol, m["scaling"], config,
-                                                         epic=m["epic"])
-            trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
-            train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
+            best_buy_results = []
+            best_sell_results = []
+            for hours in range(2, 7):
+                quantile = 0.66
+                for iteration in [66]:
+                    print(f"Train {symbol} for {hours} hours and quantile {quantile}")
+                    buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
+                                                                 time_frame=hours)
+                    trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
+                    train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
 
-            # Initialize deep predictor
-            deep_predictor = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer,
-                                           indicators=indicators)
-
-            # Train for Buy and Sell separately
-            train_for_trade_type(symbol, train_signals_df, buy_results, deep_trainer, deep_predictor, trade_mode="buy")
-            train_for_trade_type(symbol, train_signals_df, sell_results, deep_trainer, deep_predictor,
-                                 trade_mode="sell")
+                    # Train for Buy and Sell separately
+                    best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
+                                                                               deep_trainer, trade_mode="buy",
+                                                                               hours=hours, quantile=quantile,iterations=iteration)
+                    best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
+                                                                                 deep_trainer,
+                                                                                 trade_mode="sell", hours=hours,
+                                                                                 quantile=quantile,iterations=iteration)
 
             # Save and activate predictor
+            # Initialize deep predictor
+            best_buy_results_df = DataFrame(best_buy_results)
+            best_sell_results_df = DataFrame(best_sell_results)
+
+            best_buy_results_df.drop(columns=["Best Model"]).to_csv(
+                f"D:\\Code\\EmmanuelCache\\{symbol}_best_buy_results_{datetime.datetime.now().microsecond}.csv", sep=';', index=False)
+            best_sell_results_df.drop(columns=["Best Model"]).to_csv(
+                f"D:\\Code\\EmmanuelCache\\{symbol}_best_sell_results_{datetime.datetime.now().microsecond}.csv", sep=';', index=False)
+            best_buy_precision_row = best_buy_results_df.loc[best_buy_results_df["Best Precision"].idxmax()]
+            best_sell_precision_row = best_sell_results_df.loc[best_sell_results_df["Best Precision"].idxmax()]
+
+            print(f"Best Buy: {best_buy_precision_row}")
+            print(f"Best Sell: {best_sell_precision_row}")
+            deep_predictor = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer,
+                                           indicators=indicators)
+            deep_predictor.set_buy_validation(best_buy_precision_row["Best Precision"],
+                                              best_buy_precision_row["Trading Houres"],
+                                              threshold=best_buy_precision_row["Best Threshold"],
+                                              features=best_buy_precision_row["Good Features"])
+            deep_predictor.set_sell_validation(best_sell_precision_row["Best Precision"],
+                                               best_sell_precision_row["Trading Houres"],
+                                               threshold=best_sell_precision_row["Best Threshold"],
+                                               features=best_sell_precision_row["Good Features"], )
+            deep_predictor.set_model_buy(best_buy_precision_row["Best Model"])
+            deep_predictor.set_model_sell(best_sell_precision_row["Best Model"])
             deep_predictor.save()
             deep_predictor.activate()
             predictor_store.save(deep_predictor)
@@ -149,6 +178,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
         except Exception as ex:
             traceback_str = traceback.format_exc()
             print(f"MainException: {ex} File:{traceback_str}")
+
 
 while True:
     try:

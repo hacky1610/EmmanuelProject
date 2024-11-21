@@ -88,6 +88,12 @@ class Deal:
     def close(self):
         self.status = "Closed"
 
+    def get_predictor_scan_id(self):
+        return self.predictor_scan_id
+
+    def get_open_time(self) -> datetime:
+        return self.open_date_ig_datetime
+
     def set_intelligent_stop_level(self, level: float):
         self.intelligent_stop_used = True
         self.intelligent_stop_level = level
