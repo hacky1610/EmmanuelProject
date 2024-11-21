@@ -128,22 +128,22 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             best_buy_results = []
             best_sell_results = []
             for hours in range(2, 7):
-                quantile = 0.66
-                for iteration in [66]:
-                    print(f"Train {symbol} for {hours} hours and quantile {quantile}")
-                    buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
-                                                                 time_frame=hours)
-                    trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
-                    train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
+                for quantile in [0.3, 0.5, 0.9]:
+                    for iteration in [66]:
+                        print(f"Train {symbol} for {hours} hours and quantile {quantile}")
+                        buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
+                                                                     time_frame=hours)
+                        trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
+                        train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
 
-                    # Train for Buy and Sell separately
-                    best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
-                                                                               deep_trainer, trade_mode="buy",
-                                                                               hours=hours, quantile=quantile,iterations=iteration)
-                    best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
-                                                                                 deep_trainer,
-                                                                                 trade_mode="sell", hours=hours,
-                                                                                 quantile=quantile,iterations=iteration)
+                        # Train for Buy and Sell separately
+                        best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
+                                                                                   deep_trainer, trade_mode="buy",
+                                                                                   hours=hours, quantile=quantile,iterations=iteration)
+                        best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
+                                                                                     deep_trainer,
+                                                                                     trade_mode="sell", hours=hours,
+                                                                                     quantile=quantile,iterations=iteration)
 
             # Save and activate predictor
             # Initialize deep predictor

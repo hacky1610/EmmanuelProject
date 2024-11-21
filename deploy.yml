@@ -5,7 +5,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
-- TI_Deep
+- TI_Deep_4
 
 pool:
   vmImage: ubuntu-latest

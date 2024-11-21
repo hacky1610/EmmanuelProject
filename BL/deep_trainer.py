@@ -390,7 +390,7 @@ class DeepTrainer:
         combined_scores['VIF'] = combined_scores['Feature'].map(vif_df.set_index('Variable')['VIF'])
         combined_scores['Score'] = combined_scores['Correlation'] + combined_scores['Importance']
         combined_scores = combined_scores.sort_values('Score', ascending=False)
-        high_score_threshold = combined_scores['Score'].quantile(0.75)
+        high_score_threshold = combined_scores['Score'].quantile(quantile)
         top_features = combined_scores[combined_scores['Score'] > high_score_threshold]
 
         # Zeige die besten Features
