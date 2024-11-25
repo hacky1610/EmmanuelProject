@@ -1,14 +1,17 @@
 # region import
 import math
+import os
+import sys
 import warnings
 from typing import List
 import numpy as np
 from catboost import CatBoostClassifier
 import lightgbm as lgb
 from imblearn.over_sampling import SMOTE
-from keras import Sequential, Input
-from keras.src.layers import Dense, Dropout
-from keras.src.optimizers import Adam
+from keras import Sequential, Input, Model
+from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
+from keras.src.layers import Dense, Dropout, BatchNormalization, Add, Reshape, Conv1D, MaxPooling1D, Flatten
+from keras.src.optimizers import Adam, SGD, RMSprop, AdamW
 from keras.src.optimizers.schedules import ExponentialDecay
 from sklearn.decomposition import PCA
 import tensorflow as tf
@@ -41,39 +44,126 @@ from xgboost import XGBClassifier
 
 from BL import measure_time
 
+class SilentCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        pass
 
 # endregion
-
-class MyKerasClassifier(BaseEstimator, ClassifierMixin):
-    def __init__(self, build_fn=None, epochs=10, batch_size=32, verbose=0, optimizer="adam", dropout_rate=0.2, activation="relu"):
-        self.build_fn = build_fn
+class KerasWrapper(BaseEstimator, ClassifierMixin):
+    def __init__(self, dropout_rate=0.2, optimizer='adam',
+                 learning_rate=0.001, epochs=50, batch_size=32,
+                 model_type="V1", activation='relu',regularizer=None, initializer="he_normal"):
+        self.dropout_rate = dropout_rate
+        self.optimizer = optimizer
+        self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
+        self.model_ = None  # Placeholder for the model
+        self.model_type = model_type
         self.activation = activation
-        self.verbose = verbose
-        self.optimizer = optimizer
-        self.dropout_rate = dropout_rate
-        self.model = None
+        self.regularizer = regularizer
+        self.initializer = initializer
 
+    def _build_model(self, input_dim):
+        print(f"Building model with type {self.model_type}")
+        if self.model_type == "V1":
+            model = Sequential([
+                Input(shape=(input_dim,)),  # Explicitly define the input shape here
+                Dense(64, activation=self.activation),
+                Dropout(self.dropout_rate),
+                Dense(32, activation=self.activation),
+                Dropout(self.dropout_rate),
+                Dense(1, activation='sigmoid')  # Binary classification output
+            ])
+        elif self.model_type == "V2":
+            model = Sequential([
+                Input(shape=(input_dim,)),
+                Dense(128, activation=self.activation),
+                BatchNormalization(),
+                Dropout(self.dropout_rate),
+                Dense(64, activation=self.activation),
+                BatchNormalization(),
+                Dropout(self.dropout_rate),
+                Dense(32, activation=self.activation),
+                BatchNormalization(),
+                Dropout(self.dropout_rate),
+                Dense(1, activation='sigmoid')
+            ])
+        elif self.model_type == "V3":
+            model = Sequential([
+                Input(shape=(input_dim,)),
+                Dense(128, activation=self.activation, kernel_initializer=self.initializer ),
+                Dropout(self.dropout_rate),
+                Dense(64, activation=self.activation, kernel_initializer=self.initializer),
+                BatchNormalization(),
+                Dense(32, activation=self.activation, kernel_initializer=self.initializer),
+                Dropout(self.dropout_rate),
+                Dense(1, activation='sigmoid')
+            ])
+        elif self.model_type == "V4":
+            input_layer = Input(shape=(input_dim,))
+            dense1 = Dense(64, activation=self.activation)(input_layer)
+            dropout1 = Dropout(self.dropout_rate)(dense1)
+            dense2 = Dense(64, activation=self.activation)(dropout1)
+            residual = Add()([dense1, dense2])  # Residual Connection
+            dropout2 = Dropout(self.dropout_rate)(residual)
+            output_layer = Dense(1, activation='sigmoid')(dropout2)
+
+            model = Model(inputs=input_layer, outputs=output_layer)
+        elif self.model_type == "V5":
+            model = Sequential([
+                Input(shape=(input_dim,)),  # Explizite Eingabeform
+                Reshape((input_dim, 1)),  # Keine Angabe von `input_shape`
+                Conv1D(filters=32, kernel_size=3, activation=self.activation),
+                MaxPooling1D(pool_size=2),
+                Flatten(),
+                Dense(64, activation=self.activation),
+                Dropout(self.dropout_rate),
+                Dense(1, activation='sigmoid')
+            ])
+
+        optimizer = None
+        if self.optimizer == 'adam':
+            optimizer = Adam(learning_rate=self.learning_rate)
+        elif self.optimizer == 'sgd':
+            optimizer = SGD(learning_rate=self.learning_rate)
+        elif self.optimizer == 'rmsprop':
+            optimizer = RMSprop(learning_rate=self.learning_rate)
+        elif self.optimizer == 'adamw':
+            optimizer = AdamW(learning_rate=self.learning_rate)
+
+        model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['Precision'])
+        return model
 
     def fit(self, X, y):
-        # Create the model using the build_fn function
-        self.classes_ = np.unique(y)
-        self.model = self.build_fn(dropout_rate=self.dropout_rate, activation=self.activation, optimizer=self.optimizer, size= X.shape[1] )
-        # Fit the model to the training data
-        self.model.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, verbose=self.verbose)
+        import logging
+
+        early_stopping = EarlyStopping(
+            monitor='Precision',  # Überwacht den Validierungsverlust
+            patience=10,  # Anzahl der Epochen ohne Verbesserung
+            restore_best_weights=True  # Beste Gewichte wiederherstellen
+        )
+
+        reduce_lr = ReduceLROnPlateau(
+            monitor='Precision',  # Überwacht den Validierungsverlust
+            factor=0.5,  # Faktor, um den die Lernrate reduziert wird
+            patience=5,  # Anzahl der Epochen ohne Verbesserung
+            min_lr=1e-6  # Minimal erlaubte Lernrate
+        )
+        self.model_ = self._build_model(input_dim=X.shape[1])
+        self.model_.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, verbose=0,callbacks=[early_stopping, reduce_lr])
+
+
+        self.classes_ = np.array([0, 1])  # Convert to NumPy array
         return self
 
     def predict(self, X):
-        # Predict class labels
-        return np.argmax(self.model.predict(X), axis=-1)
+        proba = self.model_.predict(X)
+        return (proba > 0.5).astype(int).flatten()
 
     def predict_proba(self, X):
-        # Predict class probabilities
-        return self.model.predict(X)
-    def score(self, X, y):
-        # Evaluate the model on the test data
-        return self.model.evaluate(X, y, verbose=0)[1]  # Return accuracy
+        proba = self.model_.predict(X)
+        return np.hstack([(1 - proba), proba])
 
 class DeepTrainer:
 
@@ -123,7 +213,6 @@ class DeepTrainer:
             #     ('classifier', model)
             # ]),
             Pipeline([
-                ('scaler', MinMaxScaler()),
                 # Small threshold to remove low variance features
                 ('classifier', model)
             ]),
@@ -208,6 +297,10 @@ class DeepTrainer:
             #     'classifier__max_features': ['sqrt'],
             #     'classifier__bootstrap': [True, False],
             # }),
+            # 'XGBoost Simple': (XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', verbosity=0), {
+            #     'classifier__max_depth': [3, 5],  # Explore shallower to deeper trees
+            # }),
+
             # 'XGBoost': (XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss',  verbosity=0), {
             #        'classifier__max_depth': [3, 5, 7, 10, 12],             # Explore shallower to deeper trees
             #         'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],   # Test smaller learning rates
@@ -215,25 +308,15 @@ class DeepTrainer:
             #         'classifier__subsample': [0.6, 0.8, 1.0],               # Tweak sampling rate to control overfitting
             #         'classifier__colsample_bytree': [0.6, 0.8, 1.0]         # Contr
             # }),
-            'XGBoost Weighted': (
-            XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', verbosity=0), {
-                'classifier__max_depth': [3, 5, 7],
-                'classifier__learning_rate': [0.01, 0.1, 0.2],
-                'classifier__n_estimators': [100, 200],
-                'classifier__gamma': [0, 0.1, 0.5, 1],
-                'classifier__subsample': [0.8, 1.0],
-                'classifier__colsample_bytree': [0.8, 1.0],
-                'classifier__min_child_weight': [1, 5, 10],  # Minimale Anforderungen an Split
-                'classifier__scale_pos_weight':  [0.1, 0.5, 1, 5, 10,20,50]  # Teste verschiedene Gewichtungen für Klasse 1
-            }),
-            'Random Forest Balanced Weighted': (RandomForestClassifier(random_state=42, class_weight={0: 1, 1: 10}), {
-                'classifier__n_estimators': [50, 100, 200],
-                'classifier__max_depth': [10, 20],
-                'classifier__min_samples_split': [2, 5],
-                'classifier__min_samples_leaf': [1, 2, 4],
-                'classifier__max_features': ['sqrt'],
-                'classifier__bootstrap': [True, False],
-            }),
+
+            # 'Random Forest Balanced Weighted': (RandomForestClassifier(random_state=42, class_weight={0: 1, 1: 10}), {
+            #     'classifier__n_estimators': [50, 100, 200],
+            #     'classifier__max_depth': [10, 20],
+            #     'classifier__min_samples_split': [2, 5],
+            #     'classifier__min_samples_leaf': [1, 2, 4],
+            #     'classifier__max_features': ['sqrt'],
+            #     'classifier__bootstrap': [True, False],
+            # }),
             # 'LightGBM': (lgb.LGBMClassifier(random_state=42, verbose=-1),
             #              {
             #                  'classifier__max_depth': [3, 5, 7, 10, 12],
@@ -255,17 +338,17 @@ class DeepTrainer:
         #         'classifier__colsample_bytree': [0.8, 1.0],
         #     }
         # ),
-            'LightGBM Weighted (scale_pos_weight)': (
-                lgb.LGBMClassifier(random_state=42, verbose=-1),
-                {
-                    'classifier__max_depth': [3, 5, 7],
-                    'classifier__learning_rate': [0.01, 0.1],
-                    'classifier__n_estimators': [100, 200],
-                    'classifier__subsample': [0.8, 1.0],
-                    'classifier__colsample_bytree': [0.8, 1.0],
-                    'classifier__scale_pos_weight': [5, 10, 20],  # Experimentiere mit Werten
-                }
-            ),
+        #     'LightGBM Weighted (scale_pos_weight)': (
+        #         lgb.LGBMClassifier(random_state=42, verbose=-1),
+        #         {
+        #             'classifier__max_depth': [3, 5, 7],
+        #             'classifier__learning_rate': [0.01, 0.1],
+        #             'classifier__n_estimators': [100, 200],
+        #             'classifier__subsample': [0.8, 1.0],
+        #             'classifier__colsample_bytree': [0.8, 1.0],
+        #             'classifier__scale_pos_weight': [5, 10, 20],  # Experimentiere mit Werten
+        #         }
+        #     ),
         #     'CatBoost': (CatBoostClassifier(random_seed=42, verbose=0),
         #                  {
         #                      'classifier__depth': [3, 5, 7, 10, 12],  # Baumtiefe
@@ -275,12 +358,37 @@ class DeepTrainer:
         #                      'classifier__subsample': [0.6, 0.8, 1.0],  # Sampling-Rate
         #                      'classifier__colsample_bylevel': [0.6, 0.8, 1.0]  # Anteil der Spalten auf Ebene
         #                  }),
-            'CatBoost Weighted': (CatBoostClassifier(random_seed=42, verbose=0, class_weights=[1, 10]), {
-                'classifier__depth': [3, 5, 7],
-                'classifier__learning_rate': [0.01, 0.1],
-                'classifier__iterations': [100, 200],
-                'classifier__subsample': [0.8, 1.0],
-            }),
+        #     'CatBoost Weighted': (CatBoostClassifier(random_seed=42, verbose=0, class_weights=[1, 10]), {
+        #         'classifier__depth': [3, 5, 7],
+        #         'classifier__learning_rate': [0.01, 0.1],
+        #         'classifier__iterations': [100, 200],
+        #         'classifier__subsample': [0.8, 1.0],
+        #     }),
+        #     'Keras':  (KerasWrapper(), {
+        #             'classifier__dropout_rate': [0.2, 0.3, 0.5],
+        #         'classifier__optimizer': ['adam', 'sgd', 'rmsprop', "adamw"],
+        #         'classifier__learning_rate': [0.001, 0.01, 0.1],
+        #         'classifier__epochs': [50, 100, 200],
+        #         'classifier__batch_size': [32, 64, 128],
+        #         'classifier__activation': ['relu', 'tanh', 'elu'],
+        #         'classifier__model_type': ['V1', 'V2', 'V3','V4', 'V5'],
+        #         'classifier__initializer': ['he_normal', 'glorot_uniform', 'lecun_normal']
+        #     }),
+
+            'XGBoost Weighted': (
+                XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', verbosity=0), {
+                    'classifier__max_depth': [3, 5, 7],
+                    'classifier__learning_rate': [0.01, 0.1, 0.2],
+                    'classifier__n_estimators': [100, 200],
+                    'classifier__gamma': [0, 0.1, 0.5, 1],
+                    'classifier__subsample': [0.8, 1.0],
+                    'classifier__colsample_bytree': [0.8, 1.0],
+                    'classifier__min_child_weight': [1, 5, 10],  # Minimale Anforderungen an Split
+                    'classifier__scale_pos_weight': [0.1, 0.5, 1, 5, 10, 20, 50]
+                    # Teste verschiedene Gewichtungen für Klasse 1
+                }),
+
+
         #     'CatBoost Weighted 2': (CatBoostClassifier(random_seed=42, verbose=0, class_weights=[10, 1]), {
         #         'classifier__depth': [3, 5, 7],
         #         'classifier__learning_rate': [0.01, 0.1],
@@ -311,11 +419,11 @@ class DeepTrainer:
             #     'classifier__kernel': ['linear', 'rbf'],
             #     'classifier__gamma': ['scale', 'auto'],
             # }),
-            'Support Vector Machine Weighted': (SVC(probability=True, random_state=42, class_weight={0: 1, 1: 10}), {
-                'classifier__C': [0.1, 1, 10],
-                'classifier__kernel': ['linear', 'rbf'],
-                'classifier__gamma': ['scale', 'auto'],
-            }),
+            # 'Support Vector Machine Weighted': (SVC(probability=True, random_state=42, class_weight={0: 1, 1: 10}), {
+            #     'classifier__C': [0.1, 1, 10],
+            #     'classifier__kernel': ['linear', 'rbf'],
+            #     'classifier__gamma': ['scale', 'auto'],
+            # }),
             #
             # 'Support Vector Machine Weighted 2': (SVC(probability=True, random_state=42, class_weight={0: 10, 1: 1}), {
             #     'classifier__C': [0.1, 1, 10],
@@ -393,11 +501,12 @@ class DeepTrainer:
         high_score_threshold = combined_scores['Score'].quantile(quantile)
         top_features = combined_scores[combined_scores['Score'] > high_score_threshold]
 
-        # Zeige die besten Features
-        #print(top_features[['Feature', 'Score']])
-        featurues = top_features['Feature'].tolist()
-        featurues.remove(target)
-        return featurues
+        #remove result
+        top_features = top_features[top_features["Feature"] != "result"]
+        m = MinMaxScaler()
+        top_features["Score_transformed"] = m.fit_transform(top_features[["Score"]])
+
+        return top_features
 
     def correlation_with_target(self, df, target):
         correlation = df.corr()[target]
@@ -474,8 +583,8 @@ class DeepTrainer:
             n_iter=iterations,
             cv=tscv,
             verbose=0,
-            scoring=scorer,
             n_jobs=3,
+            scoring=scorer,
             random_state=42
         )
 
@@ -496,6 +605,7 @@ class DeepTrainer:
             "Pipeline Name": f"{pipeline}",
             "CV Score": best_cv_score,
             "Trading Houres": hours,
+            "Score": (train_result["Best Precision"] + best_cv_score) / 2,
             "Best Precision": test_result["Best Precision"],
             "Best Recall": test_result["Best Recall"],
             "Best F1-Score": test_result["Best F1-Score"],
@@ -616,12 +726,30 @@ class DeepTrainer:
         df_train = df[:int(len(df) * 0.9)]
         df_test = df[int(len(df) * 0.9):]
 
-        good_featurs = self.evaluate_features(df_train, "result", quantile)
-        X_train = df_train.drop(columns=['result'])[good_featurs]
-        X_test = df_test.drop(columns=['result'])[good_featurs]
+        good_features_df = self.evaluate_features(df_train, "result", quantile)
+        selected_features = (
+            good_features_df.sort_values(by="Score", ascending=False)  # Nach Scores sortieren
+            .index  # Feature-Namen
+            .tolist()  # Als Liste extrahieren
+        )
+
+
+        X_train = df_train.drop(columns=['result'])[selected_features]
+        X_test = df_test.drop(columns=['result'])[selected_features]
 
         y_train = df_train['result']
         y_test = df_test['result']
+
+        factors = good_features_df["Score_transformed"]
+
+        # Werte in `X_train` mit den entsprechenden Faktoren multiplizieren
+        X_train = X_train.multiply(factors, axis=1)
+        X_test = X_test.multiply(factors, axis=1)
+
+        #Test
+        X_train['Result'] = X_train.sum(axis=1)
+
+
 
         # Apply SMOTE only on the training set
         smote = SMOTE(random_state=42)
@@ -634,6 +762,48 @@ class DeepTrainer:
         tscv = TimeSeriesSplit(n_splits=5)
         best_results = []
 
+        best_train_score = 0
+        best_train_threshold = -1
+        best_test_positive_predictions = 0
+
+        for i in np.arange(0, 50.25, 0.1).tolist():
+            d_train = np.where(X_train['Result'] > i, 1, 0)
+            score = precision_score(y_train, d_train)
+            if score > best_train_score and d_train.sum() > 60:
+                best_train_score = score
+                best_test_positive_predictions = d_train.sum()
+                best_train_threshold = i
+
+        X_test['Result'] = X_test.sum(axis=1)
+        d = np.where(X_test['Result'] > best_train_threshold, 1, 0)
+        score = precision_score(y_test, d)
+
+        best_results.append( {
+            "Model": "MyModel",
+            "Pipeline Variant": 0,
+            "Pipeline Name": "Foo",
+            "CV Score": 0,
+            "Trading Houres": hours,
+            "Best Precision": score,
+            "Best Recall": 0,
+            "Best F1-Score": 0,
+            "Best Threshold": best_train_threshold,
+            "Positive Predictions Count": d.sum(),
+            "Best Train Precision": best_train_score,
+            "Best Train Recall": 0,
+            "Best Train F1-Score": 0,
+            "Best Train Threshold": best_train_threshold,
+            "Positive Predictions Count Train": best_test_positive_predictions,
+            "Best Model": None,
+            "Good Features": selected_features,
+            "Quantile": quantile,
+            "Iterations": iterations
+        })
+
+        X_test.drop(columns=["Result"], inplace=True)
+        X_train.drop(columns=["Result"], inplace=True)
+
+
         for model_name, (model, param_grid) in models.items():
             print(f"Training {model_name}...")
 
@@ -641,9 +811,9 @@ class DeepTrainer:
             pipeline_variants = self.get_pipeline_variants(model)
 
             for i, pipeline in enumerate(pipeline_variants):
-                res = self._train_model(pipeline_index=1, model_name=model_name,pipeline=pipeline,
+                res = self._train_model(pipeline_index=i, model_name=model_name,pipeline=pipeline,
                                         param_grid=param_grid, tscv=tscv, X_train=X_train, y_train=y_train,
-                                        X_test=X_test, y_test=y_test, good_featurs=good_featurs, quantile=quantile, hours=hours, iterations=iterations)
+                                        X_test=X_test, y_test=y_test, good_featurs=selected_features, quantile=quantile, hours=hours, iterations=iterations)
 
                 best_results.append(res)
 
