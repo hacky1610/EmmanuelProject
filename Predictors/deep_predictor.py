@@ -1,6 +1,7 @@
 import random
 from typing import List
 
+import pandas
 import pandas as pd
 
 from BL.indicators import Indicators
@@ -31,8 +32,8 @@ class DeepPredictor(BasePredictor):
         self._sell_model_id = ""
         self._buy_accuracy = 0.0
         self._sell_accuracy = 0.0
-        self._buy_features = []
-        self._sell_features = []
+        self._buy_features:Series = Series()
+        self._sell_features:Series = Series()
         self._buy_trading_hours = 4
         self._sell_trading_hours = 4
         self._buy_threshold = 0.5
@@ -49,12 +50,14 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_sell_accuracy")
         self._set_att(config, "_buy_model_id")
         self._set_att(config, "_sell_model_id")
-        self._set_att(config, "_buy_features")
-        self._set_att(config, "_sell_features")
+
         self._set_att(config, "_buy_trading_hours")
         self._set_att(config, "_sell_trading_hours")
         self._set_att(config, "_buy_threshold")
         self._set_att(config, "_sell_threshold")
+
+        self._buy_features = pandas.read_json(config.get("_buy_features","{}"),typ="series")
+        self._sell_features = pandas.read_json(config.get("_sell_features", "{}"), typ="series")
 
         super().setup(config)
 
@@ -65,8 +68,8 @@ class DeepPredictor(BasePredictor):
             self._sell_accuracy,
             self._buy_model_id,
             self._sell_model_id,
-            self._buy_features,
-            self._sell_features,
+            self._buy_features.to_json(),
+            self._sell_features.to_json(),
             self._buy_trading_hours,
             self._sell_trading_hours,
             self._buy_threshold,
@@ -91,11 +94,11 @@ class DeepPredictor(BasePredictor):
         self._buy_model = model
         self._buy_model_id =f"{uuid.uuid4()}"
 
-    def set_buy_validation(self, accuracy:float, trading_hours:int, threshold:float, features:List):
+    def set_buy_validation(self, accuracy:float, trading_hours:int, threshold:float, feature_factors):
         self._buy_accuracy = accuracy
         self._buy_trading_hours = trading_hours
         self._buy_threshold = threshold
-        self._buy_features = features
+        self._buy_features = feature_factors
 
     def get_buy_trading_hours(self):
         return self._buy_trading_hours
@@ -113,11 +116,11 @@ class DeepPredictor(BasePredictor):
         self._sell_model = model
         self._sell_model_id = f"{uuid.uuid4()}"
 
-    def set_sell_validation(self, accuracy: float,  trading_hours:int,threshold:float, features):
+    def set_sell_validation(self, accuracy: float, trading_hours:int, threshold:float, feature_factors:Series):
         self._sell_accuracy = accuracy
         self._sell_trading_hours = trading_hours
         self._sell_threshold = threshold
-        self._sell_features = features
+        self._sell_features = feature_factors
 
     def is_good(self):
         return self.is_good_buy() or self.is_good_sell()
@@ -137,11 +140,12 @@ class DeepPredictor(BasePredictor):
 
 
         if self._buy_model is not None:
-            for indicator_name in self._buy_features:
+            for indicator_name in self._buy_features.index:
                 action = self._indicators.predict_single(df, indicator_name)
                 actions[indicator_name] = action
             actions_df = DataFrame([actions])
-            actions_buy_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell': -1})
+            actions_buy_df = actions_df.replace({'none': 0.2, 'both': 1, 'buy': 1, 'sell': 0})
+            actions_buy_df = actions_buy_df.multiply(self._buy_features, axis=1)
             probabilities = self._buy_model.predict_proba(actions_buy_df)
             # Nehme die Wahrscheinlichkeit für die positive Klasse (1)
             positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
@@ -152,11 +156,12 @@ class DeepPredictor(BasePredictor):
 
 
         if self._sell_model is not None:
-            for indicator_name in self._sell_features:
+            for indicator_name in self._sell_features.index:
                 action = self._indicators.predict_single(df, indicator_name)
                 actions[indicator_name] = action
             actions_df = DataFrame([actions])
-            actions_sell_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': -1, 'sell': 1})
+            actions_sell_df = actions_df.replace({'none': 0.2, 'both': 1, 'buy': 0, 'sell': 1})
+            actions_sell_df = actions_sell_df.multiply(self._sell_features, axis=1)
             probabilities = self._sell_model.predict_proba(actions_sell_df)
             # Nehme die Wahrscheinlichkeit für die positive Klasse (1)
             positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"

@@ -13,6 +13,7 @@ from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
 from keras.src.layers import Dense, Dropout, BatchNormalization, Add, Reshape, Conv1D, MaxPooling1D, Flatten
 from keras.src.optimizers import Adam, SGD, RMSprop, AdamW
 from keras.src.optimizers.schedules import ExponentialDecay
+from pandas import DataFrame
 from sklearn.decomposition import PCA
 import tensorflow as tf
 import pandas as pd
@@ -493,7 +494,7 @@ class DeepTrainer:
         return precision - (1 - f) * 0.2
 
     @measure_time
-    def _train_model(self,pipeline_index,model_name, pipeline, param_grid, tscv, X_train, y_train, X_test, y_test, good_featurs, quantile, hours, iterations, evaluate_type):
+    def _train_model(self, pipeline_index, model_name, pipeline, param_grid, tscv, X_train, y_train, X_test, y_test, feature_factors:DataFrame, quantile, hours, iterations, evaluate_type):
         print(f"\nTesting pipeline variant {pipeline_index + 1} for {model_name}")
         scorer = make_scorer(precision_score, pos_label=1, zero_division=0)
         random_search = RandomizedSearchCV(
@@ -537,7 +538,7 @@ class DeepTrainer:
             "Best Train Threshold": train_result["Best Threshold"],
             "Positive Predictions Count Train": train_result["Positive Predictions Count"],
             "Best Model": best_model,
-            "Good Features": good_featurs,
+            "Feature Factors": feature_factors,
             "Quantile": quantile,
             "Iterations": iterations
         }
@@ -592,9 +593,9 @@ class DeepTrainer:
             pipeline_variants = self.get_pipeline_variants(model)
 
             for i, pipeline in enumerate(pipeline_variants):
-                res = self._train_model(pipeline_index=i, model_name=model_name,pipeline=pipeline,
+                res = self._train_model(pipeline_index=i, model_name=model_name, pipeline=pipeline,
                                         param_grid=param_grid, tscv=tscv, X_train=X_train, y_train=y_train,
-                                        X_test=X_test, y_test=y_test, good_featurs=selected_features, quantile=quantile, hours=hours, iterations=iterations, evaluate_type=evaluate_type)
+                                        X_test=X_test, y_test=y_test, feature_factors=factors, quantile=quantile, hours=hours, iterations=iterations, evaluate_type=evaluate_type)
 
                 best_results.append(res)
 

@@ -112,8 +112,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-        #if symbol != "GBPNZD":
-        #    continue
+        if symbol != "GBPNZD":
+            continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                  dropbox_cache=cache)
@@ -165,11 +165,11 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             deep_predictor.set_buy_validation(best_buy_precision_row["Best Precision"],
                                               best_buy_precision_row["Trading Houres"],
                                               threshold=best_buy_precision_row["Best Threshold"],
-                                              features=best_buy_precision_row["Good Features"])
+                                              feature_factors=best_buy_precision_row["Feature Factors"])
             deep_predictor.set_sell_validation(best_sell_precision_row["Best Precision"],
                                                best_sell_precision_row["Trading Houres"],
                                                threshold=best_sell_precision_row["Best Threshold"],
-                                               features=best_sell_precision_row["Good Features"], )
+                                               feature_factors=best_sell_precision_row["Feature Factors"], )
             deep_predictor.set_model_buy(best_buy_precision_row["Best Model"])
             deep_predictor.set_model_sell(best_sell_precision_row["Best Model"])
             deep_predictor.save()
