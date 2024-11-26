@@ -462,11 +462,17 @@ class IG:
         return positions[positions.epic == epic]
 
     def get_transaction_history(self, days: int):
-        df = DataFrame()
+        df_list = []  # Create a list to store DataFrames
         for i in range(days):
-            df = df.append(self.ig_service.fetch_transaction_history(trans_type="ALL_DEAL", page_size=50,
-                                                                     max_span_seconds=60 * 60 * 24 * days,
-                                                                     page_number=i))
+            transaction_data = self.ig_service.fetch_transaction_history(
+                trans_type="ALL_DEAL",
+                page_size=50,
+                max_span_seconds=60 * 60 * 24 * days,
+                page_number=i
+            )
+            df_list.append(transaction_data)  # Append each DataFrame to the list
+
+        df = pd.concat(df_list, ignore_index=True)  # Concatenate all DataFrames in the list
         return df.reset_index()
 
     def get_current_balance(self):
