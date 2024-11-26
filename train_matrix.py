@@ -112,8 +112,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-        if symbol != "GBPNZD":
-            continue
+        #if symbol != "AUDCAD":
+        #    continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                  dropbox_cache=cache)
@@ -129,7 +129,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             best_sell_results = []
             for hours in range(2, 7):
                 for quantile in [0.4,0.6,0.9]:
-                    iteration = 200
+                    iteration = 77
                     for evaluate_type in ["prec"]:
                         print(f"Train {symbol} for {hours} hours and quantile {quantile}")
                         buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
@@ -146,40 +146,72 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
                                                                                      trade_mode="sell", hours=hours,
                                                                                      quantile=quantile,iterations=iteration, evaluate_type=evaluate_type)
 
-            # Save and activate predictor
-            # Initialize deep predictor
-            best_buy_results_df = DataFrame(best_buy_results)
-            best_sell_results_df = DataFrame(best_sell_results)
+            best_buy_results_df = pd.DataFrame(best_buy_results)
+            best_sell_results_df = pd.DataFrame(best_sell_results)
 
-            best_buy_results_df.drop(columns=["Best Model"]).to_csv(
-                f"D:\\Code\\EmmanuelCache\\{symbol}_best_buy_results_{datetime.now().microsecond}.csv", sep=';', index=False)
-            best_sell_results_df.drop(columns=["Best Model"]).to_csv(
-                f"D:\\Code\\EmmanuelCache\\{symbol}_best_sell_results_{datetime.now().microsecond}.csv", sep=';', index=False)
-            best_buy_precision_row = best_buy_results_df.loc[best_buy_results_df["Score"].idxmax()]
-            best_sell_precision_row = best_sell_results_df.loc[best_sell_results_df["Score"].idxmax()]
+            # Speichern der Ergebnisse
+            save_to_csv(best_buy_results_df, symbol, "best_buy_results")
+            save_to_csv(best_sell_results_df, symbol, "best_sell_results")
+
+            # Beste Precision-Row für Kauf und Verkauf ermitteln
+            best_buy_precision_row = get_best_precision_row(best_buy_results_df)
+            best_sell_precision_row = get_best_precision_row(best_sell_results_df)
 
             print(f"Best Buy: {best_buy_precision_row}")
             print(f"Best Sell: {best_sell_precision_row}")
+
+            # DeepPredictor konfigurieren
             deep_predictor = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer,
                                            indicators=indicators)
-            deep_predictor.set_buy_validation(best_buy_precision_row["Best Precision"],
-                                              best_buy_precision_row["Trading Houres"],
-                                              threshold=best_buy_precision_row["Best Threshold"],
-                                              feature_factors=best_buy_precision_row["Feature Factors"])
-            deep_predictor.set_sell_validation(best_sell_precision_row["Best Precision"],
-                                               best_sell_precision_row["Trading Houres"],
-                                               threshold=best_sell_precision_row["Best Threshold"],
-                                               feature_factors=best_sell_precision_row["Feature Factors"], )
-            deep_predictor.set_model_buy(best_buy_precision_row["Best Model"])
-            deep_predictor.set_model_sell(best_sell_precision_row["Best Model"])
-            deep_predictor.save()
-            deep_predictor.activate()
+            configure_deep_predictor(deep_predictor, best_buy_precision_row, best_sell_precision_row)
+
+            # DeepPredictor speichern
             predictor_store.save(deep_predictor)
 
         except Exception as ex:
             traceback_str = traceback.format_exc()
             print(f"MainException: {ex} File:{traceback_str}")
 
+    # Funktion, um das DataFrame zu speichern
+def save_to_csv(df, symbol, file_suffix):
+    # Bestimme das Basisverzeichnis basierend auf dem Betriebssystem
+    if os.name == "nt":  # Windows
+        base_dir = "D:\\Code\\EmmanuelCache"
+    else:  # Linux oder andere Unix-basierte Systeme
+        base_dir = os.path.expanduser("~/Code/EmmanuelCache")
+
+    # Stelle sicher, dass das Verzeichnis existiert
+    os.makedirs(base_dir, exist_ok=True)
+
+    # Erstelle den Dateipfad
+    file_name = os.path.join(base_dir, f"{symbol}_{file_suffix}_{datetime.now().microsecond}.csv")
+
+    # Speichere den DataFrame
+    df.drop(columns=["Best Model", "Feature Factors"]).to_csv(file_name, sep=';', index=False)
+
+# Funktion, um das beste Precision-Row für Kauf und Verkauf zu finden
+def get_best_precision_row(df, score_column="CV Score", filter_column="Positive Predictions Count Train",
+                           threshold=100):
+    filtered_df = df[df[filter_column] > threshold]
+    return filtered_df.loc[filtered_df[score_column].idxmax()]
+
+def configure_deep_predictor(deep_predictor:DeepPredictor, best_buy_row, best_sell_row):
+    deep_predictor.set_buy_validation(accuracy=
+        best_buy_row["CV Score"],
+        trading_hours=best_buy_row["Trading Houres"],
+        threshold=best_buy_row["Best Threshold"],
+        feature_factors=best_buy_row["Feature Factors"]
+    )
+    deep_predictor.set_sell_validation(
+        accuracy=best_sell_row["CV Score"],
+        trading_hours=best_sell_row["Trading Houres"],
+        threshold=best_sell_row["Best Threshold"],
+        feature_factors=best_sell_row["Feature Factors"]
+    )
+    deep_predictor.set_model_buy(best_buy_row["Best Model"])
+    deep_predictor.set_model_sell(best_sell_row["Best Model"])
+    deep_predictor.save()
+    deep_predictor.activate()
 
 while True:
     try:

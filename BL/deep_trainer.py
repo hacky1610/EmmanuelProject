@@ -299,13 +299,16 @@ class DeepTrainer:
                 XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', verbosity=0), {
                     'classifier__max_depth': [3, 5, 7],
                     'classifier__learning_rate': [0.01, 0.1, 0.2],
-                    'classifier__n_estimators': [100, 200],
                     'classifier__gamma': [0, 0.1, 0.5, 1],
-                    'classifier__subsample': [0.8, 1.0],
                     'classifier__colsample_bytree': [0.8, 1.0],
                     'classifier__min_child_weight': [1, 5, 10],  # Minimale Anforderungen an Split
-                    'classifier__scale_pos_weight': [0.3, 0.5, 0.7, 1.0]
-                    # Teste verschiedene Gewichtungen für Klasse 1
+                    'classifier__scale_pos_weight': [0.15, 0.3, 0.5, 0.7, 1.0],
+                    'classifier__n_estimators': [50, 100, 200, 300],
+                    'classifier__subsample': [0.6, 0.8, 1.0],
+                    'classifier__reg_alpha': [0, 0.1, 0.5, 1],
+                    'classifier__reg_lambda': [1, 1.5, 2, 5],
+                    'classifier__max_leaves': [31, 63, 127],  # Für loss guide Wachstum
+                    'classifier__grow_policy': ['depthwise', 'lossguide']
                 }),
 
 
@@ -366,46 +369,21 @@ class DeepTrainer:
 
         return voting_clf
 
-    # Funktion, die ein Keras-Modell erstellt
-    def create_model(self, dropout_rate=0.2, activation='relu', optimizer="adam", size=85):
-        model = Sequential()
-        # Specify the input shape explicitly with an Input layer
-        model.add(Input(shape=(size,)))  # Replace `input_dim` with `Input`
-        model.add(Dense(256, activation=activation))
-        model.add(Dropout(dropout_rate))
-        model.add(Dense(128, activation=activation))
-        model.add(Dropout(dropout_rate))
-        model.add(Dense(64, activation=activation))
-        model.add(Dropout(dropout_rate))
-        model.add(Dense(1, activation='sigmoid'))  # Binary classification
-        model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
-        return model
-
     def evaluate_features(self, df, target, quantile=0.75):
         # 1. Korrelation mit Zielwert berechnen
         correlation = self.correlation_with_target(df, target, )
-        #print("Top 10 Features basierend auf der Korrelation zum Ziel:")
-        #print(correlation.sort_values(ascending=False).head(15))
-
         # 2. Feature-Importance mit RandomForest berechnen
         importance_df = self.feature_importance(df, target)
-        #print("\nTop 10 Features basierend auf der Feature Importance (RandomForest):")
-        #print(importance_df.head(15))
 
         # 3. VIF (Variance Inflation Factor) berechnen
         vif_df = self.calculate_vif(df.drop(columns=[target]))
-        #print("\nTop 10 Features mit dem höchsten VIF:")
         top_vif = vif_df.sort_values(by='VIF', ascending=False).head(15)
-        #print(top_vif)
 
         correlation_matrix = df.corr()
         for a, b in top_vif.iterrows():
             correlated_features = correlation_matrix[b.Variable].sort_values(ascending=False)
             # print(f"\nFeatures, die stark mit {b.Variable} korrelieren:")
             # print(correlated_features[abs(correlated_features) > 0.8])
-
-        # Kombinierte Bewertung
-        #print("\nKombinierte Rangliste der besten Features:")
 
         # Kombinierte Score-Berechnung: Korrelation + Feature-Importance - (1/VIF)
         combined_scores = pd.DataFrame({
@@ -515,14 +493,13 @@ class DeepTrainer:
         best_model = random_search.best_estimator_
 
         train_result = self.evaluate_model(best_model, X_train, y_train,
-                                      thresholds=np.arange(0.45, 0.95, 0.05).tolist(), evaluate_type=evaluate_type)
+                                      thresholds=np.arange(0.45, 0.95, 0.05).tolist(), evaluate_type=evaluate_type, min_positive_predictions=100)
         test_result = self.evaluate_model(best_model, X_test, y_test,
-                                     thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type)
+                                     thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type, min_positive_predictions=10)
 
         return random_search.best_params_ | {
             "Model": model_name,
             "Pipeline Variant": pipeline_index + 1,
-            "Pipeline Name": f"{pipeline}",
             "CV Score": best_cv_score,
             "Trading Houres": hours,
             "Evaluate Type": evaluate_type,
@@ -605,7 +582,7 @@ class DeepTrainer:
         #best_test_precision, best_model = results[best_model_name]
 
         best_item = max(best_results, key=lambda x: x['Score'])
-        print(f"Precision {best_item['Best Precision']} from {best_item['Model']} - {best_item['Pipeline Name']}")
+        print(f"Precision {best_item['Best Precision']} from {best_item['Model']}")
         return best_results
 
     @staticmethod
@@ -672,83 +649,54 @@ class DeepTrainer:
 
         # Initialisiere Ergebnisse
         results = {
-            "Best Precision": 0.0,
-            "Best Recall": 0.0,
-            "Best F1-Score": 0.0,
-            "Best Threshold": None,
-            "Positive Predictions Count": 0,
+            "Best Precision": -1,
+            "Best Recall": -1,
+            "Best F1-Score": -1,
+            "Best Threshold": 0.5,
+            "Positive Predictions Count": -1,
             "Details": []  # Detaillierte Ergebnisse für jeden Schwellenwert
         }
 
-        if hasattr(model, "predict_proba"):
-            # Das Modell unterstützt `predict_proba`
-            y_proba = model.predict_proba(X)[:, 1]
+        # Das Modell unterstützt `predict_proba`
+        y_proba = model.predict_proba(X)[:, 1]
 
-            for threshold in thresholds:
-                y_pred_thresholded = (y_proba >= threshold).astype(int)
-                positive_predictions = y_pred_thresholded.sum()
+        for threshold in thresholds:
+            y_pred_thresholded = (y_proba >= threshold).astype(int)
+            positive_predictions = y_pred_thresholded.sum()
 
-                # Überprüfe, ob die Anzahl positiver Vorhersagen das Minimum erreicht
-                if positive_predictions < min_positive_predictions:
-                    precision, recall, f1 = 0.0, 0.0, 0.0
-                else:
-                    precision = precision_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
-                    recall = recall_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
-                    f1 = f1_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
-
-                # Speichere Ergebnisse für den aktuellen Schwellenwert
-                results["Details"].append({
-                    "Threshold": threshold,
-                    "Precision": precision,
-                    "Recall": recall,
-                    "F1-Score": f1,
-                    "Positive Predictions Count": positive_predictions
-                })
-
-                if evaluate_type == "f1":
-                    # Aktualisiere die besten Metriken basierend auf dem F1-Score
-                    if f1 > results["Best F1-Score"]:
-                        results["Best F1-Score"] = f1
-                        results["Best Precision"] = precision
-                        results["Best Recall"] = recall
-                        results["Best Threshold"] = threshold
-                        results["Positive Predictions Count"] = positive_predictions
-                else:
-                    # Aktualisiere die besten Metriken basierend auf dem F1-Score
-                    if precision > results["Best Precision"]:
-                        results["Best F1-Score"] = f1
-                        results["Best Precision"] = precision
-                        results["Best Recall"] = recall
-                        results["Best Threshold"] = threshold
-                        results["Positive Predictions Count"] = positive_predictions
-
-        elif hasattr(model, "predict"):
-            # Das Modell unterstützt nur `predict`
-            y_pred = model.predict(X)
-            positive_predictions = (y_pred == 1).sum()
-
+            # Überprüfe, ob die Anzahl positiver Vorhersagen das Minimum erreicht
             if positive_predictions < min_positive_predictions:
                 precision, recall, f1 = 0.0, 0.0, 0.0
             else:
-                precision = precision_score(y, y_pred, pos_label=1, zero_division=0)
-                recall = recall_score(y, y_pred, pos_label=1, zero_division=0)
-                f1 = f1_score(y, y_pred, pos_label=1, zero_division=0)
+                precision = precision_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
+                recall = recall_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
+                f1 = f1_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
 
-            # Aktualisiere Ergebnisse
-            results["Best Precision"] = precision
-            results["Best Recall"] = recall
-            results["Best F1-Score"] = f1
-            results["Positive Predictions Count"] = positive_predictions
+            # Speichere Ergebnisse für den aktuellen Schwellenwert
             results["Details"].append({
-                "Threshold": None,
+                "Threshold": threshold,
                 "Precision": precision,
                 "Recall": recall,
                 "F1-Score": f1,
                 "Positive Predictions Count": positive_predictions
             })
 
-        else:
-            raise AttributeError("Das Modell muss entweder `predict_proba` oder `predict` unterstützen.")
+            if evaluate_type == "f1":
+                # Aktualisiere die besten Metriken basierend auf dem F1-Score
+                if f1 > results["Best F1-Score"]:
+                    results["Best F1-Score"] = f1
+                    results["Best Precision"] = precision
+                    results["Best Recall"] = recall
+                    results["Best Threshold"] = threshold
+                    results["Positive Predictions Count"] = positive_predictions
+            else:
+                # Aktualisiere die besten Metriken basierend auf dem F1-Score
+                if precision > results["Best Precision"]:
+                    results["Best F1-Score"] = f1
+                    results["Best Precision"] = precision
+                    results["Best Recall"] = recall
+                    results["Best Threshold"] = threshold
+                    results["Positive Predictions Count"] = positive_predictions
 
         return results
 

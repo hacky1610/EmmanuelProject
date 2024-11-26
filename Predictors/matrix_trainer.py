@@ -162,7 +162,8 @@ class MatrixTrainer:
         # Durchlaufe alle Indikatornamen und lade die entsprechenden DataFrames
         for indicator in indicators.get_all_indicator_names():
             df = self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")
-
+            if len(df) == 0:
+                continue
             # Füge eine Spalte für den Indikatornamen hinzu
             df = df.rename(columns={"action": indicator})
             df = df[["chart_index", indicator]]
