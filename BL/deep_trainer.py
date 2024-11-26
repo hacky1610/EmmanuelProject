@@ -1,6 +1,6 @@
 # region import
 import warnings
-
+from pytorch_tabnet.tab_model import TabNetClassifier
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -9,6 +9,7 @@ from keras import Sequential, Input, Model
 from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
 from keras.src.layers import Dense, Dropout, BatchNormalization, Add, Reshape, Conv1D, MaxPooling1D, Flatten
 from keras.src.optimizers import Adam, SGD, RMSprop, AdamW
+from lightgbm import LGBMClassifier
 from pandas import DataFrame
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
@@ -287,6 +288,31 @@ class DeepTrainer:
                     'classifier__max_leaves': [31, 63, 127],  # Für loss guide Wachstum
                     'classifier__grow_policy': ['depthwise', 'lossguide']
                 }),
+            'LGBM Weighted': (
+                LGBMClassifier(random_state=42, objective='binary', is_unbalance=True), {
+                    'classifier__max_depth': [-1, 5, 10, 20],  # -1 bedeutet keine Begrenzung
+                    'classifier__learning_rate': [0.01, 0.05, 0.1],
+                    'classifier__n_estimators': [50, 100, 200, 500],
+                    'classifier__num_leaves': [31, 63, 127],  # Kontrolliert die Baumkomplexität
+                    'classifier__min_child_samples': [10, 20, 50],  # Mindestanzahl an Samples in einem Blatt
+                    'classifier__subsample': [0.6, 0.8, 1.0],
+                    'classifier__colsample_bytree': [0.6, 0.8, 1.0],
+                    'classifier__reg_alpha': [0.0, 0.1, 0.5, 1.0],  # L1 Regularisierung
+                    'classifier__reg_lambda': [0.0, 0.1, 0.5, 1.0],  # L2 Regularisierung
+                    'classifier__scale_pos_weight': [0.5, 1, 2],  # Für unbalancierte Daten
+                }
+            ),
+
+            # 'TabNet': (
+            #     TabNetClassifier(seed=42), {
+            #         'classifier__n_d': [8, 16, 32],  # Dimensionen des Entscheidungs-Layers
+            #         'classifier__n_a': [8, 16, 32],  # Dimensionen des Attentions-Layers
+            #         'classifier__n_steps': [3, 5, 7],  # Schritte im Entscheidungsprozess
+            #         'classifier__gamma': [1.0, 1.5, 2.0],  # Verlustgewichtung
+            #         'classifier__lambda_sparse': [0.001, 0.01, 0.1],  # Regularisierung für Sparsity
+            #         'classifier__momentum': [0.02, 0.04, 0.1],  # Momentumbasierte Optimierung
+            #     }
+            # )
 
 
         #     'CatBoost Weighted 2': (CatBoostClassifier(random_seed=42, verbose=0, class_weights=[10, 1]), {
