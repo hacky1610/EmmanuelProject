@@ -157,6 +157,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             best_buy_precision_row = get_best_precision_row(best_buy_results_df)
             best_sell_precision_row = get_best_precision_row(best_sell_results_df)
 
+
             print(f"Best Buy: {best_buy_precision_row}")
             print(f"Best Sell: {best_sell_precision_row}")
 
@@ -190,27 +191,35 @@ def save_to_csv(df, symbol, file_suffix):
     df.drop(columns=["Best Model", "Feature Factors"]).to_csv(file_name, sep=';', index=False)
 
 # Funktion, um das beste Precision-Row für Kauf und Verkauf zu finden
-def get_best_precision_row(df, score_column="Best Precision", filter_column="Positive Predictions Count Train",
-                           threshold=100):
-    return df.loc[df[score_column].idxmax()]
+def get_best_precision_row(df, score_column="Best Precision", filter_column="CV Score",
+                           threshold=0.60):
+    filtered_df = df[df[filter_column] > threshold]
+    if len(filtered_df) == 0:
+        return None
+    return filtered_df.loc[filtered_df[score_column].idxmax()]
 
 def configure_deep_predictor(deep_predictor:DeepPredictor, best_buy_row, best_sell_row):
-    deep_predictor.set_buy_validation(accuracy=
-        best_buy_row["Best Precision"],
-        trading_hours=best_buy_row["Trading Houres"],
-        threshold=best_buy_row["Best Threshold"],
-        feature_factors=best_buy_row["Feature Factors"]
-    )
-    deep_predictor.set_sell_validation(
-        accuracy=best_sell_row["Best Precision"],
-        trading_hours=best_sell_row["Trading Houres"],
-        threshold=best_sell_row["Best Threshold"],
-        feature_factors=best_sell_row["Feature Factors"]
-    )
-    deep_predictor.set_model_buy(best_buy_row["Best Model"])
-    deep_predictor.set_model_sell(best_sell_row["Best Model"])
-    deep_predictor.save()
-    deep_predictor.activate()
+    if best_buy_row is not None:
+        deep_predictor.set_buy_validation(accuracy=
+            best_buy_row["Best Precision"],
+            trading_hours=best_buy_row["Trading Houres"],
+            threshold=best_buy_row["Best Threshold"],
+            feature_factors=best_buy_row["Feature Factors"]
+        )
+        deep_predictor.set_model_buy(best_buy_row["Best Model"])
+
+    if best_sell_row is not None:
+        deep_predictor.set_sell_validation(
+            accuracy=best_sell_row["Best Precision"],
+            trading_hours=best_sell_row["Trading Houres"],
+            threshold=best_sell_row["Best Threshold"],
+            feature_factors=best_sell_row["Feature Factors"]
+        )
+        deep_predictor.set_model_sell(best_sell_row["Best Model"])
+
+    if best_sell_row is not None or best_buy_row is not None:
+        deep_predictor.save()
+        deep_predictor.activate()
 
 while True:
     try:
