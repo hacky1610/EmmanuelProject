@@ -86,7 +86,7 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_proc
     return df_train, eval_df_train
 
 
-def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, trade_mode, hours, quantile,iterations):
+def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, trade_mode, hours, quantile,iterations, evaluate_type):
     print(f"Train {symbol} for {trade_mode}")
     # Set specific replacement values for each trade type
     if trade_mode == "buy":
@@ -104,7 +104,7 @@ def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, 
     signal_result_df = signal_result_df.dropna()
 
     # Train model and set predictor
-    return deep_trainer.train(signal_result_df, hours, quantile,iterations)
+    return deep_trainer.train(signal_result_df, hours, quantile,iterations, evaluate_type)
 
 
 def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indicators, trade_type=TradeType.FX,
@@ -112,8 +112,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-        if symbol != "GBPNZD":
-            continue
+        #if symbol != "GBPNZD":
+        #    continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                  dropbox_cache=cache)
@@ -129,7 +129,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             best_sell_results = []
             for hours in range(2, 7):
                 for quantile in [0.4,0.6,0.9]:
-                    for iteration in [300]:
+                    iteration = 200
+                    for evaluate_type in ["prec"]:
                         print(f"Train {symbol} for {hours} hours and quantile {quantile}")
                         buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
                                                                      time_frame=hours)
@@ -139,11 +140,11 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
                         # Train for Buy and Sell separately
                         best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
                                                                                    deep_trainer, trade_mode="buy",
-                                                                                   hours=hours, quantile=quantile,iterations=iteration)
+                                                                                   hours=hours, quantile=quantile,iterations=iteration, evaluate_type=evaluate_type)
                         best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
                                                                                      deep_trainer,
                                                                                      trade_mode="sell", hours=hours,
-                                                                                     quantile=quantile,iterations=iteration)
+                                                                                     quantile=quantile,iterations=iteration, evaluate_type=evaluate_type)
 
             # Save and activate predictor
             # Initialize deep predictor
@@ -154,8 +155,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
                 f"D:\\Code\\EmmanuelCache\\{symbol}_best_buy_results_{datetime.now().microsecond}.csv", sep=';', index=False)
             best_sell_results_df.drop(columns=["Best Model"]).to_csv(
                 f"D:\\Code\\EmmanuelCache\\{symbol}_best_sell_results_{datetime.now().microsecond}.csv", sep=';', index=False)
-            best_buy_precision_row = best_buy_results_df.loc[best_buy_results_df["Best Precision"].idxmax()]
-            best_sell_precision_row = best_sell_results_df.loc[best_sell_results_df["Best Precision"].idxmax()]
+            best_buy_precision_row = best_buy_results_df.loc[best_buy_results_df["Score"].idxmax()]
+            best_sell_precision_row = best_sell_results_df.loc[best_sell_results_df["Score"].idxmax()]
 
             print(f"Best Buy: {best_buy_precision_row}")
             print(f"Best Sell: {best_sell_precision_row}")

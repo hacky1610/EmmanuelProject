@@ -167,11 +167,6 @@ class KerasWrapper(BaseEstimator, ClassifierMixin):
 
 class DeepTrainer:
 
-    def train(self, df, hours,quantile,iterations) -> List:
-
-        return self._train_random_forest(df, hours,quantile,iterations)
-
-
     # Benutzerdefinierte Bewertungsfunktion für `1`-Vorhersagen
     def trade_precision(self, y_true, y_pred):
         # Filter nur für die Trades (y_pred == 1)
@@ -188,107 +183,31 @@ class DeepTrainer:
     # Scorer für die Cross-Validation
 
     def get_pipeline_variants(self,model):
-        # Definiere verschiedene Pipelines mit unterschiedlichen Konfigurationen
-        gradient_model = GradientBoostingClassifier()
         return [
-            # Pipeline([
-            #     ('scaler', MinMaxScaler()),  # Variante 3: MinMaxScaler + PCA
-            #     ('pca', PCA(n_components=10)),
-            #     ('variance_threshold', VarianceThreshold(threshold=0.0)),
-            #     ('classifier', model)
-            # ]),
-            # Pipeline([
-            #     ('scaler', MinMaxScaler()),
-            #     ('pca', PCA(n_components=5)),  # Keep top 5 components
-            #     ('classifier', model)
-            # ]),
-            # Pipeline([
-            #     ('scaler', MinMaxScaler()),
-            #     ('pca', PCA(n_components=10)),  # Keep top 10 components
-            #     ('classifier', model)
-            # ]),
-            # Pipeline([
-            #     ('scaler', MinMaxScaler()),
-            #     ('pca', PCA(n_components=15)),  # Keep top 15 components
-            #     ('classifier', model)
-            # ]),
             Pipeline([
                 # Small threshold to remove low variance features
                 ('classifier', model)
             ]),
-            # Pipeline([
-            #     ('scaler', MinMaxScaler()),  # Skaliert die Features auf einen Bereich [0, 1]
-            #     ('variance_threshold', VarianceThreshold(threshold=0.01)),  # Entfernt Features mit geringer Varianz
-            #     ('feature_selection', SelectFromModel(estimator=gradient_model, threshold="median")),
-            #     # Wählt wichtige Features basierend auf Feature-Wichtigkeit
-            #     ('classifier', model)  # Klassifikator
-            # ]),
-            # Pipeline([
-            #     ('scaler', MinMaxScaler()),
-            #     ('variance_threshold', VarianceThreshold(threshold=0.01)),
-            #     # Higher threshold for more aggressive filtering
-            #     ('classifier', model)
-            # ]),
-            # Pipeline([
-            #     ('scaler', MinMaxScaler()),
-            #     ('rfe', RFE(estimator=RandomForestClassifier(random_state=42), n_features_to_select=10)),
-            #     # Keep top 10 features
-            #     ('classifier', model)
-            # ]),
-            # Pipeline([
-            #     ('scaler', MinMaxScaler()),
-            #     ('feature_selection', SelectKBest(score_func=f_classif, k=30)),
-            #     # Keep top 10 features
-            #     ('classifier', model)
-            # ]),
-            # Pipeline([
-            #     ('scaler', MinMaxScaler()),
-            #     ('rfe', RFE(estimator=RandomForestClassifier(random_state=42), n_features_to_select=15)),
-            #     # Keep top 15 features
-            #     ('classifier', model)
-            # ])
         ]
 
     def _get_models(self):
-        lr_schedule = ExponentialDecay(
-            initial_learning_rate=0.01, decay_steps=100000, decay_rate=0.96, staircase=True
-        )
         models =  {
             # 'Random Forest': (RandomForestClassifier(random_state=42), {
             #     'classifier__n_estimators': [100, 200, 300],
             #     'classifier__max_depth': [10, 20],
             # }),
-        #     "keras" : (MyKerasClassifier(build_fn=self.create_model, verbose=0), {
-        #          'classifier__optimizer': ['adam', 'rmsprop', "sgd", Adam(learning_rate=0.001), Adam(learning_rate=lr_schedule)],
-        #         'classifier__activation': ["tanh", "elu", "swish"],
-        #         'classifier__dropout_rate': [0.2, 0.3, 0.4],
-        #         'classifier__epochs': [10, 20],  # Reduziere für schnelle Tests
-        #         'classifier__batch_size': [32, 64],
-        # # }),
-        #     'Gradient Boosting': (GradientBoostingClassifier(random_state=42), {
-        #         'classifier__n_estimators': [50, 100, 200],
-        #         'classifier__max_depth': [3, 5, 7],
-        #         'classifier__learning_rate': [0.01, 0.1, 0.2],
-        #     }),
-            # 'Gradient Boosting 2': (GradientBoostingClassifier(random_state=42), {
-            #     'classifier__n_estimators': [50, 100, 200],
-            #     'classifier__max_depth': [3, 5, 7],
-            #     'classifier__learning_rate': [0.01, 0.1, 0.2],
-            #     'classifier__subsample': [0.8, 1.0],
-            # }),
-            # 'Gradient Boosting 3': (GradientBoostingClassifier(random_state=42), {
-            #     'classifier__n_estimators': [50, 100, 200],
-            #     'classifier__max_depth': [3, 5, 7],
-            #     'classifier__learning_rate': [0.01, 0.1, 0.2],
-            #     'classifier__subsample': [0.8, 1.0],
-            #     'classifier__min_samples_split': [2, 5, 10],
-            #     'classifier__min_samples_leaf': [1, 3, 5],
-            #     'classifier__max_features': ['auto', 'sqrt', 'log2'],
-            #     'classifier__max_leaf_nodes': [None, 10, 20, 30],
-            #     'classifier__warm_start': [True, False],
-            #     'classifier__validation_fraction': [0.1, 0.2],
-            #     'classifier__n_iter_no_change': [None, 5, 10]
-            # }),
+            #     "keras" : (MyKerasClassifier(build_fn=self.create_model, verbose=0), {
+            #          'classifier__optimizer': ['adam', 'rmsprop', "sgd", Adam(learning_rate=0.001), Adam(learning_rate=lr_schedule)],
+            #         'classifier__activation': ["tanh", "elu", "swish"],
+            #         'classifier__dropout_rate': [0.2, 0.3, 0.4],
+            #         'classifier__epochs': [10, 20],  # Reduziere für schnelle Tests
+            #         'classifier__batch_size': [32, 64],
+            # # }),
+            #     'Gradient Boosting': (GradientBoostingClassifier(random_state=42), {
+            #         'classifier__n_estimators': [50, 100, 200],
+            #         'classifier__max_depth': [3, 5, 7],
+            #         'classifier__learning_rate': [0.01, 0.1, 0.2],
+            #     }),
             # 'Random Forest Balanced': (RandomForestClassifier(random_state=42, class_weight='balanced'), {
             #     'classifier__n_estimators': [50, 100, 200],
             #     'classifier__max_depth': [10, 20],
@@ -384,7 +303,7 @@ class DeepTrainer:
                     'classifier__subsample': [0.8, 1.0],
                     'classifier__colsample_bytree': [0.8, 1.0],
                     'classifier__min_child_weight': [1, 5, 10],  # Minimale Anforderungen an Split
-                    'classifier__scale_pos_weight': [0.1, 0.5, 1, 5, 10, 20, 50]
+                    'classifier__scale_pos_weight': [0.3, 0.5, 0.7, 1.0]
                     # Teste verschiedene Gewichtungen für Klasse 1
                 }),
 
@@ -574,7 +493,7 @@ class DeepTrainer:
         return precision - (1 - f) * 0.2
 
     @measure_time
-    def _train_model(self,pipeline_index,model_name, pipeline, param_grid, tscv, X_train, y_train, X_test, y_test, good_featurs, quantile, hours, iterations):
+    def _train_model(self,pipeline_index,model_name, pipeline, param_grid, tscv, X_train, y_train, X_test, y_test, good_featurs, quantile, hours, iterations, evaluate_type):
         print(f"\nTesting pipeline variant {pipeline_index + 1} for {model_name}")
         scorer = make_scorer(precision_score, pos_label=1, zero_division=0)
         random_search = RandomizedSearchCV(
@@ -595,9 +514,9 @@ class DeepTrainer:
         best_model = random_search.best_estimator_
 
         train_result = self.evaluate_model(best_model, X_train, y_train,
-                                      thresholds=np.arange(0.45, 0.95, 0.05).tolist())
+                                      thresholds=np.arange(0.45, 0.95, 0.05).tolist(), evaluate_type=evaluate_type)
         test_result = self.evaluate_model(best_model, X_test, y_test,
-                                     thresholds=np.arange(0.45, 0.95, 0.05).tolist())
+                                     thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type)
 
         return random_search.best_params_ | {
             "Model": model_name,
@@ -605,6 +524,7 @@ class DeepTrainer:
             "Pipeline Name": f"{pipeline}",
             "CV Score": best_cv_score,
             "Trading Houres": hours,
+            "Evaluate Type": evaluate_type,
             "Score": (train_result["Best Precision"] + best_cv_score) / 2,
             "Best Precision": test_result["Best Precision"],
             "Best Recall": test_result["Best Recall"],
@@ -624,100 +544,7 @@ class DeepTrainer:
 
 
 
-    def evaluate_model(self, model, X, y, thresholds=None, min_positive_predictions=25):
-            """
-            Bewertet ein Modell basierend auf Precision, Recall und F1-Score.
-            - Falls das Modell `predict_proba` unterstützt, wird eine Schwellenwertanalyse durchgeführt.
-            - Andernfalls wird nur `predict` verwendet.
-
-            Args:
-                model: Das zu bewertende Modell.
-                X: Eingabedaten.
-                y: Zielvariablen (binär: 0 oder 1).
-                thresholds: Liste von Schwellenwerten für die Schwellenwertanalyse (nur bei `predict_proba`).
-                min_positive_predictions: Minimale Anzahl an positiven Vorhersagen, um Metriken zu berechnen.
-
-            Returns:
-                Dictionary mit den besten Metriken und weiteren Informationen.
-            """
-            # Überprüfen, ob Schwellenwerte angegeben wurden
-            if thresholds is None:
-                thresholds = [0.5]  # Standard-Schwellenwert für binäre Klassifikationen
-
-            # Initialisiere Ergebnisse
-            results = {
-                "Best Precision": 0.0,
-                "Best Recall": 0.0,
-                "Best F1-Score": 0.0,
-                "Best Threshold": None,
-                "Positive Predictions Count": 0,
-                "Details": []  # Detaillierte Ergebnisse für jeden Schwellenwert
-            }
-
-            if hasattr(model, "predict_proba"):
-                # Das Modell unterstützt `predict_proba`
-                y_proba = model.predict_proba(X)[:, 1]
-
-                for threshold in thresholds:
-                    y_pred_thresholded = (y_proba >= threshold).astype(int)
-                    positive_predictions = y_pred_thresholded.sum()
-
-                    # Überprüfe, ob die Anzahl positiver Vorhersagen das Minimum erreicht
-                    if positive_predictions < min_positive_predictions:
-                        precision, recall, f1 = 0.0, 0.0, 0.0
-                    else:
-                        precision = precision_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
-                        recall = recall_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
-                        f1 = f1_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
-
-                    # Speichere Ergebnisse für den aktuellen Schwellenwert
-                    results["Details"].append({
-                        "Threshold": threshold,
-                        "Precision": precision,
-                        "Recall": recall,
-                        "F1-Score": f1,
-                        "Positive Predictions Count": positive_predictions
-                    })
-
-                    # Aktualisiere die besten Metriken basierend auf dem F1-Score
-                    if precision > results["Best Precision"]:
-                        results["Best F1-Score"] = f1
-                        results["Best Precision"] = precision
-                        results["Best Recall"] = recall
-                        results["Best Threshold"] = threshold
-                        results["Positive Predictions Count"] = positive_predictions
-
-            elif hasattr(model, "predict"):
-                # Das Modell unterstützt nur `predict`
-                y_pred = model.predict(X)
-                positive_predictions = (y_pred == 1).sum()
-
-                if positive_predictions < min_positive_predictions:
-                    precision, recall, f1 = 0.0, 0.0, 0.0
-                else:
-                    precision = precision_score(y, y_pred, pos_label=1, zero_division=0)
-                    recall = recall_score(y, y_pred, pos_label=1, zero_division=0)
-                    f1 = f1_score(y, y_pred, pos_label=1, zero_division=0)
-
-                # Aktualisiere Ergebnisse
-                results["Best Precision"] = precision
-                results["Best Recall"] = recall
-                results["Best F1-Score"] = f1
-                results["Positive Predictions Count"] = positive_predictions
-                results["Details"].append({
-                    "Threshold": None,
-                    "Precision": precision,
-                    "Recall": recall,
-                    "F1-Score": f1,
-                    "Positive Predictions Count": positive_predictions
-                })
-
-            else:
-                raise AttributeError("Das Modell muss entweder `predict_proba` oder `predict` unterstützen.")
-
-            return results
-
-    def _train_random_forest(self, df, hours, quantile, iterations):
+    def train(self, df, hours, quantile, iterations, evaluate_type):
         # Suppress warnings
         warnings.filterwarnings("ignore")
 
@@ -746,11 +573,6 @@ class DeepTrainer:
         X_train = X_train.multiply(factors, axis=1)
         X_test = X_test.multiply(factors, axis=1)
 
-        #Test
-        X_train['Result'] = X_train.sum(axis=1)
-
-
-
         # Apply SMOTE only on the training set
         smote = SMOTE(random_state=42)
         X_train, y_train = smote.fit_resample(X_train, y_train)
@@ -762,47 +584,6 @@ class DeepTrainer:
         tscv = TimeSeriesSplit(n_splits=5)
         best_results = []
 
-        best_train_score = 0
-        best_train_threshold = -1
-        best_test_positive_predictions = 0
-
-        for i in np.arange(0, 50.25, 0.1).tolist():
-            d_train = np.where(X_train['Result'] > i, 1, 0)
-            score = precision_score(y_train, d_train)
-            if score > best_train_score and d_train.sum() > 60:
-                best_train_score = score
-                best_test_positive_predictions = d_train.sum()
-                best_train_threshold = i
-
-        X_test['Result'] = X_test.sum(axis=1)
-        d = np.where(X_test['Result'] > best_train_threshold, 1, 0)
-        score = precision_score(y_test, d)
-
-        best_results.append( {
-            "Model": "MyModel",
-            "Pipeline Variant": 0,
-            "Pipeline Name": "Foo",
-            "CV Score": 0,
-            "Trading Houres": hours,
-            "Best Precision": score,
-            "Best Recall": 0,
-            "Best F1-Score": 0,
-            "Best Threshold": best_train_threshold,
-            "Positive Predictions Count": d.sum(),
-            "Best Train Precision": best_train_score,
-            "Best Train Recall": 0,
-            "Best Train F1-Score": 0,
-            "Best Train Threshold": best_train_threshold,
-            "Positive Predictions Count Train": best_test_positive_predictions,
-            "Best Model": None,
-            "Good Features": selected_features,
-            "Quantile": quantile,
-            "Iterations": iterations
-        })
-
-        X_test.drop(columns=["Result"], inplace=True)
-        X_train.drop(columns=["Result"], inplace=True)
-
 
         for model_name, (model, param_grid) in models.items():
             print(f"Training {model_name}...")
@@ -813,7 +594,7 @@ class DeepTrainer:
             for i, pipeline in enumerate(pipeline_variants):
                 res = self._train_model(pipeline_index=i, model_name=model_name,pipeline=pipeline,
                                         param_grid=param_grid, tscv=tscv, X_train=X_train, y_train=y_train,
-                                        X_test=X_test, y_test=y_test, good_featurs=selected_features, quantile=quantile, hours=hours, iterations=iterations)
+                                        X_test=X_test, y_test=y_test, good_featurs=selected_features, quantile=quantile, hours=hours, iterations=iterations, evaluate_type=evaluate_type)
 
                 best_results.append(res)
 
@@ -822,8 +603,8 @@ class DeepTrainer:
         #best_model_name = max(results, key=lambda k: results[k][0])
         #best_test_precision, best_model = results[best_model_name]
 
-        best_item = max(best_results, key=lambda x: x['Best Precision'])
-        print(f"{best_item['Best Precision']} from {best_item['Model']} - {best_item['Pipeline Name']}")
+        best_item = max(best_results, key=lambda x: x['Score'])
+        print(f"Precision {best_item['Best Precision']} from {best_item['Model']} - {best_item['Pipeline Name']}")
         return best_results
 
     @staticmethod
@@ -868,7 +649,7 @@ class DeepTrainer:
 
     @staticmethod
     # Angepasste Validierungsfunktion, die Präzision bei 1 misst
-    def evaluate_model(model, X, y, thresholds=None, min_positive_predictions=10):
+    def evaluate_model(model, X, y, thresholds=None, min_positive_predictions=10, evaluate_type: str = "f1"):
         """
         Bewertet ein Modell basierend auf Precision, Recall und F1-Score.
         - Falls das Modell `predict_proba` unterstützt, wird eine Schwellenwertanalyse durchgeführt.
@@ -923,13 +704,22 @@ class DeepTrainer:
                     "Positive Predictions Count": positive_predictions
                 })
 
-                # Aktualisiere die besten Metriken basierend auf dem F1-Score
-                if f1 > results["Best F1-Score"]:
-                    results["Best F1-Score"] = f1
-                    results["Best Precision"] = precision
-                    results["Best Recall"] = recall
-                    results["Best Threshold"] = threshold
-                    results["Positive Predictions Count"] = positive_predictions
+                if evaluate_type == "f1":
+                    # Aktualisiere die besten Metriken basierend auf dem F1-Score
+                    if f1 > results["Best F1-Score"]:
+                        results["Best F1-Score"] = f1
+                        results["Best Precision"] = precision
+                        results["Best Recall"] = recall
+                        results["Best Threshold"] = threshold
+                        results["Positive Predictions Count"] = positive_predictions
+                else:
+                    # Aktualisiere die besten Metriken basierend auf dem F1-Score
+                    if precision > results["Best Precision"]:
+                        results["Best F1-Score"] = f1
+                        results["Best Precision"] = precision
+                        results["Best Recall"] = recall
+                        results["Best Threshold"] = threshold
+                        results["Positive Predictions Count"] = positive_predictions
 
         elif hasattr(model, "predict"):
             # Das Modell unterstützt nur `predict`
