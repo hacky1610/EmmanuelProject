@@ -154,6 +154,7 @@ class DeepPredictor(BasePredictor):
             if positive_prob >= self._buy_threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
                 return TradeAction.BUY
 
+        actions = {}
 
         if self._sell_model is not None:
             for indicator_name in self._sell_features.index:
