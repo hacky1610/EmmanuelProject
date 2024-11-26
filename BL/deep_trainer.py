@@ -472,7 +472,32 @@ class DeepTrainer:
         train_result = self.evaluate_model(best_model, X_train, y_train,
                                       thresholds=np.arange(0.45, 0.95, 0.05).tolist(), evaluate_type=evaluate_type, min_positive_predictions=100)
         test_result = self.evaluate_model(best_model, X_test, y_test,
-                                     thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type, min_positive_predictions=10)
+                                     thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type, min_positive_predictions=15)
+
+        retest_test_dict = {}
+        if test_result["Best Precision"] >= 0.65:
+            print("Test-Ergebnisse sehen gut aus. Modell wird jetzt auf dem gesamten Dataset trainiert.")
+
+            # Gesamtes Dataset kombinieren
+            X_full = pd.concat([X_train, X_test])
+            y_full = pd.concat([y_train, y_test])
+
+            # Modell mit besten Parametern erneut trainieren
+            best_model.fit(X_full, y_full)
+
+            retest_test_result = self.evaluate_model(best_model, X_full, y_full,
+                                              thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type,
+                                              min_positive_predictions=100)
+
+            retest_test_dict = {
+                "Retest Precision": retest_test_result["Best Precision"],
+                "Retest F1": retest_test_result["Best F1-Score"],
+                "Retest Recall": retest_test_result["Best Recall"],
+                "Positive Predictions Count": retest_test_result["Positive Predictions Count"],
+            }
+
+            print("Das Modell wurde erfolgreich auf dem gesamten Dataset trainiert.")
+
 
         return random_search.best_params_ | {
             "Model": model_name,
@@ -495,7 +520,7 @@ class DeepTrainer:
             "Feature Factors": feature_factors,
             "Quantile": quantile,
             "Iterations": iterations
-        }
+        } | retest_test_dict
 
 
 

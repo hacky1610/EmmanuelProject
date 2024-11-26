@@ -190,20 +190,19 @@ def save_to_csv(df, symbol, file_suffix):
     df.drop(columns=["Best Model", "Feature Factors"]).to_csv(file_name, sep=';', index=False)
 
 # Funktion, um das beste Precision-Row für Kauf und Verkauf zu finden
-def get_best_precision_row(df, score_column="CV Score", filter_column="Positive Predictions Count Train",
+def get_best_precision_row(df, score_column="Best Precision", filter_column="Positive Predictions Count Train",
                            threshold=100):
-    filtered_df = df[df[filter_column] > threshold]
-    return filtered_df.loc[filtered_df[score_column].idxmax()]
+    return df.loc[df[score_column].idxmax()]
 
 def configure_deep_predictor(deep_predictor:DeepPredictor, best_buy_row, best_sell_row):
     deep_predictor.set_buy_validation(accuracy=
-        best_buy_row["CV Score"],
+        best_buy_row["Best Precision"],
         trading_hours=best_buy_row["Trading Houres"],
         threshold=best_buy_row["Best Threshold"],
         feature_factors=best_buy_row["Feature Factors"]
     )
     deep_predictor.set_sell_validation(
-        accuracy=best_sell_row["CV Score"],
+        accuracy=best_sell_row["Best Precision"],
         trading_hours=best_sell_row["Trading Houres"],
         threshold=best_sell_row["Best Threshold"],
         feature_factors=best_sell_row["Feature Factors"]
