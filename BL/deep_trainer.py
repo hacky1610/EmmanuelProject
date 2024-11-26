@@ -1,49 +1,27 @@
 # region import
-import math
-import os
-import sys
 import warnings
-from typing import List
+
 import numpy as np
-from catboost import CatBoostClassifier
-import lightgbm as lgb
+import pandas as pd
+import tensorflow as tf
 from imblearn.over_sampling import SMOTE
 from keras import Sequential, Input, Model
 from keras.src.callbacks import ReduceLROnPlateau, EarlyStopping
 from keras.src.layers import Dense, Dropout, BatchNormalization, Add, Reshape, Conv1D, MaxPooling1D, Flatten
 from keras.src.optimizers import Adam, SGD, RMSprop, AdamW
-from keras.src.optimizers.schedules import ExponentialDecay
 from pandas import DataFrame
-from sklearn.decomposition import PCA
-import tensorflow as tf
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LinearRegression
-from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_iris
-
-from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif, SelectFromModel, RFE
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, TimeSeriesSplit, GridSearchCV
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score, recall_score, f1_score
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.metrics import make_scorer, precision_score
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, VotingClassifier, GradientBoostingClassifier
-import pandas as pd
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
-
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, PolynomialFeatures, MinMaxScaler
+from sklearn.metrics import recall_score, f1_score
+from sklearn.model_selection import RandomizedSearchCV, TimeSeriesSplit
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import MinMaxScaler
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 from xgboost import XGBClassifier
 
 from BL import measure_time
+
 
 class SilentCallback(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -137,7 +115,6 @@ class KerasWrapper(BaseEstimator, ClassifierMixin):
         return model
 
     def fit(self, X, y):
-        import logging
 
         early_stopping = EarlyStopping(
             monitor='Precision',  # Überwacht den Validierungsverlust

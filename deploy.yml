@@ -12,7 +12,7 @@ pool:
 strategy:
   matrix:
     Python37:
-      python.version: '3.7'
+      python.version: '3.9'
 
 steps:
 - script: |
@@ -27,4 +27,4 @@ steps:
     repository: 'hacky1610/emmanuel_ti'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v52.02'
+    tags: 'v60.00'

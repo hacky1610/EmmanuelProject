@@ -3,7 +3,6 @@ import os.path
 import random
 import traceback
 from collections import namedtuple
-from datetime import datetime
 from typing import List
 
 import pandas as pd
@@ -17,8 +16,7 @@ from BL import measure_time
 from BL.eval_result import EvalResult
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.predictore_store import PredictorStore
-from Predictors.utils import FileSystem
-from Predictors.base_predictor import BasePredictor
+
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.Tracer import Tracer
 
