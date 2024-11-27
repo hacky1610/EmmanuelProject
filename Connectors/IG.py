@@ -403,15 +403,16 @@ class IG:
               time_threshold_minutes (int): Zeit-Threshold in Minuten, standardmäßig 10 Minuten.
           """
         # Extrahiere Position-Details
-        direction = position.direction
         deal_id = position.dealId
 
         # Lade das zugehörige Deal-Objekt
         deal = deal_store.get_deal_by_deal_id(deal_id)
+        direction = deal.direction
         open_time = deal.get_open_time()  # Öffnungszeit des Trades
         p_id = deal.get_predictor_scan_id()
 
         # Setup des Predictors
+        self._tracer.debug(f"Predictor ID: {p_id}")
         predictor = DeepPredictor(cache=None, config=None,  indicators=Indicators(),symbol="")
         predictor.setup(predictor_store.load_by_id(p_id))
 
@@ -432,7 +433,6 @@ class IG:
             trading_hours = predictor.get_sell_trading_hours()
             close_time = open_time + timedelta(hours=trading_hours)
             close_time_with_threshold = close_time - timedelta(minutes=time_threshold_minutes)
-
             # Überprüfen, ob die Zeit überschritten wurde
             if datetime.utcnow() > close_time_with_threshold:
                 print(f"Schließe Verkaufs-Trade {deal_id}, da die Zeit überschritten ist.")
