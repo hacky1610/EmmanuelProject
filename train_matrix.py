@@ -129,7 +129,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             best_sell_results = []
             for hours in range(2, 7):
                 for quantile in [0.4,0.6,0.9]:
-                    iteration = 150
+                    iteration = 90
                     evaluate_type = "prec"
                     for min_feature_factor in [0.1,0.6]:
                         print(f"Train {symbol} for {hours} hours and quantile {quantile}")

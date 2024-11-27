@@ -288,20 +288,20 @@ class DeepTrainer:
                     'classifier__max_leaves': [31, 63, 127],  # Für loss guide Wachstum
                     'classifier__grow_policy': ['depthwise', 'lossguide']
                 }),
-            'LGBM Weighted': (
-                LGBMClassifier(random_state=42, objective='binary', is_unbalance=True), {
-                    'classifier__max_depth': [-1, 5, 10, 20],  # -1 bedeutet keine Begrenzung
-                    'classifier__learning_rate': [0.01, 0.05, 0.1],
-                    'classifier__n_estimators': [50, 100, 200, 500],
-                    'classifier__num_leaves': [31, 63, 127],  # Kontrolliert die Baumkomplexität
-                    'classifier__min_child_samples': [10, 20, 50],  # Mindestanzahl an Samples in einem Blatt
-                    'classifier__subsample': [0.6, 0.8, 1.0],
-                    'classifier__colsample_bytree': [0.6, 0.8, 1.0],
-                    'classifier__reg_alpha': [0.0, 0.1, 0.5, 1.0],  # L1 Regularisierung
-                    'classifier__reg_lambda': [0.0, 0.1, 0.5, 1.0],  # L2 Regularisierung
-                    'classifier__scale_pos_weight': [0.5, 1, 2],  # Für unbalancierte Daten
-                }
-            ),
+            # 'LGBM Weighted': (
+            #     LGBMClassifier(random_state=42, objective='binary', is_unbalance=True), {
+            #         'classifier__max_depth': [-1, 5, 10, 20],  # -1 bedeutet keine Begrenzung
+            #         'classifier__learning_rate': [0.01, 0.05, 0.1],
+            #         'classifier__n_estimators': [50, 100, 200, 500],
+            #         'classifier__num_leaves': [31, 63, 127],  # Kontrolliert die Baumkomplexität
+            #         'classifier__min_child_samples': [10, 20, 50],  # Mindestanzahl an Samples in einem Blatt
+            #         'classifier__subsample': [0.6, 0.8, 1.0],
+            #         'classifier__colsample_bytree': [0.6, 0.8, 1.0],
+            #         'classifier__reg_alpha': [0.0, 0.1, 0.5, 1.0],  # L1 Regularisierung
+            #         'classifier__reg_lambda': [0.0, 0.1, 0.5, 1.0],  # L2 Regularisierung
+            #         'classifier__scale_pos_weight': [0.5, 1, 2],  # Für unbalancierte Daten
+            #     }
+            # ),
 
             # 'TabNet': (
             #     TabNetClassifier(seed=42), {
@@ -522,6 +522,7 @@ class DeepTrainer:
                 "Retest F1": retest_test_result["Best F1-Score"],
                 "Retest Recall": retest_test_result["Best Recall"],
                 "Positive Predictions Count": retest_test_result["Positive Predictions Count"],
+                "Retest Reward": retest_test_result["Reward"],
             }
 
             print("Das Modell wurde erfolgreich auf dem gesamten Dataset trainiert.")
@@ -540,10 +541,12 @@ class DeepTrainer:
             "Best F1-Score": test_result["Best F1-Score"],
             "Best Threshold": test_result["Best Threshold"],
             "Positive Predictions Count": test_result["Positive Predictions Count"],
+            "Best Reward": test_result["Reward"],
             "Best Train Precision": train_result["Best Precision"],
             "Best Train Recall": train_result["Best Recall"],
             "Best Train F1-Score": train_result["Best F1-Score"],
             "Best Train Threshold": train_result["Best Threshold"],
+            "Best Train Reward": train_result["Reward"],
             "Positive Predictions Count Train": train_result["Positive Predictions Count"],
             "Best Model": best_model,
             "Feature Factors": feature_factors,
@@ -671,14 +674,14 @@ class DeepTrainer:
             X: Eingabedaten.
             y: Zielvariablen (binär: 0 oder 1).
             thresholds: Liste von Schwellenwerten für die Schwellenwertanalyse (nur bei `predict_proba`).
-            min_positive_predictions: Minimale Anzahl an positiven Vorhersagen, um Metriken zu berechnen.
+            min_positive_predictions: Minimale Anzahl an positiven Vorhersagen, um Metriken zu berücksichtigen.
+            evaluate_type: Metrik zur Optimierung, entweder "f1" oder "precision".
 
         Returns:
             Dictionary mit den besten Metriken und weiteren Informationen.
         """
-        # Überprüfen, ob Schwellenwerte angegeben wurden
         if thresholds is None:
-            thresholds = [0.5]  # Standard-Schwellenwert für binäre Klassifikationen
+            thresholds = [0.5]  # Standard-Schwellenwert
 
         # Initialisiere Ergebnisse
         results = {
@@ -687,49 +690,67 @@ class DeepTrainer:
             "Best F1-Score": -1,
             "Best Threshold": 0.5,
             "Positive Predictions Count": -1,
+            "Reward": -1,
             "Details": []  # Detaillierte Ergebnisse für jeden Schwellenwert
         }
 
-        # Das Modell unterstützt `predict_proba`
+        # Vorhersagenwahrscheinlichkeiten
         y_proba = model.predict_proba(X)[:, 1]
+        valid_results = []  # Ergebnisse, die min_positive_predictions erfüllen
 
         for threshold in thresholds:
             y_pred_thresholded = (y_proba >= threshold).astype(int)
             positive_predictions = y_pred_thresholded.sum()
 
-            # Überprüfe, ob die Anzahl positiver Vorhersagen das Minimum erreicht
-            if positive_predictions < min_positive_predictions:
-                precision, recall, f1 = 0.0, 0.0, 0.0
-            else:
-                precision = precision_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
-                recall = recall_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
-                f1 = f1_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
+            true_positives = ((y_pred_thresholded == 1) & (y == 1)).sum()
+            false_positives = ((y_pred_thresholded == 1) & (y == 0)).sum()
+            tp_minus_fp = true_positives - false_positives
 
-            # Speichere Ergebnisse für den aktuellen Schwellenwert
-            results["Details"].append({
+            precision = precision_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
+            recall = recall_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
+            f1 = f1_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
+
+            result = {
                 "Threshold": threshold,
                 "Precision": precision,
                 "Recall": recall,
                 "F1-Score": f1,
-                "Positive Predictions Count": positive_predictions
-            })
+                "Positive Predictions Count": positive_predictions,
+                "Reward": tp_minus_fp
+            }
 
+            results["Details"].append(result)
+
+            if positive_predictions >= min_positive_predictions:
+                valid_results.append(result)
+
+        # Wähle das beste Ergebnis aus valid_results oder alle Ergebnisse
+        if valid_results:
+            candidates = valid_results
+        else:
+            candidates = results["Details"]
+
+        for candidate in candidates:
             if evaluate_type == "f1":
-                # Aktualisiere die besten Metriken basierend auf dem F1-Score
-                if f1 > results["Best F1-Score"]:
-                    results["Best F1-Score"] = f1
-                    results["Best Precision"] = precision
-                    results["Best Recall"] = recall
-                    results["Best Threshold"] = threshold
-                    results["Positive Predictions Count"] = positive_predictions
-            else:
-                # Aktualisiere die besten Metriken basierend auf dem F1-Score
-                if precision > results["Best Precision"]:
-                    results["Best F1-Score"] = f1
-                    results["Best Precision"] = precision
-                    results["Best Recall"] = recall
-                    results["Best Threshold"] = threshold
-                    results["Positive Predictions Count"] = positive_predictions
+                if candidate["F1-Score"] > results["Best F1-Score"]:
+                    results.update({
+                        "Best F1-Score": candidate["F1-Score"],
+                        "Best Precision": candidate["Precision"],
+                        "Best Recall": candidate["Recall"],
+                        "Best Threshold": candidate["Threshold"],
+                        "Positive Predictions Count": candidate["Positive Predictions Count"],
+                        "Reward": candidate["Reward"]
+                    })
+            elif evaluate_type == "precision":
+                if candidate["Precision"] > results["Best Precision"]:
+                    results.update({
+                        "Best F1-Score": candidate["F1-Score"],
+                        "Best Precision": candidate["Precision"],
+                        "Best Recall": candidate["Recall"],
+                        "Best Threshold": candidate["Threshold"],
+                        "Positive Predictions Count": candidate["Positive Predictions Count"],
+                        "Reward": candidate["Reward"]
+                    })
 
         return results
 
