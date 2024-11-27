@@ -372,7 +372,7 @@ class DeepTrainer:
 
         return voting_clf
 
-    def evaluate_features(self, df, target, quantile=0.75):
+    def evaluate_features(self, df, target, quantile=0.75, min_feature_factor=0.1):
         # 1. Korrelation mit Zielwert berechnen
         correlation = self.correlation_with_target(df, target, )
         # 2. Feature-Importance mit RandomForest berechnen
@@ -404,7 +404,7 @@ class DeepTrainer:
 
         #remove result
         top_features = top_features[top_features["Feature"] != "result"]
-        m = MinMaxScaler()
+        m = MinMaxScaler(feature_range=(min_feature_factor, 1))
         top_features["Score_transformed"] = m.fit_transform(top_features[["Score"]])
 
         return top_features
@@ -475,7 +475,9 @@ class DeepTrainer:
         return precision - (1 - f) * 0.2
 
     @measure_time
-    def _train_model(self, pipeline_index, model_name, pipeline, param_grid, tscv, X_train, y_train, X_test, y_test, feature_factors:DataFrame, quantile, hours, iterations, evaluate_type):
+    def _train_model(self, pipeline_index, model_name, pipeline, param_grid, tscv,
+                     X_train, y_train, X_test, y_test, feature_factors:DataFrame,
+                     quantile, hours, iterations, evaluate_type, min_feature_factor):
         print(f"\nTesting pipeline variant {pipeline_index + 1} for {model_name}")
         scorer = make_scorer(precision_score, pos_label=1, zero_division=0)
         random_search = RandomizedSearchCV(
@@ -531,6 +533,7 @@ class DeepTrainer:
             "CV Score": best_cv_score,
             "Trading Houres": hours,
             "Evaluate Type": evaluate_type,
+            "Min Feature Factor": min_feature_factor,
             "Score": (train_result["Best Precision"] + best_cv_score) / 2,
             "Best Precision": test_result["Best Precision"],
             "Best Recall": test_result["Best Recall"],
@@ -550,7 +553,7 @@ class DeepTrainer:
 
 
 
-    def train(self, df, hours, quantile, iterations, evaluate_type):
+    def train(self, df, hours, quantile, iterations, evaluate_type,min_feature_factor):
         # Suppress warnings
         warnings.filterwarnings("ignore")
 
@@ -559,7 +562,7 @@ class DeepTrainer:
         df_train = df[:int(len(df) * 0.9)]
         df_test = df[int(len(df) * 0.9):]
 
-        good_features_df = self.evaluate_features(df_train, "result", quantile)
+        good_features_df = self.evaluate_features(df_train, "result", quantile, min_feature_factor)
         selected_features = (
             good_features_df.sort_values(by="Score", ascending=False)  # Nach Scores sortieren
             .index  # Feature-Namen
@@ -600,7 +603,9 @@ class DeepTrainer:
             for i, pipeline in enumerate(pipeline_variants):
                 res = self._train_model(pipeline_index=i, model_name=model_name, pipeline=pipeline,
                                         param_grid=param_grid, tscv=tscv, X_train=X_train, y_train=y_train,
-                                        X_test=X_test, y_test=y_test, feature_factors=factors, quantile=quantile, hours=hours, iterations=iterations, evaluate_type=evaluate_type)
+                                        X_test=X_test, y_test=y_test, feature_factors=factors,
+                                        quantile=quantile, hours=hours, iterations=iterations,
+                                        evaluate_type=evaluate_type, min_feature_factor=min_feature_factor)
 
                 best_results.append(res)
 

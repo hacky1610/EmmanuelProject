@@ -86,7 +86,7 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_proc
     return df_train, eval_df_train
 
 
-def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, trade_mode, hours, quantile,iterations, evaluate_type):
+def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, trade_mode, hours, quantile,iterations, evaluate_type,min_feature_factor):
     print(f"Train {symbol} for {trade_mode}")
     # Set specific replacement values for each trade type
     if trade_mode == "buy":
@@ -104,7 +104,7 @@ def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, 
     signal_result_df = signal_result_df.dropna()
 
     # Train model and set predictor
-    return deep_trainer.train(signal_result_df, hours, quantile,iterations, evaluate_type)
+    return deep_trainer.train(signal_result_df, hours, quantile,iterations, evaluate_type,min_feature_factor)
 
 
 def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indicators, trade_type=TradeType.FX,
@@ -129,8 +129,9 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             best_sell_results = []
             for hours in range(2, 7):
                 for quantile in [0.4,0.6,0.9]:
-                    iteration = 77
-                    for evaluate_type in ["prec"]:
+                    iteration = 150
+                    evaluate_type = "prec"
+                    for min_feature_factor in [0.1,0.6]:
                         print(f"Train {symbol} for {hours} hours and quantile {quantile}")
                         buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
                                                                      time_frame=hours)
@@ -140,11 +141,11 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
                         # Train for Buy and Sell separately
                         best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
                                                                                    deep_trainer, trade_mode="buy",
-                                                                                   hours=hours, quantile=quantile,iterations=iteration, evaluate_type=evaluate_type)
+                                                                                   hours=hours, quantile=quantile,iterations=iteration, evaluate_type=evaluate_type, min_feature_factor=min_feature_factor)
                         best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
                                                                                      deep_trainer,
                                                                                      trade_mode="sell", hours=hours,
-                                                                                     quantile=quantile,iterations=iteration, evaluate_type=evaluate_type)
+                                                                                     quantile=quantile,iterations=iteration, evaluate_type=evaluate_type, min_feature_factor=min_feature_factor)
 
             best_buy_results_df = pd.DataFrame(best_buy_results)
             best_sell_results_df = pd.DataFrame(best_sell_results)
