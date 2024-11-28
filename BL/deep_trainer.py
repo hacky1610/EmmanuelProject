@@ -741,7 +741,7 @@ class DeepTrainer:
                         "Positive Predictions Count": candidate["Positive Predictions Count"],
                         "Reward": candidate["Reward"]
                     })
-            elif evaluate_type == "precision":
+            elif evaluate_type == "prec":
                 if candidate["Precision"] > results["Best Precision"]:
                     results.update({
                         "Best F1-Score": candidate["F1-Score"],
