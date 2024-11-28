@@ -112,8 +112,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-        if symbol != "NZDCAD":
-            continue
+        #if symbol != "NZDCAD":
+        #    continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                  dropbox_cache=cache)
@@ -192,7 +192,7 @@ def save_to_csv(df, symbol, file_suffix):
     df.drop(columns=["Best Model", "Feature Factors"]).to_csv(file_name, sep=';', index=False)
 
 # Funktion, um das beste Precision-Row für Kauf und Verkauf zu finden
-def get_best_precision_row(df, score_column="Best Reward", filter_column="CV Score",
+def get_best_precision_row(df, score_column="Best Train Reward", filter_column="CV Score",
                            threshold=0.63):
     filtered_df = df[df[filter_column] > threshold]
     if len(filtered_df) == 0:
@@ -202,7 +202,7 @@ def get_best_precision_row(df, score_column="Best Reward", filter_column="CV Sco
 def configure_deep_predictor(deep_predictor:DeepPredictor, best_buy_row, best_sell_row):
     if best_buy_row is not None:
         deep_predictor.set_buy_validation(accuracy=
-            best_buy_row["Best Precision"],
+            best_buy_row["CV Score"],
             trading_hours=best_buy_row["Trading Houres"],
             threshold=best_buy_row["Best Threshold"],
             feature_factors=best_buy_row["Feature Factors"]
@@ -211,7 +211,7 @@ def configure_deep_predictor(deep_predictor:DeepPredictor, best_buy_row, best_se
 
     if best_sell_row is not None:
         deep_predictor.set_sell_validation(
-            accuracy=best_sell_row["Best Precision"],
+            accuracy=best_sell_row["CV Score"],
             trading_hours=best_sell_row["Trading Houres"],
             threshold=best_sell_row["Best Threshold"],
             feature_factors=best_sell_row["Feature Factors"]

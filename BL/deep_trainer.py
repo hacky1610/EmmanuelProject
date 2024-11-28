@@ -503,29 +503,28 @@ class DeepTrainer:
                                      thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type, min_positive_predictions=15)
 
         retest_test_dict = {}
-        if test_result["Best Precision"] >= 0.65:
-            print("Test-Ergebnisse sehen gut aus. Modell wird jetzt auf dem gesamten Dataset trainiert.")
+        print("Test-Ergebnisse sehen gut aus. Modell wird jetzt auf dem gesamten Dataset trainiert.")
 
-            # Gesamtes Dataset kombinieren
-            X_full = pd.concat([X_train, X_test])
-            y_full = pd.concat([y_train, y_test])
+        # Gesamtes Dataset kombinieren
+        X_full = pd.concat([X_train, X_test])
+        y_full = pd.concat([y_train, y_test])
 
-            # Modell mit besten Parametern erneut trainieren
-            best_model.fit(X_full, y_full)
+        # Modell mit besten Parametern erneut trainieren
+        best_model.fit(X_full, y_full)
 
-            retest_test_result = self.evaluate_model(best_model, X_full, y_full,
-                                              thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type,
-                                              min_positive_predictions=100)
+        retest_test_result = self.evaluate_model(best_model, X_full, y_full,
+                                          thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type,
+                                          min_positive_predictions=100)
 
-            retest_test_dict = {
-                "Retest Precision": retest_test_result["Best Precision"],
-                "Retest F1": retest_test_result["Best F1-Score"],
-                "Retest Recall": retest_test_result["Best Recall"],
-                "Retest Positive Predictions Count": retest_test_result["Positive Predictions Count"],
-                "Retest Reward": retest_test_result["Reward"],
-            }
+        retest_test_dict = {
+            "Retest Precision": retest_test_result["Best Precision"],
+            "Retest F1": retest_test_result["Best F1-Score"],
+            "Retest Recall": retest_test_result["Best Recall"],
+            "Retest Positive Predictions Count": retest_test_result["Positive Predictions Count"],
+            "Retest Reward": retest_test_result["Reward"],
+        }
 
-            print("Das Modell wurde erfolgreich auf dem gesamten Dataset trainiert.")
+        print("Das Modell wurde erfolgreich auf dem gesamten Dataset trainiert.")
 
 
         return random_search.best_params_ | {
