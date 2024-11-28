@@ -112,8 +112,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-        #if symbol != "EURDKK":
-        #    continue
+        if symbol != "NZDCAD":
+            continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                  dropbox_cache=cache)
@@ -192,8 +192,8 @@ def save_to_csv(df, symbol, file_suffix):
     df.drop(columns=["Best Model", "Feature Factors"]).to_csv(file_name, sep=';', index=False)
 
 # Funktion, um das beste Precision-Row für Kauf und Verkauf zu finden
-def get_best_precision_row(df, score_column="Best Precision", filter_column="CV Score",
-                           threshold=0.60):
+def get_best_precision_row(df, score_column="Best Reward", filter_column="CV Score",
+                           threshold=0.63):
     filtered_df = df[df[filter_column] > threshold]
     if len(filtered_df) == 0:
         return None

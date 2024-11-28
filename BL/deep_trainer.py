@@ -521,7 +521,7 @@ class DeepTrainer:
                 "Retest Precision": retest_test_result["Best Precision"],
                 "Retest F1": retest_test_result["Best F1-Score"],
                 "Retest Recall": retest_test_result["Best Recall"],
-                "Positive Predictions Count": retest_test_result["Positive Predictions Count"],
+                "Retest Positive Predictions Count": retest_test_result["Positive Predictions Count"],
                 "Retest Reward": retest_test_result["Reward"],
             }
 
@@ -709,6 +709,11 @@ class DeepTrainer:
             precision = precision_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
             recall = recall_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
             f1 = f1_score(y, y_pred_thresholded, pos_label=1, zero_division=0)
+
+            if precision == 1:
+                if tp_minus_fp != true_positives:
+                    print(f"True Positives: {true_positives}, False Positives: {false_positives}")
+                    raise ValueError("Precition is 1. But Reward ist false")
 
             result = {
                 "Threshold": threshold,
