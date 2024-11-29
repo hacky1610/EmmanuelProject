@@ -392,7 +392,7 @@ class IG:
                     self._tracer.debug(f"Stop reached {deal}")
                     self.close("BUY", deal_id, deal.size)
 
-    def manual_close_after_time(self, position: Series,deal_store: DealStore, predictor_store: PredictorStore, time_threshold_minutes=10):
+    def manual_close_after_time(self, position: Series,deal_store: DealStore, predictor_store: PredictorStore, time_threshold_minutes=10,  atr_multiplier_limit=1.0, atr_multiplier_stop=1.3):
         """
           Schließt Trades manuell, wenn die Zeit die Handelszeit (plus Threshold) überschreitet.
 
@@ -404,39 +404,61 @@ class IG:
           """
         # Extrahiere Position-Details
         deal_id = position.dealId
-
-        # Lade das zugehörige Deal-Objekt
+        current_price = position.level
         deal = deal_store.get_deal_by_deal_id(deal_id)
         direction = deal.direction
-        open_time = deal.get_open_time()  # Öffnungszeit des Trades
+        open_time = deal.get_open_time()
+        entry_price = deal.open_level  # Einstiegswert des Trades
         p_id = deal.get_predictor_scan_id()
 
         # Setup des Predictors
-        self._tracer.debug(f"Predictor ID: {p_id}")
-        predictor = DeepPredictor(cache=None, config=None,  indicators=Indicators(),symbol="")
+        predictor = DeepPredictor(cache=None, config=None, indicators=Indicators(), symbol="")
         predictor.setup(predictor_store.load_by_id(p_id))
+
+        # Hole das ATR-Wert des Einstiegspunktes
+        stop = deal.get_stop()
+        limit = deal.get_limit()
+        limit = entry_price + limit if direction == TradeAction.BUY else entry_price - limit
+        stop = entry_price - stop if direction == TradeAction.BUY else entry_price + stop
 
         # Handelsrichtung überprüfen
         if direction == TradeAction.BUY:
-            # Erlaubte Handelszeit und Threshold berechnen
             trading_hours = predictor.get_buy_trading_hours()
             close_time = open_time + timedelta(hours=trading_hours)
             close_time_with_threshold = close_time - timedelta(minutes=time_threshold_minutes)
 
-            # Überprüfen, ob die Zeit überschritten wurde
-            if datetime.utcnow() > close_time_with_threshold:
-                print(f"Schließe Kauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
+            # Überprüfen der Bedingungen
+            if current_price >= limit:
+                self._tracer.info(f"Schließe Kauf-Trade {deal_id}, da das Limit erreicht wurde.")
                 self.close("SELL", deal_id, deal.size)
+            elif current_price <= stop:
+                self._tracer.info(f"Schließe Kauf-Trade {deal_id}, da der Stop erreicht wurde.")
+                self.close("SELL", deal_id, deal.size)
+            elif datetime.utcnow() > close_time_with_threshold:
+                self._tracer.info(
+                    f"Schließe Kauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}.")
+                self.close("SELL", deal_id, deal.size)
+            else:
+                self._tracer.debug(f"Keine Bedingungen erfüllt {deal_id}")
 
         elif direction == TradeAction.SELL:
-            # Erlaubte Handelszeit und Threshold berechnen
             trading_hours = predictor.get_sell_trading_hours()
             close_time = open_time + timedelta(hours=trading_hours)
             close_time_with_threshold = close_time - timedelta(minutes=time_threshold_minutes)
-            # Überprüfen, ob die Zeit überschritten wurde
-            if datetime.utcnow() > close_time_with_threshold:
-                print(f"Schließe Verkaufs-Trade {deal_id}, da die Zeit überschritten ist.")
+
+            # Überprüfen der Bedingungen
+
+            if current_price <= limit:
+                self._tracer.info(f"Schließe Verkaufs-Trade {deal_id}, da das Limit erreicht wurde.")
                 self.close("BUY", deal_id, deal.size)
+            elif current_price >= stop:
+                self._tracer.info(f"Schließe Verkaufs-Trade {deal_id}, da der Stop erreicht wurde.")
+                self.close("BUY", deal_id, deal.size)
+            elif datetime.utcnow() > close_time_with_threshold:
+                self._tracer.info(f"Schließe Verkaufs-Trade {deal_id}, da die Zeit überschritten ist.")
+                self.close("BUY", deal_id, deal.size)
+            else:
+                self._tracer.debug(f"Keine Bedingungen erfüllt {deal_id}")
 
     def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")

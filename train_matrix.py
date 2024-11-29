@@ -128,10 +128,10 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             best_buy_results = []
             best_sell_results = []
             for hours in range(2, 7):
-                for quantile in [0.4,0.6,0.9]:
-                    iteration = 90
+                for quantile in [0.33,0.66]:
+                    iteration = 110
                     evaluate_type = "prec"
-                    for min_feature_factor in [0.1,0.6]:
+                    for min_feature_factor in [0.5]:
                         print(f"Train {symbol} for {hours} hours and quantile {quantile}")
                         buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
                                                                      time_frame=hours)
@@ -193,7 +193,7 @@ def save_to_csv(df, symbol, file_suffix):
 
 # Funktion, um das beste Precision-Row für Kauf und Verkauf zu finden
 def get_best_precision_row(df, score_column="Best Train Reward", filter_column="CV Score",
-                           threshold=0.63):
+                           threshold=0.60):
     filtered_df = df[df[filter_column] > threshold]
     if len(filtered_df) == 0:
         return None

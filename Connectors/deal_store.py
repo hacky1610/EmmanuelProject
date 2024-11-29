@@ -94,6 +94,13 @@ class Deal:
     def get_open_time(self) -> datetime:
         return self.open_date_ig_datetime
 
+    def get_stop(self) -> float:
+        return self.stop_factor
+
+    def get_limit(self) -> float:
+        return self.limit_factor
+
+
     def set_intelligent_stop_level(self, level: float):
         self.intelligent_stop_used = True
         self.intelligent_stop_level = level

@@ -304,8 +304,8 @@ class Trader:
         predictor.load_model()
         signal = predictor.predict(trade_df)
         market = self._market_store.get_market(config.symbol)
-        stop = trade_df.ATR.iloc[-1] * 1.7 * config.scaling
-        limit = trade_df.ATR.iloc[-1] * 1.7 * config.scaling
+        stop = trade_df.ATR.iloc[-1] * 1.3 * config.scaling
+        limit = trade_df.ATR.iloc[-1] * 1.0 * config.scaling
 
         if signal == TradeAction.NONE or signal == TradeAction.BOTH:
             return TradeResult.NOACTION

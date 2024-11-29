@@ -324,28 +324,30 @@ class Analytics:
                                  action: str,
                                  df: DataFrame,
                                  df_eval: DataFrame,
+                                 limit_multiplier: float = 1.0,
+                                 stop_multiplier: float = 1.3,
                                  timeframe_hours: int = 4) -> DataFrame:
         """
-        Simuliert Trades mit einem festen Zeitrahmen, um diese zu schließen.
+        Simuliert Trades mit einem festen Zeitrahmen, Limit und Stop, um diese zu schließen.
 
         Parameters:
             action (str): "BUY" oder "SELL".
             df (DataFrame): DataFrame mit den Einstiegsdaten.
-            df_eval (DataFrame): DataFrame mit den zukünftigen Kursdaten.
+            df_eval (DataFrame): DataFrame mit den zukünftigen Kursdaten (enthält ATR).
+            limit_multiplier (float): Multiplikator für ATR, um das Limit zu bestimmen.
+            stop_multiplier (float): Multiplikator für ATR, um das Stop-Level zu bestimmen.
             timeframe_hours (int): Zeitrahmen in Stunden, nach dem der Trade geschlossen wird.
 
         Returns:
             DataFrame: Ergebnisse der Simulation mit den Profiten.
         """
-        # Absicherungen
-        required_columns = {"date", "close"}
+        required_columns = {"date", "close", "ATR"}
         assert required_columns.issubset(df.columns), "df is missing required columns"
-        assert required_columns.issubset(df_eval.columns), "df_eval is missing required columns"
+        assert {"close", "date"}.issubset(df_eval.columns), "df_eval is missing required columns"
 
         if len(df) == 0 or len(df_eval) == 0:
             raise ValueError("Input DataFrames must not be empty")
 
-        # Konvertiere Datumsspalten vor der Schleife
         df["date"] = pd.to_datetime(df["date"])
         df_eval["date"] = pd.to_datetime(df_eval["date"])
 
@@ -354,15 +356,16 @@ class Analytics:
         for i in range(len(df)):
             entry_time = df.date.iloc[i]
             entry_price = df.close.iloc[i]
+            atr = df.ATR.iloc[i]  # ATR-Wert des Einstiegszeitpunkts
+            limit = atr * limit_multiplier
+            stop = atr * stop_multiplier
 
-            # Filter future prices ab der nächsten Stunde
             future = df_eval[
-                (df_eval["date"] >= entry_time + timedelta(hours=1)) &  # Ab der nächsten Stunde
+                (df_eval["date"] >= entry_time + timedelta(hours=1)) &
                 (df_eval["date"] <= entry_time + timedelta(hours=timeframe_hours + 1))
-            ]
+                ]
 
             if len(future) == 0:
-                # Kein zukünftiger Preis verfügbar
                 simulation_result.append({
                     "action": action,
                     "entry_time": entry_time,
@@ -370,30 +373,53 @@ class Analytics:
                     "entry_price": entry_price,
                     "exit_price": None,
                     "result": None,
+                    "atr": atr,
+                    "reason": "No data",
                     "chart_index": i,
                     "next_index": i + 1
                 })
                 continue
 
-            # Schlusspreis ist der letzte Preis im Zeitrahmen
-            closing_price = future.iloc[-1].close
+            for idx, row in future.iterrows():
+                current_price = row.close
+                time = row.date
 
-            # Berechne Gewinn/Verlust basierend auf der Aktion
-            if action == TradeAction.BUY:
-                profit = closing_price - entry_price
-            elif action == TradeAction.SELL:
-                profit = entry_price - closing_price
+                if action == TradeAction.BUY:
+                    profit = current_price - entry_price
+                    if profit >= limit:
+                        reason = "Limit reached"
+                        break
+                    elif profit <= -stop:
+                        reason = "Stop reached"
+                        break
+                elif action == TradeAction.SELL:
+                    profit = entry_price - current_price
+                    if profit >= limit:
+                        reason = "Limit reached"
+                        break
+                    elif profit <= -stop:
+                        reason = "Stop reached"
+                        break
+                else:
+                    raise ValueError(f"Unknown action: {action}")
+
             else:
-                raise ValueError(f"Unknown action: {action}")
+                # Schließe den Trade am Ende des Zeitrahmens
+                current_price = future.iloc[-1].close
+                time = future.iloc[-1].date
+                reason = "Timeframe ended"
 
-            # Speichere das Ergebnis
+            # Ergebnis speichern
+            result = current_price - entry_price if action == TradeAction.BUY else entry_price - current_price
             simulation_result.append({
                 "action": action,
                 "entry_time": entry_time,
-                "exit_time": future.iloc[-1].date,
+                "exit_time": time,
                 "entry_price": entry_price,
-                "exit_price": closing_price,
-                "result": profit,
+                "exit_price": current_price,
+                "result": result,
+                "reason": reason,
+                "atr": atr,
                 "chart_index": i,
                 "next_index": i + 1
             })

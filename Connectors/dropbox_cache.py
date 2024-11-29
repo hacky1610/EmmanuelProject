@@ -115,7 +115,7 @@ class DropBoxCache(BaseCache):
         day_of_year = heute.timetuple().tm_yday
         index = day_of_year - (day_of_year % 10)
 
-        return f"Training_V21_6/{heute.year}_D{index}"
+        return f"Training_V21_7/{heute.year}_D{index}"
 
     def load_train_cache(self, name: str):
         res = self.dropbox_servie.load(self._get_train_cache_path(name))
