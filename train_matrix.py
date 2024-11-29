@@ -197,6 +197,9 @@ def get_best_precision_row(df, score_column="Best Train Reward", filter_column="
     filtered_df = df[df[filter_column] > threshold]
     if len(filtered_df) == 0:
         return None
+    filtered_df = filtered_df[filtered_df["Best Train Precision"] > 0.85]
+    if len(filtered_df) == 0:
+        return None
     return filtered_df.loc[filtered_df[score_column].idxmax()]
 
 def configure_deep_predictor(deep_predictor:DeepPredictor, best_buy_row, best_sell_row):
