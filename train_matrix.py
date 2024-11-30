@@ -194,7 +194,7 @@ def save_to_csv(df, symbol, file_suffix):
 # Funktion, um das beste Precision-Row für Kauf und Verkauf zu finden
 def get_best_precision_row(df, score_column="Best Train Reward", filter_column="CV Score",
                            threshold=0.69):
-    filtered_df = df[df[filter_column] > threshold]
+    filtered_df = df[df[filter_column] >= threshold]
     if len(filtered_df) == 0:
         return None
     filtered_df = filtered_df[filtered_df["Best Train Precision"] > 0.85]

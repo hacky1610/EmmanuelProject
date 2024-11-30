@@ -499,32 +499,32 @@ class DeepTrainer:
 
         train_result = self.evaluate_model(best_model, X_train, y_train,
                                       thresholds=np.arange(0.45, 0.95, 0.05).tolist(), evaluate_type=evaluate_type, min_positive_predictions=100)
-        test_result = self.evaluate_model(best_model, X_test, y_test,
-                                     thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type, min_positive_predictions=15)
+        # test_result = self.evaluate_model(best_model, X_test, y_test,
+        #                              thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type, min_positive_predictions=15)
 
         retest_test_dict = {}
-        print("Test-Ergebnisse sehen gut aus. Modell wird jetzt auf dem gesamten Dataset trainiert.")
+        # print("Test-Ergebnisse sehen gut aus. Modell wird jetzt auf dem gesamten Dataset trainiert.")
 
         # Gesamtes Dataset kombinieren
-        X_full = pd.concat([X_train, X_test])
-        y_full = pd.concat([y_train, y_test])
+        # X_full = pd.concat([X_train, X_test])
+        # y_full = pd.concat([y_train, y_test])
 
         # Modell mit besten Parametern erneut trainieren
-        best_model.fit(X_full, y_full)
-
-        retest_test_result = self.evaluate_model(best_model, X_full, y_full,
-                                          thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type,
-                                          min_positive_predictions=100)
-
-        retest_test_dict = {
-            "Retest Precision": retest_test_result["Best Precision"],
-            "Retest F1": retest_test_result["Best F1-Score"],
-            "Retest Recall": retest_test_result["Best Recall"],
-            "Retest Positive Predictions Count": retest_test_result["Positive Predictions Count"],
-            "Retest Reward": retest_test_result["Reward"],
-        }
-
-        print("Das Modell wurde erfolgreich auf dem gesamten Dataset trainiert.")
+        # best_model.fit(X_full, y_full)
+        #
+        # retest_test_result = self.evaluate_model(best_model, X_full, y_full,
+        #                                   thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type,
+        #                                   min_positive_predictions=100)
+        #
+        # retest_test_dict = {
+        #     "Retest Precision": retest_test_result["Best Precision"],
+        #     "Retest F1": retest_test_result["Best F1-Score"],
+        #     "Retest Recall": retest_test_result["Best Recall"],
+        #     "Retest Positive Predictions Count": retest_test_result["Positive Predictions Count"],
+        #     "Retest Reward": retest_test_result["Reward"],
+        # }
+        #
+        # print("Das Modell wurde erfolgreich auf dem gesamten Dataset trainiert.")
 
 
         return random_search.best_params_ | {
@@ -535,12 +535,12 @@ class DeepTrainer:
             "Evaluate Type": evaluate_type,
             "Min Feature Factor": min_feature_factor,
             "Score": (train_result["Best Precision"] + best_cv_score) / 2,
-            "Best Precision": test_result["Best Precision"],
-            "Best Recall": test_result["Best Recall"],
-            "Best F1-Score": test_result["Best F1-Score"],
-            "Best Threshold": test_result["Best Threshold"],
-            "Positive Predictions Count": test_result["Positive Predictions Count"],
-            "Best Reward": test_result["Reward"],
+            # "Best Precision": test_result["Best Precision"],
+            # "Best Recall": test_result["Best Recall"],
+            # "Best F1-Score": test_result["Best F1-Score"],
+            "Best Threshold": train_result["Best Threshold"],
+            # "Positive Predictions Count": test_result["Positive Predictions Count"],
+            # "Best Reward": test_result["Reward"],
             "Best Train Precision": train_result["Best Precision"],
             "Best Train Recall": train_result["Best Recall"],
             "Best Train F1-Score": train_result["Best F1-Score"],
@@ -563,6 +563,7 @@ class DeepTrainer:
         # Split dataset into training and test sets
         df_train = df[:int(len(df) * 0.9)]
         df_test = df[int(len(df) * 0.9):]
+        df_train = df
 
         good_features_df = self.evaluate_features(df_train, "result", quantile, min_feature_factor)
         selected_features = (
@@ -573,16 +574,16 @@ class DeepTrainer:
 
 
         X_train = df_train.drop(columns=['result'])[selected_features]
-        X_test = df_test.drop(columns=['result'])[selected_features]
+        # X_test = df_test.drop(columns=['result'])[selected_features]
 
         y_train = df_train['result']
-        y_test = df_test['result']
+        # y_test = df_test['result']
 
         factors = good_features_df["Score_transformed"]
 
         # Werte in `X_train` mit den entsprechenden Faktoren multiplizieren
         X_train = X_train.multiply(factors, axis=1)
-        X_test = X_test.multiply(factors, axis=1)
+        # X_test = X_test.multiply(factors, axis=1)
 
         # Apply SMOTE only on the training set
         smote = SMOTE(random_state=42)
@@ -605,7 +606,7 @@ class DeepTrainer:
             for i, pipeline in enumerate(pipeline_variants):
                 res = self._train_model(pipeline_index=i, model_name=model_name, pipeline=pipeline,
                                         param_grid=param_grid, tscv=tscv, X_train=X_train, y_train=y_train,
-                                        X_test=X_test, y_test=y_test, feature_factors=factors,
+                                        X_test=None, y_test=None, feature_factors=factors,
                                         quantile=quantile, hours=hours, iterations=iterations,
                                         evaluate_type=evaluate_type, min_feature_factor=min_feature_factor)
 
@@ -616,8 +617,8 @@ class DeepTrainer:
         #best_model_name = max(results, key=lambda k: results[k][0])
         #best_test_precision, best_model = results[best_model_name]
 
-        best_item = max(best_results, key=lambda x: x['Score'])
-        print(f"Precision {best_item['Best Precision']} from {best_item['Model']}")
+        #best_item = max(best_results, key=lambda x: x['Score'])
+        #print(f"Precision {best_item['Best Precision']} from {best_item['Model']}")
         return best_results
 
     @staticmethod
