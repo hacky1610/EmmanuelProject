@@ -126,10 +126,10 @@ class DeepPredictor(BasePredictor):
         return self.is_good_buy() or self.is_good_sell()
 
     def is_good_buy(self):
-        return self._buy_accuracy >= 0.72
+        return self._buy_accuracy >= 0.70
 
     def is_good_sell(self):
-        return self._sell_accuracy >= 0.72
+        return self._sell_accuracy >= 0.70
 
     def save(self):
         self._cache.save_model_cache(self._buy_model, self._buy_model_id)

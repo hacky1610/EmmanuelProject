@@ -280,7 +280,7 @@ class DeepTrainer:
                     'classifier__gamma': [0, 0.1, 0.5, 1],
                     'classifier__colsample_bytree': [0.8, 1.0],
                     'classifier__min_child_weight': [1, 5, 10],  # Minimale Anforderungen an Split
-                    'classifier__scale_pos_weight': [0.15, 0.3, 0.5, 0.7, 1.0],
+                    'classifier__scale_pos_weight': [0.03, 0.075, 0.15, 0.3, 0.5, 0.7],
                     'classifier__n_estimators': [50, 100, 200, 300],
                     'classifier__subsample': [0.6, 0.8, 1.0],
                     'classifier__reg_alpha': [0, 0.1, 0.5, 1],
