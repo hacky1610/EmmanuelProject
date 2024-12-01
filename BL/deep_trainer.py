@@ -170,108 +170,16 @@ class DeepTrainer:
         ]
 
     def _get_models(self):
+        def precision_metric(preds, dtrain):
+            labels = dtrain.get_label()
+            preds = (preds > 0.5).astype(int)  # Schwellenwert anpassen
+            tp = ((labels == 1) & (preds == 1)).sum()
+            fp = ((labels == 0) & (preds == 1)).sum()
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            return 'precision', precision
+
         models =  {
-            # 'Random Forest': (RandomForestClassifier(random_state=42), {
-            #     'classifier__n_estimators': [100, 200, 300],
-            #     'classifier__max_depth': [10, 20],
-            # }),
-            #     "keras" : (MyKerasClassifier(build_fn=self.create_model, verbose=0), {
-            #          'classifier__optimizer': ['adam', 'rmsprop', "sgd", Adam(learning_rate=0.001), Adam(learning_rate=lr_schedule)],
-            #         'classifier__activation': ["tanh", "elu", "swish"],
-            #         'classifier__dropout_rate': [0.2, 0.3, 0.4],
-            #         'classifier__epochs': [10, 20],  # Reduziere für schnelle Tests
-            #         'classifier__batch_size': [32, 64],
-            # # }),
-            #     'Gradient Boosting': (GradientBoostingClassifier(random_state=42), {
-            #         'classifier__n_estimators': [50, 100, 200],
-            #         'classifier__max_depth': [3, 5, 7],
-            #         'classifier__learning_rate': [0.01, 0.1, 0.2],
-            #     }),
-            # 'Random Forest Balanced': (RandomForestClassifier(random_state=42, class_weight='balanced'), {
-            #     'classifier__n_estimators': [50, 100, 200],
-            #     'classifier__max_depth': [10, 20],
-            #     'classifier__min_samples_split': [2, 5],
-            #     'classifier__min_samples_leaf': [1, 2, 4],
-            #     'classifier__max_features': ['sqrt'],
-            #     'classifier__bootstrap': [True, False],
-            # }),
-            # 'XGBoost Simple': (XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', verbosity=0), {
-            #     'classifier__max_depth': [3, 5],  # Explore shallower to deeper trees
-            # }),
 
-            # 'XGBoost': (XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss',  verbosity=0), {
-            #        'classifier__max_depth': [3, 5, 7, 10, 12],             # Explore shallower to deeper trees
-            #         'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],   # Test smaller learning rates
-            #         'classifier__n_estimators': [50, 100, 200, 300, 500],   # Cover a wider range of estimators
-            #         'classifier__subsample': [0.6, 0.8, 1.0],               # Tweak sampling rate to control overfitting
-            #         'classifier__colsample_bytree': [0.6, 0.8, 1.0]         # Contr
-            # }),
-
-            # 'Random Forest Balanced Weighted': (RandomForestClassifier(random_state=42, class_weight={0: 1, 1: 10}), {
-            #     'classifier__n_estimators': [50, 100, 200],
-            #     'classifier__max_depth': [10, 20],
-            #     'classifier__min_samples_split': [2, 5],
-            #     'classifier__min_samples_leaf': [1, 2, 4],
-            #     'classifier__max_features': ['sqrt'],
-            #     'classifier__bootstrap': [True, False],
-            # }),
-            # 'LightGBM': (lgb.LGBMClassifier(random_state=42, verbose=-1),
-            #              {
-            #                  'classifier__max_depth': [3, 5, 7, 10, 12],
-            #                  # Ähnlich wie XGBoost, tiefere und flachere Bäume testen
-            #                  'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],  # Geringere Lernraten ausprobieren
-            #                  'classifier__n_estimators': [50, 100, 200, 300, 500],
-            #                  # Größerer Bereich für die Anzahl der Bäume
-            #                  'classifier__subsample': [0.6, 0.8, 1.0],
-            #                  # Sampling-Rate zum Überanpassungskontrolle anpassen
-            #                  'classifier__colsample_bytree': [0.6, 0.8, 1.0]  # Anteil der Spalten für Baumaufbau
-            #              }),
-        #     'LightGBM Weighted (is_unbalance)': (
-        #     lgb.LGBMClassifier(random_state=42, is_unbalance=True, verbose=-1),
-        #     {
-        #         'classifier__max_depth': [3, 5, 7],
-        #         'classifier__learning_rate': [0.01, 0.1],
-        #         'classifier__n_estimators': [100, 200],
-        #         'classifier__subsample': [0.8, 1.0],
-        #         'classifier__colsample_bytree': [0.8, 1.0],
-        #     }
-        # ),
-        #     'LightGBM Weighted (scale_pos_weight)': (
-        #         lgb.LGBMClassifier(random_state=42, verbose=-1),
-        #         {
-        #             'classifier__max_depth': [3, 5, 7],
-        #             'classifier__learning_rate': [0.01, 0.1],
-        #             'classifier__n_estimators': [100, 200],
-        #             'classifier__subsample': [0.8, 1.0],
-        #             'classifier__colsample_bytree': [0.8, 1.0],
-        #             'classifier__scale_pos_weight': [5, 10, 20],  # Experimentiere mit Werten
-        #         }
-        #     ),
-        #     'CatBoost': (CatBoostClassifier(random_seed=42, verbose=0),
-        #                  {
-        #                      'classifier__depth': [3, 5, 7, 10, 12],  # Baumtiefe
-        #                      'classifier__learning_rate': [0.01, 0.05, 0.1, 0.2],  # Lernrate
-        #                      'classifier__iterations': [50, 100, 200, 300, 500],
-        #                      # Anzahl der Iterationen (entspricht n_estimators)
-        #                      'classifier__subsample': [0.6, 0.8, 1.0],  # Sampling-Rate
-        #                      'classifier__colsample_bylevel': [0.6, 0.8, 1.0]  # Anteil der Spalten auf Ebene
-        #                  }),
-        #     'CatBoost Weighted': (CatBoostClassifier(random_seed=42, verbose=0, class_weights=[1, 10]), {
-        #         'classifier__depth': [3, 5, 7],
-        #         'classifier__learning_rate': [0.01, 0.1],
-        #         'classifier__iterations': [100, 200],
-        #         'classifier__subsample': [0.8, 1.0],
-        #     }),
-        #     'Keras':  (KerasWrapper(), {
-        #             'classifier__dropout_rate': [0.2, 0.3, 0.5],
-        #         'classifier__optimizer': ['adam', 'sgd', 'rmsprop', "adamw"],
-        #         'classifier__learning_rate': [0.001, 0.01, 0.1],
-        #         'classifier__epochs': [50, 100, 200],
-        #         'classifier__batch_size': [32, 64, 128],
-        #         'classifier__activation': ['relu', 'tanh', 'elu'],
-        #         'classifier__model_type': ['V1', 'V2', 'V3','V4', 'V5'],
-        #         'classifier__initializer': ['he_normal', 'glorot_uniform', 'lecun_normal']
-        #     }),
 
             'XGBoost Weighted': (
                 XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', verbosity=0), {
@@ -282,12 +190,13 @@ class DeepTrainer:
                     'classifier__min_child_weight': [1, 5, 10],  # Minimale Anforderungen an Split
                     'classifier__scale_pos_weight': [0.03, 0.075, 0.15, 0.3, 0.5, 0.7],
                     'classifier__n_estimators': [50, 100, 200, 300],
-                    'classifier__subsample': [0.6, 0.8, 1.0],
+                    'classifier__subsample': [0.3, 0.6, 0.8, 1.0],
                     'classifier__reg_alpha': [0, 0.1, 0.5, 1],
-                    'classifier__reg_lambda': [1, 1.5, 2, 5],
+                    'classifier__reg_lambda': [1, 1.5, 2, 5, 8],
                     'classifier__max_leaves': [31, 63, 127],  # Für loss guide Wachstum
                     'classifier__grow_policy': ['depthwise', 'lossguide']
                 }),
+
             # 'LGBM Weighted': (
             #     LGBMClassifier(random_state=42, objective='binary', is_unbalance=True), {
             #         'classifier__max_depth': [-1, 5, 10, 20],  # -1 bedeutet keine Begrenzung
