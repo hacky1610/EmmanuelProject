@@ -302,8 +302,7 @@ class Trader:
 
         self._tracer.debug(f"{config.symbol} valid to predict")
         predictor.load_model()
-        #signal = predictor.predict(trade_df)
-        signal = TradeAction.BUY
+        signal = predictor.predict(trade_df)
         market = self._market_store.get_market(config.symbol)
         stop = trade_df.ATR.iloc[-1] * 1.3 * config.scaling
         limit = trade_df.ATR.iloc[-1] * 1.0 * config.scaling
