@@ -245,7 +245,7 @@ class IG:
                 trailing_stop_increment=None
             )
             if response["dealStatus"] != "ACCEPTED":
-                if response['reason'] == "MARKET_OFFLINE":
+                if response['reason'] == "MARKET_OFFLINE" or response['reason'] == "MARKET_CLOSED_WITH_EDITS":
                     self._tracer.warning(f"{response['reason']} for {epic}. Details {response}")
                     result = True
                 else:
