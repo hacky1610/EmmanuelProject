@@ -302,7 +302,8 @@ class Trader:
 
         self._tracer.debug(f"{config.symbol} valid to predict")
         predictor.load_model()
-        signal = predictor.predict(trade_df)
+        #signal = predictor.predict(trade_df)
+        signal = TradeAction.BUY
         market = self._market_store.get_market(config.symbol)
         stop = trade_df.ATR.iloc[-1] * 1.3 * config.scaling
         limit = trade_df.ATR.iloc[-1] * 1.0 * config.scaling
@@ -368,5 +369,7 @@ class Trader:
                                          open_date_ig_str=date_string,
                                          manual_stop_level=manual_stop_level,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
-                                         stop_factor=stop, limit_factor=limit,predictor_scan_id=predictor.get_id(), size=config.size))
+                                         open_level=deal_response["level"],
+                                         stop_level=deal_response["stopLevel"], limit_level=deal_response["limitLevel"],predictor_scan_id=predictor.get_id(),
+                                         size=config.size, stop_factor=0, limit_factor=0))
         return res

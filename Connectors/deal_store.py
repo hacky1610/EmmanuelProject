@@ -26,6 +26,8 @@ class Deal:
                  intelligent_stop_level: float = None,
                  predictor_scan_id="",
                  open_level: float = None,
+                 stop_level: float = None,
+                 limit_level: float = None,
                  close_level: float = None,
                  manual_stop_level: float = None,
                  is_manual_stop: bool = False,
@@ -49,6 +51,8 @@ class Deal:
         self.intelligent_stop_level = intelligent_stop_level
         self.predictor_scan_id = predictor_scan_id
         self.open_level = open_level
+        self.limit_level = limit_level
+        self.stop_level = stop_level
         self.close_level = close_level
         self.manual_stop = manual_stop
         self.is_manual_stop = is_manual_stop
@@ -75,7 +79,9 @@ class Deal:
             intelligent_stop_used=data.get("intelligent_stop_used", False),
             intelligent_stop_level=data.get("intelligent_stop_level", None),
             predictor_scan_id=data.get("predictor_scan_id", ""),
-            open_level=data.get("open_level", None),
+            open_level=data.get("open_level", -1),
+            stop_level=data.get("stop_level", -1),
+            limit_level=data.get("limit_level", -1),
             close_level=data.get("close_level", None),
             manual_stop=data.get("manual_stop", None),
             is_manual_stop=data.get("is_manual_stop", False),
@@ -96,6 +102,15 @@ class Deal:
 
     def get_stop(self) -> float:
         return self.stop_factor
+
+    def get_limit_level(self) -> float:
+        return self.limit_level
+
+    def get_open_level(self) -> float:
+        return self.open_level
+
+    def get_stop_level(self) -> float:
+        return self.stop_level
 
     def get_limit(self) -> float:
         return self.limit_factor
@@ -125,6 +140,8 @@ class Deal:
             "intelligent_stop_level": self.intelligent_stop_level,
             "predictor_scan_id": self.predictor_scan_id,
             "open_level": self.open_level,
+            "stop_level": self.stop_level,
+            "limit_level": self.limit_level,
             "close_level": self.close_level,
             "manual_stop":self.manual_stop,
             "is_manual_stop": self.is_manual_stop,
