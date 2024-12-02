@@ -186,9 +186,15 @@ class Trader:
         self._tracer.debug("End")
 
     def update_markets(self):
-        self._intelligent_update_and_close()
-        self.update_deals()
-        self._fix_deals()
+        try:
+            self._intelligent_update_and_close()
+            self.update_deals()
+            self._fix_deals()
+        except Exception as EX:
+            self._tracer.error(f"Error while updating")
+            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+            self._tracer.error(f"Error: {EX} File:{traceback_str}")
+
 
 
     def _intelligent_update_and_close(self):
