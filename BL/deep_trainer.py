@@ -385,7 +385,8 @@ class DeepTrainer:
 
     @measure_time
     def _train_model(self, pipeline_index, model_name, pipeline, param_grid, tscv,
-                     X_train, y_train, X_test, y_test, feature_factors:DataFrame,
+                     X_train_small, y_train_small, X_test, y_test,
+                     X_train_full, y_train_full, feature_factors_full,
                      quantile, hours, iterations, evaluate_type, min_feature_factor):
         print(f"\nTesting pipeline variant {pipeline_index + 1} for {model_name}")
         scorer = make_scorer(precision_score, pos_label=1, zero_division=0)
@@ -401,66 +402,68 @@ class DeepTrainer:
         )
 
         # Führe RandomizedSearch durch und speichere das beste Modell
-        random_search.fit(X_train, y_train)
+        random_search.fit(X_train_small, y_train_small)
 
-        best_cv_score = random_search.best_score_
+        best_cv_score_small = random_search.best_score_
         best_model = random_search.best_estimator_
 
-        train_result = self.evaluate_model(best_model, X_train, y_train,
-                                      thresholds=np.arange(0.45, 0.95, 0.05).tolist(), evaluate_type=evaluate_type, min_positive_predictions=100)
-        # test_result = self.evaluate_model(best_model, X_test, y_test,
-        #                              thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type, min_positive_predictions=15)
+        train_result_small = self.evaluate_model(best_model, X_train_small, y_train_small,
+                                                 thresholds=np.arange(0.45, 0.95, 0.05).tolist(),
+                                                 evaluate_type=evaluate_type, min_positive_predictions=100)
+        test_result = self.evaluate_model(best_model, X_test, y_test,
+                                      thresholds=[train_result_small["Best Threshold"]],
+                                          evaluate_type=evaluate_type, min_positive_predictions=15)
 
-        retest_test_dict = {}
-        # print("Test-Ergebnisse sehen gut aus. Modell wird jetzt auf dem gesamten Dataset trainiert.")
+        random_search = RandomizedSearchCV(
+            estimator=pipeline,
+            param_distributions=param_grid,
+            n_iter=iterations,
+            cv=tscv,
+            verbose=0,
+            n_jobs=3,
+            scoring=scorer,
+            random_state=42
+        )
+        random_search.fit(X_train_full, y_train_full)
 
-        # Gesamtes Dataset kombinieren
-        # X_full = pd.concat([X_train, X_test])
-        # y_full = pd.concat([y_train, y_test])
+        best_cv_score_full = random_search.best_score_
+        best_model = random_search.best_estimator_
 
-        # Modell mit besten Parametern erneut trainieren
-        # best_model.fit(X_full, y_full)
-        #
-        # retest_test_result = self.evaluate_model(best_model, X_full, y_full,
-        #                                   thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type,
-        #                                   min_positive_predictions=100)
-        #
-        # retest_test_dict = {
-        #     "Retest Precision": retest_test_result["Best Precision"],
-        #     "Retest F1": retest_test_result["Best F1-Score"],
-        #     "Retest Recall": retest_test_result["Best Recall"],
-        #     "Retest Positive Predictions Count": retest_test_result["Positive Predictions Count"],
-        #     "Retest Reward": retest_test_result["Reward"],
-        # }
-        #
-        # print("Das Modell wurde erfolgreich auf dem gesamten Dataset trainiert.")
-
+        train_result_full = self.evaluate_model(best_model, X_train_full, y_train_full,
+                                                 thresholds=np.arange(0.45, 0.95, 0.05).tolist(),
+                                                 evaluate_type=evaluate_type, min_positive_predictions=100)
 
         return random_search.best_params_ | {
             "Model": model_name,
             "Pipeline Variant": pipeline_index + 1,
-            "CV Score": best_cv_score,
+            "CV Score Full": best_cv_score_full,
+            "CV Score Small": best_cv_score_small,
             "Trading Houres": hours,
             "Evaluate Type": evaluate_type,
             "Min Feature Factor": min_feature_factor,
-            "Score": (train_result["Best Precision"] + best_cv_score) / 2,
-            # "Best Precision": test_result["Best Precision"],
-            # "Best Recall": test_result["Best Recall"],
-            # "Best F1-Score": test_result["Best F1-Score"],
-            "Best Threshold": train_result["Best Threshold"],
-            # "Positive Predictions Count": test_result["Positive Predictions Count"],
-            # "Best Reward": test_result["Reward"],
-            "Best Train Precision": train_result["Best Precision"],
-            "Best Train Recall": train_result["Best Recall"],
-            "Best Train F1-Score": train_result["Best F1-Score"],
-            "Best Train Threshold": train_result["Best Threshold"],
-            "Best Train Reward": train_result["Reward"],
-            "Positive Predictions Count Train": train_result["Positive Predictions Count"],
+            "Test Precision": test_result["Best Precision"],
+            "Test Recall": test_result["Best Recall"],
+            "Test F1-Score": test_result["Best F1-Score"],
+            "Test Threshold": test_result["Best Threshold"],
+            "Test Positive Predictions Count": test_result["Positive Predictions Count"],
+            "Test Reward": test_result["Reward"],
+            "Train Small Precision": train_result_small["Best Precision"],
+            "Train Small Recall": train_result_small["Best Recall"],
+            "Train Small F1-Score": train_result_small["Best F1-Score"],
+            "Train Small Threshold": train_result_small["Best Threshold"],
+            "Train Small Predictions Count": train_result_small["Positive Predictions Count"],
+            "Train Small Reward": train_result_small["Reward"],
+            "Train Full Precision": train_result_full["Best Precision"],
+            "Train Full Recall": train_result_full["Best Recall"],
+            "Train Full F1-Score": train_result_full["Best F1-Score"],
+            "Train Full Threshold": train_result_full["Best Threshold"],
+            "Train Full Predictions Count": train_result_full["Positive Predictions Count"],
+            "Train Full Reward": train_result_full["Reward"],
             "Best Model": best_model,
-            "Feature Factors": feature_factors,
+            "Feature Factors": feature_factors_full,
             "Quantile": quantile,
             "Iterations": iterations
-        } | retest_test_dict
+        }
 
 
 
@@ -470,33 +473,45 @@ class DeepTrainer:
 
         df = df.drop(columns=["chart_index"])
         # Split dataset into training and test sets
-        df_train = df[:int(len(df) * 0.9)]
+        df_train_full = df
+        df_train_small = df[:int(len(df) * 0.9)]
         df_test = df[int(len(df) * 0.9):]
-        df_train = df
 
-        good_features_df = self.evaluate_features(df_train, "result", quantile, min_feature_factor)
-        selected_features = (
-            good_features_df.sort_values(by="Score", ascending=False)  # Nach Scores sortieren
+        #Get features
+        good_features_df_full = self.evaluate_features(df_train_full, "result", quantile, min_feature_factor)
+        selected_features_full = (
+            good_features_df_full.sort_values(by="Score", ascending=False)  # Nach Scores sortieren
             .index  # Feature-Namen
             .tolist()  # Als Liste extrahieren
         )
 
+        good_features_df_small = self.evaluate_features(df_train_small, "result", quantile, min_feature_factor)
+        selected_features_small = (
+            good_features_df_small.sort_values(by="Score", ascending=False)  # Nach Scores sortieren
+            .index  # Feature-Namen
+            .tolist()  # Als Liste extrahieren
+        )
 
-        X_train = df_train.drop(columns=['result'])[selected_features]
-        # X_test = df_test.drop(columns=['result'])[selected_features]
+        X_train_full = df_train_full.drop(columns=['result'])[selected_features_full]
+        X_train_small = df_train_small.drop(columns=['result'])[selected_features_small]
+        X_test = df_test.drop(columns=['result'])[selected_features_small]
 
-        y_train = df_train['result']
-        # y_test = df_test['result']
+        y_train_full = df_train_full['result']
+        y_train_small = df_train_small['result']
+        y_test = df_test['result']
 
-        factors = good_features_df["Score_transformed"]
+        factors_full = good_features_df_full["Score_transformed"]
+        factors_small = good_features_df_small["Score_transformed"]
 
         # Werte in `X_train` mit den entsprechenden Faktoren multiplizieren
-        X_train = X_train.multiply(factors, axis=1)
-        # X_test = X_test.multiply(factors, axis=1)
+        X_train_full = X_train_full.multiply(factors_full, axis=1)
+        X_train_small = X_train_small.multiply(factors_small, axis=1)
+        X_test = X_test.multiply(factors_small, axis=1)
 
         # Apply SMOTE only on the training set
         smote = SMOTE(random_state=42)
-        X_train, y_train = smote.fit_resample(X_train, y_train)
+        X_train_full, y_train_full = smote.fit_resample(X_train_full, y_train_full)
+        X_train_small, y_train_small = smote.fit_resample(X_train_small, y_train_small)
 
         # Models and parameter grids
         models = self._get_models()
@@ -514,8 +529,10 @@ class DeepTrainer:
 
             for i, pipeline in enumerate(pipeline_variants):
                 res = self._train_model(pipeline_index=i, model_name=model_name, pipeline=pipeline,
-                                        param_grid=param_grid, tscv=tscv, X_train=X_train, y_train=y_train,
-                                        X_test=None, y_test=None, feature_factors=factors,
+                                        param_grid=param_grid, tscv=tscv, X_train_small=X_train_small,
+                                        y_train_small=y_train_small,
+                                        X_test=X_test, y_test=y_test, feature_factors_full=factors_full,
+                                        X_train_full=X_train_full, y_train_full=y_train_full,
                                         quantile=quantile, hours=hours, iterations=iterations,
                                         evaluate_type=evaluate_type, min_feature_factor=min_feature_factor)
 

@@ -136,10 +136,11 @@ class DeepPredictor(BasePredictor):
         self._cache.save_model_cache(self._sell_model, self._sell_model_id)
 
     def predict(self, df: DataFrame):
-        actions = {}
-
+        buy_signal = None
+        sell_signal = None
 
         if self._buy_model is not None:
+            actions = {}
             for indicator_name in self._buy_features.index:
                 action = self._indicators.predict_single(df, indicator_name)
                 actions[indicator_name] = action
@@ -147,16 +148,16 @@ class DeepPredictor(BasePredictor):
             actions_buy_df = actions_df.replace({'none': 0.2, 'both': 1, 'buy': 1, 'sell': 0})
             actions_buy_df = actions_buy_df.multiply(self._buy_features, axis=1)
             probabilities = self._buy_model.predict_proba(actions_buy_df)
-            # Nehme die Wahrscheinlichkeit für die positive Klasse (1)
-            positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
+            positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit für die positive Klasse (1)
 
             # Vergleiche mit dem Threshold
-            if positive_prob >= self._buy_threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
-                return TradeAction.BUY
-
-        actions = {}
+            if positive_prob >= self._buy_threshold:
+                buy_signal = True
+            else:
+                buy_signal = False
 
         if self._sell_model is not None:
+            actions = {}
             for indicator_name in self._sell_features.index:
                 action = self._indicators.predict_single(df, indicator_name)
                 actions[indicator_name] = action
@@ -164,13 +165,21 @@ class DeepPredictor(BasePredictor):
             actions_sell_df = actions_df.replace({'none': 0.2, 'both': 1, 'buy': 0, 'sell': 1})
             actions_sell_df = actions_sell_df.multiply(self._sell_features, axis=1)
             probabilities = self._sell_model.predict_proba(actions_sell_df)
-            # Nehme die Wahrscheinlichkeit für die positive Klasse (1)
-            positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
+            positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit für die positive Klasse (1)
 
             # Vergleiche mit dem Threshold
-            if positive_prob >= self._sell_threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
-                return TradeAction.SELL
+            if positive_prob >= self._sell_threshold:
+                sell_signal = True
+            else:
+                sell_signal = False
 
+        # Prüfen, ob nur ein Signal aktiv ist
+        if buy_signal and not sell_signal:
+            return TradeAction.BUY
+        elif sell_signal and not buy_signal:
+            return TradeAction.SELL
+
+        # Kein eindeutiges Signal
         return TradeAction.NONE
 
     def _clean_list(self, l):

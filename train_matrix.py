@@ -192,31 +192,31 @@ def save_to_csv(df, symbol, file_suffix):
     df.drop(columns=["Best Model", "Feature Factors"]).to_csv(file_name, sep=';', index=False)
 
 # Funktion, um das beste Precision-Row für Kauf und Verkauf zu finden
-def get_best_precision_row(df, score_column="Best Train Reward", filter_column="CV Score",
+def get_best_precision_row(df, score_column="Train Full Reward", filter_column="CV Score",
                            threshold=0.72):
     filtered_df = df[df[filter_column] >= threshold]
     if len(filtered_df) == 0:
         return None
-    filtered_df = filtered_df[filtered_df["Best Train Precision"] > 0.88]
+    filtered_df = filtered_df[filtered_df["Train Full Precision"] > 0.88]
     if len(filtered_df) == 0:
         return None
     return filtered_df.loc[filtered_df[score_column].idxmax()]
 
 def configure_deep_predictor(deep_predictor:DeepPredictor, best_buy_row, best_sell_row):
     if best_buy_row is not None:
-        deep_predictor.set_buy_validation(accuracy=
-            best_buy_row["CV Score"],
+        deep_predictor.set_buy_validation(
+            accuracy=best_buy_row["CV Score Full"],
             trading_hours=best_buy_row["Trading Houres"],
-            threshold=best_buy_row["Best Threshold"],
+            threshold=best_buy_row["Train Full Threshold"],
             feature_factors=best_buy_row["Feature Factors"]
         )
         deep_predictor.set_model_buy(best_buy_row["Best Model"])
 
     if best_sell_row is not None:
         deep_predictor.set_sell_validation(
-            accuracy=best_sell_row["CV Score"],
+            accuracy=best_sell_row["CV Score Full"],
             trading_hours=best_sell_row["Trading Houres"],
-            threshold=best_sell_row["Best Threshold"],
+            threshold=best_sell_row["Train Full Threshold"],
             feature_factors=best_sell_row["Feature Factors"]
         )
         deep_predictor.set_model_sell(best_sell_row["Best Model"])
