@@ -474,8 +474,8 @@ class DeepTrainer:
         df = df.drop(columns=["chart_index"])
         # Split dataset into training and test sets
         df_train_full = df
-        df_train_small = df[:int(len(df) * 0.9)]
-        df_test = df[int(len(df) * 0.9):]
+        df_train_small = df[:int(len(df) * 0.8)]
+        df_test = df[int(len(df) * 0.8):]
 
         #Get features
         good_features_df_full = self.evaluate_features(df_train_full, "result", quantile, min_feature_factor)

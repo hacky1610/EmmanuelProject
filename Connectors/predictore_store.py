@@ -13,7 +13,7 @@ class PredictorStore:
 
     def __init__(self, db: Database):
 
-        self._collection = db["Predictors_Deep_V3"]
+        self._collection = db["Predictors_Deep_V4"]
 
     def save(self, predictor: BasePredictor, overwrite: bool = True):
         if predictor.is_active():

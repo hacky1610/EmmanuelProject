@@ -188,24 +188,29 @@ def save_to_csv(df, symbol, file_suffix):
     # Erstelle den Dateipfad
     file_name = os.path.join(base_dir, f"{symbol}_{file_suffix}_{datetime.now().microsecond}.csv")
 
-    # Speichere den DataFrame
-    df.drop(columns=["Best Model", "Feature Factors"]).to_csv(file_name, sep=';', index=False)
+    # Sortiere den DataFrame nach "Test Reward" absteigend
+    sorted_df = df.sort_values(by="Test Reward", ascending=False)
+
+    # Speichere den sortierten DataFrame
+    sorted_df.drop(columns=["Best Model", "Feature Factors"]).to_csv(file_name, sep=';', index=False)
 
 # Funktion, um das beste Precision-Row für Kauf und Verkauf zu finden
 def get_best_precision_row(df, score_column="Train Full Reward", filter_column="CV Score",
                            threshold=0.72):
-    filtered_df = df[df[filter_column] >= threshold]
+    filtered_df = df[df["Train Full F1-Score"] >= 0.6]
     if len(filtered_df) == 0:
         return None
-    filtered_df = filtered_df[filtered_df["Train Full Precision"] > 0.88]
+
+    filtered_df = df[df["Test F1-Score"] >= 0.6]
     if len(filtered_df) == 0:
         return None
-    return filtered_df.loc[filtered_df[score_column].idxmax()]
+
+    return filtered_df.loc[filtered_df["Test Reward"].idxmax()]
 
 def configure_deep_predictor(deep_predictor:DeepPredictor, best_buy_row, best_sell_row):
     if best_buy_row is not None:
         deep_predictor.set_buy_validation(
-            accuracy=best_buy_row["CV Score Full"],
+            accuracy=best_buy_row["Train Full F1-Score"],
             trading_hours=best_buy_row["Trading Houres"],
             threshold=best_buy_row["Train Full Threshold"],
             feature_factors=best_buy_row["Feature Factors"]
@@ -214,7 +219,7 @@ def configure_deep_predictor(deep_predictor:DeepPredictor, best_buy_row, best_se
 
     if best_sell_row is not None:
         deep_predictor.set_sell_validation(
-            accuracy=best_sell_row["CV Score Full"],
+            accuracy=best_sell_row["Train Full F1-Score"],
             trading_hours=best_sell_row["Trading Houres"],
             threshold=best_sell_row["Train Full Threshold"],
             feature_factors=best_sell_row["Feature Factors"]
