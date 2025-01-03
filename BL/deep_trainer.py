@@ -459,11 +459,13 @@ class DeepTrainer:
             "Trading Houres": hours,
             "Evaluate Type": evaluate_type,
             "Score": (train_result["Best Precision"] + best_cv_score) / 2,
+            "Best Reward": test_result["Best Reward"],
             "Best Precision": test_result["Best Precision"],
             "Best Recall": test_result["Best Recall"],
             "Best F1-Score": test_result["Best F1-Score"],
             "Best Threshold": test_result["Best Threshold"],
             "Positive Predictions Count": test_result["Positive Predictions Count"],
+            "Best Train Reward": train_result["Best Reward"],
             "Best Train Precision": train_result["Best Precision"],
             "Best Train Recall": train_result["Best Recall"],
             "Best Train F1-Score": train_result["Best F1-Score"],
@@ -608,6 +610,7 @@ class DeepTrainer:
             "Best Precision": 0.0,
             "Best Recall": 0.0,
             "Best F1-Score": 0.0,
+            "Best Reward": 0.0,
             "Best Threshold": None,
             "Positive Predictions Count": 0,
             "Details": []  # Detaillierte Ergebnisse für jeden Schwellenwert
@@ -620,6 +623,10 @@ class DeepTrainer:
             for threshold in thresholds:
                 y_pred_thresholded = (y_proba >= threshold).astype(int)
                 positive_predictions = y_pred_thresholded.sum()
+
+                true_positives = ((y_pred_thresholded == 1) & (y == 1)).sum()
+                false_positives = ((y_pred_thresholded == 1) & (y == 0)).sum()
+                tp_minus_fp = true_positives - false_positives
 
                 # Überprüfe, ob die Anzahl positiver Vorhersagen das Minimum erreicht
                 if positive_predictions < min_positive_predictions:
@@ -634,6 +641,7 @@ class DeepTrainer:
                     "Threshold": threshold,
                     "Precision": precision,
                     "Recall": recall,
+                    "Reward": tp_minus_fp,
                     "F1-Score": f1,
                     "Positive Predictions Count": positive_predictions
                 })
@@ -644,6 +652,7 @@ class DeepTrainer:
                         results["Best F1-Score"] = f1
                         results["Best Precision"] = precision
                         results["Best Recall"] = recall
+                        results["Best Reward"] = tp_minus_fp
                         results["Best Threshold"] = threshold
                         results["Positive Predictions Count"] = positive_predictions
                 else:
@@ -652,6 +661,7 @@ class DeepTrainer:
                         results["Best F1-Score"] = f1
                         results["Best Precision"] = precision
                         results["Best Recall"] = recall
+                        results["Best Reward"] = tp_minus_fp
                         results["Best Threshold"] = threshold
                         results["Positive Predictions Count"] = positive_predictions
 
@@ -659,6 +669,9 @@ class DeepTrainer:
             # Das Modell unterstützt nur `predict`
             y_pred = model.predict(X)
             positive_predictions = (y_pred == 1).sum()
+            true_positives = ((y_pred == 1) & (y == 1)).sum()
+            false_positives = ((y_pred == 1) & (y == 0)).sum()
+            tp_minus_fp = true_positives - false_positives
 
             if positive_predictions < min_positive_predictions:
                 precision, recall, f1 = 0.0, 0.0, 0.0
@@ -670,12 +683,14 @@ class DeepTrainer:
             # Aktualisiere Ergebnisse
             results["Best Precision"] = precision
             results["Best Recall"] = recall
+            results["Best Reward"] = tp_minus_fp
             results["Best F1-Score"] = f1
             results["Positive Predictions Count"] = positive_predictions
             results["Details"].append({
                 "Threshold": None,
                 "Precision": precision,
                 "Recall": recall,
+                "Reward": tp_minus_fp,
                 "F1-Score": f1,
                 "Positive Predictions Count": positive_predictions
             })
