@@ -86,13 +86,14 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_proc
     return df_train, eval_df_train
 
 
-def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, trade_mode, hours, quantile,iterations, evaluate_type):
+def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, trade_mode, hours, quantile,iterations,
+                         evaluate_type, combination_size=3):
     print(f"Train {symbol} for {trade_mode}")
     # Set specific replacement values for each trade type
     if trade_mode == "buy":
-        train_signals_df = train_signals_df.replace({'none': 0.2, 'both': 1, 'buy': 1, 'sell': 0})
+        train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': 1, 'sell': 0})
     elif trade_mode == "sell":
-        train_signals_df = train_signals_df.replace({'none': 0.2, 'both': 1, 'buy': 0, 'sell': 1})
+        train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': 0, 'sell': 1})
 
     train_signals_df = train_signals_df.infer_objects(copy=False)
 
@@ -104,7 +105,7 @@ def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, 
     signal_result_df = signal_result_df.dropna()
 
     # Train model and set predictor
-    return deep_trainer.train(signal_result_df, hours, quantile,iterations, evaluate_type)
+    return deep_trainer.train(signal_result_df, hours, quantile,iterations, evaluate_type, combination_size)
 
 
 def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indicators, trade_type=TradeType.FX,
@@ -112,7 +113,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-        #if symbol != "GBPNZD":
+        #if symbol != "GBPSGD":
         #    continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
@@ -127,27 +128,35 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             config = predictor_store.load_active_by_symbol(symbol)
             best_buy_results = []
             best_sell_results = []
-            for hours in range(2, 7):
-                for quantile in [0.4,0.6,0.9]:
-                    iteration = 200
-                    for evaluate_type in ["prec"]:
-                        print(f"Train {symbol} for {hours} hours and quantile {quantile}")
-                        buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
-                                                                     time_frame=hours)
-                        trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
-                        train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
+            for hours in [1,2,3,4,5]:
+                for quantile in [0.66, 0.85]:
+                    for combination_size in [3, 4]:
+                        iteration = 100
+                        for evaluate_type in ["prec"]:
+                            print(f"Train {symbol} for {hours} hours and quantile {quantile}")
+                            buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
+                                                                         time_frame=hours)
+                            trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
+                            train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
 
-                        # Train for Buy and Sell separately
-                        best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
-                                                                                   deep_trainer, trade_mode="buy",
-                                                                                   hours=hours, quantile=quantile,iterations=iteration, evaluate_type=evaluate_type)
-                        best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
-                                                                                     deep_trainer,
-                                                                                     trade_mode="sell", hours=hours,
-                                                                                     quantile=quantile,iterations=iteration, evaluate_type=evaluate_type)
+                            # Train for Buy and Sell separately
+                            best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
+                                                                                       deep_trainer, trade_mode="buy",
+                                                                                       hours=hours, quantile=quantile,
+                                                                                       iterations=iteration, evaluate_type=evaluate_type,
+                                                                                       combination_size=combination_size)
+                            best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
+                                                                                         deep_trainer,
+                                                                                         trade_mode="sell", hours=hours,
+                                                                                         quantile=quantile,iterations=iteration,
+                                                                                         evaluate_type=evaluate_type,
+                                                                                         combination_size=combination_size)
 
             # Save and activate predictor
             # Initialize deep predictor
+
+            if best_buy_results == [] or best_sell_results == []:
+                continue
             best_buy_results_df = DataFrame(best_buy_results)
             best_sell_results_df = DataFrame(best_sell_results)
 

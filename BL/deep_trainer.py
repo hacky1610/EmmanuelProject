@@ -2,6 +2,11 @@
 import math
 import os
 import sys
+from itertools import combinations
+
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
 import warnings
 from typing import List
 import numpy as np
@@ -380,79 +385,6 @@ class DeepTrainer:
         model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
         return model
 
-    def evaluate_features(self, df, target, quantile=0.75):
-        # 1. Korrelation mit Zielwert berechnen
-        correlation = self.correlation_with_target(df, target, )
-        #print("Top 10 Features basierend auf der Korrelation zum Ziel:")
-        #print(correlation.sort_values(ascending=False).head(15))
-
-        # 2. Feature-Importance mit RandomForest berechnen
-        importance_df = self.feature_importance(df, target)
-        #print("\nTop 10 Features basierend auf der Feature Importance (RandomForest):")
-        #print(importance_df.head(15))
-
-        # 3. VIF (Variance Inflation Factor) berechnen
-        vif_df = self.calculate_vif(df.drop(columns=[target]))
-        #print("\nTop 10 Features mit dem höchsten VIF:")
-        top_vif = vif_df.sort_values(by='VIF', ascending=False).head(15)
-        #print(top_vif)
-
-        correlation_matrix = df.corr()
-        for a, b in top_vif.iterrows():
-            correlated_features = correlation_matrix[b.Variable].sort_values(ascending=False)
-            # print(f"\nFeatures, die stark mit {b.Variable} korrelieren:")
-            # print(correlated_features[abs(correlated_features) > 0.8])
-
-        # Kombinierte Bewertung
-        #print("\nKombinierte Rangliste der besten Features:")
-
-        # Kombinierte Score-Berechnung: Korrelation + Feature-Importance - (1/VIF)
-        combined_scores = pd.DataFrame({
-            'Feature': df.columns,
-            'Correlation': correlation,
-            'Importance': importance_df.set_index('Feature')['Importance'].reindex(df.columns).fillna(0),
-        })
-
-        # VIF hinzufügen und kombinierte Bewertung berechnen (niedrigere VIF-Werte besser, daher invertiert)
-        combined_scores['VIF'] = combined_scores['Feature'].map(vif_df.set_index('Variable')['VIF'])
-        combined_scores['Score'] = combined_scores['Correlation'] + combined_scores['Importance']
-        combined_scores = combined_scores.sort_values('Score', ascending=False)
-        high_score_threshold = combined_scores['Score'].quantile(quantile)
-        top_features = combined_scores[combined_scores['Score'] > high_score_threshold]
-
-        #remove result
-        top_features = top_features[top_features["Feature"] != "result"]
-        m = MinMaxScaler()
-        top_features["Score_transformed"] = m.fit_transform(top_features[["Score"]])
-
-        return top_features
-
-    def correlation_with_target(self, df, target):
-        correlation = df.corr()[target]
-        return correlation
-
-    def calculate_vif(self, df):
-        vif_data = pd.DataFrame()
-        vif_data['Variable'] = df.columns
-        vif_data['VIF'] = [variance_inflation_factor(df.values, i) for i in range(df.shape[1])]
-        return vif_data
-
-    def feature_importance(self, df, target):
-        # Features und Ziel trennen
-        X = df.drop(columns=[target])
-        y = df[target]
-
-        # RandomForest-Modell trainieren
-        model = RandomForestClassifier(random_state=42)
-        model.fit(X, y)
-
-        # Feature-Importances extrahieren
-        importance_df = pd.DataFrame({
-            'Feature': X.columns,
-            'Importance': model.feature_importances_
-        }).sort_values(by='Importance', ascending=False)
-
-        return importance_df
 
     def custom_scoring(self,y_true, y_pred):
         """
@@ -493,7 +425,8 @@ class DeepTrainer:
         return precision - (1 - f) * 0.2
 
     @measure_time
-    def _train_model(self,pipeline_index,model_name, pipeline, param_grid, tscv, X_train, y_train, X_test, y_test, good_featurs, quantile, hours, iterations, evaluate_type):
+    def _train_model(self,pipeline_index,model_name, pipeline, param_grid, tscv,
+                     X_train, y_train, X_test, y_test, good_featurs, quantile, hours, iterations, evaluate_type, manual_precision=0):
         print(f"\nTesting pipeline variant {pipeline_index + 1} for {model_name}")
         scorer = make_scorer(precision_score, pos_label=1, zero_division=0)
         random_search = RandomizedSearchCV(
@@ -539,52 +472,55 @@ class DeepTrainer:
             "Best Model": best_model,
             "Good Features": good_featurs,
             "Quantile": quantile,
-            "Iterations": iterations
+            "Iterations": iterations,
+            "Manual Precision": manual_precision,
         }
 
 
 
-    def train(self, df, hours, quantile, iterations, evaluate_type):
+    def train(self, df, hours, quantile, iterations, evaluate_type, combination_size=3):
         # Suppress warnings
         warnings.filterwarnings("ignore")
 
         df = df.drop(columns=["chart_index"])
         # Split dataset into training and test sets
-        df_train = df[:int(len(df) * 0.9)]
-        df_test = df[int(len(df) * 0.9):]
+        df_train = df[:int(len(df) * 0.75)]
+        df_test = df[int(len(df) * 0.75):]
 
-        good_features_df = self.evaluate_features(df_train, "result", quantile)
-        selected_features = (
-            good_features_df.sort_values(by="Score", ascending=False)  # Nach Scores sortieren
-            .index  # Feature-Namen
-            .tolist()  # Als Liste extrahieren
-        )
+        fe = FeatureEngineering()
+        res = fe.evaluate_features(df_train, "result", quantile, combination_size=combination_size)
+        best_results = []
+
+        rec = res["Evaluation"]
+        print(f"Ev {rec}")
+        if not rec["recommend_training"]:
+            print("----------------BAD")
+            return best_results
+
+        print("*******************Good results")
+
+        precicion = fe.calculate_precision(df_test,list(res["Best_Features"]))
+        print(f"*******************{precicion}")
+
+        selected_features = list(res["Best_Features"])
+        print(selected_features)
+        return self.train_features(best_results, df_test, df_train, evaluate_type, hours, iterations, quantile,
+                                       selected_features, manual_precision=precicion)
 
 
+    def train_features(self, best_results, df_test, df_train, evaluate_type, hours, iterations, quantile,
+                       selected_features,manual_precision):
         X_train = df_train.drop(columns=['result'])[selected_features]
         X_test = df_test.drop(columns=['result'])[selected_features]
-
         y_train = df_train['result']
         y_test = df_test['result']
-
-        factors = good_features_df["Score_transformed"]
-
-        # Werte in `X_train` mit den entsprechenden Faktoren multiplizieren
-        X_train = X_train.multiply(factors, axis=1)
-        X_test = X_test.multiply(factors, axis=1)
-
         # Apply SMOTE only on the training set
         smote = SMOTE(random_state=42)
         X_train, y_train = smote.fit_resample(X_train, y_train)
-
         # Models and parameter grids
         models = self._get_models()
-
         # Cross-validation
         tscv = TimeSeriesSplit(n_splits=5)
-        best_results = []
-
-
         for model_name, (model, param_grid) in models.items():
             print(f"Training {model_name}...")
 
@@ -592,17 +528,15 @@ class DeepTrainer:
             pipeline_variants = self.get_pipeline_variants(model)
 
             for i, pipeline in enumerate(pipeline_variants):
-                res = self._train_model(pipeline_index=i, model_name=model_name,pipeline=pipeline,
+                res = self._train_model(pipeline_index=i, model_name=model_name, pipeline=pipeline,
                                         param_grid=param_grid, tscv=tscv, X_train=X_train, y_train=y_train,
-                                        X_test=X_test, y_test=y_test, good_featurs=selected_features, quantile=quantile, hours=hours, iterations=iterations, evaluate_type=evaluate_type)
+                                        X_test=X_test, y_test=y_test, good_featurs=selected_features, quantile=quantile,
+                                        hours=hours, iterations=iterations, evaluate_type=evaluate_type, manual_precision=manual_precision)
 
                 best_results.append(res)
-
-
         # Ausgabe des besten Modells basierend auf Test-Precision
-        #best_model_name = max(results, key=lambda k: results[k][0])
-        #best_test_precision, best_model = results[best_model_name]
-
+        # best_model_name = max(results, key=lambda k: results[k][0])
+        # best_test_precision, best_model = results[best_model_name]
         best_item = max(best_results, key=lambda x: x['Score'])
         print(f"Precision {best_item['Best Precision']} from {best_item['Model']} - {best_item['Pipeline Name']}")
         return best_results
@@ -776,6 +710,251 @@ class DeepTrainer:
             X = features_df.drop(columns=['Score'])
 
         return features_df
+
+
+
+
+
+import pandas as pd
+import numpy as np
+from sklearn.feature_selection import RFE, f_classif, chi2, SelectKBest
+from sklearn.linear_model import LassoCV, RidgeCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+class FeatureEngineering:
+    def correlation_with_target(self, df, target):
+        return df.corr()[target].drop(target)
+
+    def feature_importance(self, df, target):
+        X = df.drop(columns=[target])
+        y = df[target]
+        model = RandomForestClassifier(random_state=42)
+        model.fit(X, y)
+        importance = model.feature_importances_
+        return pd.DataFrame({'Feature': X.columns, 'Importance': importance}).sort_values(by='Importance', ascending=False)
+
+    def calculate_vif(self, df):
+        vif_data = pd.DataFrame()
+        vif_data['Variable'] = df.columns
+        vif_data['VIF'] = [variance_inflation_factor(df.values, i) for i in range(df.shape[1])]
+        return vif_data
+
+    def remove_high_vif_features(self, df, threshold=5.0):
+        vif_df = self.calculate_vif(df)
+        while vif_df['VIF'].max() > threshold:
+            feature_to_remove = vif_df.sort_values('VIF', ascending=False).iloc[0]['Variable']
+            df = df.drop(columns=[feature_to_remove])
+            vif_df = self.calculate_vif(df)
+        return df
+
+    def select_features_with_rfe(self, df, target, n_features):
+        X = df.drop(columns=[target])
+        y = df[target]
+        model = RandomForestClassifier(random_state=42)
+        rfe = RFE(model, n_features_to_select=n_features)
+        rfe.fit(X, y)
+        selected_features = X.columns[rfe.support_]
+        return selected_features
+
+    def select_features_with_stat_tests(self, df, target):
+        X = df.drop(columns=[target])
+        y = df[target]
+        if y.nunique() == 2:  # Binary target
+            chi2_selector = SelectKBest(chi2, k='all').fit(X, y)
+            scores = chi2_selector.scores_
+        else:  # Continuous target
+            f_selector = SelectKBest(f_classif, k='all').fit(X, y)
+            scores = f_selector.scores_
+        return pd.DataFrame({'Feature': X.columns, 'Score': scores}).sort_values(by='Score', ascending=False)
+
+    def select_features_with_embedded_methods(self, df, target):
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        lasso = LassoCV(cv=5, random_state=42).fit(X, y)
+        ridge = RidgeCV(cv=5).fit(X, y)
+
+        lasso_coef = pd.Series(lasso.coef_, index=X.columns)
+        ridge_coef = pd.Series(ridge.coef_, index=X.columns)
+
+        lasso_selected = lasso_coef[lasso_coef != 0].index
+        ridge_selected = ridge_coef[ridge_coef != 0].index
+
+        return list(set(lasso_selected).intersection(ridge_selected))
+
+    def precision_with_target(self, df, target):
+        """Berechnet die Precision jedes Features im Vergleich zum Zielwert."""
+        y_true = df[target]
+        precision_scores = {}
+        for feature in df.drop(columns=[target]).columns:
+            # Precision direkt berechnen, da Features bereits binär sind
+            y_pred = df[feature]
+            precision_scores[feature] = precision_score(y_true, y_pred, zero_division=0)
+        return pd.Series(precision_scores)
+
+    def best_feature_combination(self,df, target, top_features, combination_size=3):
+        """
+        Findet die beste Kombination von Features basierend auf der Precision.
+
+        Args:
+            df (pd.DataFrame): Der DataFrame mit den Features und dem Zielwert.
+            target (str): Der Name der Zielspalte.
+            top_features (list): Liste der Top-Features, die berücksichtigt werden sollen.
+            combination_size (int): Die Anzahl der Features pro Kombination (Standard: 3).
+
+        Returns:
+            dict: Die beste Kombination und die zugehörige Precision.
+        """
+        y_true = df[target]
+        best_combination = None
+        best_precision = 0
+        weeks = len(df) / 24 / 5
+
+        # Iteriere über alle möglichen Kombinationen von Features
+        for combination in combinations(top_features, combination_size):
+            # Kombinierte Vorhersage: Logisches ODER der Werte der Features
+            y_pred = df[list(combination)].all(axis=1).astype(int)
+
+            # Berechne die Precision für diese Kombination
+            precision = precision_score(y_true, y_pred, zero_division=0)
+            trade_weeks = y_pred.sum() / weeks
+
+            if trade_weeks <= 2:
+                continue
+
+            # Speichere die beste Kombination
+            if precision > best_precision:
+                best_precision = precision
+                best_combination = combination
+
+        return {
+            "Best_Features": best_combination,
+            "Best_Precision": best_precision
+        }
+
+    @staticmethod
+    def calculate_precision(test_df, features_list, target_column='result'):
+        """
+        Berechnet die Präzision, indem die Werte der Feature-Spalten mit UND verknüpft werden.
+
+        Args:
+            test_df (pd.DataFrame): Der Test-DataFrame, der die relevanten Spalten enthält.
+            features_list (list): Liste der Feature-Spalten, die verknüpft werden.
+            target_column (str): Name der Spalte mit den tatsächlichen Werten (Default: 'result').
+
+        Returns:
+            float: Präzisionswert für die Vorhersagen.
+        """
+        # Sicherstellen, dass die erforderlichen Spalten vorhanden sind
+        missing_features = [feature for feature in features_list if feature not in test_df]
+        if missing_features:
+            raise ValueError(f"Die folgenden Features fehlen im DataFrame: {missing_features}")
+
+        if target_column not in test_df:
+            raise ValueError(f"Die Zielspalte '{target_column}' fehlt im DataFrame.")
+
+        weeks = len(test_df) / 24 / 5
+
+
+
+        # Vorhersage (y_pred) erstellen, indem die Features mit UND verknüpft werden
+        y_pred = test_df[features_list].all(axis=1).astype(int)
+
+        # Zielspalte extrahieren
+        y_true = test_df[target_column]
+
+        trade_weeks = y_pred.sum() / weeks
+
+        #if trade_weeks <= 2:
+        #    return 0
+
+        # Präzision berechnen
+        precision = precision_score(y_true, y_pred)
+        return precision
+
+    def evaluate_features(self, df, target, quantile=0.75, vif_threshold=5.0, combination_size=3):
+
+        # Step 3: Remove high VIF features
+        df_reduced_vif = self.remove_high_vif_features(df.drop(columns=[target]), threshold=vif_threshold)
+        df_reduced_vif[target] = df[target]
+
+        # Step 1: Precision with target
+        precision = self.precision_with_target(df_reduced_vif, target)
+
+        # Step 2: Feature importance with RandomForest
+        importance_df = self.feature_importance(df_reduced_vif, target)
+
+        # Step 4: Feature selection with RFE
+        #selected_rfe_features = self.select_features_with_rfe(df_reduced_vif, target, n_features)
+
+        # Step 5: Feature selection with statistical tests
+        #stat_test_features = self.select_features_with_stat_tests(df_reduced_vif, target)
+
+        # Step 6: Embedded methods (LASSO and Ridge)
+        #embedded_features = self.select_features_with_embedded_methods(df_reduced_vif, target)
+
+        # Combine scores
+        combined_scores = pd.DataFrame({
+            'Feature': df_reduced_vif.columns,
+            'Precision': precision.reindex(df_reduced_vif.columns).fillna(0),
+           # 'Importance': importance_df.set_index('Feature')['Importance'].reindex(df_reduced_vif.columns).fillna(0)
+        })
+
+        # VIF values
+        vif_df = self.calculate_vif(df_reduced_vif.drop(columns=[target]))
+        combined_scores['VIF'] = combined_scores['Feature'].map(vif_df.set_index('Variable')['VIF'])
+
+        # Combined score calculation
+        scaler = MinMaxScaler()
+        combined_scores[['Precision_transformed',  'VIF_transformed']] = scaler.fit_transform(
+            combined_scores[['Precision',  'VIF']]
+        )
+
+        # Umkehren der VIF-Skalierung (niedrigere VIF-Werte sind besser)
+        combined_scores['VIF_transformed'] = 1 - combined_scores['VIF_transformed']
+
+        # Finalen Score berechnen
+        combined_scores['Score'] = (
+                combined_scores['Precision_transformed']
+               # combined_scores['VIF_transformed']
+        )
+
+        # Filter top features
+        high_score_threshold = combined_scores['Score'].quantile(quantile)
+        top_features = combined_scores[combined_scores['Score'] > high_score_threshold]
+
+        # Ensure target is not included
+        top_features = top_features[top_features['Feature'] != target]
+
+        res = self.best_feature_combination(df_reduced_vif, target, top_features['Feature'], combination_size=combination_size)
+
+        # Evaluate feature quality
+        num_features = len(top_features)
+        avg_precision = top_features['Precision'].mean()
+        max_precision = top_features['Precision'].max()
+        avg_vif = top_features['VIF'].mean()
+
+        evaluation = {
+            'num_features': num_features,
+            'avg_precision': avg_precision,
+            'max_precision': max_precision,
+            'best_features': res["Best_Features"],
+            'best_precision': res["Best_Precision"],
+            'avg_vif': avg_vif,
+            'recommend_training': num_features >= 5 and res["Best_Precision"] >= 0.66 and avg_vif < vif_threshold
+        }
+
+        return {
+            'Top_Features': top_features['Feature'].tolist(),
+            'Best_Features': res["Best_Features"],
+            'Evaluation': evaluation
+        }
+
+
+
+
 
 
 
