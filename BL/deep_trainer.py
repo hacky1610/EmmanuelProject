@@ -486,8 +486,8 @@ class DeepTrainer:
 
         df = df.drop(columns=["chart_index"])
         # Split dataset into training and test sets
-        df_train = df[:int(len(df) * 0.75)]
-        df_test = df[int(len(df) * 0.75):]
+        df_train = df[:int(len(df) * 0.8)]
+        df_test = df[int(len(df) * 0.8):]
 
         fe = FeatureEngineering()
         res = fe.evaluate_features(df_train, "result", quantile, combination_size=combination_size)
@@ -501,13 +501,21 @@ class DeepTrainer:
 
         print("*******************Good results")
 
-        precicion = fe.calculate_precision(df_test,list(res["Best_Features"]))
+        precicion, reward = fe.calculate_precision(df_test,list(res["Best_Features"]))
         print(f"*******************{precicion}")
 
         selected_features = list(res["Best_Features"])
         print(selected_features)
-        return self.train_features(best_results, df_test, df_train, evaluate_type, hours, iterations, quantile,
+        res_list = self.train_features(best_results, df_test, df_train, evaluate_type, hours, iterations, quantile,
                                        selected_features, manual_precision=precicion)
+
+        for d in res_list:
+            d.update(rec)
+            d.update({"manual reward test":reward})
+
+
+
+        return res_list
 
 
     def train_features(self, best_results, df_test, df_train, evaluate_type, hours, iterations, quantile,
@@ -825,28 +833,35 @@ class FeatureEngineering:
         y_true = df[target]
         best_combination = None
         best_precision = 0
+        best_reward = 0
         weeks = len(df) / 24 / 5
 
         # Iteriere über alle möglichen Kombinationen von Features
         for combination in combinations(top_features, combination_size):
             # Kombinierte Vorhersage: Logisches ODER der Werte der Features
             y_pred = df[list(combination)].all(axis=1).astype(int)
+            true_positives = ((y_pred == 1) & (y_true == 1)).sum()
+            false_positives = ((y_pred == 1) & (y_true == 0)).sum()
+            tp_minus_fp = true_positives - false_positives
+
 
             # Berechne die Precision für diese Kombination
             precision = precision_score(y_true, y_pred, zero_division=0)
             trade_weeks = y_pred.sum() / weeks
 
-            if trade_weeks <= 2:
+            if trade_weeks <= 3:
                 continue
 
             # Speichere die beste Kombination
-            if precision > best_precision:
+            if tp_minus_fp > best_reward:
                 best_precision = precision
                 best_combination = combination
+                best_reward = tp_minus_fp
 
         return {
             "Best_Features": best_combination,
-            "Best_Precision": best_precision
+            "Best_Precision": best_precision,
+            "Best_Reward": best_reward
         }
 
     @staticmethod
@@ -877,8 +892,13 @@ class FeatureEngineering:
         # Vorhersage (y_pred) erstellen, indem die Features mit UND verknüpft werden
         y_pred = test_df[features_list].all(axis=1).astype(int)
 
+
         # Zielspalte extrahieren
         y_true = test_df[target_column]
+        true_positives = ((y_pred == 1) & (y_true == 1)).sum()
+        false_positives = ((y_pred == 1) & (y_true == 0)).sum()
+
+        reward = true_positives - false_positives
 
         trade_weeks = y_pred.sum() / weeks
 
@@ -887,7 +907,7 @@ class FeatureEngineering:
 
         # Präzision berechnen
         precision = precision_score(y_true, y_pred)
-        return precision
+        return precision, reward
 
     def evaluate_features(self, df, target, quantile=0.75, vif_threshold=5.0, combination_size=3):
 
@@ -952,11 +972,12 @@ class FeatureEngineering:
         avg_vif = top_features['VIF'].mean()
 
         evaluation = {
-            'num_features': num_features,
-            'avg_precision': avg_precision,
-            'max_precision': max_precision,
-            'best_features': res["Best_Features"],
-            'best_precision': res["Best_Precision"],
+            'num_features_eval': num_features,
+            'avg_precision_eval': avg_precision,
+            'max_precision_eval': max_precision,
+            'best_features_eval': res["Best_Features"],
+            'best_precision_eval': res["Best_Precision"],
+            'best_reward_eval': res["Best_Reward"],
             'avg_vif': avg_vif,
             'recommend_training': num_features >= 5 and res["Best_Precision"] >= 0.66 and avg_vif < vif_threshold
         }

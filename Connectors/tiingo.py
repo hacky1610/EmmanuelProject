@@ -219,7 +219,7 @@ class Tiingo:
                                          validate=False)
         return df, df_eval
 
-    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 365 * 0.75, use_cache=True):
+    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 35, use_cache=True):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,

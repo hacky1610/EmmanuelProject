@@ -161,17 +161,20 @@ class MatrixTrainer:
 
         # Durchlaufe alle Indikatornamen und lade die entsprechenden DataFrames
         for indicator in indicators.get_all_indicator_names():
-            df = self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")
+            try:
+                df = self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")
 
-            # Füge eine Spalte für den Indikatornamen hinzu
-            df = df.rename(columns={"action": indicator})
-            df = df[["chart_index", indicator]]
+                # Füge eine Spalte für den Indikatornamen hinzu
+                df = df.rename(columns={"action": indicator})
+                df = df[["chart_index", indicator]]
 
-            # Setze 'chart_index' als Index
-            df.set_index("chart_index", inplace=True)
+                # Setze 'chart_index' als Index
+                df.set_index("chart_index", inplace=True)
 
-            # Hänge den DataFrame zur Liste hinzu
-            df_list.append(df)
+                # Hänge den DataFrame zur Liste hinzu
+                df_list.append(df)
+            except Exception as e:
+                print(f"Error: {e}")
 
         # Konkateniere alle DataFrames anhand des Index 'chart_index', fülle fehlende Werte mit 'none'
         merged_df = pd.concat(df_list, axis=1, join="outer").fillna("none")

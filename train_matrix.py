@@ -128,9 +128,9 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             config = predictor_store.load_active_by_symbol(symbol)
             best_buy_results = []
             best_sell_results = []
-            for hours in [1,2,3,4,5]:
-                for quantile in [0.66, 0.85]:
-                    for combination_size in [3, 4]:
+            for hours in [2, 3,4,5]:
+                for quantile in [0.75]:
+                    for combination_size in [1,2, 3, 4, 5]:
                         iteration = 100
                         for evaluate_type in ["prec"]:
                             print(f"Train {symbol} for {hours} hours and quantile {quantile}")
@@ -164,6 +164,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
 
                 best_buy_results_df = DataFrame(best_buy_results)
                 best_buy_results_df["Symbol"] = symbol
+                best_buy_results_df = best_buy_results_df.sort_values(by="Best Reward", ascending=False)
 
                 # Speichern der neuen individuellen CSV
                 best_buy_results_df.drop(columns=["Best Model"]).to_csv(
@@ -190,6 +191,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
                 best_sell_results_df = DataFrame(best_sell_results)
 
                 best_sell_results_df["Symbol"] = symbol
+                best_sell_results_df = best_sell_results_df.sort_values(by="Best Reward", ascending=False)
 
                 # Speichern der neuen individuellen CSV
                 best_sell_results_df.drop(columns=["Best Model"]).to_csv(

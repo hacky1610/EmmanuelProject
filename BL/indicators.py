@@ -200,7 +200,7 @@ class Indicators:
         self._add_indicator(self.MACD_MAX_2, self._macd_max_predict2)
         self._add_indicator(self.MACD_MAX_4H, self._macd_max_predict_4h)
         self._add_indicator(self.MACD_MAX_12H, self._macd_max_predict_12h)
-        self._add_indicator(self.MACD_MAX_1d, self._macd_max_predict_1d)
+        #self._add_indicator(self.MACD_MAX_1d, self._macd_max_predict_1d)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
