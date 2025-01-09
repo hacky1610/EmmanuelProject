@@ -324,14 +324,18 @@ class Analytics:
                                  action: str,
                                  df: DataFrame,
                                  df_eval: DataFrame,
+                                 stop_loss_factor: float = 1.5,
+                                 take_profit_factor: float = 1.5,
                                  timeframe_hours: int = 4) -> DataFrame:
         """
-        Simuliert Trades mit einem festen Zeitrahmen, um diese zu schließen.
+        Simuliert Trades mit einem festen Zeitrahmen oder bis ein Stop/Limit erreicht wird.
 
         Parameters:
             action (str): "BUY" oder "SELL".
-            df (DataFrame): DataFrame mit den Einstiegsdaten.
-            df_eval (DataFrame): DataFrame mit den zukünftigen Kursdaten.
+            df (DataFrame): DataFrame mit den Einstiegsdaten (1-Stunden-Raster).
+            df_eval (DataFrame): DataFrame mit den zukünftigen Kursdaten (5-Minuten-Raster).
+            stop_loss (float): Stop-Loss in Preisabweichung.
+            take_profit (float): Take-Profit in Preisabweichung.
             timeframe_hours (int): Zeitrahmen in Stunden, nach dem der Trade geschlossen wird.
 
         Returns:
@@ -345,7 +349,7 @@ class Analytics:
         if len(df) == 0 or len(df_eval) == 0:
             raise ValueError("Input DataFrames must not be empty")
 
-        # Konvertiere Datumsspalten vor der Schleife
+        # Konvertiere Datumsspalten
         df["date"] = pd.to_datetime(df["date"])
         df_eval["date"] = pd.to_datetime(df_eval["date"])
 
@@ -355,47 +359,79 @@ class Analytics:
             entry_time = df.date.iloc[i]
             entry_price = df.close.iloc[i]
 
-            # Filter future prices ab der nächsten Stunde
-            future = df_eval[
-                (df_eval["date"] >= entry_time + timedelta(hours=1)) &  # Ab der nächsten Stunde
-                (df_eval["date"] <= entry_time + timedelta(hours=timeframe_hours + 1))
-            ]
-
+            # Filter future prices ab der nächsten 5-Minuten-Periode
+            future = df_eval[df_eval["date"] >= entry_time + timedelta(hours=1, minutes=5)]
             if len(future) == 0:
-                # Kein zukünftiger Preis verfügbar
-                simulation_result.append({
-                    "action": action,
-                    "entry_time": entry_time,
-                    "exit_time": None,
-                    "entry_price": entry_price,
-                    "exit_price": None,
-                    "result": None,
-                    "chart_index": i,
-                    "next_index": i + 1
-                })
                 continue
 
-            # Schlusspreis ist der letzte Preis im Zeitrahmen
-            closing_price = future.iloc[-1].close
+            # Initialisiere Variablen für die Iteration
+            exit_time = None
+            exit_price = None
+            profit = None
+            accumulated_time = timedelta(0)
+            max_timeframe = timedelta(hours=timeframe_hours)
 
-            # Berechne Gewinn/Verlust basierend auf der Aktion
-            if action == TradeAction.BUY:
-                profit = closing_price - entry_price
-            elif action == TradeAction.SELL:
-                profit = entry_price - closing_price
-            else:
-                raise ValueError(f"Unknown action: {action}")
+            stop_loss = df.ATR.iloc[i] * stop_loss_factor
+            take_profit = df.ATR.iloc[i] * take_profit_factor
+
+            for j in range(len(future)):
+                row = future.iloc[j]
+                current_time = row.date
+                current_price = row.close
+
+                # Berechne die Zeitdifferenz zur vorherigen Iteration
+                if j > 0:
+                    time_diff = future.iloc[j].date - future.iloc[j - 1].date
+                    accumulated_time += time_diff
+
+                # Prüfe Stop-Loss und Take-Profit
+                if action == "buy":
+                    if current_price <= entry_price - stop_loss:
+                        exit_time = current_time
+                        exit_price = current_price
+                        profit = -stop_loss
+                        break
+                    elif current_price >= entry_price + take_profit:
+                        exit_time = current_time
+                        exit_price = current_price
+                        profit = take_profit
+                        break
+                elif action == "sell":
+                    if current_price >= entry_price + stop_loss:
+                        exit_time = current_time
+                        exit_price = current_price
+                        profit = -stop_loss
+                        break
+                    elif current_price <= entry_price - take_profit:
+                        exit_time = current_time
+                        exit_price = current_price
+                        profit = take_profit
+                        break
+                else:
+                    raise ValueError(f"Unknown action: {action}")
+
+                # Prüfe, ob der maximale Zeitrahmen überschritten wurde
+                if accumulated_time >= max_timeframe:
+                    exit_time = current_time
+                    exit_price = current_price
+                    profit = -1
+                    break
+
+            # Falls kein Exit-Bedingung getroffen wurde, setze Defaults
+            if exit_time is None:
+                exit_time = future.iloc[-1].date
+                exit_price = future.iloc[-1].close
+                profit = (exit_price - entry_price) if action == "BUY" else (entry_price - exit_price)
 
             # Speichere das Ergebnis
             simulation_result.append({
                 "action": action,
                 "entry_time": entry_time,
-                "exit_time": future.iloc[-1].date,
+                "exit_time": exit_time,
                 "entry_price": entry_price,
-                "exit_price": closing_price,
+                "exit_price": exit_price,
                 "result": profit,
                 "chart_index": i,
-                "next_index": i + 1
             })
 
         return pd.DataFrame(simulation_result)

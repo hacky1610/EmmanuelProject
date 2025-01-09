@@ -91,9 +91,9 @@ def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, 
     print(f"Train {symbol} for {trade_mode}")
     # Set specific replacement values for each trade type
     if trade_mode == "buy":
-        train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': 1, 'sell': 0})
+        train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': 1, 'sell': -1})
     elif trade_mode == "sell":
-        train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': 0, 'sell': 1})
+        train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': -1, 'sell': 1})
 
     train_signals_df = train_signals_df.infer_objects(copy=False)
 
@@ -128,14 +128,15 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             config = predictor_store.load_active_by_symbol(symbol)
             best_buy_results = []
             best_sell_results = []
-            for hours in [2, 3,4,5]:
-                for quantile in [0.75]:
+            quantile = 0.75
+            for hours in [2]:
+                for factor in [1,1.5,2]:
                     for combination_size in [1,2, 3, 4, 5]:
                         iteration = 100
                         for evaluate_type in ["prec"]:
                             print(f"Train {symbol} for {hours} hours and quantile {quantile}")
                             buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
-                                                                         time_frame=hours)
+                                                                         time_frame=hours, factor=factor)
                             trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
                             train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
 
