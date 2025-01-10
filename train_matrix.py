@@ -113,8 +113,8 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
     for m in random.choices(markets, k=10):
         symbol = m["symbol"]
 
-        #if symbol != "GBPSGD":
-        #    continue
+        if symbol != "EURCHF":
+            continue
         tracer.info(f"Train {symbol}")
         df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                  dropbox_cache=cache)
@@ -128,30 +128,35 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
             config = predictor_store.load_active_by_symbol(symbol)
             best_buy_results = []
             best_sell_results = []
-            quantile = 0.75
-            for hours in [2]:
-                for factor in [1,1.5,2]:
-                    for combination_size in [1,2, 3, 4, 5]:
-                        iteration = 100
-                        for evaluate_type in ["prec"]:
-                            print(f"Train {symbol} for {hours} hours and quantile {quantile}")
-                            buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
-                                                                         time_frame=hours, factor=factor)
-                            trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
-                            train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
 
-                            # Train for Buy and Sell separately
-                            best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
-                                                                                       deep_trainer, trade_mode="buy",
-                                                                                       hours=hours, quantile=quantile,
-                                                                                       iterations=iteration, evaluate_type=evaluate_type,
-                                                                                       combination_size=combination_size)
-                            best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
-                                                                                         deep_trainer,
-                                                                                         trade_mode="sell", hours=hours,
-                                                                                         quantile=quantile,iterations=iteration,
-                                                                                         evaluate_type=evaluate_type,
-                                                                                         combination_size=combination_size)
+            for hours in [3,8]:
+                for factor in [1.5,3.5]:
+                    for combination_size in [2,4]:
+                        for quantile in [0.75,1]:
+                            iteration = 100
+                            for evaluate_type in ["prec"]:
+                                try:
+                                    print(f"Train {symbol} for {hours} hours and quantile {quantile}")
+                                    buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
+                                                                                 time_frame=hours, factor=factor)
+                                    trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
+                                    train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
+
+                                    # Train for Buy and Sell separately
+                                    best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
+                                                                                               deep_trainer, trade_mode="buy",
+                                                                                               hours=hours, quantile=quantile,
+                                                                                               iterations=iteration, evaluate_type=evaluate_type,
+                                                                                               combination_size=combination_size)
+                                    best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
+                                                                                                 deep_trainer,
+                                                                                                 trade_mode="sell", hours=hours,
+                                                                                                 quantile=quantile,iterations=iteration,
+                                                                                                 evaluate_type=evaluate_type,
+                                                                                                 combination_size=combination_size)
+                                except Exception as ex:
+                                    traceback_str = traceback.format_exc()
+                                    print(f"MainException: {ex} File:{traceback_str}")
 
             # Save and activate predictor
             # Initialize deep predictor

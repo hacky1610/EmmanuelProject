@@ -306,7 +306,7 @@ class DeepTrainer:
         best_model = random_search.best_estimator_
 
         train_result = self.evaluate_model(best_model, X_train, y_train,
-                                      thresholds=np.arange(0.1, 1.0, 0.05).tolist(), evaluate_type=evaluate_type)
+                                      thresholds=[0.45,0.5, 0.55], evaluate_type=evaluate_type)
         test_result = self.evaluate_model(best_model, X_test, y_test,
                                      thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type)
 
@@ -770,14 +770,14 @@ class FeatureEngineering:
     def evaluate_features(self, df, target, quantile=0.75, vif_threshold=5.0, combination_size=3):
 
         # Step 3: Remove high VIF features
-        df_reduced_vif = self.remove_high_vif_features(df.drop(columns=[target]), threshold=vif_threshold)
-        df_reduced_vif[target] = df[target]
+        #df_reduced_vif = self.remove_high_vif_features(df.drop(columns=[target]), threshold=vif_threshold)
+        #df_reduced_vif[target] = df[target]
 
         # Step 1: Precision with target
-        precision = self.precision_with_target(df_reduced_vif, target)
+        precision = self.precision_with_target(df, target)
 
         # Step 2: Feature importance with RandomForest
-        importance_df = self.feature_importance(df_reduced_vif, target)
+        importance_df = self.feature_importance(df, target)
 
         # Step 4: Feature selection with RFE
         #selected_rfe_features = self.select_features_with_rfe(df_reduced_vif, target, n_features)
@@ -790,44 +790,36 @@ class FeatureEngineering:
 
         # Combine scores
         combined_scores = pd.DataFrame({
-            'Feature': df_reduced_vif.columns,
-            'Precision': precision.reindex(df_reduced_vif.columns).fillna(0),
+            'Feature': df.columns,
+            'Precision': precision.reindex(df.columns).fillna(0),
            # 'Importance': importance_df.set_index('Feature')['Importance'].reindex(df_reduced_vif.columns).fillna(0)
         })
 
-        # VIF values
-        vif_df = self.calculate_vif(df_reduced_vif.drop(columns=[target]))
-        combined_scores['VIF'] = combined_scores['Feature'].map(vif_df.set_index('Variable')['VIF'])
 
-        # Combined score calculation
-        scaler = MinMaxScaler()
-        combined_scores[['Precision_transformed',  'VIF_transformed']] = scaler.fit_transform(
-            combined_scores[['Precision',  'VIF']]
-        )
 
-        # Umkehren der VIF-Skalierung (niedrigere VIF-Werte sind besser)
-        combined_scores['VIF_transformed'] = 1 - combined_scores['VIF_transformed']
 
         # Finalen Score berechnen
         combined_scores['Score'] = (
-                combined_scores['Precision_transformed']
+                combined_scores['Precision']
                # combined_scores['VIF_transformed']
         )
 
         # Filter top features
-        high_score_threshold = combined_scores['Score'].quantile(quantile)
+        if quantile == 1:
+            high_score_threshold = 0.6
+        else:
+            high_score_threshold = combined_scores['Score'].quantile(quantile)
         top_features = combined_scores[combined_scores['Score'] > high_score_threshold]
 
         # Ensure target is not included
         top_features = top_features[top_features['Feature'] != target]
 
-        res = self.best_feature_combination(df_reduced_vif, target, top_features['Feature'], combination_size=combination_size)
+        res = self.best_feature_combination(df, target, top_features['Feature'], combination_size=combination_size)
 
         # Evaluate feature quality
         num_features = len(top_features)
         avg_precision = top_features['Precision'].mean()
         max_precision = top_features['Precision'].max()
-        avg_vif = top_features['VIF'].mean()
 
         evaluation = {
             'num_features_eval': num_features,
@@ -836,8 +828,7 @@ class FeatureEngineering:
             'best_features_eval': res["Best_Features"],
             'best_precision_eval': res["Best_Precision"],
             'best_reward_eval': res["Best_Reward"],
-            'avg_vif': avg_vif,
-            'recommend_training': num_features >= 5 and res["Best_Precision"] >= 0.66 and avg_vif < vif_threshold
+            'recommend_training': num_features >= 5 and res["Best_Precision"] >= 0.66
         }
 
         return {
