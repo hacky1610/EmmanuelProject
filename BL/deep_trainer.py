@@ -808,6 +808,52 @@ class FeatureEngineering:
         precision = precision_score(y_true, y_pred)
         return precision, reward
 
+    def calculate_precision_by_sum(test_df, features_list, target_column='result', threshold=0):
+        """
+        Berechnet die Präzision, indem die Werte der Feature-Spalten mit UND verknüpft werden.
+
+        Args:
+            test_df (pd.DataFrame): Der Test-DataFrame, der die relevanten Spalten enthält.
+            features_list (list): Liste der Feature-Spalten, die verknüpft werden.
+            target_column (str): Name der Spalte mit den tatsächlichen Werten (Default: 'result').
+
+        Returns:
+            float: Präzisionswert für die Vorhersagen.
+        """
+        # Sicherstellen, dass die erforderlichen Spalten vorhanden sind
+        missing_features = [feature for feature in features_list if feature not in test_df]
+        if missing_features:
+            raise ValueError(f"Die folgenden Features fehlen im DataFrame: {missing_features}")
+
+        if target_column not in test_df:
+            raise ValueError(f"Die Zielspalte '{target_column}' fehlt im DataFrame.")
+
+        weeks = len(test_df) / 24 / 5
+
+        # Vorhersage (y_pred) erstellen, indem die Features mit UND verknüpft werden
+        test_df["sum"] = test_df[features_list].sum(axis=1)
+        y_pred = (test_df["sum"] >= threshold).astype(int)
+        # filtered['date'] = df_reduced_vif['date']
+
+        # dates_with_y_pred_1 = test_df.loc[y_pred == 1, 'date']
+        # print(dates_with_y_pred_1.tolist())
+
+        # Zielspalte extrahieren
+        y_true = test_df[target_column]
+        true_positives = ((y_pred == 1) & (y_true == 1)).sum()
+        false_positives = ((y_pred == 1) & (y_true == 0)).sum()
+
+        reward = true_positives - false_positives
+
+        trade_weeks = y_pred.sum() / weeks
+
+        # if trade_weeks <= 2:
+        #    return 0
+
+        # Präzision berechnen
+        precision = precision_score(y_true, y_pred)
+        return precision, reward
+
     def evaluate_features(self, df, target, quantile=0.75, vif_threshold=5.0, combination_size=3):
 
         # Step 3: Remove high VIF features
