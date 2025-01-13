@@ -4,6 +4,7 @@ import os
 import sys
 from itertools import combinations
 
+from lightgbm import LGBMClassifier
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
@@ -193,24 +194,67 @@ class DeepTrainer:
                 # Small threshold to remove low variance features
                 ('classifier', model)
             ]),
+            Pipeline([
+                # Entferne Features mit geringer Varianz
+                ('variance_threshold', VarianceThreshold(threshold=0.01)),
+                ('classifier', model)
+            ]),
+            Pipeline([
+                # Wähle die k besten Features basierend auf F-Statistik
+                ('select_k_best', SelectKBest(score_func=f_classif, k=7)),  # K beste Features auswählen
+                ('classifier', model)
+            ])
         ]
 
     def _get_models(self):
         models =  {
 
 
-            'XGBoost Weighted': (
+            'XGBoost Weighted Adapted': (
                 XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', verbosity=0), {
-                    'classifier__max_depth': [3, 5, 7],
-                    'classifier__learning_rate': [0.01, 0.1, 0.2],
-                    'classifier__n_estimators': [100, 200],
-                    'classifier__gamma': [0, 0.1, 0.5, 1],
-                    'classifier__subsample': [0.8, 1.0],
-                    'classifier__colsample_bytree': [0.8, 1.0],
+                    'classifier__max_depth': [2,3],
+                    'classifier__learning_rate': [0.01, 0.05, 0.1],
+                    'classifier__n_estimators': [30, 50],
+                    'classifier__gamma': [0.1, 0.2, 0.5],
+
+                     'classifier__subsample': [0.8, 0.9],
+                     'classifier__colsample_bytree': [0.8, 0.9],
                     'classifier__min_child_weight': [1, 5, 10],  # Minimale Anforderungen an Split
                     'classifier__scale_pos_weight': [0.3, 0.5, 0.7, 1.0]
                     # Teste verschiedene Gewichtungen für Klasse 1
                 }),
+
+            'XGBoost Weighted Adapted 2': (
+                XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='aucpr', verbosity=0), {
+                    'classifier__max_depth': [2, 3],
+                    'classifier__learning_rate': [0.01, 0.05, 0.1],
+                    'classifier__n_estimators': [30, 50],
+                    'classifier__gamma': [0.1, 0.2, 0.5],
+
+                    'classifier__subsample': [0.8, 0.9],
+                    'classifier__colsample_bytree': [0.8, 0.9],
+                    'classifier__min_child_weight': [1, 5, 10],  # Minimale Anforderungen an Split
+                    'classifier__scale_pos_weight': [0.3, 0.5, 0.7, 1.0]
+                    # Teste verschiedene Gewichtungen für Klasse 1
+                }),
+
+            'XGBoost Weighted Adapted 3': (
+                XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', verbosity=0), {
+                    'classifier__max_depth': [2, 3],
+                    'classifier__learning_rate': [0.01, 0.05, 0.1],
+                    'classifier__n_estimators': [30, 50],
+                    'classifier__gamma': [0.5, 1],
+
+                    'classifier__subsample': [0.8, 0.9],
+                    'classifier__colsample_bytree': [0.8, 0.9],
+                    'classifier__min_child_weight': [ 10, 20],  # Minimale Anforderungen an Split
+                    'classifier__scale_pos_weight': [0.3, 0.5, 0.7, 1.0]
+                    # Teste verschiedene Gewichtungen für Klasse 1
+                }),
+
+
+
+
 
 
         }
@@ -308,7 +352,7 @@ class DeepTrainer:
         train_result = self.evaluate_model(best_model, X_train, y_train,
                                       thresholds=[0.45,0.5, 0.55], evaluate_type=evaluate_type)
         test_result = self.evaluate_model(best_model, X_test, y_test,
-                                     thresholds=[train_result["Best Threshold"]], evaluate_type=evaluate_type)
+                                     thresholds=[0.45,0.5, 0.55], evaluate_type=evaluate_type)
 
         return random_search.best_params_ | {
             "Model": model_name,
@@ -339,14 +383,10 @@ class DeepTrainer:
 
 
 
-    def train(self, df, hours, quantile, iterations, evaluate_type, combination_size=3):
+    def train(self, df_train, df_test, hours, quantile, iterations, evaluate_type, combination_size=3):
         # Suppress warnings
         warnings.filterwarnings("ignore")
 
-        df = df.drop(columns=["chart_index"])
-        # Split dataset into training and test sets
-        df_train = df[:int(len(df) * 0.8)]
-        df_test = df[int(len(df) * 0.8):]
 
         fe = FeatureEngineering()
         res = fe.evaluate_features(df_train, "result", quantile, combination_size=combination_size)
@@ -388,7 +428,8 @@ class DeepTrainer:
         # Models and parameter grids
         models = self._get_models()
         # Cross-validation
-        tscv = TimeSeriesSplit(n_splits=5)
+        tscv = TimeSeriesSplit(n_splits=13)
+        scale_pos_weight = len(y_train) / sum(y_train)
         for model_name, (model, param_grid) in models.items():
             print(f"Training {model_name}...")
 

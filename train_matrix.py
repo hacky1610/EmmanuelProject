@@ -3,7 +3,7 @@ import os
 import random
 import traceback
 from datetime import datetime
-
+from sklearn.utils import shuffle
 import dropbox
 import pymongo
 import pandas as pd
@@ -86,14 +86,22 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_proc
     return df_train, eval_df_train
 
 
-def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, trade_mode, hours, quantile,iterations,
-                         evaluate_type, combination_size=3):
-    print(f"Train {symbol} for {trade_mode}")
+
+def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, factor, indicators, trade_mode, cache):
+    df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
+                                             dropbox_cache=cache)
+    buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
+                                                 time_frame=hours, factor=factor)
+    trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
+    train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
+
     # Set specific replacement values for each trade type
     if trade_mode == "buy":
         train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': 1, 'sell': -1})
+        trade_results = buy_results
     elif trade_mode == "sell":
         train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': -1, 'sell': 1})
+        trade_results = sell_results
 
     train_signals_df = train_signals_df.infer_objects(copy=False)
 
@@ -104,132 +112,145 @@ def train_for_trade_type(symbol, train_signals_df, trade_results, deep_trainer, 
     signal_result_df['result'].fillna(0, inplace=True)
     signal_result_df = signal_result_df.dropna()
 
-    # Train model and set predictor
-    return deep_trainer.train(signal_result_df, hours, quantile,iterations, evaluate_type, combination_size)
+    df = signal_result_df.drop(columns=["chart_index"])
+    # Split dataset into training and test sets
+    df_train = df[:int(len(df) * 0.8)]
+    df_test = df[int(len(df) * 0.8):]
+
+    return df_train, df_test
 
 
 def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
-    for m in random.choices(markets, k=10):
-        symbol = m["symbol"]
 
-        if symbol != "EURCHF":
-            continue
-        tracer.info(f"Train {symbol}")
-        df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
-                                                 dropbox_cache=cache)
 
-        indicators.reset_caches()
-        if len(df_train) == 0:
-            continue
 
-        try:
-            # General configuration and data processing
-            config = predictor_store.load_active_by_symbol(symbol)
-            best_buy_results = []
-            best_sell_results = []
+    indicators.reset_caches()
 
-            for hours in [3,8]:
-                for factor in [1.5,3.5]:
-                    for combination_size in [2,4]:
-                        for quantile in [0.75,1]:
+
+    try:
+        # General configuration and data processing
+        best_buy_results = []
+        best_sell_results = []
+
+        for hours in [3]:
+            for factor in [1.5]:
+                for combination_size in [3]:
+                    for quantile in [0.9]:
+                        for mix in [True, False]:
                             iteration = 100
                             for evaluate_type in ["prec"]:
                                 try:
-                                    print(f"Train {symbol} for {hours} hours and quantile {quantile}")
-                                    buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
-                                                                                 time_frame=hours, factor=factor)
-                                    trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
-                                    train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
+                                    print(f"Train for {hours} hours and quantile {quantile}")
 
-                                    # Train for Buy and Sell separately
-                                    best_buy_results = best_buy_results + train_for_trade_type(symbol, train_signals_df, buy_results,
-                                                                                               deep_trainer, trade_mode="buy",
-                                                                                               hours=hours, quantile=quantile,
-                                                                                               iterations=iteration, evaluate_type=evaluate_type,
-                                                                                               combination_size=combination_size)
-                                    best_sell_results = best_sell_results + train_for_trade_type(symbol, train_signals_df, sell_results,
-                                                                                                 deep_trainer,
-                                                                                                 trade_mode="sell", hours=hours,
-                                                                                                 quantile=quantile,iterations=iteration,
-                                                                                                 evaluate_type=evaluate_type,
-                                                                                                 combination_size=combination_size)
+                                    df_train_global = pd.DataFrame()
+                                    df_test_global = pd.DataFrame()
+
+                                    for fx in ["EURCHF", "EURGBP", "USDCHF", "EURUSD", "USDJPY"]:
+                                        df_train,df_test = create_data(tiingo, fx, trade_type, data_processor, trainer, hours, factor, indicators, "buy", cache)
+                                        # Zusammenfügen der Daten
+                                        df_train_global = pd.concat([df_train_global, df_train], ignore_index=True)
+                                        df_test_global = pd.concat([df_test_global, df_test], ignore_index=True)
+
+                                    if mix:
+                                        df_train_global = shuffle(df_train_global, random_state=42)
+                                    best_buy_results = best_buy_results + deep_trainer.train(df_train_global, df_test_global, hours, quantile,
+                                                                                             iteration, evaluate_type,combination_size)
+
+                                    for fx in ["EURCHF", "EURGBP", "USDCHF", "EURUSD", "USDJPY"]:
+                                        df_train, df_test = create_data(tiingo, fx, trade_type, data_processor, trainer,
+                                                                        hours, factor, indicators, "sell", cache)
+                                        # Zusammenfügen der Daten
+                                        df_train_global = pd.concat([df_train_global, df_train], ignore_index=True)
+                                        df_test_global = pd.concat([df_test_global, df_test], ignore_index=True)
+                                    if mix:
+                                        df_train_global = shuffle(df_train_global, random_state=42)
+                                    best_sell_results = best_sell_results + deep_trainer.train(df_train_global, df_test_global, hours, quantile,
+                                                                                             iteration, evaluate_type,combination_size)
+
+                                    for r in best_buy_results:
+                                        r.update({"factor": factor, "combination_size":combination_size, "mix":mix })
+
+                                    for r in best_sell_results:
+                                        r.update({"factor": factor, "combination_size": combination_size,"mix":mix  })
+
                                 except Exception as ex:
                                     traceback_str = traceback.format_exc()
                                     print(f"MainException: {ex} File:{traceback_str}")
 
-            # Save and activate predictor
-            # Initialize deep predictor
+        # Save and activate predictor
+        # Initialize deep predictor
+        config = predictor_store.load_active_by_symbol("EURUSD")
 
-            deep_predictor = DeepPredictor(symbol=symbol, cache=cache, config=config, tracer=tracer,
-                                           indicators=indicators)
-            global_buy_results_path = "D:\\Code\\EmmanuelCache\\global_best_buy_results.csv"
-            global_sell_results_path = "D:\\Code\\EmmanuelCache\\global_best_sell_results.csv"
+        deep_predictor = DeepPredictor(symbol="foo", cache=cache, config=config, tracer=tracer,
+                                       indicators=indicators)
+        global_buy_results_path = "D:\\Code\\EmmanuelCache\\global_best_buy_results.csv"
+        global_sell_results_path = "D:\\Code\\EmmanuelCache\\global_best_sell_results.csv"
 
-            if best_buy_results:
+        if best_buy_results:
 
-                best_buy_results_df = DataFrame(best_buy_results)
-                best_buy_results_df["Symbol"] = symbol
-                best_buy_results_df = best_buy_results_df.sort_values(by="Best Reward", ascending=False)
+            best_buy_results_df = DataFrame(best_buy_results)
+            best_buy_results_df["Symbol"] = "foo"
+            best_buy_results_df = best_buy_results_df.sort_values(by="Best Reward", ascending=False)
 
-                # Speichern der neuen individuellen CSV
+            # Speichern der neuen individuellen CSV
+            best_buy_results_df.drop(columns=["Best Model"]).to_csv(
+                f"D:\\Code\\EmmanuelCache\\foo_best_buy_results_{datetime.now().microsecond}.csv", sep=';',
+                index=False)
+
+            # Hinzufügen der Daten zur globalen CSV-Datei
+            if os.path.exists(global_buy_results_path):
                 best_buy_results_df.drop(columns=["Best Model"]).to_csv(
-                    f"D:\\Code\\EmmanuelCache\\{symbol}_best_buy_results_{datetime.now().microsecond}.csv", sep=';',
-                    index=False)
+                    global_buy_results_path, sep=';', index=False, header=False, mode='a')
+            else:
+                best_buy_results_df.drop(columns=["Best Model"]).to_csv(
+                    global_buy_results_path, sep=';', index=False, header=True, mode='w')
 
-                # Hinzufügen der Daten zur globalen CSV-Datei
-                if os.path.exists(global_buy_results_path):
-                    best_buy_results_df.drop(columns=["Best Model"]).to_csv(
-                        global_buy_results_path, sep=';', index=False, header=False, mode='a')
-                else:
-                    best_buy_results_df.drop(columns=["Best Model"]).to_csv(
-                        global_buy_results_path, sep=';', index=False, header=True, mode='w')
-
-                best_buy_precision_row = best_buy_results_df.loc[best_buy_results_df["Score"].idxmax()]
-                deep_predictor.set_buy_validation(best_buy_precision_row["Best Precision"],
-                                                  best_buy_precision_row["Trading Houres"],
-                                                  threshold=best_buy_precision_row["Best Threshold"],
-                                                  features=best_buy_precision_row["Good Features"])
-                deep_predictor.set_model_buy(best_buy_precision_row["Best Model"])
+            best_buy_precision_row = best_buy_results_df.loc[best_buy_results_df["Score"].idxmax()]
+            deep_predictor.set_buy_validation(best_buy_precision_row["Best Precision"],
+                                              best_buy_precision_row["Trading Houres"],
+                                              threshold=best_buy_precision_row["Best Threshold"],
+                                              features=best_buy_precision_row["Good Features"])
+            deep_predictor.set_model_buy(best_buy_precision_row["Best Model"])
 
 
-            if best_sell_results:
-                best_sell_results_df = DataFrame(best_sell_results)
+        if best_sell_results:
+            best_sell_results_df = DataFrame(best_sell_results)
 
-                best_sell_results_df["Symbol"] = symbol
-                best_sell_results_df = best_sell_results_df.sort_values(by="Best Reward", ascending=False)
+            best_sell_results_df["Symbol"] = "Foo"
+            best_sell_results_df = best_sell_results_df.sort_values(by="Best Reward", ascending=False)
 
-                # Speichern der neuen individuellen CSV
+            # Speichern der neuen individuellen CSV
+            best_sell_results_df.drop(columns=["Best Model"]).to_csv(
+                f"D:\\Code\\EmmanuelCache\\foo_best_sell_results_{datetime.now().microsecond}.csv", sep=';',
+                index=False)
+
+            # Hinzufügen der Daten zur globalen CSV-Datei
+            if os.path.exists(global_sell_results_path):
                 best_sell_results_df.drop(columns=["Best Model"]).to_csv(
-                    f"D:\\Code\\EmmanuelCache\\{symbol}_best_sell_results_{datetime.now().microsecond}.csv", sep=';',
-                    index=False)
-
-                # Hinzufügen der Daten zur globalen CSV-Datei
-                if os.path.exists(global_sell_results_path):
-                    best_sell_results_df.drop(columns=["Best Model"]).to_csv(
-                        global_sell_results_path, sep=';', index=False, header=False, mode='a')
-                else:
-                    best_sell_results_df.drop(columns=["Best Model"]).to_csv(
-                        global_sell_results_path, sep=';', index=False, header=True, mode='w')
-                best_sell_precision_row = best_sell_results_df.loc[best_sell_results_df["Score"].idxmax()]
+                    global_sell_results_path, sep=';', index=False, header=False, mode='a')
+            else:
+                best_sell_results_df.drop(columns=["Best Model"]).to_csv(
+                    global_sell_results_path, sep=';', index=False, header=True, mode='w')
+            best_sell_precision_row = best_sell_results_df.loc[best_sell_results_df["Score"].idxmax()]
 
 
 
 
-                deep_predictor.set_sell_validation(best_sell_precision_row["Best Precision"],
-                                                   best_sell_precision_row["Trading Houres"],
-                                                   threshold=best_sell_precision_row["Best Threshold"],
-                                                   features=best_sell_precision_row["Good Features"], )
-                deep_predictor.set_model_sell(best_sell_precision_row["Best Model"])
+            deep_predictor.set_sell_validation(best_sell_precision_row["Best Precision"],
+                                               best_sell_precision_row["Trading Houres"],
+                                               threshold=best_sell_precision_row["Best Threshold"],
+                                               features=best_sell_precision_row["Good Features"], )
+            deep_predictor.set_model_sell(best_sell_precision_row["Best Model"])
 
-            if best_buy_results or best_sell_results:
-                deep_predictor.save()
-                deep_predictor.activate()
-                predictor_store.save(deep_predictor)
+        if best_buy_results or best_sell_results:
+            deep_predictor.save()
+            deep_predictor.activate()
+            predictor_store.save(deep_predictor)
 
-        except Exception as ex:
-            traceback_str = traceback.format_exc()
-            print(f"MainException: {ex} File:{traceback_str}")
+    except Exception as ex:
+        traceback_str = traceback.format_exc()
+        print(f"MainException: {ex} File:{traceback_str}")
 
 
 while True:
