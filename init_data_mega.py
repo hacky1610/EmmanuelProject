@@ -39,12 +39,14 @@ only_one_position = False
 # region functions
 def init_data(ig: IG, ti: Tiingo):
     global symbol
-    markets = ig.get_markets(tradeable=False, trade_type=trade_type)
+    markets = ig.get_markets_offline()
     for m in markets:
         symbol = m["symbol"]
+        if symbol != "USDCHF":
+            continue
         try:
             print(f"Init {symbol}")
-            ti.init_data(symbol, trade_type, days=4 * 365, suffix="mega")
+            ti.init_data(symbol, trade_type, days=3 * 365, suffix="mega")
         except Exception as e:
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
             print(f"MainException: {e} File:{traceback_str}")

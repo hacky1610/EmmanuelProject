@@ -69,14 +69,14 @@ _deep_trainer = DeepTrainer()
 
 def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor,
                    dropbox_cache: DropBoxCache) -> (DataFrame, DataFrame):
-    hour_df = f"{symbol}_train_1hour.csv"
-    minute_df = f"{symbol}_train_5minute.csv"
+    hour_df = f"{symbol}_train_1hour_5.csv"
+    minute_df = f"{symbol}_train_5minute_5.csv"
 
     if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(minute_df):
         df_train = dropbox_cache.load_train_cache(hour_df)
         eval_df_train = dropbox_cache.load_train_cache(minute_df)
     else:
-        df_train, eval_df_train = tiingo.load_test_data(symbol, data_processor, trade_type=trade_type)
+        df_train, eval_df_train = tiingo.load_test_data(symbol, data_processor, trade_type=trade_type, use_cache=True)
         dropbox_cache.save_train_cache(df_train, hour_df)
         dropbox_cache.save_train_cache(eval_df_train, minute_df)
 
@@ -97,10 +97,10 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
 
     # Set specific replacement values for each trade type
     if trade_mode == "buy":
-        train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': 1, 'sell': -1})
+        train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
         trade_results = buy_results
     elif trade_mode == "sell":
-        train_signals_df = train_signals_df.replace({'none': 0.0, 'both': 1, 'buy': -1, 'sell': 1})
+        train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1})
         trade_results = sell_results
 
     train_signals_df = train_signals_df.infer_objects(copy=False)
@@ -114,8 +114,8 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
 
     df = signal_result_df.drop(columns=["chart_index"])
     # Split dataset into training and test sets
-    df_train = df[:int(len(df) * 0.8)]
-    df_test = df[int(len(df) * 0.8):]
+    df_train = df[:int(len(df) * 0.95)]
+    df_test = df[int(len(df) * 0.95):]
 
     return df_train, df_test
 
@@ -133,20 +133,21 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
         best_buy_results = []
         best_sell_results = []
 
-        for hours in [3]:
-            for factor in [1.5]:
-                for combination_size in [3]:
-                    for quantile in [0.9]:
-                        for mix in [True, False]:
+        for hours in [6,7,8,9]:
+            for factor in [0.3,0.5]:
+                for combination_size in [9]:
+                    for quantile in [0.7]:
+                        for mix in [False]:
                             iteration = 100
                             for evaluate_type in ["prec"]:
                                 try:
-                                    print(f"Train for {hours} hours and quantile {quantile}")
+                                    print(f"Train for {hours} hours and factor {factor}")
 
                                     df_train_global = pd.DataFrame()
                                     df_test_global = pd.DataFrame()
 
-                                    for fx in ["EURCHF", "EURGBP", "USDCHF", "EURUSD", "USDJPY"]:
+                                    #for fx in ["EURCHF", "EURGBP", "USDCHF", "EURUSD", "USDJPY"]:
+                                    for fx in ["EURCHF"]:
                                         df_train,df_test = create_data(tiingo, fx, trade_type, data_processor, trainer, hours, factor, indicators, "buy", cache)
                                         # Zusammenfügen der Daten
                                         df_train_global = pd.concat([df_train_global, df_train], ignore_index=True)
@@ -157,7 +158,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
                                     best_buy_results = best_buy_results + deep_trainer.train(df_train_global, df_test_global, hours, quantile,
                                                                                              iteration, evaluate_type,combination_size)
 
-                                    for fx in ["EURCHF", "EURGBP", "USDCHF", "EURUSD", "USDJPY"]:
+                                    for fx in ["EURCHF"]:
                                         df_train, df_test = create_data(tiingo, fx, trade_type, data_processor, trainer,
                                                                         hours, factor, indicators, "sell", cache)
                                         # Zusammenfügen der Daten

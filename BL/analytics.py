@@ -381,7 +381,7 @@ class Analytics:
 
                 # Berechne die Zeitdifferenz zur vorherigen Iteration
                 if j > 0:
-                    time_diff = future.iloc[j].date - future.iloc[j - 1].date
+                    time_diff = timedelta(minutes=5)
                     accumulated_time += time_diff
 
                 # Prüfe Stop-Loss und Take-Profit

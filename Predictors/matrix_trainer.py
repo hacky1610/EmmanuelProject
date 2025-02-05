@@ -52,8 +52,8 @@ class MatrixTrainer:
                 self._cache.save_signal(trades, path)
 
     def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, time_frame: int = 4, factor = 1.5):
-        buy_path = f"simulation_buy{symbol}_{time_frame}{factor}h2.csv"
-        sell_path = f"simulation_sell{symbol}_{time_frame}{factor}h2.csv"
+        buy_path = f"simulation_buy{symbol}_{time_frame}{factor}h10.csv"
+        sell_path = f"simulation_sell{symbol}_{time_frame}{factor}h10.csv"
 
         if not self._cache.simulation_exist(buy_path):
             buy = self._analytics.simulate_fixed_timeframe(action="buy",

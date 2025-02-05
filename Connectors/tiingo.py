@@ -180,7 +180,7 @@ class Tiingo:
                     df = df[df.date < data[0:1].date.item()]
                 else:
                     break
-                data = df.append(data)
+                data = pd.concat([df, data], ignore_index=True)
             end_time = start_time + timedelta(days=1)
             start_time = end_time - timedelta(days=window)
 
@@ -219,7 +219,7 @@ class Tiingo:
                                          validate=False)
         return df, df_eval
 
-    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 365, use_cache=True):
+    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 900, use_cache=True):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,
