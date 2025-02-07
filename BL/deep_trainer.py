@@ -1,4 +1,5 @@
 # region import
+import itertools
 import math
 import os
 import sys
@@ -202,11 +203,6 @@ class DeepTrainer:
                 ('classifier', model)
             ]),
 
-            Pipeline([
-                # Wähle die k besten Features basierend auf F-Statistik
-                ('select_k_best', SelectKBest(score_func=f_classif, k=4)),  # K beste Features auswählen
-                ('classifier', model)
-            ])
         ]
 
     def _get_models(self):
@@ -240,15 +236,21 @@ class DeepTrainer:
                     'classifier__reg_alpha': [1, 5, 10],  # L1-Regularisierung
                     'classifier__reg_lambda': [5, 10, 20],  # L2-Regularisierung
                     'classifier__scale_pos_weight': [0.5, 1.0, 1.5]
-                })
+                }),
 
-
-
-
-
-
-
-
+            'XGBoost Regularized 3': (
+                XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='aucpr', verbosity=0), {
+                    'classifier__max_depth': [3, 4, 6, 8],
+                    'classifier__learning_rate': [0.001, 0.005, 0.01, 0.05],
+                    'classifier__n_estimators': [50, 100, 200],
+                    'classifier__gamma': [0, 0.1, 0.5, 1.0],
+                    'classifier__subsample': [0.6, 0.7, 0.8, 0.9],
+                    'classifier__colsample_bytree': [0.6, 0.7, 0.8, 0.9],
+                    'classifier__min_child_weight': [1, 5, 10, 20],
+                    'classifier__reg_alpha': [0, 0.1, 0.5, 1.0, 2.0],  # L1-Regularisierung
+                    'classifier__reg_lambda': [0.1, 1, 5, 10],  # L2-Regularisierung
+                    'classifier__scale_pos_weight': [0.5, 1.0, 2.0, 5.0]  # Falls Klassen unausgeglichen sind
+                }),
 
         }
 
@@ -382,29 +384,25 @@ class DeepTrainer:
 
 
 
-    def train(self, df_train, df_test, hours, quantile, iterations, evaluate_type, combination_size=3):
+    def train(self, df_train, df_test, hours, quantile, iterations, evaluate_type, combination_size=3,use_importance=False):
         # Suppress warnings
         warnings.filterwarnings("ignore")
 
 
         fe = FeatureEngineering()
-        res = fe.evaluate_features(df_train, "result", quantile, combination_size=combination_size)
+        res = fe.evaluate_features(df_train, "result", quantile, combination_size=combination_size, use_importance=use_importance)
         best_results = []
-        return best_results
 
-        rec = res["Evaluation"]
-        print(f"Ev {rec}")
 
-        precicion, reward = fe.calculate_precision(df_test,list(res["Top_Features"]))
+        precicion, reward = fe.calculate_precision(df_test,list(res["Selected_Features"]))
         print(f"*******************{precicion}")
 
-        selected_features = list(res["Top_Features"])
+        selected_features = list(res["Selected_Features"])
         print(selected_features)
         res_list = self.train_features(best_results, df_test, df_train, evaluate_type, hours, iterations, quantile,
                                        selected_features, manual_precision=precicion)
 
         for d in res_list:
-            d.update(rec)
             d.update({"manual reward test":reward})
 
 
@@ -447,7 +445,7 @@ class DeepTrainer:
         # best_model_name = max(results, key=lambda k: results[k][0])
         # best_test_precision, best_model = results[best_model_name]
         best_item = max(best_results, key=lambda x: x['Best Reward'])
-        print(f"Reward {best_item['Best Reward']}")
+        print(f"Reward {best_item['Best Reward']} Precision {best_item['Best Precision']}")
         return best_results
 
     @staticmethod
@@ -1068,7 +1066,8 @@ class FeatureEngineering:
             reg_alpha=10.0,  # L1-Regularisierung
             reg_lambda=30.0,  # L2-Regularisierung
             subsample=0.7,
-            colsample_bytree=0.8
+            colsample_bytree=0.8,
+            verbosity=0
         )
 
         # 🔹 Feature Selection mit ExhaustiveFeatureSelector (EFS)
@@ -1077,7 +1076,7 @@ class FeatureEngineering:
                   max_features=max_features,
                   scoring='precision',
                   cv=3,
-                  n_jobs=-1)
+                  n_jobs=4)
 
         efs.fit(X_train, y_train)
         best_features = list(efs.best_feature_names_)
@@ -1093,7 +1092,7 @@ class FeatureEngineering:
             model.set_params(scale_pos_weight=w)
             model.fit(X_train[best_features], y_train)
             y_pred = model.predict(X_test[best_features])
-            precision = precision_score(y_test, y_pred, zero_division=0)
+            precision = precision_score(y_test, y_pred, zero_division=1)
 
             if precision > best_precision:
                 best_precision = precision
@@ -1123,25 +1122,23 @@ class FeatureEngineering:
         print(precision_scores.nlargest(15).mean())
         prec_list.append(target)
         prec_df = df[prec_list]
-        #importance_df = self.calculate_feature_importance(df, target)
 
         foo = self.exhaustive_feature_search_and_test(prec_df, target)
+        print("*****************")
+        print(foo)
 
-        combined_scores = pd.DataFrame({
-            'Feature': df.drop(columns=[target]).columns,  # Sicherstellen, dass es nur Feature-Spalten sind
-            'Precision': precision_scores.reindex(df.drop(columns=[target]).columns).fillna(0),
-            # Gleiche Länge sicherstellen
-            'Importance': importance_df.set_index('Feature')['Importance']
-            .reindex(df.drop(columns=[target]).columns).fillna(0)  # Sicherstellen, dass reindex zur Spaltenliste passt
-        })
+        import os
 
-        scaler = MinMaxScaler()
-        combined_scores[['Precision', 'Importance']] = scaler.fit_transform(
-            combined_scores[['Precision', 'Importance']])
-        combined_scores['Score'] = combined_scores['Precision']
+        dateiname = "D:\Code\EmmanuelCache\log.txt"
 
-        top_features = combined_scores[combined_scores['Score'] > combined_scores['Score'].quantile(quantile)]
-        return top_features['Feature'].tolist()
+        # Falls die Datei nicht existiert, erstelle sie
+        if not os.path.exists(dateiname):
+            with open(dateiname, "w") as file:
+                file.write(str(foo))
+
+        # Danach immer im Anhangsmodus schreiben
+        with open(dateiname, "a") as file:
+            file.write(str(foo))
 
     ### 2️⃣ Reduktion hoch korrelierter Features mit VIF ###
 
@@ -1247,11 +1244,7 @@ class FeatureEngineering:
 
     ### 5️⃣ Kompletter Optimierungsprozess ###
     def optimize_indicators(self, df, target, quantile=0.75, vif_threshold=5.0, max_comb_size=3):
-        import xgboost as xgb
-        model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss')
-        #df_vif = self.remove_high_vif_features(df.drop(columns=[target]),df[target],model)
-        df_vif = df
-        top_features = self.combine_precision_importance(df_vif, target, quantile)
+        self.combine_precision_importance(df, target, quantile)
 
     def filter_features_by_vif_and_precision(self, df, y, model, vif_threshold=5.0, cv_folds=5):
         """
@@ -1314,104 +1307,88 @@ class FeatureEngineering:
         return df_filtered
 
 
+    def evaluate_features(self, df, target, quantile=0.75, vif_threshold=5.0, combination_size=3, use_importance=False):
+        # Kategorien für Indikatoren definieren
+        categories = {
+            'trend': [
+            "macd", "macd_slope", "macd_slope_4h", "macd_max", "macd_max_2", "macd_max_4h",
+            "macd_max_12h", "macd_zero", "macd_crossing", "macd_convergence", "macd_convergence_4h",
+            "macd_signal_diff", "ema_10_slope", "ema_30_slope", "ema_alligator", "ema_hist",
+            "ema_alligator_hist", "ema_10_50", "ema_20_close", "ema_50_close", "ema_100_close",
+            "smma_20_close", "ema_20_smma_20", "ema_20_channel", "ema_50_100", "pivot_breakout",
+            "pivot_ema_20_cross", "ichi_kijun_confirm", "ichi_kijun_confirm_4h",
+            "ichi_kijun_confirm_12h", "ichi_kijun_cross_confirm", "ichi_cloud_thickness",
+            "super_trend", "psar", "psar_change"
+        ],
+            'momentum': [
+            "rsi", "rsi_limit", "rsi_limit_4h", "rsi_limit_12h", "rsi_break", "rsi_convergence",
+            "rsi_convergence_4h", "rsi_convergence5_40", "rsi_slope", "rsi_break_4h",
+            "williams_break", "williams_break_4h", "williams_limit", "williams_limit_4h",
+            "adx", "adx_4h", "adx_slope", "adx_max", "adx_max_4h", "adx_max_21", "adx_max_48",
+            "adx_max2", "adx_break", "cci", "cci_4h", "cci_cross", "squeeze_momentum"
+        ],
+            'volatility': [
+            "bb", "bb_4h", "bb_12h", "bb_middle_crossing", "bb_middle_crossing_4h",
+            "bb_sqeeze", "bb_sqeeze_both_direction", "bb_sqeeze_both_direction_4h",
+            "bb_sqeeze_both_direction_12h", "pivot_fib_bounce", "privot_fib_sr_trading"
+        ]
+        }
 
-    def evaluate_features(self, df, target, quantile=0.75, vif_threshold=5.0, combination_size=3):
-
-        # Erstelle ein XGBoost-Modell
-        # Modell initialisieren
+        # Initialisiere das Modell
         model = RandomForestClassifier()
 
-        # Funktion aufrufen
-        X = df.drop(columns=[target])  # Features
+        # Features und Zielvariable extrahieren
+        X = df.drop(columns=[target])
         y = df[target]
+
+        # Features bereinigen
         cleaned_df = self.filter_features_by_vif_and_precision(X, y, model)
-
-        # Bereinige Features
-        res  = self.optimize_indicators(cleaned_df, target, max_comb_size=combination_size)
-
-        return res
-
-        # Step 3: Remove high VIF features
-        #df = self.remove_high_vif_features(df.drop(columns=[target]), threshold=vif_threshold)
         df = df[cleaned_df.columns]
         df[target] = y
 
-        # Step 1: Precision with target
-        precision = self.precision_with_target(df, target)
+        selected_features_per_category = {}
 
-        # Step 2: Feature importance with RandomForest
-        importance_df = self.feature_importance_xgboost(df, target)
+        for category, features in categories.items():
+            # Beschränkung auf existierende Features
+            category_features = [f for f in features if f in df.columns]
+            if not category_features:
+                continue
 
-        # Step 4: Feature selection with RFE
-        #selected_rfe_features = self.select_features_with_rfe(df_reduced_vif, target, n_features)
+            category_df = df[category_features + [target]]
 
-        # Step 5: Feature selection with statistical tests
-        #stat_test_features = self.select_features_with_stat_tests(df_reduced_vif, target)
+            # Berechnung der Precision für die Kategorie
+            precision = self.precision_with_target(category_df, target)
 
-        # Step 6: Embedded methods (LASSO and Ridge)
-        #embedded_features = self.select_features_with_embedded_methods(df_reduced_vif, target)
+            # Berechnung der Feature Importance mit RandomForest
+            importance_df = self.feature_importance_xgboost(category_df, target)
 
-        # Combine scores
-        combined_scores = pd.DataFrame({
-            'Feature': df.columns,
-            'Precision': precision.reindex(df.columns).fillna(0),
-            'Importance': importance_df.set_index('Feature')['Importance'].reindex(df.columns).fillna(0)
-        })
+            # Combine scores
+            combined_scores = pd.DataFrame({
+                'Feature': category_features,
+                'Precision': precision.reindex(category_features).fillna(0),
+                'Importance': importance_df.set_index('Feature')['Importance'].reindex(category_features).fillna(0)
+            })
 
-        scaler = MinMaxScaler()
-        combined_scores[['Precision', 'Importance']] = scaler.fit_transform(combined_scores[['Precision', 'Importance']])
+            scaler = MinMaxScaler()
+            combined_scores[['Precision', 'Importance']] = scaler.fit_transform(
+                combined_scores[['Precision', 'Importance']])
 
-        # Berechnung des kombinierten Scores
-        combined_scores['Score'] = combined_scores['Precision']
+            # Berechnung des kombinierten Scores
+            combined_scores['Score'] = combined_scores['Precision'] + (
+                combined_scores['Importance'] if use_importance else 0)
 
-        high_score_threshold = combined_scores['Score'].quantile(quantile)
-        top_features = combined_scores[combined_scores['Score'] > high_score_threshold]
+            # Auswahl der Top 3 Features
+            top_features = combined_scores.nlargest(3, 'Score')['Feature'].tolist()
+            selected_features_per_category[category] = top_features
 
+        all_features = sum(selected_features_per_category.values(), [])
 
-
-        best_reward = -100000
-        best_threshold = -10000
-        best_precision = 0
-        for i in range(-5, len(top_features['Feature'].tolist())):
-            prec, rew = FeatureEngineering.calculate_precision_by_sum(df, top_features['Feature'].tolist(),
-                                                               threshold=i)
-            if rew > best_reward:
-                best_threshold = i
-                best_reward = rew
-                best_precision = prec
-
-        # Ensure target is not included
-        top_features = top_features[top_features['Feature'] != target]
-
-        res = self.best_feature_combination(df, target, top_features['Feature'], combination_size=combination_size)
-
-        # Evaluate feature quality
-        num_features = len(top_features)
-        avg_precision = top_features['Precision'].mean()
-        max_precision = top_features['Precision'].max()
-
+        # Evaluation
         evaluation = {
-            'num_features_eval': num_features,
-            'avg_precision_eval': avg_precision,
-            'max_precision_eval': max_precision,
-            'best_features_eval': res["Best_Features"],
-            'best_precision_eval': res["Best_Precision"],
-            'best_reward_eval': res["Best_Reward"],
-            'recommend_training': num_features >= 5 and res["Best_Precision"] >= 0.66
+
         }
 
         return {
-            'Top_Features': top_features['Feature'].tolist(),
+            'Selected_Features': all_features,
             'Evaluation': evaluation
         }
-
-
-
-
-
-
-
-
-
-
-

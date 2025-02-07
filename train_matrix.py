@@ -133,13 +133,14 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
         best_buy_results = []
         best_sell_results = []
 
-        for hours in [6,7,8,9]:
+        for hours in [6,7]:
             for factor in [0.3,0.5]:
-                for combination_size in [9]:
-                    for quantile in [0.7]:
+                for combination_size in [3]:
+                    for quantile in [0.7,0.9]:
                         for mix in [False]:
                             iteration = 100
-                            for evaluate_type in ["prec"]:
+                            evaluate_type = "prec"
+                            for use_importance in [True, False]:
                                 try:
                                     print(f"Train for {hours} hours and factor {factor}")
 
@@ -156,7 +157,7 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
                                     if mix:
                                         df_train_global = shuffle(df_train_global, random_state=42)
                                     best_buy_results = best_buy_results + deep_trainer.train(df_train_global, df_test_global, hours, quantile,
-                                                                                             iteration, evaluate_type,combination_size)
+                                                                                             iteration, evaluate_type,combination_size, use_importance)
 
                                     for fx in ["EURCHF"]:
                                         df_train, df_test = create_data(tiingo, fx, trade_type, data_processor, trainer,
@@ -167,13 +168,13 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
                                     if mix:
                                         df_train_global = shuffle(df_train_global, random_state=42)
                                     best_sell_results = best_sell_results + deep_trainer.train(df_train_global, df_test_global, hours, quantile,
-                                                                                             iteration, evaluate_type,combination_size)
+                                                                                             iteration, evaluate_type,combination_size,use_importance)
 
                                     for r in best_buy_results:
-                                        r.update({"factor": factor, "combination_size":combination_size, "mix":mix })
+                                        r.update({"factor": factor, "combination_size":combination_size, "mix":mix , "use_importance":use_importance})
 
                                     for r in best_sell_results:
-                                        r.update({"factor": factor, "combination_size": combination_size,"mix":mix  })
+                                        r.update({"factor": factor, "combination_size": combination_size,"mix":mix,"use_importance":use_importance  })
 
                                 except Exception as ex:
                                     traceback_str = traceback.format_exc()
