@@ -5,7 +5,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
-- TI_Deep_4
+- DeepCombo
 
 pool:
   vmImage: ubuntu-latest
@@ -27,4 +27,4 @@ steps:
     repository: 'hacky1610/emmanuel_ti'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v52.00'
+    tags: 'v60.00'
