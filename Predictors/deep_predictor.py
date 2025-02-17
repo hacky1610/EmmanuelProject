@@ -85,10 +85,13 @@ class DeepPredictor(BasePredictor):
         self._trade_mode = trade_mode
         self._atr_factor = atr_factor
 
-    def get_trading_hours(self):
+    def get_trading_hours(self) -> int:
         return self._trading_hours
 
-    def get_threshold(self):
+    def get_atr_factor(self) -> float:
+        return self._atr_factor
+
+    def get_threshold(self) -> float:
         return self._threshold
 
     def save(self):

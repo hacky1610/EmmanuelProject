@@ -186,17 +186,16 @@ class Trader:
         self._tracer.debug("End")
 
     def update_markets(self):
-        self._intelligent_update_and_close()
+        self._close_after_time()
         self.update_deals()
         self._fix_deals()
 
 
-    def _intelligent_update_and_close(self):
-        self._tracer.debug("Intelligent Update")
+    def _close_after_time(self):
+        self._tracer.debug("Close after time")
         for _, item in self._ig.get_opened_positions().iterrows():
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
             if deal is not None:
-                #self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
                 self._ig.manual_close_after_time(item, self._deal_storage, self._predictor_store)
 
     def _get_predictors(self, symbol:str, indicators) -> List[DeepPredictor]:
@@ -304,26 +303,15 @@ class Trader:
                 Returns:
                     TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
                 """
-
-        # if not self._is_good_ticker(config.symbol, min_avg_profit=3, min_deal_count=1, days=10):
-        #     self._tracer.debug(f"{config.symbol} has a bad IG Performance in the last days")
-        #     return TradeResult.NOACTION
-
-
-
         self._tracer.debug(f"{config.symbol} valid to predict")
         predictor.load_model()
         signal = predictor.predict(trade_df)
         market = self._market_store.get_market(config.symbol)
-        stop = trade_df.ATR.iloc[-1] * 2.5 * config.scaling
-        limit = trade_df.ATR.iloc[-1] * 2.5 * config.scaling
+        stop = trade_df.ATR.iloc[-1] * predictor.get_atr_factor() * config.scaling
+        limit = trade_df.ATR.iloc[-1] * predictor.get_atr_factor() * config.scaling
 
         if signal == TradeAction.NONE or signal == TradeAction.BOTH:
             return TradeResult.NOACTION
-
-        if predictor.get_open_limit_isl():
-            self._tracer.debug("ISL is used")
-            limit = None
 
         is_manual_stop = False
         minimal_stop = self._ig.get_min_stop_distance(config.epic)
@@ -339,21 +327,15 @@ class Trader:
         self._tracer.info(f"Trade {signal} ")
 
         if signal == TradeAction.BUY:
-            if predictor.is_good_buy():
-                res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
-                                                         config.currency,
-                                                         self._ig.buy)
-            else:
-                self._tracer.debug("No good buy")
-                return TradeResult.NOACTION
+            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
+                                                     config.currency,
+                                                     self._ig.buy)
+
         else:
-            if predictor.is_good_sell():
-                res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
+            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
                                                          config.currency,
                                                          self._ig.sell)
-            else:
-                self._tracer.debug("No good sell")
-                return TradeResult.NOACTION
+
         if res == TradeResult.SUCCESS:
             self._save_result(predictor, deal_response, config.symbol)
             self._tracer.debug("Save Deal in db")

@@ -16,9 +16,22 @@ class PredictorStore:
         self._collection = db["Predictors_Combo"]
 
     def save(self, predictor: BasePredictor, overwrite: bool = True):
+        query = {"_id": predictor.get_id()}
 
-        if self._collection.find_one({"_id": predictor.get_id()}) and overwrite:
-            self._collection.update_one({"_id": predictor.get_id()}, {"$set": predictor.get_save_data()})
+        # Zusätzliche Bedingung für _symbol und _features
+        alternative_query = {
+            "_symbol": predictor.get_symbol(),
+            "_features": {"$size": len(predictor._features), "$all": predictor._features},
+            "_trading_hours": predictor._trading_hours
+        }
+
+        existing_record = self._collection.find_one(query)
+        alternative_record = self._collection.find_one(alternative_query)
+
+        if existing_record and overwrite:
+            self._collection.update_one(query, {"$set": predictor.get_save_data()})
+        elif alternative_record and overwrite:
+            self._collection.update_one(alternative_query, {"$set": predictor.get_save_data()})
         else:
             self._collection.insert_one(predictor.get_save_data())
 

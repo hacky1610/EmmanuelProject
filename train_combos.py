@@ -93,6 +93,9 @@ def _create_hash(df):
 def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, factor, indicators, trade_mode:str, cache) -> (DataFrame, DataFrame, str):
     df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                              dropbox_cache=cache)
+    if len(df_train) < 10000:
+        raise Exception("Invalid data")
+
     hash = _create_hash(df_train )
     buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
                                                  time_frame=hours, factor=factor)
