@@ -1,0 +1,2 @@
+Features,Best Model,Best Model Name,Train Precision,Train Reward,Test Precision,Test Reward,Best Threshold
+"('macd_convergence_4h', 'adx_max_4h', 'psar', 'macd', 'pivot_ema_20_cross')","RandomForestClassifier(max_depth=7, max_features=None, random_state=42)",RandomForestClassifier,1.0,4,0.0,0,0.45

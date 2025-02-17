@@ -85,11 +85,13 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_proc
         {col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
     return df_train, eval_df_train
 
+def _create_hash(df):
+    return df.date.iloc[0] + df.date.iloc[-1]
 
-
-def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, factor, indicators, trade_mode, cache):
+def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, factor, indicators, trade_mode, cache) -> (DataFrame, DataFrame, str):
     df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                              dropbox_cache=cache)
+    hash = _create_hash(df_train )
     buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
                                                  time_frame=hours, factor=factor)
     trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
@@ -117,7 +119,7 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
     df_train = df[:int(len(df) * 0.95)]
     df_test = df[int(len(df) * 0.95):]
 
-    return df_train, df_test
+    return df_train, df_test, hash
 
 
 def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indicators, trade_type=TradeType.FX,
@@ -133,52 +135,40 @@ def train_symbols(markets, trainer, tiingo, deep_trainer, data_processor, indica
         best_buy_results = []
         best_sell_results = []
 
-        for hours in [6,7]:
-            for factor in [0.3,0.5]:
-                for combination_size in [3]:
-                    for quantile in [0.7,0.9]:
-                        for mix in [False]:
+        for fx in ["EURCHF"]:
+            for hours in [6]:
+                for factor in [2.2]:
+                    for combination_size in [4,5]:
+                        for quantile in [0.88]:
                             iteration = 100
                             evaluate_type = "prec"
-                            for use_importance in [True, False]:
-                                try:
-                                    print(f"Train for {hours} hours and factor {factor}")
+                            use_importance = True
+                            try:
+                                print(f"Train for {hours} hours and factor {factor} and quantille {quantile} combination {combination_size}")
 
-                                    df_train_global = pd.DataFrame()
-                                    df_test_global = pd.DataFrame()
+                                df_train_global,df_test_global, df_hash = create_data(tiingo, fx, trade_type, data_processor, trainer, hours, factor, indicators, "buy", cache)
 
-                                    #for fx in ["EURCHF", "EURGBP", "USDCHF", "EURUSD", "USDJPY"]:
-                                    for fx in ["EURCHF"]:
-                                        df_train,df_test = create_data(tiingo, fx, trade_type, data_processor, trainer, hours, factor, indicators, "buy", cache)
-                                        # Zusammenfügen der Daten
-                                        df_train_global = pd.concat([df_train_global, df_train], ignore_index=True)
-                                        df_test_global = pd.concat([df_test_global, df_test], ignore_index=True)
+                                best_buy_results = best_buy_results + deep_trainer.train(df_train_global, df_test_global, hours, quantile,
+                                                                                         iteration, evaluate_type,combination_size, use_importance)
 
-                                    if mix:
-                                        df_train_global = shuffle(df_train_global, random_state=42)
-                                    best_buy_results = best_buy_results + deep_trainer.train(df_train_global, df_test_global, hours, quantile,
-                                                                                             iteration, evaluate_type,combination_size, use_importance)
+                                for r in best_buy_results:
+                                    r.update({"factor": factor, "combination_size": combination_size,
+                                              "use_importance": use_importance})
 
-                                    for fx in ["EURCHF"]:
-                                        df_train, df_test = create_data(tiingo, fx, trade_type, data_processor, trainer,
-                                                                        hours, factor, indicators, "sell", cache)
-                                        # Zusammenfügen der Daten
-                                        df_train_global = pd.concat([df_train_global, df_train], ignore_index=True)
-                                        df_test_global = pd.concat([df_test_global, df_test], ignore_index=True)
-                                    if mix:
-                                        df_train_global = shuffle(df_train_global, random_state=42)
-                                    best_sell_results = best_sell_results + deep_trainer.train(df_train_global, df_test_global, hours, quantile,
-                                                                                             iteration, evaluate_type,combination_size,use_importance)
+                                df_train_global, df_test_global, df_hash = create_data(tiingo, fx, trade_type, data_processor, trainer,
+                                                                hours, factor, indicators, "sell", cache)
 
-                                    for r in best_buy_results:
-                                        r.update({"factor": factor, "combination_size":combination_size, "mix":mix , "use_importance":use_importance})
 
-                                    for r in best_sell_results:
-                                        r.update({"factor": factor, "combination_size": combination_size,"mix":mix,"use_importance":use_importance  })
+                                best_sell_results = best_sell_results + deep_trainer.train(df_train_global, df_test_global, hours, quantile,
+                                                                                         iteration, evaluate_type,combination_size,use_importance)
 
-                                except Exception as ex:
-                                    traceback_str = traceback.format_exc()
-                                    print(f"MainException: {ex} File:{traceback_str}")
+
+                                for r in best_sell_results:
+                                    r.update({"factor": factor, "combination_size": combination_size,"use_importance":use_importance  })
+
+                            except Exception as ex:
+                                traceback_str = traceback.format_exc()
+                                print(f"MainException: {ex} File:{traceback_str}")
 
         # Save and activate predictor
         # Initialize deep predictor
