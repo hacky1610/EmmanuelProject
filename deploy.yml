@@ -5,7 +5,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
-- DeepCombo
+- multi
 
 pool:
   vmImage: ubuntu-latest
