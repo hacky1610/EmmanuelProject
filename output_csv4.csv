@@ -1,3 +1,0 @@
-Features,Best Model,Best Model Name,Train Precision,Train Reward,Test Precision,Test Reward,Best Threshold
-"('macd_max', 'rsi_convergence', 'ema_20_channel', 'adx_max_4h')","RandomForestClassifier(bootstrap=False, max_depth=7, max_features='log2',
-                       min_samples_leaf=2, n_estimators=200, random_state=42)",RandomForestClassifier,1.0,4,0.5,0,0.45

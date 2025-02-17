@@ -25,18 +25,14 @@ class DeepPredictor(BasePredictor):
                  ):
         self._cache = cache
         self._viewer = viewer
-        self._buy_model = None
-        self._buy_model_id = ""
-        self._sell_model = None
-        self._sell_model_id = ""
-        self._buy_accuracy = 0.0
-        self._sell_accuracy = 0.0
-        self._buy_features = []
-        self._sell_features = []
-        self._buy_trading_hours = 4
-        self._sell_trading_hours = 4
-        self._buy_threshold = 0.5
-        self._sell_threshold = 0.5
+        self._model = None
+        self._model_id = ""
+        self._trade_mode = TradeAction.NONE
+
+        self._features = []
+        self._trading_hours = 4
+        self._threshold = 0.5
+        self._atr_factor = 0.0
         self._indicators = indicators
         if config is None:
             config = {}
@@ -45,125 +41,80 @@ class DeepPredictor(BasePredictor):
         self.setup(config)
 
     def setup(self, config: dict):
-        self._set_att(config, "_buy_accuracy")
-        self._set_att(config, "_sell_accuracy")
-        self._set_att(config, "_buy_model_id")
-        self._set_att(config, "_sell_model_id")
-        self._set_att(config, "_buy_features")
-        self._set_att(config, "_sell_features")
-        self._set_att(config, "_buy_trading_hours")
-        self._set_att(config, "_sell_trading_hours")
-        self._set_att(config, "_buy_threshold")
-        self._set_att(config, "_sell_threshold")
+        self._set_att(config, "_model_id")
+        self._set_att(config, "_features")
+        self._set_att(config, "_trading_hours")
+        self._set_att(config, "_threshold")
+        self._set_att(config, "_trade_mode")
+        self._set_att(config, "_atr_factor")
+
+
+
 
         super().setup(config)
 
     def get_config(self) -> Series:
         parent_c = super().get_config()
         my_conf = Series([
-            self._buy_accuracy,
-            self._sell_accuracy,
-            self._buy_model_id,
-            self._sell_model_id,
-            self._buy_features,
-            self._sell_features,
-            self._buy_trading_hours,
-            self._sell_trading_hours,
-            self._buy_threshold,
-            self._sell_threshold
+            self._model_id,
+            self._features,
+            self._trading_hours,
+            self._threshold,
+            self._trade_mode,
+            self._atr_factor
 
         ],
             index=[
-                "_buy_accuracy",
-                "_sell_accuracy",
-                "_buy_model_id",
-                "_sell_model_id",
-                "_buy_features",
-                "_sell_features",
-                "_buy_trading_hours",
-                "_sell_trading_hours",
-                "_buy_threshold",
-                "_sell_threshold",
+                "_model_id",
+                "_features",
+                "_trading_hours",
+                "_threshold",
+                "_trade_mode",
+                "_atr_factor"
             ])
         return pd.concat([parent_c, my_conf])
 
-    def set_model_buy(self, model):
-        self._buy_model = model
-        self._buy_model_id =f"{uuid.uuid4()}"
+    def set_model(self, model):
+        self._model = model
+        self._model_id = f"{uuid.uuid4()}"
 
-    def set_buy_validation(self, accuracy:float, trading_hours:int, threshold:float, features:List):
-        self._buy_accuracy = accuracy
-        self._buy_trading_hours = trading_hours
-        self._buy_threshold = threshold
-        self._buy_features = features
+    def set_model_params(self, trade_mode:str,  trading_hours:int, threshold:float, features:List, atr_factor:float):
+        self._trading_hours = trading_hours
+        self._threshold = threshold
+        self._features = features
+        self._trade_mode = trade_mode
+        self._atr_factor = atr_factor
 
-    def get_buy_trading_hours(self):
-        return self._buy_trading_hours
+    def get_trading_hours(self):
+        return self._trading_hours
 
-    def get_buy_threshold(self):
-        return self._buy_threshold
-
-    def get_sell_trading_hours(self):
-        return self._sell_trading_hours
-
-    def get_sell_threshold(self):
-        return self._sell_threshold
-
-    def set_model_sell(self, model):
-        self._sell_model = model
-        self._sell_model_id = f"{uuid.uuid4()}"
-
-    def set_sell_validation(self, accuracy: float,  trading_hours:int,threshold:float, features):
-        self._sell_accuracy = accuracy
-        self._sell_trading_hours = trading_hours
-        self._sell_threshold = threshold
-        self._sell_features = features
-
-    def is_good(self):
-        return self.is_good_buy() or self.is_good_sell()
-
-    def is_good_buy(self):
-        return self._buy_accuracy > 0.63
-
-    def is_good_sell(self):
-        return self._sell_accuracy > 0.63
+    def get_threshold(self):
+        return self._threshold
 
     def save(self):
-        self._cache.save_model_cache(self._buy_model, self._buy_model_id)
-        self._cache.save_model_cache(self._sell_model, self._sell_model_id)
+        self._cache.save_model_cache(self._model, self._model_id)
 
     def predict(self, df: DataFrame):
         actions = {}
 
 
-        if self._buy_model is not None:
-            for indicator_name in self._buy_features:
+        if self._model is not None:
+            for indicator_name in self._features:
                 action = self._indicators.predict_single(df, indicator_name)
                 actions[indicator_name] = action
             actions_df = DataFrame([actions])
-            actions_buy_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': 1, 'sell': -1})
-            probabilities = self._buy_model.predict_proba(actions_buy_df)
-            # Nehme die Wahrscheinlichkeit für die positive Klasse (1)
+
+            if self._trade_mode == TradeAction.BUY:
+                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
+            elif self._trade_mode == TradeAction.SELL:
+                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1})
+
+            probabilities = self._model.predict_proba(actions_df)
             positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
 
             # Vergleiche mit dem Threshold
-            if positive_prob >= self._buy_threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
-                return TradeAction.BUY
-
-
-        if self._sell_model is not None:
-            for indicator_name in self._sell_features:
-                action = self._indicators.predict_single(df, indicator_name)
-                actions[indicator_name] = action
-            actions_df = DataFrame([actions])
-            actions_sell_df = actions_df.replace({'none': -0.5, 'both': 1, 'buy': -1, 'sell': 1})
-            probabilities = self._sell_model.predict_proba(actions_sell_df)
-            # Nehme die Wahrscheinlichkeit für die positive Klasse (1)
-            positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
-
-            # Vergleiche mit dem Threshold
-            if positive_prob >= self._sell_threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
-                return TradeAction.SELL
+            if positive_prob >= self._threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
+                return  self._trade_mode
 
         return TradeAction.NONE
 
@@ -171,50 +122,7 @@ class DeepPredictor(BasePredictor):
         return list(set(l))
 
     def load_model(self):
-        self._buy_model = self._cache.load_model_cache(self._buy_model_id)
-        self._sell_model = self._cache.load_model_cache(self._sell_model_id)
-
-    @staticmethod
-    def _indicator_names_sets(best_indicators:List):
-
-        json_objs = []
-        to_skip = [Indicators.RSI30_70]
-
-        json_objs.append({
-            "_indicator_names": best_indicators
-        })
-
-        json_objs.append({
-            "_indicator_names": random.choices(best_indicators,k=5)
-        })
-
-        for i in range(4):
-            r = Indicators().get_random_indicator_names(min=1, max=1, skip=to_skip)
-            json_objs.append({
-                "_additional_indicators": r
-            })
-
-        for i in range(4):
-            names = Indicators().get_random_indicator_names(skip=to_skip)
-            json_objs.append({
-                "_indicator_names": names
-            })
-        return json_objs
-
-    @staticmethod
-    def _indicator_names_sets_by_combos(best_indicator_combos: List[List[str]]):
-
-        json_objs = []
-
-        for combo in best_indicator_combos:
-            json_objs.append({
-                "_indicator_names": combo
-            })
+        self._model = self._cache.load_model_cache(self._model_id)
 
 
-        return json_objs
-
-    @staticmethod
-    def get_training_sets(best_indicator_combs:List[List[str]]):
-        return BasePredictor._stop_limit_trainer() + BasePredictor._isl_trainer()
 

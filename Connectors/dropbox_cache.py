@@ -106,6 +106,9 @@ class DropBoxCache(BaseCache):
     def _get_simulations_path(self, name) -> str:
         return f"{self._get_train_folder()}/Simulations/{name}"
 
+    def _get_best_features_path(self, name) -> str:
+        return f"{self._get_train_folder()}/BestFeatures/{name}"
+
     def _get_train_folder(self):
 
         # Aktuelles Datum und Uhrzeit
@@ -152,6 +155,20 @@ class DropBoxCache(BaseCache):
         if res is not None:
             return pd.read_csv(io.StringIO(res), sep=",")
         return None
+
+    def best_features_exist(self, name: str):
+        return self.dropbox_servie.exists(self._get_best_features_path(name))
+
+    def save_best_features(self, data: [], name: str):
+        pickled_data = pickle.dumps(data)
+        self.dropbox_servie.upload_bytes(pickled_data, self._get_best_features_path(name))
+
+    def load_best_features(self, name: str):
+        res = self.dropbox_servie.load_bytes(self._get_best_features_path(name))
+        if res is not None:
+            pickled_data = res.content  # Dateiinhalt abrufen
+            return pickle.loads(pickled_data)  # Deserialisieren
+        return []
 
     def load_model_cache(self, name: str):
         res = self.dropbox_servie.load_bytes(self._get_model_cache_path(name))

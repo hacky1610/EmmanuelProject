@@ -39,11 +39,8 @@ only_one_position = False
 # region functions
 def init_data(ig: IG, ti: Tiingo):
     global symbol
-    markets = ig.get_markets_offline()
-    for m in markets:
-        symbol = m["symbol"]
-        if symbol != "USDCHF":
-            continue
+    for symbol in ["EURGBP", "USDCHF",  "AUDNZD", "USDSGD", "EURDKK", "EURNOK", "USDCNH", "CADCHF"]:
+
         try:
             print(f"Init {symbol}")
             ti.init_data(symbol, trade_type, days=3 * 365, suffix="mega")

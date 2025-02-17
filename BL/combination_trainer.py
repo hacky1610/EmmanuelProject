@@ -18,6 +18,8 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 from tqdm import tqdm
 from xgboost import XGBClassifier
 
+from Predictors.deep_predictor import DeepPredictor
+
 log_filename = f"best_feature_search_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
 
 # logging.basicConfig(
@@ -29,6 +31,14 @@ log_filename = f"best_feature_search_{datetime.datetime.now().strftime('%Y-%m-%d
 # )
 
 class CombinationTrainer:
+
+    def __init__(self, cache, indicators, predictor_store , test_mode):
+        self._cache = cache
+        self._indicators = indicators
+        self._predictor_store = predictor_store
+        self._target = "result"
+        self._test_mode =test_mode
+
 
     def _filter_features_by_vif_and_precision(self, df, y, model, vif_threshold=5.0, cv_folds=5):
         """
@@ -90,10 +100,10 @@ class CombinationTrainer:
 
         return df_filtered
 
-    def _predict(self, df:DataFrame, target:str, features:List[str], model:object, threshold:float) -> (float, int):
+    def _predict(self, df:DataFrame, features:List[str], model:object, threshold:float) -> (float, int):
 
         X_test = df[list(features)]
-        y_test = df[target]
+        y_test = df[self._target]
 
         y_prob_test = model.predict_proba(X_test)[:, 1]
         y_pred_test = (y_prob_test >= threshold).astype(int)
@@ -105,11 +115,11 @@ class CombinationTrainer:
 
         return test_precision, test_reward
 
-    def _predict_dynamic_threshold(self, df: DataFrame, target: str, features: List[str], model: object) -> (
+    def _predict_dynamic_threshold(self, df: DataFrame, features: List[str], model: object) -> (
     float, int, float):
 
         X_train = df[list(features)]
-        y_train = df[target]
+        y_train = df[self._target]
         # Wahrscheinlichkeiten statt harte Vorhersagen
         y_prob_train = model.predict_proba(X_train)[:, 1]
 
@@ -133,15 +143,8 @@ class CombinationTrainer:
 
         return best_local_precision, reward, best_local_threshold
 
-    def _best_feature_pair_by_reward(self, df, target, num_features, min_prec=0.66, test_size=0.2, n_iter=5, do_test=True):
-
-        if do_test:
-            train_df, test_df = train_test_split(df, test_size=test_size, random_state=42)
-        else:
-            train_df = df
-
-        # 🟢 2. Modell-Parameter für RandomizedSearch
-        param_grid_rf = {
+    def _get_random_forest_params(self) -> dict:
+        return  {
                 'n_estimators': [50, 100, 200, 500],  # Anzahl der Bäume
                 'max_depth': [3, 5, 7, 10, None],  # Maximale Tiefe der Bäume
                 'min_samples_split': [2, 5, 10, 20],  # Mindestanzahl von Samples für Split
@@ -152,45 +155,47 @@ class CombinationTrainer:
                 'class_weight': ['balanced', 'balanced_subsample', None]  # Gewichtung für unbalancierte Klassen
         }
 
-        import warnings
-        warnings.filterwarnings("ignore", category=UserWarning)
-        warnings.filterwarnings("ignore", category=RuntimeWarning)
-        warnings.filterwarnings("ignore", category=UndefinedMetricWarning, module="sklearn.metrics._classification")
+    def _save_predictor(self,symbol:str, trade_mode:str, trading_hours:int,best_threshold:float, features:List, atr_factor:float, model):
+        if self._test_mode:
+            return
+        ##Save
+        dp = DeepPredictor(symbol=symbol, cache=self._cache,
+                           indicators=self._indicators, config={})
+        dp.set_model_params(trade_mode=trade_mode, trading_hours=trading_hours,
+                            threshold=best_threshold, features=list(features),
+                            atr_factor=atr_factor)
+        dp.set_model(model)
+        dp.save()
+        self._predictor_store.save(dp)
 
+    def  _best_feature_pair_by_reward(self, df:DataFrame, symbol:str,
+                                      trading_hours:int, trade_mode:str,
+                                      num_features:int,  atr_factor:float, min_prec:float,
+                                      n_iter=5):
 
-        feature_cols = [col for col in train_df.columns if col != target]
+        if self._test_mode:
+            train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+        else:
+            train_df = df
 
-        combos = list(combinations(feature_cols, num_features))
-        random.shuffle(combos)
         results = []
-
-        for features in tqdm(combos):
+        combos = self._get_combos(num_features, train_df)
+        total = len(combos)
+        last_shown = -1
+        for i, features in enumerate(combos):
             try:
-                model_rf = RandomForestClassifier(random_state=42)
+                percent = int((i / total) * 100)  # Berechne das Prozent als Ganzzahl
+                if percent != last_shown:  # Nur ausgeben, wenn sich der Prozentwert ändert
+                    last_shown = percent
+                    print(f"Progress: {percent}%")
 
-                search_rf = RandomizedSearchCV(model_rf, param_distributions=param_grid_rf, n_iter=n_iter,
-                                               scoring='precision', cv=3, n_jobs=12)
+                best_model_candidate = self._train_combo(df, features, n_iter)
 
-                X_train = df[list(features)]
-                y_train = df[target]
-                logging.getLogger("sklearn").setLevel(logging.ERROR)
-                # Warnungen global unterdrücken
-                warnings.simplefilter("ignore", UndefinedMetricWarning)
-
-                # Environment-Variable setzen, damit subprocesses sie erben
-                os.environ["PYTHONWARNINGS"] = "ignore"
-                search_rf.fit(X_train, y_train)
-
-
-                best_model_candidate = search_rf.best_estimator_
-
-
-                train_precision, train_reward, best_threshold = self._predict_dynamic_threshold(train_df, target, features, best_model_candidate)
-                if do_test:
-                    test_precision, test_reward = self._predict(test_df, target, features, best_model_candidate, best_threshold)
+                train_precision, train_reward, best_threshold = self._predict_dynamic_threshold(train_df,  features, best_model_candidate)
+                if self._test_mode:
+                    test_precision, test_reward = self._predict(test_df,features, best_model_candidate, best_threshold)
                 else:
                     test_precision, test_reward = 0,0
-
 
                 # Mindestbedingungen prüfen
                 if train_precision >= min_prec:
@@ -208,8 +213,11 @@ class CombinationTrainer:
                     result_df = pandas.DataFrame(results)
                     mean = result_df["Test Reward"].mean()
                     sum = result_df["Test Reward"].sum()
-                    print(
-                            f"Best Threshold: {best_threshold:.2f}, Precision: {train_precision:.4f}, Reward: {train_reward} Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} Features: {features} {best_model_candidate.__class__.__name__}")
+                    print(f"Best Threshold: {best_threshold:.2f}, Precision: {train_precision:.4f}, Reward: {train_reward} Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} Features: {features} {best_model_candidate.__class__.__name__}")
+
+                    self._save_predictor(symbol=symbol, atr_factor=atr_factor,
+                                         features=features,trade_mode=trade_mode,
+                                         trading_hours=trading_hours,model=best_model_candidate, best_threshold=best_threshold)
             except Exception as e:
                 traceback_str = traceback.format_exc()
                 print(f"Error: {e} with {features} {traceback_str}")
@@ -220,6 +228,34 @@ class CombinationTrainer:
         return {
 
         }
+
+    def _train_combo(self, df, features, n_iter):
+        import warnings
+        warnings.filterwarnings("ignore", category=UserWarning)
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        warnings.filterwarnings("ignore", category=UndefinedMetricWarning, module="sklearn.metrics._classification")
+
+        model_rf = RandomForestClassifier(random_state=42)
+        search_rf = RandomizedSearchCV(model_rf,
+                                       param_distributions=self._get_random_forest_params(),
+                                       n_iter=n_iter,
+                                       scoring='precision', cv=3, n_jobs=5)
+        X_train = df[list(features)]
+        y_train = df[self._target]
+        logging.getLogger("sklearn").setLevel(logging.ERROR)
+        # Warnungen global unterdrücken
+        warnings.simplefilter("ignore", UndefinedMetricWarning)
+        # Environment-Variable setzen, damit subprocesses sie erben
+        os.environ["PYTHONWARNINGS"] = "ignore"
+        search_rf.fit(X_train, y_train)
+        best_model_candidate = search_rf.best_estimator_
+        return best_model_candidate
+
+    def _get_combos(self, num_features, train_df):
+        feature_cols = [col for col in train_df.columns if col != self._target]
+        combos = list(combinations(feature_cols, num_features))
+        random.shuffle(combos)
+        return combos
 
     def feature_importance_xgboost(self, df, target):
         """
@@ -249,23 +285,40 @@ class CombinationTrainer:
 
         return importance_df
 
-    def train(self, df, target, num_features, quantile=0.75):
-        # Initialisiere das Modell
-        model = RandomForestClassifier()
+    def _prepare_df(self, df:DataFrame, symbol:str, trading_hours:int, atr_factor:float) -> DataFrame:
+        path = f"{symbol}_{atr_factor}_{trading_hours}"
+        y = df[self._target]
 
-        # Features und Zielvariable extrahieren
-        X = df.drop(columns=[target])
-        y = df[target]
+        if not self._cache.best_features_exist(path):
+            # Initialisiere das Modell
+            model = RandomForestClassifier()
 
-        # Features bereinigen
-        cleaned_df = self._filter_features_by_vif_and_precision(X, y, model)
-        df = df[cleaned_df.columns]
-        df[target] = y
+            # Features und Zielvariable extrahieren
+            X = df.drop(columns=[self._target])
 
-        # Auswahl der besten Features pro Kategorie # Berechnung der Feature Importance mit RandomForest
-        importance_df = self.feature_importance_xgboost(df, target)
-        df = df[importance_df.nlargest(30, columns=["Importance"])["Feature"].to_list()]
-        df[target] = y
-        best_combination = self._best_feature_pair_by_reward(df, target,num_features , min_prec=quantile)
+            # Features bereinigen
+            cleaned_df = self._filter_features_by_vif_and_precision(X, y, model)
+            df = df[cleaned_df.columns]
+            df[self._target] = y
+
+            # Auswahl der besten Features pro Kategorie # Berechnung der Feature Importance mit RandomForest
+            importance_df = self.feature_importance_xgboost(df, self._target)
+            best_features = importance_df.nlargest(30, columns=["Importance"])["Feature"].to_list()
+            self._cache.save_best_features(best_features, path)
+        else:
+            best_features = self._cache.load_best_features(path)
+        df = df[best_features]
+
+        df[self._target] = y
+        return df
+
+    def train(self, df, trading_hours:int,  num_features:int,
+              trading_mode:str, symbol:str,
+              min_prec:float, atr_factor:float):
+
+        best_combination = self._best_feature_pair_by_reward(df=self._prepare_df(df,symbol, trading_hours, atr_factor), symbol=symbol
+                                                             ,num_features=num_features ,
+                                                             min_prec=min_prec, trade_mode=trading_mode,
+                                                             trading_hours=trading_hours, atr_factor=atr_factor)
         print(best_combination)
         return

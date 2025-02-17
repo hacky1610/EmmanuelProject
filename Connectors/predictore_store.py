@@ -13,11 +13,9 @@ class PredictorStore:
 
     def __init__(self, db: Database):
 
-        self._collection = db["Predictors_Deep_V1"]
+        self._collection = db["Predictors_Combo"]
 
     def save(self, predictor: BasePredictor, overwrite: bool = True):
-        if predictor.is_active():
-            self._collection.update_many({"_symbol": predictor.get_symbol()}, {"$set":{"_active": False}})
 
         if self._collection.find_one({"_id": predictor.get_id()}) and overwrite:
             self._collection.update_one({"_id": predictor.get_id()}, {"$set": predictor.get_save_data()})
@@ -38,6 +36,7 @@ class PredictorStore:
         if d == None:
             return {}
         return d
+
 
     def load_active_by_id(self, predictor_id:str):
         d = self._collection.find_one({"_id": ObjectId(predictor_id)})

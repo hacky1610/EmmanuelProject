@@ -199,24 +199,50 @@ class Trader:
                 #self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
                 self._ig.manual_close_after_time(item, self._deal_storage, self._predictor_store)
 
+    def _get_predictors(self, symbol:str, indicators) -> List[DeepPredictor]:
+        predictors = []
+
+        for predictor_data in self._predictor_store.load_all_by_symbol(symbol):
+            predictor = DeepPredictor(symbol=symbol, tracer=self._tracer, indicators=indicators, cache=self._cache)
+            predictor.setup(predictor_data)
+            predictors.append(predictor)
+        return predictors
+
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
         self._tracer.set_prefix(symbol_)
         indicators.reset_caches()
         self._tracer.debug(f"Try to trade {symbol_}")
-        predictor = DeepPredictor(symbol=symbol_, tracer=self._tracer, indicators=indicators, cache=self._cache)
-        predictor.setup(self._predictor_store.load_active_by_symbol(symbol_))
-        self.trade(
-            predictor=predictor,
-            config=TradeConfig(
-                symbol=symbol_,
-                epic=market["epic"],
-                spread=market["spread"],
-                scaling=market["scaling"],
-                trade_type=TradeType.FX,
-                size=market["size"],
-                currency=market["currency"])
-        )
+
+        predictors = self._get_predictors(symbol_, indicators)
+        if len(predictors) == 0:
+            return
+
+        trade_df = self._tiingo.load_trade_data(symbol=symbol_, dp=self._dataprocessor,
+                                                trade_type=TradeType.FX)
+
+        if len(trade_df) == 0:
+            self._tracer.error(f"Could not load train data for {symbol_}")
+            return TradeResult.ERROR
+
+        open_deals = self._deal_storage.get_open_deals_by_ticker(symbol_)
+        if len(open_deals) >= 10:
+            self._tracer.debug(f"there are already 2 open position of {symbol_}")
+            return TradeResult.ERROR
+
+        for predictor in predictors:
+            self.trade(
+                predictor=predictor,
+                trade_df=trade_df,
+                config=TradeConfig(
+                    symbol=symbol_,
+                    epic=market["epic"],
+                    spread=market["spread"],
+                    scaling=market["scaling"],
+                    trade_type=TradeType.FX,
+                    size=market["size"],
+                    currency=market["currency"])
+            )
 
     @staticmethod
     def _evalutaion_up_to_date(last_scan_time):
@@ -267,7 +293,8 @@ class Trader:
 
     def trade(self,
               predictor: DeepPredictor,
-              config: TradeConfig) -> TradeResult:
+              config: TradeConfig,
+              trade_df:DataFrame) -> TradeResult:
         """Führt den Handel für ein bestimmtes Symbol und einen Predictor durch.
 
                 Args:
@@ -283,22 +310,6 @@ class Trader:
         #     return TradeResult.NOACTION
 
 
-        if not predictor.is_good():
-            self._tracer.debug(f"{config.symbol}")
-            return TradeResult.ERROR
-
-        open_deals = self._deal_storage.get_open_deals_by_ticker(config.symbol)
-        if len(open_deals) >= 10:
-            self._tracer.debug(f"there are already 2 open position of {config.symbol}")
-            return TradeResult.ERROR
-
-
-        trade_df = self._tiingo.load_trade_data(symbol=config.symbol, dp=self._dataprocessor,
-                                                trade_type=config.trade_type)
-
-        if len(trade_df) == 0:
-            self._tracer.error(f"Could not load train data for {config.symbol}")
-            return TradeResult.ERROR
 
         self._tracer.debug(f"{config.symbol} valid to predict")
         predictor.load_model()

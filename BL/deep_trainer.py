@@ -264,8 +264,7 @@ class DeepTrainer:
         # Suppress warnings
         warnings.filterwarnings("ignore")
 
-        ct = CombinationTrainer()
-        ct.train(df_train, "result", combination_size, quantile)
+
         return []
 
 
