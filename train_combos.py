@@ -1,9 +1,6 @@
 # region import
 import os
-import random
 import traceback
-from datetime import datetime
-from sklearn.utils import shuffle
 import dropbox
 import pymongo
 import pandas as pd
@@ -12,7 +9,6 @@ from BL.analytics import Analytics
 from BL.combination_trainer import CombinationTrainer
 from BL.data_processor import DataProcessor
 from BL.datatypes import TradeAction
-from BL.deep_trainer import DeepTrainer
 from BL.indicators import Indicators
 from BL.utils import ConfigReader, EnvReader
 from Connectors.IG import IG
@@ -23,7 +19,6 @@ from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.matrix_trainer import MatrixTrainer
-from Predictors.deep_predictor import DeepPredictor
 from Predictors.utils import Reporting
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
@@ -64,7 +59,6 @@ _dp = DataProcessor()
 _trade_type = TradeType.FX
 _indicators = Indicators()
 _reporting = Reporting(predictor_store=predictor_store)
-_deep_trainer = DeepTrainer()
 
 
 # endregion
@@ -93,7 +87,7 @@ def _create_hash(df):
 def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, factor, indicators, trade_mode:str, cache) -> (DataFrame, DataFrame, str):
     df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                              dropbox_cache=cache)
-    if len(df_train) < 10000:
+    if len(df_train) < 9000:
         raise Exception("Invalid data")
 
     hash = _create_hash(df_train )
@@ -124,15 +118,15 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
     return df, hash
 
 
-def train_symbols(markets, trainer, cache, tiingo, deep_trainer, data_processor, indicators, trade_type=TradeType.FX,
+def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
     indicators.reset_caches()
 
     # General configuration and data processing
     for fx,factor in [("EURCHF", 2.2),
-                      ("EURGPB",1.6)]:
+                      ("EURGBP",1.6)]:
 
-        if len(predictor_store.load_all_by_symbol(fx)) > 10:
+        if predictor_store.count_of_all_by_symbol(fx) > 10:
             print("Enough training data to train")
             continue
 
@@ -144,7 +138,7 @@ def train_symbols(markets, trainer, cache, tiingo, deep_trainer, data_processor,
                                 predictor_store=predictor_store,
                                 test_mode=False)
         try:
-            print(f"Train for {hours} hours and factor {factor} and quantille {quantile} combination {combination_size}")
+            print(f"Train {fx} for {hours} hours and factor {factor} and quantille {quantile} combination {combination_size}")
 
             for trade_action in [TradeAction.BUY, TradeAction.SELL]:
                 df_train_global, df_hash = create_data(tiingo, fx,
@@ -174,7 +168,6 @@ while True:
                       data_processor=_dp,
                       indicators=_indicators,
                       tracer=_tracer,
-                      deep_trainer=_deep_trainer,
                       cache= _cache)
     except Exception as ex:
         traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
