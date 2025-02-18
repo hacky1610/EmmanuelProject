@@ -123,8 +123,8 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
     indicators.reset_caches()
 
     # General configuration and data processing
-    for fx,factor in [("EURCHF", 2.2),
-                      ("EURGBP",1.6)]:
+    for fx,factor, hours in [("EURCHF", 2.0, 16),
+                      ("EURGBP",2.0, 16)]:
 
         if predictor_store.count_of_all_by_symbol(fx) > 10:
             print("Enough training data to train")
@@ -132,7 +132,6 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
 
         combination_size = 4
         quantile = 0.88
-        hours = 6
         ct = CombinationTrainer(cache=cache,
                                 indicators=indicators,
                                 predictor_store=predictor_store,
