@@ -131,6 +131,11 @@ def train_symbols(markets, trainer, cache, tiingo, deep_trainer, data_processor,
     # General configuration and data processing
     for fx,factor in [("EURCHF", 2.2),
                       ("EURGPB",1.6)]:
+
+        if len(predictor_store.load_all_by_symbol(fx)) > 10:
+            print("Enough training data to train")
+            continue
+
         combination_size = 4
         quantile = 0.88
         hours = 6
