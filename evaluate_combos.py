@@ -126,7 +126,7 @@ def train_symbols(markets, trainer, cache, tiingo, deep_trainer, data_processor,
     indicators.reset_caches()
 
     # General configuration and data processing
-    for fx in ["EURGBP", "USDCHF", "EURCHF", "AUDNZD", "USDSGD", "EURDKK", "EURNOK", "USDCNH", "CADCHF"]:
+    for fx in ["USDCHF", "AUDNZD", "USDSGD", "EURDKK", "EURNOK", "USDCNH", "CADCHF"]:
         for hours in [6]:
             for factor in [1.6, 2.2]:
                 combination_size = 4

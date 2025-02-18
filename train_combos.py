@@ -129,11 +129,11 @@ def train_symbols(markets, trainer, cache, tiingo, deep_trainer, data_processor,
     indicators.reset_caches()
 
     # General configuration and data processing
-    for fx in ["EURCHF"]:
+    for fx,factor in [("EURCHF", 2.2),
+                      ("EURGPB",1.6)]:
         combination_size = 4
         quantile = 0.88
         hours = 6
-        factor = 2.2
         ct = CombinationTrainer(cache=cache,
                                 indicators=indicators,
                                 predictor_store=predictor_store,
