@@ -120,14 +120,14 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
     indicators.reset_caches()
 
     # General configuration and data processing
-    for fx in ["USDCHF", "AUDNZD", "USDSGD", "EURDKK", "EURNOK", "USDCNH", "CADCHF"]:
+    for fx in ["EURCHF","USDCHF", "AUDNZD", "USDSGD", "EURDKK", "EURNOK", "USDCNH", "CADCHF"]:
 
-        if predictor_store.count_of_all_by_symbol(fx) > 15:
+        if predictor_store.count_of_all_by_symbol(fx) > 40:
             print("Enough training data to train")
             continue
 
-        for hours in [6]:
-            for factor in [1.6, 2.2]:
+        for hours in [16]:
+            for factor in [2.0]:
                 combination_size = 4
                 quantile = 0.88
                 ct = CombinationTrainer(cache=cache,
