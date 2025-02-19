@@ -171,7 +171,7 @@ class CombinationTrainer:
     def  _best_feature_pair_by_reward(self, df:DataFrame, symbol:str,
                                       trading_hours:int, trade_mode:str,
                                       num_features:int,  atr_factor:float, min_prec:float,
-                                      n_iter=5):
+                                      n_iter=5,):
 
         if self._test_mode:
             train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -213,7 +213,7 @@ class CombinationTrainer:
                     result_df = pandas.DataFrame(results)
                     mean = result_df["Test Reward"].mean()
                     sum = result_df["Test Reward"].sum()
-                    print(f"Best Threshold: {best_threshold:.2f}, Precision: {train_precision:.4f}, Reward: {train_reward} Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} Features: {features} {best_model_candidate.__class__.__name__}")
+                    print(f"{symbol} Best Threshold: {best_threshold:.2f}, Precision: {train_precision:.4f}, Reward: {train_reward} Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} Features: {features} {best_model_candidate.__class__.__name__}")
 
                     self._save_predictor(symbol=symbol, atr_factor=atr_factor,
                                          features=features,trade_mode=trade_mode,
@@ -255,7 +255,10 @@ class CombinationTrainer:
         feature_cols = [col for col in train_df.columns if col != self._target]
         combos = list(combinations(feature_cols, num_features))
         random.shuffle(combos)
-        return combos
+
+        # Kürze die Liste auf 20 % der ursprünglichen Länge
+        reduced_size = max(1, int(len(combos) * 0.2))  # Mindestens 1 Element behalten
+        return combos[:reduced_size]
 
     def feature_importance_xgboost(self, df, target):
         """
@@ -316,7 +319,8 @@ class CombinationTrainer:
               trading_mode:str, symbol:str,
               min_prec:float, atr_factor:float):
 
-        best_combination = self._best_feature_pair_by_reward(df=self._prepare_df(df,symbol, trading_hours, atr_factor), symbol=symbol
+        best_combination = self._best_feature_pair_by_reward(df=self._prepare_df(df,symbol, trading_hours, atr_factor),
+                                                             symbol=symbol
                                                              ,num_features=num_features ,
                                                              min_prec=min_prec, trade_mode=trading_mode,
                                                              trading_hours=trading_hours, atr_factor=atr_factor)
