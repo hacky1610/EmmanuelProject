@@ -1,5 +1,6 @@
 # region import
 import os
+import random
 import traceback
 import dropbox
 import pymongo
@@ -121,12 +122,19 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
 def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
     indicators.reset_caches()
+    list_fx = [
+                        ("USDCHF",2.0, 16),
+                        ("EURCHF", 2.0, 16),
+                        ("EURGBP",2.0, 16),
+                        ("AUDNZD", 2.0, 16)
+    ]
+
+    random.shuffle(list_fx)
 
     # General configuration and data processing
-    for fx,factor, hours in [("EURCHF", 2.0, 16),
-                      ("EURGBP",2.0, 16)]:
+    for fx,factor, hours in list_fx:
 
-        if predictor_store.count_of_all_by_symbol(fx) > 10:
+        if predictor_store.count_of_all_by_symbol(fx) > 50:
             print("Enough training data to train")
             continue
 
