@@ -126,7 +126,7 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
     for fx,factor, hours in [("EURCHF", 2.0, 16),
                       ("EURGBP",2.0, 16)]:
 
-        if predictor_store.count_of_all_by_symbol(fx) > 10:
+        if predictor_store.count_of_all_by_symbol(fx) > 40:
             print("Enough training data to train")
             continue
 
