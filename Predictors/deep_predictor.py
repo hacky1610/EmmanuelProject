@@ -1,3 +1,4 @@
+import datetime
 import random
 from typing import List
 
@@ -33,6 +34,7 @@ class DeepPredictor(BasePredictor):
         self._trading_hours = 4
         self._threshold = 0.5
         self._atr_factor = 0.0
+        self._training_time = None
         self._indicators = indicators
         if config is None:
             config = {}
@@ -47,6 +49,7 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_threshold")
         self._set_att(config, "_trade_mode")
         self._set_att(config, "_atr_factor")
+        self._set_att(config, "_training_time")
 
 
 
@@ -61,7 +64,8 @@ class DeepPredictor(BasePredictor):
             self._trading_hours,
             self._threshold,
             self._trade_mode,
-            self._atr_factor
+            self._atr_factor,
+            self._training_time
 
         ],
             index=[
@@ -70,7 +74,8 @@ class DeepPredictor(BasePredictor):
                 "_trading_hours",
                 "_threshold",
                 "_trade_mode",
-                "_atr_factor"
+                "_atr_factor",
+                "_training_time"
             ])
         return pd.concat([parent_c, my_conf])
 
@@ -84,6 +89,7 @@ class DeepPredictor(BasePredictor):
         self._features = features
         self._trade_mode = trade_mode
         self._atr_factor = atr_factor
+        self._training_time = datetime.datetime.now()
 
     def get_trading_hours(self) -> int:
         return self._trading_hours
