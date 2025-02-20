@@ -120,7 +120,7 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
     indicators.reset_caches()
 
     # General configuration and data processing
-    for fx in ["USDSGD", "EURDKK", "EURNOK", "USDCNH", "CADCHF"]:
+    for fx in ["EURDKK", "EURNOK", "USDCNH", "CADCHF"]:
 
         if predictor_store.count_of_all_by_symbol(fx) > 40:
             print("Enough training data to train")
