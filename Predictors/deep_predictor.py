@@ -1,10 +1,8 @@
 import datetime
-import random
+import pickle
 from typing import List
-
 import pandas as pd
-
-from BL.indicators import Indicators
+from BL import measure_time
 from Predictors.base_predictor import BasePredictor
 from pandas import Series, DataFrame
 from Tracing.Tracer import Tracer
@@ -28,6 +26,7 @@ class DeepPredictor(BasePredictor):
         self._viewer = viewer
         self._model = None
         self._model_id = ""
+        self._model_data = None
         self._trade_mode = TradeAction.NONE
 
         self._features = []
@@ -50,7 +49,7 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_trade_mode")
         self._set_att(config, "_atr_factor")
         self._set_att(config, "_training_time")
-
+        self._set_att(config, "_model_data")
 
 
 
@@ -65,7 +64,8 @@ class DeepPredictor(BasePredictor):
             self._threshold,
             self._trade_mode,
             self._atr_factor,
-            self._training_time
+            self._training_time,
+            self._model_data
 
         ],
             index=[
@@ -75,13 +75,18 @@ class DeepPredictor(BasePredictor):
                 "_threshold",
                 "_trade_mode",
                 "_atr_factor",
-                "_training_time"
+                "_training_time",
+                "_model_data"
             ])
         return pd.concat([parent_c, my_conf])
 
     def set_model(self, model):
         self._model = model
-        self._model_id = f"{uuid.uuid4()}"
+        self._model_data = pickle.dumps(model)
+
+    def convert(self):
+        if self._model_data is None:
+            self._model_data = pickle.dumps(self._model)
 
     def set_model_params(self, trade_mode:str,  trading_hours:int, threshold:float, features:List, atr_factor:float):
         self._trading_hours = trading_hours
@@ -103,22 +108,15 @@ class DeepPredictor(BasePredictor):
     def save(self):
         self._cache.save_model_cache(self._model, self._model_id)
 
-    def predict(self, df: DataFrame):
-        actions = {}
+    def predict(self, buy_actions_df: DataFrame, sell_actions_df: DataFrame):
 
+        if self._trade_mode == TradeAction.BUY:
+            actions_df = buy_actions_df
+        else:
+            actions_df = sell_actions_df
 
         if self._model is not None:
-            for indicator_name in self._features:
-                action = self._indicators.predict_single(df, indicator_name)
-                actions[indicator_name] = action
-            actions_df = DataFrame([actions])
-
-            if self._trade_mode == TradeAction.BUY:
-                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
-            elif self._trade_mode == TradeAction.SELL:
-                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1})
-
-            probabilities = self._model.predict_proba(actions_df)
+            probabilities = self._model.predict_proba(actions_df[self._features])
             positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
 
             # Vergleiche mit dem Threshold
@@ -130,8 +128,12 @@ class DeepPredictor(BasePredictor):
     def _clean_list(self, l):
         return list(set(l))
 
+    @measure_time
     def load_model(self):
-        self._model = self._cache.load_model_cache(self._model_id)
+        if self._model_data == None:
+            self._model = self._cache.load_model_cache(self._model_id)
+        else:
+            self._model = pickle.loads(self._model_data)
 
 
 

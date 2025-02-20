@@ -165,13 +165,12 @@ class CombinationTrainer:
                             threshold=best_threshold, features=list(features),
                             atr_factor=atr_factor)
         dp.set_model(model)
-        dp.save()
         self._predictor_store.save(dp)
 
     def  _best_feature_pair_by_reward(self, df:DataFrame, symbol:str,
                                       trading_hours:int, trade_mode:str,
                                       num_features:int,  atr_factor:float, min_prec:float,
-                                      n_iter=5,):
+                                      n_iter=5):
 
         if self._test_mode:
             train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)

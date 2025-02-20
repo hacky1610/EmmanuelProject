@@ -127,7 +127,10 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
                         ("EURCHF", 2.0, 16),
                         ("EURGBP",2.0, 16),
                         ("AUDNZD", 2.0, 16),
-                        ("USDSGD", 2.0, 16)
+                        ("USDSGD", 2.0, 16),
+                        ("EURNOK", 2.0, 16),
+                        ("EURDKK", 2.0, 16),
+                        ("USDCNH", 2.0, 16)
     ]
 
     random.shuffle(list_fx)
@@ -135,7 +138,7 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
     # General configuration and data processing
     for fx,factor, hours in list_fx:
 
-        if predictor_store.count_of_all_by_symbol(fx) > 50:
+        if predictor_store.count_of_all_by_symbol(fx) > 400:
             print("Enough training data to train")
             continue
 
@@ -149,6 +152,10 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
             print(f"Train {fx} for {hours} hours and factor {factor} and quantille {quantile} combination {combination_size}")
 
             for trade_action in [TradeAction.BUY, TradeAction.SELL]:
+                if predictor_store.count_of_all_by_symbol_and_trade_mode(fx,trade_action ) > 200:
+                    print(f"Enough training data to train with trade action {trade_action}")
+                    continue
+
                 df_train_global, df_hash = create_data(tiingo, fx,
                                                        trade_type, data_processor,
                                                        trainer, hours,
