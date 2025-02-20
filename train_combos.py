@@ -127,7 +127,10 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
                         ("EURCHF", 2.0, 16),
                         ("EURGBP",2.0, 16),
                         ("AUDNZD", 2.0, 16),
-                        ("USDSGD", 2.0, 16)
+                        ("USDSGD", 2.0, 16),
+                        ("EURNOK", 2.0, 16),
+                        ("EURDKK", 2.0, 16),
+                        ("USDCNH", 2.0, 16)
     ]
 
     random.shuffle(list_fx)

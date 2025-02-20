@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from BL import  DataProcessor
+from BL import DataProcessor, measure_time
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
 from Connectors import IG
@@ -207,6 +207,7 @@ class Trader:
             predictors.append(predictor)
         return predictors
 
+    @measure_time
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
         self._tracer.set_prefix(symbol_)

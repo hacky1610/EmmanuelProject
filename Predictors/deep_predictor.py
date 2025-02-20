@@ -114,9 +114,11 @@ class DeepPredictor(BasePredictor):
             actions_df = DataFrame([actions])
 
             if self._trade_mode == TradeAction.BUY:
-                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
+                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0}).astype(int)
             elif self._trade_mode == TradeAction.SELL:
-                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1})
+                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1}).astype(int)
+            # Ensure correct data types after replacement
+            actions_df = actions_df.infer_objects(copy=False)
 
             probabilities = self._model.predict_proba(actions_df)
             positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
