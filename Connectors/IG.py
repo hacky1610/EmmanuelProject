@@ -461,7 +461,7 @@ class IG:
         positions = self.get_opened_positions()
         return positions[positions.epic == epic]
 
-    def get_transaction_history(self, days: int):
+    def get_transaction_history(self, days: int) -> DataFrame:
         df_list = []
         for i in range(days):
             transactions = self.ig_service.fetch_transaction_history(
@@ -472,7 +472,7 @@ class IG:
             )
             df_list.append(transactions)
 
-        df = pd.concat(df_list, ignore_index=True)
+        return pd.concat(df_list, ignore_index=True)
 
     def get_current_balance(self):
         balance = self.ig_service.fetch_accounts().loc[0].balance
