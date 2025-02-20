@@ -118,18 +118,10 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
 
 def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
-    indicators.reset_caches()
-
-    for p_data in predictor_store.load_all():
-        dp = DeepPredictor(symbol="", cache=cache,
-                           indicators=indicators, config={})
-        dp.setup(p_data)
-        dp.load_model()
-        dp.convert()
-        predictor_store.save(dp)
 
     # General configuration and data processing
     for fx in ["EURCHF", "CADCHF"]:
+        indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
         #    print("Enough training data to train")

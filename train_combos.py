@@ -121,7 +121,6 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
 
 def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
-    indicators.reset_caches()
     list_fx = [
                         ("USDCHF",2.0, 16),
                         ("EURCHF", 2.0, 16),
@@ -137,6 +136,7 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
 
     # General configuration and data processing
     for fx,factor, hours in list_fx:
+        indicators.reset_caches()
 
         if predictor_store.count_of_all_by_symbol(fx) > 400:
             print("Enough training data to train")
