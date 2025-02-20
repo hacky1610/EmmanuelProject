@@ -122,9 +122,9 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
     # General configuration and data processing
     for fx in ["EURCHF", "CADCHF"]:
 
-        if predictor_store.count_of_all_by_symbol(fx) > 40:
-            print("Enough training data to train")
-            continue
+        #if predictor_store.count_of_all_by_symbol(fx) > 40:
+        #    print("Enough training data to train")
+        #    continue
 
         for hours in [16]:
             for factor in [2.0]:

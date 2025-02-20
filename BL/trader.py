@@ -167,6 +167,7 @@ class Trader:
             profit = float(ig_deal["openLevel"]) - float(ig_deal["closeLevel"])
             return m.get_euro_value(profit, scaling)
 
+    @measure_time
     def trade_markets(self, trade_type: TradeType, indicators):
         """Führt den Handel für alle Märkte eines bestimmten Typs durch.
 
@@ -177,7 +178,8 @@ class Trader:
         currency_markets = IG.IG.get_markets_offline()
         for market in currency_markets:
             try:
-                self.trade_market(indicators, market)
+                if self.market_tradeble(market["symbol"]):
+                    self.trade_market(indicators, market)
             except Exception as EX:
                 self._tracer.error(f"Error while trading {market['symbol']} {EX}")
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
@@ -207,6 +209,9 @@ class Trader:
             predictors.append(predictor)
         return predictors
 
+    def market_tradeble(self, market:str):
+        return self._predictor_store.count_of_all_by_symbol(market) > 0
+
     @measure_time
     def trade_market(self, indicators, market):
         symbol_ = market["symbol"]
@@ -214,9 +219,7 @@ class Trader:
         indicators.reset_caches()
         self._tracer.debug(f"Try to trade {symbol_}")
 
-        predictors = self._get_predictors(symbol_, indicators)
-        if len(predictors) == 0:
-            return
+
 
         trade_df = self._tiingo.load_trade_data(symbol=symbol_, dp=self._dataprocessor,
                                                 trade_type=TradeType.FX)
@@ -229,11 +232,24 @@ class Trader:
         if len(open_deals) >= 10:
             self._tracer.debug(f"there are already 2 open position of {symbol_}")
             return TradeResult.ERROR
+        predictors = self._get_predictors(symbol_,indicators)
+        all_features = set(feature for d in predictors for feature in d._features)
+        actions = {}
+
+        for indicator_name in all_features:
+            action = indicators.predict_single(trade_df, indicator_name)
+            actions[indicator_name] = action
+        actions_df = DataFrame([actions])
+
+        buy_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0}).astype(int)
+        sell_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1}).astype(int)
 
         for predictor in predictors:
             self.trade(
                 predictor=predictor,
                 trade_df=trade_df,
+                buy_actions_df=buy_actions_df,
+                sell_actions_df=sell_actions_df,
                 config=TradeConfig(
                     symbol=symbol_,
                     epic=market["epic"],
@@ -294,7 +310,9 @@ class Trader:
     def trade(self,
               predictor: DeepPredictor,
               config: TradeConfig,
-              trade_df:DataFrame) -> TradeResult:
+              trade_df:DataFrame,
+              buy_actions_df:DataFrame,
+              sell_actions_df:DataFrame) -> TradeResult:
         """Führt den Handel für ein bestimmtes Symbol und einen Predictor durch.
 
                 Args:
@@ -306,7 +324,7 @@ class Trader:
                 """
         self._tracer.debug(f"{config.symbol} valid to predict")
         predictor.load_model()
-        signal = predictor.predict(trade_df)
+        signal = predictor.predict(buy_actions_df, sell_actions_df)
         market = self._market_store.get_market(config.symbol)
         stop = trade_df.ATR.iloc[-1] * predictor.get_atr_factor() * config.scaling
         limit = trade_df.ATR.iloc[-1] * predictor.get_atr_factor() * config.scaling

@@ -4,6 +4,7 @@ from typing import List
 
 import pandas as pd
 
+from BL import measure_time
 from BL.indicators import Indicators
 from Predictors.base_predictor import BasePredictor
 from pandas import Series, DataFrame
@@ -103,24 +104,15 @@ class DeepPredictor(BasePredictor):
     def save(self):
         self._cache.save_model_cache(self._model, self._model_id)
 
-    def predict(self, df: DataFrame):
-        actions = {}
+    def predict(self, buy_actions_df: DataFrame, sell_actions_df: DataFrame):
 
+        if self._trade_mode == TradeAction.BUY:
+            actions_df = buy_actions_df
+        else:
+            actions_df = sell_actions_df
 
         if self._model is not None:
-            for indicator_name in self._features:
-                action = self._indicators.predict_single(df, indicator_name)
-                actions[indicator_name] = action
-            actions_df = DataFrame([actions])
-
-            if self._trade_mode == TradeAction.BUY:
-                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0}).astype(int)
-            elif self._trade_mode == TradeAction.SELL:
-                actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1}).astype(int)
-            # Ensure correct data types after replacement
-            actions_df = actions_df.infer_objects(copy=False)
-
-            probabilities = self._model.predict_proba(actions_df)
+            probabilities = self._model.predict_proba(actions_df[self._features])
             positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
 
             # Vergleiche mit dem Threshold
@@ -132,6 +124,7 @@ class DeepPredictor(BasePredictor):
     def _clean_list(self, l):
         return list(set(l))
 
+    @measure_time
     def load_model(self):
         self._model = self._cache.load_model_cache(self._model_id)
 
