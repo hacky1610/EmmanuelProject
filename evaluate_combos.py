@@ -17,6 +17,7 @@ from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
+from Predictors.deep_predictor import DeepPredictor
 from Predictors.generic_predictor import GenericPredictor
 from Predictors.matrix_trainer import MatrixTrainer
 from Predictors.utils import Reporting
@@ -118,6 +119,14 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
 def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
     indicators.reset_caches()
+
+    for p_data in predictor_store.load_all():
+        dp = DeepPredictor(symbol="", cache=cache,
+                           indicators=indicators, config={})
+        dp.setup(p_data)
+        dp.load_model()
+        dp.convert()
+        predictor_store.save(dp)
 
     # General configuration and data processing
     for fx in ["EURCHF", "CADCHF"]:

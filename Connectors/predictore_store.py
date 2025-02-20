@@ -41,6 +41,9 @@ class PredictorStore:
     def load_all_by_symbol(self, symbol):
         return self._collection.find({"_symbol": symbol})
 
+    def load_all(self):
+        return self._collection.find({})
+
     def count_of_all_by_symbol(self, symbol) -> int:
         return len(list(self.load_all_by_symbol(symbol)))
 

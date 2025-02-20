@@ -165,7 +165,6 @@ class CombinationTrainer:
                             threshold=best_threshold, features=list(features),
                             atr_factor=atr_factor)
         dp.set_model(model)
-        dp.save()
         self._predictor_store.save(dp)
 
     def  _best_feature_pair_by_reward(self, df:DataFrame, symbol:str,
