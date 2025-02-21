@@ -22,7 +22,8 @@ class PredictorStore:
         alternative_query = {
             "_symbol": predictor.get_symbol(),
             "_features": {"$size": len(predictor._features), "$all": predictor._features},
-            "_trading_hours": predictor._trading_hours
+            "_trading_hours": predictor._trading_hours,
+            "_trade_mode": predictor._trade_mode
         }
 
         existing_record = self._collection.find_one(query)

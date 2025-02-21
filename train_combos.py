@@ -151,7 +151,7 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
         try:
             print(f"Train {fx} for {hours} hours and factor {factor} and quantille {quantile} combination {combination_size}")
 
-            for trade_action in [TradeAction.BUY, TradeAction.SELL]:
+            for trade_action in [ TradeAction.SELL,TradeAction.BUY]:
                 if predictor_store.count_of_all_by_symbol_and_trade_mode(fx,trade_action ) > 200:
                     print(f"Enough training data to train with trade action {trade_action}")
                     continue
