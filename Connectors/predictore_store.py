@@ -22,7 +22,8 @@ class PredictorStore:
         alternative_query = {
             "_symbol": predictor.get_symbol(),
             "_features": {"$size": len(predictor._features), "$all": predictor._features},
-            "_trading_hours": predictor._trading_hours
+            "_trading_hours": predictor._trading_hours,
+            "_trade_mode": predictor._trade_mode
         }
 
         existing_record = self._collection.find_one(query)
@@ -48,10 +49,11 @@ class PredictorStore:
         return self._collection.find({})
 
     def count_of_all_by_symbol(self, symbol) -> int:
-        return len(list(self.load_all_by_symbol(symbol)))
+        return self._collection.count_documents({"_symbol": symbol})
 
     def count_of_all_by_symbol_and_trade_mode(self, symbol, trade_mode) -> int:
-        return len(list(self.load_all_by_symbol_and_trade_mode(symbol,trade_mode)))
+        return self._collection.count_documents({"_symbol": symbol, "_trade_mode":trade_mode})
+
 
     def load_best_by_symbol(self, symbol):
         return self._collection.find({"_symbol": symbol}, sort=[('_reward', -1)])[0]
