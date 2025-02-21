@@ -49,10 +49,11 @@ class PredictorStore:
         return self._collection.find({})
 
     def count_of_all_by_symbol(self, symbol) -> int:
-        return len(list(self.load_all_by_symbol(symbol)))
+        return self._collection.count_documents({"_symbol": symbol})
 
     def count_of_all_by_symbol_and_trade_mode(self, symbol, trade_mode) -> int:
-        return len(list(self.load_all_by_symbol_and_trade_mode(symbol,trade_mode)))
+        return self._collection.count_documents({"_symbol": symbol, "_trade_mode":trade_mode})
+
 
     def load_best_by_symbol(self, symbol):
         return self._collection.find({"_symbol": symbol}, sort=[('_reward', -1)])[0]
