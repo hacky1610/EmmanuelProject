@@ -1,3 +1,6 @@
+import asyncio
+import concurrent.futures
+import os
 import traceback
 from enum import Enum
 from typing import List, NamedTuple
@@ -168,22 +171,29 @@ class Trader:
             return m.get_euro_value(profit, scaling)
 
     @measure_time
-    def trade_markets(self, trade_type: TradeType, indicators):
-        """Führt den Handel für alle Märkte eines bestimmten Typs durch.
+    async def trade_markets(self, trade_type: TradeType, indicators):
+        """Führt den Handel für alle Märkte eines bestimmten Typs asynchron durch,
+           aber begrenzt die Anzahl der gleichzeitig laufenden Threads auf die Anzahl der CPU-Kerne.
+        """
 
-               Args:
-                   trade_type (TradeType): Der Handelstyp.
-               """
         self._tracer.debug("Start")
         currency_markets = IG.IG.get_markets_offline()
-        for market in currency_markets:
+
+        max_workers = os.cpu_count() or 4  # Falls os.cpu_count() None zurückgibt, setze Standardwert 4
+        self._tracer.debug(f"Using max {max_workers} concurrent threads")
+
+        async def trade_single_market(market):
             try:
                 if self.market_tradeble(market["symbol"]):
-                    self.trade_market(indicators, market)
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                        loop = asyncio.get_running_loop()
+                        await loop.run_in_executor(executor, self.trade_market, indicators, market)
             except Exception as EX:
                 self._tracer.error(f"Error while trading {market['symbol']} {EX}")
-                traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+                traceback_str = traceback.format_exc()
                 self._tracer.error(f"Error: {EX} File:{traceback_str}")
+
+        await asyncio.gather(*(trade_single_market(market) for market in currency_markets))
 
         self._tracer.debug("End")
 
