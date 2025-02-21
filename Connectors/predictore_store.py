@@ -1,6 +1,6 @@
 import datetime
 from typing import List, Optional
-
+from collections import Counter
 from bson import ObjectId
 from pandas import DataFrame
 from pymongo.database import Database
@@ -53,6 +53,32 @@ class PredictorStore:
 
     def count_of_all_by_symbol_and_trade_mode(self, symbol, trade_mode) -> int:
         return self._collection.count_documents({"_symbol": symbol, "_trade_mode":trade_mode})
+
+    def get_most_used_features(self) -> List[str]:
+        features_list = []
+        for doc in self._collection.find({}, {"_features": 1}):
+            if "_features" in doc and isinstance(doc["_features"], list):
+                features_list.extend(doc["_features"])
+
+        # Feature-Häufigkeit berechnen
+        feature_counts = Counter(features_list)
+
+        # Ergebnisse ausgeben
+        print("Feature-Häufigkeiten:")
+        for feature, count in feature_counts.most_common():
+            print(f"{feature}: {count}")
+
+        # Top 33 % Features bestimmen
+        top_n = int(len(feature_counts) * 0.50)
+        top_features = feature_counts.most_common(top_n)
+
+        print("\nTop 33 % Features:")
+        for feature, count in top_features:
+            print(f"{feature}: {count}")
+
+        top_features_list = [feature for feature, _ in feature_counts.most_common(top_n)]
+
+        return top_features_list
 
 
     def load_best_by_symbol(self, symbol):

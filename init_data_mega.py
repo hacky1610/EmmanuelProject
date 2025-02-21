@@ -39,9 +39,10 @@ only_one_position = False
 # region functions
 def init_data(ig: IG, ti: Tiingo):
     global symbol
-    for symbol in ["USDCAD",  "GBPUSD", "AUDUSD", "NZDUSD"]:
+    for m in ig.get_markets_offline():
 
         try:
+            symbol = m["symbol"]
             print(f"Init {symbol}")
             ti.init_data(symbol, trade_type, days=3 * 365, suffix="mega")
         except Exception as e:

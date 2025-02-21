@@ -1,5 +1,6 @@
 # region import
 import os
+import random
 import traceback
 import dropbox
 import pymongo
@@ -120,12 +121,18 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
                   tracer=ConsoleTracer()):
 
     # General configuration and data processing
-    for fx in ["USDCAD"]:
+    markets = IG.get_markets_offline()
+    random.shuffle(markets)
+    for market in markets:
+        fx = market["symbol"]
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
         #    print("Enough training data to train")
         #    continue
+
+
+        best_features = predictor_store.get_most_used_features()
 
         for hours in [16]:
             for factor in [2.0]:
@@ -151,7 +158,8 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
                                  num_features=combination_size,
                                  trading_mode=trade_action,
                                  symbol=fx,
-                                 atr_factor=factor)
+                                 atr_factor=factor,
+                                 best_features=best_features)
 
                 except Exception as ex:
                     traceback_str = traceback.format_exc()
