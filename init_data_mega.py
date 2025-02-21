@@ -39,7 +39,7 @@ only_one_position = False
 # region functions
 def init_data(ig: IG, ti: Tiingo):
     global symbol
-    for symbol in ["EURUSD", "USDCAD",  "GBPUSD", "AUDUSD", "NZDUSD"]:
+    for symbol in ["USDCAD",  "GBPUSD", "AUDUSD", "NZDUSD"]:
 
         try:
             print(f"Init {symbol}")

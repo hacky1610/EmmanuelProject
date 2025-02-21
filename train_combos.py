@@ -129,7 +129,8 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
                         ("USDSGD", 2.0, 16),
                         ("EURNOK", 2.0, 16),
                         ("EURDKK", 2.0, 16),
-                        ("USDCNH", 2.0, 16)
+                        ("USDCNH", 2.0, 16),
+                        ("EURUSD", 2.0, 16)
     ]
 
     random.shuffle(list_fx)
@@ -138,7 +139,7 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
     for fx,factor, hours in list_fx:
         indicators.reset_caches()
 
-        if predictor_store.count_of_all_by_symbol(fx) > 400:
+        if predictor_store.count_of_all_by_symbol(fx) > 200:
             print("Enough training data to train")
             continue
 
