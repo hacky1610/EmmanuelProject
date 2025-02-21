@@ -120,7 +120,7 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
                   tracer=ConsoleTracer()):
 
     # General configuration and data processing
-    for fx in ["EURCHF", "CADCHF"]:
+    for fx in ["EURUSD"]:
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:

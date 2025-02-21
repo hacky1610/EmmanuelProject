@@ -1,3 +1,5 @@
+import asyncio
+
 import pymongo
 
 from BL.analytics import Analytics
@@ -61,6 +63,6 @@ trader = Trader(
     cache=cache
 )
 
-trader.trade_markets(TradeType.FX, indicators)
+asyncio.run(trader.trade_markets(TradeType.FX, indicators))
 
 
