@@ -138,7 +138,7 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
     # General configuration and data processing
     for fx,factor, hours in list_fx:
         indicators.reset_caches()
-
+        best_features = predictor_store.get_most_used_features()
         if predictor_store.count_of_all_by_symbol(fx) > 200:
             print("Enough training data to train")
             continue
@@ -169,7 +169,8 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
                          num_features=combination_size,
                          trading_mode=trade_action,
                          symbol=fx,
-                         atr_factor=factor)
+                         atr_factor=factor,
+                         best_features=best_features)
 
         except Exception as ex:
             traceback_str = traceback.format_exc()
