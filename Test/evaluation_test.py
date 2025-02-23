@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import MagicMock
+import pandas as pd
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
 from BL.eval_result import EvalResultCollection
@@ -22,11 +23,12 @@ class EvaluationTest(unittest.TestCase):
         self.predictor.predict = MagicMock(side_effect=self.predict_mock)
         self.predictor.get_stop_limit = MagicMock(return_value=(10,10))
 
-    def add_line(self, df: DataFrame, date, open, high, low, close, action=TradeAction.NONE):
-        return df.append(
-            Series([open, high, low, close, date, action],
-                   index=["open", "high", "low", "close", "date", "action"]),
-            ignore_index=True)
+    import pandas as pd
+
+    def add_line(self, df: pd.DataFrame, date, open, high, low, close, action=TradeAction.NONE):
+        new_row = pd.Series([open, high, low, close, date, action],
+                            index=["open", "high", "low", "close", "date", "action"])
+        return pd.concat([df, new_row.to_frame().T], ignore_index=True)
 
     def predict_mock(self, df):
         return df[-1:].action.item()
@@ -151,70 +153,94 @@ class EvaluationTest(unittest.TestCase):
         assert res.get_reward() == -30
 
     def test_evalresult_collection(self):
-
         d1 = DataFrame()
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1,10,"buy"]), ignore_index=True)
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[2,10,"buy"]), ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
 
         d2 = DataFrame()
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]), ignore_index=True)
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
-
-        result = EvalResultCollection.calc_combination([d1,d2])
-        assert len(result) == 2
-
-        d1 = DataFrame()
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]), ignore_index=True)
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
-
-        d2 = DataFrame()
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]), ignore_index=True)
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "both"]), ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
 
         result = EvalResultCollection.calc_combination([d1, d2])
         assert len(result) == 2
 
         d1 = DataFrame()
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
 
         d2 = DataFrame()
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]), ignore_index=True)
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[2, 10, "both"]).to_frame().T],
+                       ignore_index=True)
+
+        result = EvalResultCollection.calc_combination([d1, d2])
+        assert len(result) == 2
+
+        d1 = DataFrame()
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
+
+        d2 = DataFrame()
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
 
         result = EvalResultCollection.calc_combination([d1, d2])
 
         assert len(result) == 1
 
         d1 = DataFrame()
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "none"]), ignore_index=True)
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[1, 10, "none"]).to_frame().T],
+                       ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
 
         d2 = DataFrame()
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]), ignore_index=True)
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[1, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
 
         result = EvalResultCollection.calc_combination([d1, d2])
         assert len(result) == 1
 
         d1 = DataFrame()
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "none"]), ignore_index=True)
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]), ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[1, 10, "none"]).to_frame().T],
+                       ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[2, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
 
         d2 = DataFrame()
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[4, 10, "buy"]), ignore_index=True)
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[5, 10, "buy"]), ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[4, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[5, 10, "buy"]).to_frame().T],
+                       ignore_index=True)
 
         result = EvalResultCollection.calc_combination([d1, d2])
         assert len(result) == 0
 
         d1 = DataFrame()
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[1, 10, "both"]), ignore_index=True)
-        d1 = d1.append(Series(index=["chart_index", "result", "action"], data=[2, 10, "both"]), ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[1, 10, "both"]).to_frame().T],
+                       ignore_index=True)
+        d1 = pd.concat([d1, Series(index=["chart_index", "result", "action"], data=[2, 10, "both"]).to_frame().T],
+                       ignore_index=True)
 
         d2 = DataFrame()
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[4, 10, "both"]), ignore_index=True)
-        d2 = d2.append(Series(index=["chart_index", "result", "action"], data=[5, 10, "both"]), ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[4, 10, "both"]).to_frame().T],
+                       ignore_index=True)
+        d2 = pd.concat([d2, Series(index=["chart_index", "result", "action"], data=[5, 10, "both"]).to_frame().T],
+                       ignore_index=True)
 
+        result = EvalResultCollection.calc_combination([d1, d2])
+        assert len(result) == 0
         result = EvalResultCollection.calc_combination([d1, d2])
         assert len(result) == 0
 

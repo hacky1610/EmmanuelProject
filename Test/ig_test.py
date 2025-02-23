@@ -1,9 +1,7 @@
-import unittest
 from unittest.mock import MagicMock
-from Connectors.IG import IG
-from pandas import DataFrame,Series
+import pandas as pd
+from pandas import DataFrame, Series
 import unittest
-from unittest.mock import Mock, patch
 from pandas import Series
 from Connectors.market_store import MarketStore
 from Connectors.deal_store import DealStore
@@ -16,7 +14,7 @@ class IgTest(unittest.TestCase):
 
     def setUp(self):
         conf_reader = MagicMock()
-        conf_reader.read_config = MagicMock(return_value={"ti_api_key":"key"})
+        conf_reader.read_config = MagicMock(return_value={"ti_api_key": "key"})
         self.ig = IG(conf_reader)
 
     def test_get_markets_no_return(self):
@@ -29,8 +27,12 @@ class IgTest(unittest.TestCase):
 
     def test_get_markets_some_returns(self):
         df = DataFrame()
-        df = df.append(Series(["GBPUSD Mini","TRADEABLE","GBPUSD.de",100,102,10],index=["instrumentName","marketStatus","epic","offer","bid","scalingFactor"]),ignore_index=True)
-        df = df.append(Series(["GBPUSD","NOTTRADEABLE","GBPUSD.de",100,102,10],index=["instrumentName","marketStatus","epic","offer","bid","scalingFactor"]),ignore_index=True)
+        new_row = Series(["GBPUSD Mini", "TRADEABLE", "GBPUSD.de", 100, 102, 10],
+                         index=["instrumentName", "marketStatus", "epic", "offer", "bid", "scalingFactor"])
+        df = pd.concat([df, new_row.to_frame().T], ignore_index=True)
+        new_row = Series(["GBPUSD", "NOTTRADEABLE", "GBPUSD.de", 100, 102, 10],
+                         index=["instrumentName", "marketStatus", "epic", "offer", "bid", "scalingFactor"])
+        df = pd.concat([df, new_row.to_frame().T], ignore_index=True)
         self.ig.ig_service.fetch_sub_nodes_by_node = MagicMock(return_value={
             "nodes": [],
             "markets": df
@@ -49,14 +51,3 @@ class IgTest(unittest.TestCase):
 
         cur = self.ig.get_currency("CS.D.USDTRY.CFD.IP")
         assert cur == "TRL"
-
-
-
-
-
-
-
-
-
-
-

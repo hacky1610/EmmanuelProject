@@ -1,3 +1,4 @@
+# pylint: disable=E0401
 import datetime
 import logging
 import os
@@ -15,8 +16,6 @@ from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.metrics import precision_score
 from sklearn.model_selection import train_test_split, RandomizedSearchCV, cross_val_score
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from tqdm import tqdm
-from xgboost import XGBClassifier
 
 from Predictors.deep_predictor import DeepPredictor
 
