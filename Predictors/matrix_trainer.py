@@ -114,7 +114,7 @@ class MatrixTrainer:
         #Get data
 
 
-        all_combos = list(itertools.combinations(df_list, random.randint(4, 5)))
+        all_combos = list(itertools.combinations(None, random.randint(4, 5)))
         all_best_combos = best_combo_list.copy()
 
         for best_combo in best_combo_list:
@@ -136,7 +136,7 @@ class MatrixTrainer:
         all = all_best_combos + random_combos
         for combo in all:
             combo_objects = []
-            for indicator in df_list:
+            for indicator in []:
                 if indicator["indicator"] in combo:
                     combo_objects.append(indicator)
             best_combo_object_list.append(combo_objects)
@@ -145,7 +145,7 @@ class MatrixTrainer:
         filtered_combos = random.choices(all_combos, k=80000)
         all_combos = best_combo_object_list + filtered_combos
 
-        for indicator in df_list:
+        for indicator in []:
             if indicator["indicator"] == Indicators.EMA_50_100 or indicator["indicator"] == Indicators.ADX_4H:
                 for i in range(len(all_combos) -1):
                     l = list(all_combos[i])

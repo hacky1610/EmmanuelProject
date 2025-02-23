@@ -96,7 +96,7 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
                                                  time_frame=hours, factor=factor)
     trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
     train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
-
+    trade_results = []
     # Set specific replacement values for each trade type
     if trade_mode ==  TradeAction.BUY:
         train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
@@ -132,11 +132,14 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
                         ("USDCNH", 2.0, 16),
                         ("EURUSD", 2.0, 16)
     ]
-
-    random.shuffle(list_fx)
+    markets = IG.get_markets_offline()
+    random.shuffle(markets)
 
     # General configuration and data processing
-    for fx,factor, hours in list_fx:
+    for market in markets:
+        fx = market["symbol"]
+        hours = 16
+        factor = 2.0
         indicators.reset_caches()
         best_features = predictor_store.get_most_used_features()
         if predictor_store.count_of_all_by_symbol(fx) > 200:

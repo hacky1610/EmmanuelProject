@@ -429,7 +429,7 @@ class IG:
 
         elif direction == TradeAction.SELL:
             # Erlaubte Handelszeit und Threshold berechnen
-            trading_hours = predictor.get_sell_trading_hours()
+            trading_hours = predictor.get_trading_hours()
             close_time = open_time + timedelta(hours=trading_hours)
             close_time_with_threshold = close_time - timedelta(minutes=time_threshold_minutes)
 

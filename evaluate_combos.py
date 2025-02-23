@@ -94,7 +94,7 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
                                                  time_frame=hours, factor=factor)
     trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
     train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
-
+    trade_results = []
     # Set specific replacement values for each trade type
     if trade_mode ==  TradeAction.BUY:
         train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
