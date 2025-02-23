@@ -332,6 +332,9 @@ class Trader:
                 Returns:
                     TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
                 """
+        if len(trade_df) == 0:
+            return TradeResult.ERROR
+
         self._tracer.debug(f"{config.symbol} valid to predict")
         predictor.load_model()
         signal = predictor.predict(buy_actions_df, sell_actions_df)

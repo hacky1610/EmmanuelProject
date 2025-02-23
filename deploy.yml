@@ -24,6 +24,12 @@ steps:
     pylint --recursive=y . --errors-only --ignore=venv
   displayName: 'PyLint'
 
+
+- script: |
+    pip install pytest pytest-azurepipelines coverage
+    coverage run -m pytest ./Test
+  displayName: 'Test'
+
 - task: Docker@2
   inputs:
     containerRegistry: 'Docker'

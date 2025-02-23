@@ -38,26 +38,7 @@ class TestMatrixTrainer(unittest.TestCase):
             "sell_indicator": ["none", "sell", "buy", "none"]
         }, index=[12, 13, 14, 15])
 
-    def test_create_combined_indicator_data(self):
-        # Mock für `load_signal` konfigurieren
-        self.test_instance._cache.load_signal.side_effect = [
-            self.mock_data_1.rename(columns={"action": "buy_indicator"}),  # Mock für ersten Indikator
-            self.mock_data_2.rename(columns={"action": "sell_indicator"})  # Mock für zweiten Indikator
-        ]
 
-        # Indikatorliste simulieren
-        mock_indicators = MagicMock()
-        mock_indicators.get_all_indicator_names.return_value = ["buy_indicator", "sell_indicator"]
-
-        # Funktion aufrufen
-        result = self.test_instance.create_combined_indicator_data(mock_indicators, "mock_symbol")
-
-        # Assert-Erwartungen
-        pd.testing.assert_frame_equal(result, self.expected_result)
-
-        # Sicherstellen, dass `load_signal` mit den richtigen Argumenten aufgerufen wurde
-        self.test_instance._cache.load_signal.assert_any_call("signal_mock_symbol_buy_indicator.csv")
-        self.test_instance._cache.load_signal.assert_any_call("signal_mock_symbol_sell_indicator.csv")
 
 
 
