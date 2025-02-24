@@ -15,12 +15,7 @@ from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import Tiingo, TradeType
-from Predictors.chart_pattern_rectangle import RectanglePredictor
-from Predictors.chart_pattern_triangle import TrianglePredictor
 from Predictors.generic_predictor import GenericPredictor
-from Predictors.ichi_predictor import IchimokuPredictor
-from UI.plotly_viewer import PlotlyViewer
-from UI.base_viewer import BaseViewer
 from BL.indicators import Indicators
 import dropbox
 

@@ -22,10 +22,8 @@ class HighLowScannerTest(unittest.TestCase):
         })
 
     def add_line(self, df: DataFrame, high, low):
-        return df.append(
-            Series([ high, low],
-                   index=["high", "low" ]),
-            ignore_index=True)
+        new_row = pd.Series([high, low], index=["high", "low"])
+        return pd.concat([df, new_row.to_frame().T], ignore_index=True)
 
 
 

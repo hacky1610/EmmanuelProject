@@ -52,7 +52,8 @@ class TraderTest(unittest.TestCase):
                               predictor_class_list= self._predictor_class_list,
                               predictor_store=MagicMock(),
                               deal_storage=self._deal_storage,
-                              market_storage=self._mock_market_store)
+                              market_storage=self._mock_market_store,
+                              cache=MagicMock())
         self._trader._evalutaion_up_to_date = MagicMock(return_value=True)
         # Setzen der Test-Werte für _min_win_loss und _min_trades
         self._trader._min_win_loss = 0.7
@@ -66,18 +67,18 @@ class TraderTest(unittest.TestCase):
 
     @staticmethod
     def _add_data(df: DataFrame):
-        return df.append(Series({
+        new_row = Series({
             "close": 23, "SMA7": 3, "EMA": 4, "BB_UPPER": 5, "BB_MIDDLE": 6, "BB_LOWER": 6, "ROC": 7, "%R": 8,
-            "MACD": 4,
-            "SIGNAL": 6}
-        ), ignore_index=True)
+            "MACD": 4, "SIGNAL": 6
+        })
+        return pd.concat([df, new_row.to_frame().T], ignore_index=True)
 
     def test_trade_no_datafrom_tiingo(self):
         self._trader._is_good = MagicMock(return_value=True)
         self._tiingo.load_trade_data = MagicMock(return_value=DataFrame())
         self._predictor.predict = MagicMock(return_value=("none", 0, 0))
         res = self._trader.trade(predictor=self._predictor,
-                                 config=self._default_trade_config)
+                                 config=self._default_trade_config, trade_df=DataFrame(), buy_actions_df=DataFrame(), sell_actions_df=DataFrame())
         assert res == TradeResult.ERROR
 
     # def test_trade_has_open_positions(self):
@@ -145,9 +146,9 @@ class TraderTest(unittest.TestCase):
 
     def test_trade_no_data(self):
         self._trader._is_good = MagicMock(return_value=True)
-        self._tiingo.load_trade_data = MagicMock(return_value=DataFrame())
         res = self._trader.trade(predictor=self._predictor,
-                                 config=self._default_trade_config
+                                 config=self._default_trade_config,
+                                 trade_df=DataFrame(), buy_actions_df=DataFrame(), sell_actions_df=DataFrame()
                                  )
         self._mock_ig.buy.assert_not_called()
         self._mock_ig.sell.assert_not_called()

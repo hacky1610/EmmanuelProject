@@ -74,10 +74,10 @@ class Trader:
                  analytics: Analytics,
                  cache: DropBoxCache,
                  predictor_store: PredictorStore,
-                 deal_storage:DealStore,
-                 market_storage:MarketStore,
+                 deal_storage: DealStore,
+                 market_storage: MarketStore,
                  check_ig_performance: bool = False):
-        self._ig:IG = ig
+        self._ig: IG = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
         self._tracer: Tracer = tracer
@@ -104,10 +104,10 @@ class Trader:
           """
         return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
 
-    def _is_good_ticker(self, ticker: str, min_avg_profit:float, min_deal_count:int, days:int = 30) -> bool:
+    def _is_good_ticker(self, ticker: str, min_avg_profit: float, min_deal_count: int, days: int = 30) -> bool:
         if not self._check_ig_performance:
             return True
-        deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker,days)
+        deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker, days)
         if len(deals) > min_deal_count:
             min_profit = min_avg_profit * len(deals)
             if deals.profit.sum() > min_profit:
@@ -138,9 +138,10 @@ class Trader:
                     scaling = int(ig_m["instrument"]["contractSize"])
                     m = self._market_store.get_market(deal.ticker)
 
-                    deal.profit = self._calc_profit( ig_deal, m, scaling)
+                    deal.profit = self._calc_profit(ig_deal, m, scaling)
 
-                    self._tracer.warning(f"Problem with IG Calcululation. Profit is 0 Euro. Real profit is {deal.profit} . Deal {deal.dealId}")
+                    self._tracer.warning(
+                        f"Problem with IG Calcululation. Profit is 0 Euro. Real profit is {deal.profit} . Deal {deal.dealId}")
 
                 if deal.profit > 0:
                     deal.result = 1
@@ -152,7 +153,6 @@ class Trader:
             else:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
 
-
     def _fix_deals(self):
         opened = self._ig.get_opened_positions()
         deals = self._deal_storage.get_open_deals()
@@ -162,7 +162,8 @@ class Trader:
                 deal.close()
                 self._deal_storage.save(deal)
 
-    def _calc_profit(self,  ig_deal, m, scaling) -> float:
+    @staticmethod
+    def _calc_profit(ig_deal, m, scaling) -> float:
         if int(ig_deal["size"]) > 0:
             profit = float(ig_deal["closeLevel"]) - float(ig_deal["openLevel"])
             return m.get_euro_value(profit, scaling)
@@ -202,7 +203,6 @@ class Trader:
         self.update_deals()
         self._fix_deals()
 
-
     def _close_after_time(self):
         self._tracer.debug("Close after time")
         for _, item in self._ig.get_opened_positions().iterrows():
@@ -210,7 +210,7 @@ class Trader:
             if deal is not None:
                 self._ig.manual_close_after_time(item, self._deal_storage, self._predictor_store)
 
-    def _get_predictors(self, symbol:str, indicators) -> List[DeepPredictor]:
+    def _get_predictors(self, symbol: str, indicators) -> List[DeepPredictor]:
         predictors = []
 
         for predictor_data in self._predictor_store.load_all_by_symbol(symbol):
@@ -219,7 +219,7 @@ class Trader:
             predictors.append(predictor)
         return predictors
 
-    def market_tradeble(self, market:str):
+    def market_tradeble(self, market: str):
         return self._predictor_store.count_of_all_by_symbol(market) > 0
 
     @measure_time
@@ -228,8 +228,6 @@ class Trader:
         self._tracer.set_prefix(symbol_)
         indicators.reset_caches()
         self._tracer.debug(f"Try to trade {symbol_}")
-
-
 
         trade_df = self._tiingo.load_trade_data(symbol=symbol_, dp=self._dataprocessor,
                                                 trade_type=TradeType.FX)
@@ -242,7 +240,7 @@ class Trader:
         if len(open_deals) >= 10:
             self._tracer.debug(f"there are already 2 open position of {symbol_}")
             return TradeResult.ERROR
-        predictors = self._get_predictors(symbol_,indicators)
+        predictors = self._get_predictors(symbol_, indicators)
         all_features = set(feature for d in predictors for feature in d._features)
         actions = {}
 
@@ -320,9 +318,9 @@ class Trader:
     def trade(self,
               predictor: DeepPredictor,
               config: TradeConfig,
-              trade_df:DataFrame,
-              buy_actions_df:DataFrame,
-              sell_actions_df:DataFrame) -> TradeResult:
+              trade_df: DataFrame,
+              buy_actions_df: DataFrame,
+              sell_actions_df: DataFrame) -> TradeResult:
         """Führt den Handel für ein bestimmtes Symbol und einen Predictor durch.
 
                 Args:
@@ -332,6 +330,9 @@ class Trader:
                 Returns:
                     TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
                 """
+        if len(trade_df) == 0:
+            return TradeResult.ERROR
+
         self._tracer.debug(f"{config.symbol} valid to predict")
         predictor.load_model()
         signal = predictor.predict(buy_actions_df, sell_actions_df)
@@ -352,7 +353,6 @@ class Trader:
             self._tracer.debug(f"Set stop to {new_stop}")
             stop = new_stop
 
-
         self._tracer.info(f"Trade {signal} ")
 
         if signal == TradeAction.BUY:
@@ -362,8 +362,8 @@ class Trader:
 
         else:
             res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
-                                                         config.currency,
-                                                         self._ig.sell)
+                                                     config.currency,
+                                                     self._ig.sell)
 
         if res == TradeResult.SUCCESS:
             self._save_result(predictor, deal_response, config.symbol)
@@ -375,7 +375,7 @@ class Trader:
             manual_stop_level = None
 
             if is_manual_stop:
-                pip_diff = market.get_pip_value(stop,config.scaling)
+                pip_diff = market.get_pip_value(stop, config.scaling)
                 if signal == TradeAction.BUY:
                     manual_stop_level = deal_response["level"] - pip_diff
                 elif signal == TradeAction.SELL:
@@ -390,5 +390,6 @@ class Trader:
                                          open_date_ig_str=date_string,
                                          manual_stop_level=manual_stop_level,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
-                                         stop_factor=stop, limit_factor=limit,predictor_scan_id=predictor.get_id(), size=config.size))
+                                         stop_factor=stop, limit_factor=limit, predictor_scan_id=predictor.get_id(),
+                                         size=config.size))
         return res
