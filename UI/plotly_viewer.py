@@ -4,7 +4,6 @@ from pandas import DataFrame
 from plotly.subplots import make_subplots
 
 from BL.datatypes import TradeAction
-from BL.eval_result import TradeResult
 from Connectors.dropbox_cache import BaseCache
 from UI.base_viewer import BaseViewer
 import plotly.graph_objects as go
@@ -82,20 +81,6 @@ class PlotlyViewer(BaseViewer):
                              f'<b>{add_text}</b>',
                              )
 
-    def print_trade_result(self, r: TradeResult, df:DataFrame):
-        try:
-            if r.action == TradeAction.BUY:
-                self.print_buy(df[df.date == r.open_time].index.item(), r.opening, add_text=str(r))
-            else:
-                self.print_sell(df[df.date == r.open_time].index.item(), r.opening, add_text=str(r))
-
-            close_time = self.round(r.close_time)
-            if r.profit < 0:
-                self.print_lost(df[df.date == close_time].index.item(), r.closing)
-            else:
-                self.print_won(df[df.date == close_time].index.item(), r.closing)
-        except Exception as e:
-            print(e)
 
     def round(self,timestamp_str):
 

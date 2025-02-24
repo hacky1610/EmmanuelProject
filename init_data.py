@@ -4,7 +4,6 @@ import traceback
 
 from BL import DataProcessor, ConfigReader
 from BL.analytics import Analytics
-from BL.eval_result import EvalResultCollection
 from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
@@ -29,10 +28,8 @@ db = client["ZuluDB"]
 ms = MarketStore(db)
 analytics = Analytics(ms,_ig)
 trade_type = TradeType.FX
-results = EvalResultCollection()
 viewer = BaseViewer()
 only_one_position = False
-
 
 # endregion
 

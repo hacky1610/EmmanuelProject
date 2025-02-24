@@ -35,9 +35,6 @@ class Reporting:
         self.reports: DataFrame = DataFrame()
         self._min_reward = 600
 
-    def create(self, markets:List[Dict], predictor_class, verbose=False):
-        self.results, self.reports = self.report_predictors(markets, predictor_class, verbose)
-
     def report_predictor(self, symbol: str, predictor_class: Type, verbose: bool):
         predictor = predictor_class(symbol=symbol, indicators=Indicators())
         predictor.setup(self._predictor_store.load_active_by_symbol(symbol))

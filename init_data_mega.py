@@ -28,7 +28,6 @@ db = client["ZuluDB"]
 ms = MarketStore(db)
 analytics = Analytics(ms, None)
 trade_type = TradeType.FX
-results = EvalResultCollection()
 viewer = BaseViewer()
 only_one_position = False
 
