@@ -55,7 +55,7 @@ class Reporting:
 
     def get_best_indicators_by_reward(self):
 
-        best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports)/3)]
+        best_df = self.reports.sort_values(by='reward', ascending=False).iloc[:int(len(self.reports)/3)]
         indicators = []
         for r in best_df.iterrows():
             indicators = indicators + r[1]._indicator_names
@@ -93,10 +93,6 @@ class Reporting:
 
         return list(set(indicators))
 
-    def get_best_indicator_combos_by_reward(self) -> List[List[str]]:
-
-        best_df = self.reports.sort_values(by='reward', ascending=False)[:int(len(self.reports)/3)]
-        return best_df['_indicator_names'].tolist()
 
     def get_best_indicator_combos(self) -> List[List[str]]:
 

@@ -339,7 +339,7 @@ class CombinationTrainer:
                     cache) -> (DataFrame, DataFrame, str):
         df_train, eval_df_train = self._get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                        dropbox_cache=cache)
-        if len(df_train) < 9000:
+        if len(df_train) < 5000:
             raise Exception("Invalid data")
 
         buy_results, sell_results = simulation.simulate(df_train, eval_df_train, symbol,
