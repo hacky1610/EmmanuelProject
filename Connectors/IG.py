@@ -29,6 +29,9 @@ from UI.base_viewer import BaseViewer
 
 class IG:
 
+    BUY_DIRECTION = "BUY"
+    SELL_DIRECTION = "SELL"
+
     def __init__(self, conf_reader: BaseReader, tracer: Tracer = ConsoleTracer(), live: bool = False):
         self.ig_service = None
         self.user = conf_reader.get("ig_demo_user")
@@ -203,7 +206,7 @@ class IG:
             limit: int,
             size: float = 1.0,
             currency: str = "USD") -> (bool, str):
-        return self.open(epic, "BUY", stop, limit, size, currency)
+        return self.open(epic, IG.BUY_DIRECTION, stop, limit, size, currency)
 
     def sell(self,
              epic: str,
@@ -211,7 +214,7 @@ class IG:
              limit: int,
              size: float = 1.0,
              currency: str = "USD") -> (bool, str):
-        return self.open(epic, "SELL", stop, limit, size, currency)
+        return self.open(epic, IG.SELL_DIRECTION, stop, limit, size, currency)
 
     def open(self,
              epic: str,
@@ -342,7 +345,7 @@ class IG:
             if p.get_open_limit_isl():
                 self._tracer.debug(f"Limit is open")
                 limit_level = None
-            if direction == "BUY":
+            if direction == IG.BUY_DIRECTION:
                 if bid_price > open_price:
                     diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
                     if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
@@ -385,12 +388,12 @@ class IG:
                 self._tracer.debug(f"Bid {bid_price} Stop {deal.manual_stop_level}")
                 if bid_price < deal.manual_stop_level:
                     self._tracer.debug(f"Stop reached {deal}")
-                    self.close("SELL", deal_id, deal.size)
+                    self.close(IG.SELL_DIRECTION, deal_id, deal.size)
             if direction == TradeAction.SELL:
                 self._tracer.debug(f"Offer {offer_price} Stop {deal.manual_stop_level}")
                 if offer_price > deal.manual_stop_level:
                     self._tracer.debug(f"Stop reached {deal}")
-                    self.close("BUY", deal_id, deal.size)
+                    self.close(IG.BUY_DIRECTION, deal_id, deal.size)
 
     def manual_close_after_time(self, position: Series,deal_store: DealStore, predictor_store: PredictorStore, time_threshold_minutes=10):
         """
@@ -416,7 +419,7 @@ class IG:
         predictor.setup(predictor_store.load_by_id(p_id))
 
         # Handelsrichtung überprüfen
-        if direction == TradeAction.BUY:
+        if direction == IG.BUY_DIRECTION:
             # Erlaubte Handelszeit und Threshold berechnen
             trading_hours = predictor.get_trading_hours()
             close_time = open_time + timedelta(hours=trading_hours)
@@ -425,11 +428,11 @@ class IG:
             # Überprüfen, ob die Zeit überschritten wurde
             if datetime.utcnow() > close_time_with_threshold:
                 self._tracer.info(f"Schließe Kauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
-                self.close("SELL", deal_id, deal.size)
+                self.close(IG.SELL_DIRECTION, deal_id, deal.size)
             else:
                 self._tracer.debug(f"Trade{ deal_id} ist noch im Zeitrahmen wird geschlossen {close_time_with_threshold}")
 
-        elif direction == TradeAction.SELL:
+        elif direction == IG.SELL_DIRECTION
             # Erlaubte Handelszeit und Threshold berechnen
             trading_hours = predictor.get_trading_hours()
             close_time = open_time + timedelta(hours=trading_hours)
@@ -438,7 +441,7 @@ class IG:
             # Überprüfen, ob die Zeit überschritten wurde
             if datetime.utcnow() > close_time_with_threshold:
                 self._tracer.info(f"Schließe Verkauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
-                self.close("BUY", deal_id, deal.size)
+                self.close(IG.BUY_DIRECTION, deal_id, deal.size)
             else:
                 self._tracer.debug(f"Trade{ deal_id} ist noch im Zeitrahmen wird geschlossen {close_time_with_threshold}")
 
