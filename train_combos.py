@@ -6,6 +6,8 @@ import dropbox
 import pymongo
 import pandas as pd
 from pandas import DataFrame
+
+from BL.Simulation import Simulation
 from BL.analytics import Analytics
 from BL.combination_trainer import CombinationTrainer
 from BL.data_processor import DataProcessor
@@ -19,7 +21,6 @@ from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
-from Predictors.matrix_trainer import MatrixTrainer
 from Predictors.utils import Reporting
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
@@ -51,10 +52,7 @@ db = client["ZuluDB"]
 ms = MarketStore(db)
 predictor_store = PredictorStore(db)
 an = Analytics(market_store=ms, ig=IG(conf_reader=conf_reader))
-_trainer = MatrixTrainer(analytics=an,
-                         cache=_cache,
-                         check_trainable=False,
-                         predictor_store=predictor_store)
+_simulation = Simulation(_cache,an)
 _tiingo = Tiingo(conf_reader=conf_reader, cache=_cache, tracer=_tracer)
 _dp = DataProcessor()
 _trade_type = TradeType.FX
@@ -85,17 +83,17 @@ def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_proc
 def _create_hash(df):
     return df.date.iloc[0] + df.date.iloc[-1]
 
-def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, factor, indicators, trade_mode:str, cache) -> (DataFrame, DataFrame, str):
+def create_data(tiingo, symbol, trade_type,data_processor,  simulation, hours, factor, indicators, trade_mode:str, cache) -> (DataFrame, DataFrame, str):
     df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                              dropbox_cache=cache)
     if len(df_train) < 9000:
         raise Exception("Invalid data")
 
     hash = _create_hash(df_train )
-    buy_results, sell_results = trainer.simulate(df_train, eval_df_train, symbol,
+    buy_results, sell_results = simulation.simulate(df_train, eval_df_train, symbol,
                                                  time_frame=hours, factor=factor)
-    trainer.get_signals(symbol, df_train, indicators, GenericPredictor)
-    train_signals_df = trainer.create_combined_indicator_data(indicators, symbol)
+    simulation.get_signals(symbol, df_train, indicators, GenericPredictor)
+    train_signals_df = simulation.create_combined_indicator_data(indicators, symbol)
     trade_results = []
     # Set specific replacement values for each trade type
     if trade_mode ==  TradeAction.BUY:
@@ -119,7 +117,7 @@ def create_data(tiingo, symbol, trade_type,data_processor, trainer, hours, facto
     return df, hash
 
 
-def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
+def train_symbols(markets,  simulation, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
     list_fx = [
                         ("USDCHF",2.0, 16),
@@ -162,7 +160,7 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
 
                 df_train_global, df_hash = create_data(tiingo, fx,
                                                        trade_type, data_processor,
-                                                       trainer, hours,
+                                                       simulation, hours,
                                                        factor, indicators,
                                                        trade_action, cache)
 
@@ -183,12 +181,12 @@ def train_symbols(markets, trainer, cache, tiingo, data_processor, indicators, t
 while True:
     try:
         train_symbols(markets=IG.get_markets_offline(),
-                      trainer=_trainer,
                       tiingo=_tiingo,
                       data_processor=_dp,
                       indicators=_indicators,
                       tracer=_tracer,
-                      cache= _cache)
+                      cache= _cache,
+                      simulation = _simulation)
     except Exception as ex:
         traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
         print(f"MainException: {ex} File:{traceback_str}")

@@ -1,8 +1,5 @@
 import os
-import time
-
 import pymongo
-
 from BL.analytics import Analytics
 from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
@@ -17,7 +14,6 @@ from Connectors.IG import IG
 from BL import EnvReader, DataProcessor, ConfigReader
 from BL.trader import Trader
 import dropbox
-
 from Tracing.MultiTracer import MultiTracer
 from Tracing.StreamTracer import StreamTracer
 

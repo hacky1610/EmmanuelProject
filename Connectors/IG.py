@@ -424,8 +424,10 @@ class IG:
 
             # Überprüfen, ob die Zeit überschritten wurde
             if datetime.utcnow() > close_time_with_threshold:
-                print(f"Schließe Kauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
+                self._tracer.info(f"Schließe Kauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
                 self.close("SELL", deal_id, deal.size)
+            else:
+                self._tracer.debug(f"Trade{ deal_id} ist noch im Zeitrahmen wird geschlossen {close_time_with_threshold}")
 
         elif direction == TradeAction.SELL:
             # Erlaubte Handelszeit und Threshold berechnen
@@ -435,8 +437,10 @@ class IG:
 
             # Überprüfen, ob die Zeit überschritten wurde
             if datetime.utcnow() > close_time_with_threshold:
-                print(f"Schließe Verkaufs-Trade {deal_id}, da die Zeit überschritten ist.")
+                self._tracer.info(f"Schließe Verkauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
                 self.close("BUY", deal_id, deal.size)
+            else:
+                self._tracer.debug(f"Trade{ deal_id} ist noch im Zeitrahmen wird geschlossen {close_time_with_threshold}")
 
     def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")

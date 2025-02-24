@@ -23,25 +23,18 @@ from Predictors.deep_predictor import DeepPredictor
 
 log_filename = f"best_feature_search_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
 
-# logging.basicConfig(
-#     filename=log_filename,  # Log-Datei mit Zeitstempel
-#     filemode="a",  # Anhängen, nicht überschreiben
-#     level=logging.INFO,  # Nur INFO & ERROR-Level speichern
-#     format="%(asctime)s - %(levelname)s - %(message)s",
-#     datefmt="%Y-%m-%d %H:%M:%S"
-# )
 
 class CombinationTrainer:
 
-    def __init__(self, cache, indicators, predictor_store , test_mode):
+    def __init__(self, cache, indicators, predictor_store, test_mode):
         self._cache = cache
         self._indicators = indicators
         self._predictor_store = predictor_store
         self._target = "result"
-        self._test_mode =test_mode
+        self._test_mode = test_mode
 
-
-    def _filter_features_by_vif_and_precision(self, df, y, model, vif_threshold=5.0, cv_folds=5):
+    @staticmethod
+    def _filter_features_by_vif_and_precision(df, y, model, vif_threshold=5.0, cv_folds=5):
         """
         Entfernt Features mit hohem VIF und behält nur das Feature mit der höchsten Präzision.
 
@@ -101,12 +94,12 @@ class CombinationTrainer:
 
         return df_filtered
 
-    def _predict(self, df:DataFrame, features:List[str], model:object, threshold:float) -> (float, int):
+    def _predict(self, df: DataFrame, features: List[str], model: object, threshold: float) -> (float, int):
 
-        X_test = df[list(features)]
+        x_test = df[list(features)]
         y_test = df[self._target]
 
-        y_prob_test = model.predict_proba(X_test)[:, 1]
+        y_prob_test = model.predict_proba(x_test)[:, 1]
         y_pred_test = (y_prob_test >= threshold).astype(int)
 
         test_precision = precision_score(y_test, y_pred_test, zero_division=0)
@@ -117,7 +110,7 @@ class CombinationTrainer:
         return test_precision, test_reward
 
     def _predict_dynamic_threshold(self, df: DataFrame, features: List[str], model: object) -> (
-    float, int, float):
+            float, int, float):
 
         X_train = df[list(features)]
         y_train = df[self._target]
@@ -145,21 +138,20 @@ class CombinationTrainer:
         return best_local_precision, reward, best_local_threshold
 
     def _get_random_forest_params(self) -> dict:
-        return  {
-                'n_estimators': [50, 100, 200, 500],  # Anzahl der Bäume
-                'max_depth': [3, 5, 7, 10, None],  # Maximale Tiefe der Bäume
-                'min_samples_split': [2, 5, 10, 20],  # Mindestanzahl von Samples für Split
-                'min_samples_leaf': [1, 2, 4, 10],  # Mindestanzahl von Samples in einem Blatt
-                'max_features': ['sqrt', 'log2', None],  # Anzahl der betrachteten Features pro Split
-                #'bootstrap': [True, False],  # Ob Bootstrapping verwendet wird
-                'criterion': ['gini', 'entropy'],  # Kriterium zur Bestimmung der Qualität eines Splits
-                'class_weight': ['balanced', 'balanced_subsample', None]  # Gewichtung für unbalancierte Klassen
+        return {
+            'n_estimators': [50, 100, 200, 500],  # Anzahl der Bäume
+            'max_depth': [3, 5, 7, 10, None],  # Maximale Tiefe der Bäume
+            'min_samples_split': [2, 5, 10, 20],  # Mindestanzahl von Samples für Split
+            'min_samples_leaf': [1, 2, 4, 10],  # Mindestanzahl von Samples in einem Blatt
+            'max_features': ['sqrt', 'log2', None],  # Anzahl der betrachteten Features pro Split
+            'criterion': ['gini', 'entropy'],  # Kriterium zur Bestimmung der Qualität eines Splits
+            'class_weight': ['balanced', 'balanced_subsample', None]  # Gewichtung für unbalancierte Klassen
         }
 
-    def _save_predictor(self,symbol:str, trade_mode:str, trading_hours:int,best_threshold:float, features:List, atr_factor:float, model):
+    def _save_predictor(self, symbol: str, trade_mode: str, trading_hours: int, best_threshold: float, features: List,
+                        atr_factor: float, model):
         if self._test_mode:
             return
-        ##Save
         dp = DeepPredictor(symbol=symbol, cache=self._cache,
                            indicators=self._indicators, config={})
         dp.set_model_params(trade_mode=trade_mode, trading_hours=trading_hours,
@@ -168,10 +160,10 @@ class CombinationTrainer:
         dp.set_model(model)
         self._predictor_store.save(dp)
 
-    def  _best_feature_pair_by_reward(self, df:DataFrame, symbol:str,
-                                      trading_hours:int, trade_mode:str,
-                                      num_features:int,  atr_factor:float, min_prec:float, best_features:list,
-                                      n_iter=5):
+    def _best_feature_pair_by_reward(self, df: DataFrame, symbol: str,
+                                     trading_hours: int, trade_mode: str,
+                                     num_features: int, atr_factor: float, min_prec: float, best_features: list,
+                                     n_iter=5):
 
         if self._test_mode:
             train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -192,11 +184,12 @@ class CombinationTrainer:
 
                 best_model_candidate = self._train_combo(df, features, n_iter)
 
-                train_precision, train_reward, best_threshold = self._predict_dynamic_threshold(train_df,  features, best_model_candidate)
+                train_precision, train_reward, best_threshold = self._predict_dynamic_threshold(train_df, features,
+                                                                                                best_model_candidate)
                 if self._test_mode:
-                    test_precision, test_reward = self._predict(test_df,features, best_model_candidate, best_threshold)
+                    test_precision, test_reward = self._predict(test_df, features, best_model_candidate, best_threshold)
                 else:
-                    test_precision, test_reward = 0,0
+                    test_precision, test_reward = 0, 0
 
                 # Mindestbedingungen prüfen
                 if train_precision >= min_prec:
@@ -214,17 +207,16 @@ class CombinationTrainer:
                     result_df = pandas.DataFrame(results)
                     mean = result_df["Test Reward"].mean()
                     sum = result_df["Test Reward"].sum()
-                    print(f"{symbol} Best Threshold: {best_threshold:.2f}, Precision: {train_precision:.4f}, Reward: {train_reward} Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} Features: {features} {best_model_candidate.__class__.__name__}")
+                    print(
+                        f"{symbol} Best Threshold: {best_threshold:.2f}, Precision: {train_precision:.4f}, Reward: {train_reward} Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} Features: {features} {best_model_candidate.__class__.__name__}")
 
                     self._save_predictor(symbol=symbol, atr_factor=atr_factor,
-                                         features=features,trade_mode=trade_mode,
-                                         trading_hours=trading_hours,model=best_model_candidate, best_threshold=best_threshold)
+                                         features=features, trade_mode=trade_mode,
+                                         trading_hours=trading_hours, model=best_model_candidate,
+                                         best_threshold=best_threshold)
             except Exception as e:
                 traceback_str = traceback.format_exc()
                 print(f"Error: {e} with {features} {traceback_str}")
-
-        df_results = pd.DataFrame(results)
-        df_results.to_csv(f"output_csv{num_features}.csv", index=False)
 
         return {
 
@@ -261,7 +253,7 @@ class CombinationTrainer:
         reduced_size = max(1, int(len(combos) * 0.2))  # Mindestens 1 Element behalten
         return combos[:reduced_size]
 
-    def _get_combos_by_best_features(self, num_features, best_features:List):
+    def _get_combos_by_best_features(self, num_features, best_features: List):
         combos = list(combinations(best_features, num_features))
         random.shuffle(combos)
 
@@ -297,7 +289,7 @@ class CombinationTrainer:
 
         return importance_df
 
-    def _prepare_df(self, df:DataFrame, symbol:str, trading_hours:int, atr_factor:float) -> DataFrame:
+    def _prepare_df(self, df: DataFrame, symbol: str, trading_hours: int, atr_factor: float) -> DataFrame:
         path = f"{symbol}_{atr_factor}_{trading_hours}"
         y = df[self._target]
 
@@ -324,17 +316,18 @@ class CombinationTrainer:
         df[self._target] = y
         return df
 
-    def train(self, df, trading_hours:int,  num_features:int,
-              trading_mode:str, symbol:str,
-              min_prec:float, atr_factor:float, best_features:List[str]):
+    def train(self, df, trading_hours: int, num_features: int,
+              trading_mode: str, symbol: str,
+              min_prec: float, atr_factor: float, best_features: List[str]):
 
         if len(best_features) == 0:
-            df = self._prepare_df(df,symbol, trading_hours, atr_factor)
+            df = self._prepare_df(df, symbol, trading_hours, atr_factor)
 
         best_combination = self._best_feature_pair_by_reward(df=df,
                                                              symbol=symbol
-                                                             ,num_features=num_features ,
+                                                             , num_features=num_features,
                                                              min_prec=min_prec, trade_mode=trading_mode,
-                                                             trading_hours=trading_hours, atr_factor=atr_factor, best_features=best_features)
+                                                             trading_hours=trading_hours, atr_factor=atr_factor,
+                                                             best_features=best_features)
         print(best_combination)
         return
