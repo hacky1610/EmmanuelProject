@@ -22,7 +22,6 @@ class TestBasePredictor(unittest.TestCase):
 
         self.assertEqual(base_predictor._limit, 1.5)
         self.assertEqual(base_predictor._stop, 1.5)
-        self.assertEqual(base_predictor.get_last_scan_time(), datetime(2023, 7, 31, 18, 0, 0))
 
 
     def test_predict_not_implemented(self):

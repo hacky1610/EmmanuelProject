@@ -1,19 +1,12 @@
 # region import
-import random
-from typing import Dict
-
 import pymongo
 from BL import DataProcessor,  ConfigReader
-from BL.analytics import Analytics
-from BL.eval_result import  EvalResultCollection
-
 from Connectors.IG import IG
-from Connectors.deal_store import DealStore
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
-from Connectors.tiingo import Tiingo, TradeType
+from Connectors.tiingo import Tiingo
 from BL.indicators import Indicators
 import dropbox
 

@@ -4,7 +4,6 @@ import traceback
 
 from BL import DataProcessor, ConfigReader
 from BL.analytics import Analytics
-from BL.eval_result import EvalResultCollection
 from Connectors.IG import IG
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService

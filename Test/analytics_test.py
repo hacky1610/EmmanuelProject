@@ -1,12 +1,8 @@
 import unittest
 from unittest.mock import Mock, patch, MagicMock
-
 import pandas as pd
-from pandas import DataFrame
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
-from BL.eval_result import EvalResult
-from datetime import datetime
 
 class TestAnalytics(unittest.TestCase):
 
@@ -113,4 +109,7 @@ class TestAnalytics(unittest.TestCase):
 
         result = self._analytics.calculate_overall_result(signals, df_buy_results, df_sell_results)
         self.assertEqual(result.wl, 0)
+
+if __name__ == "__main__":
+    unittest.main()
 

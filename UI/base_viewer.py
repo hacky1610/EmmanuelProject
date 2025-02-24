@@ -1,8 +1,5 @@
 from pandas import DataFrame
 
-from BL.eval_result import TradeResult
-
-
 class BaseViewer:
 
     def __init__(self):
@@ -18,9 +15,6 @@ class BaseViewer:
         pass
 
     def print_graph(self):
-        pass
-
-    def print_trade_result(self, trade_result:TradeResult, df:DataFrame):
         pass
 
     def print_buy(self, x, y, add_text: str = ""):

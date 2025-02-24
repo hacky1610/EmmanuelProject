@@ -3,7 +3,6 @@ from datetime import datetime, date
 from typing import Type, List, Dict
 from collections import Counter
 from pandas import DataFrame, Series
-from BL.eval_result import EvalResultCollection
 from BL.indicators import Indicators
 from Connectors.predictore_store import PredictorStore
 
@@ -33,7 +32,6 @@ class Reporting:
 
     def __init__(self, predictor_store: PredictorStore):
         self._predictor_store = predictor_store
-        self.results: EvalResultCollection = None
         self.reports: DataFrame = DataFrame()
         self._min_reward = 600
 
@@ -57,18 +55,6 @@ class Reporting:
                                                      "trades",
                                                      "frequence",
                                                      "reward"])
-
-    def report_predictors(self, markets:List[Dict], predictor_class: Type, verbose: bool = True) -> (
-    EvalResultCollection, DataFrame):
-        results = EvalResultCollection()
-        df = DataFrame()
-        for market in markets:
-            result, data = self.report_predictor(market["symbol"], predictor_class, verbose)
-            results.add(result)
-            df = df.append(data, ignore_index=True)
-
-        df.fillna(0, inplace=True)
-        return results, df
 
     def get_best_indicators_by_reward(self):
 

@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import MagicMock
 from BL.candle import Candle, Direction, CandleType
 from pandas import Series
 

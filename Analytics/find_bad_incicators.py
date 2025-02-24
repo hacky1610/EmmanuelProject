@@ -6,7 +6,6 @@ import pymongo
 
 from BL import DataProcessor,  ConfigReader
 from BL.analytics import Analytics
-from BL.eval_result import  EvalResultCollection
 
 from Connectors.IG import IG
 from Connectors.deal_store import DealStore
@@ -45,7 +44,6 @@ only_one_position = True
 # region functions
 def find_bad_indicators(indicators, ig: IG):
     global symbol
-    results = EvalResultCollection()
     markets = ig.get_markets(tradeable=False, trade_type=trade_type)
     good_indicators = []
     for m in markets:

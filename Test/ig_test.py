@@ -1,11 +1,8 @@
 from unittest.mock import MagicMock
 import pandas as pd
-from pandas import DataFrame, Series
+from pandas import DataFrame
 import unittest
 from pandas import Series
-from Connectors.market_store import MarketStore
-from Connectors.deal_store import DealStore
-from Connectors.predictore_store import PredictorStore
 from Connectors.IG import IG
 from Connectors.tiingo import TradeType
 

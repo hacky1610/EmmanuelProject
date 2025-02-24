@@ -1,11 +1,7 @@
-import copy
 import unittest
 from datetime import datetime
 from unittest.mock import MagicMock, call
-
 import pandas as pd
-
-from BL.datatypes import TradeAction
 from BL.trader import Trader, TradeConfig, TradeResult
 from BL.analytics import Analytics
 from Tracing.ConsoleTracer import ConsoleTracer

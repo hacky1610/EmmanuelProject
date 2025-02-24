@@ -3,7 +3,6 @@ import time
 
 import pymongo
 from BL import  ConfigReader
-from BL.eval_result import  EvalResultCollection
 from Connectors.IG import IG
 from Connectors.predictore_store import PredictorStore
 from Predictors.generic_predictor import GenericPredictor
