@@ -237,7 +237,7 @@ class Trader:
             return TradeResult.ERROR
 
         open_deals = self._deal_storage.get_open_deals_by_ticker(symbol_)
-        if len(open_deals) >= 10:
+        if len(open_deals) >= 2:
             self._tracer.debug(f"there are already 2 open position of {symbol_}")
             return TradeResult.ERROR
         predictors = self._get_predictors(symbol_, indicators)

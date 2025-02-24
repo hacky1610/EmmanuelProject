@@ -1,8 +1,10 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import pandas as pd
 from pandas import DataFrame
 import unittest
 from pandas import Series
+from trading_ig.rest import ApiExceededException
+
 from Connectors.IG import IG
 from Connectors.tiingo import TradeType
 
@@ -48,3 +50,35 @@ class IgTest(unittest.TestCase):
 
         cur = self.ig.get_currency("CS.D.USDTRY.CFD.IP")
         assert cur == "TRL"
+
+
+    @patch('Connectors.IG.IGService')
+    def test_get_markets_by_id_valid_data(self, MockIGService):
+        mock_service = MockIGService.return_value
+        mock_service.fetch_sub_nodes_by_node.return_value = {
+            "nodes": [],
+            "markets": DataFrame([{"epic": "CS.D.BCHUSD.CFD.IP", "marketStatus": "TRADEABLE"}])
+        }
+        self.ig.ig_service = mock_service
+
+        result = self.ig._get_markets_by_id(12345)
+        self.assertFalse(result.empty)
+        self.assertEqual(result.iloc[0]["epic"], "CS.D.BCHUSD.CFD.IP")
+
+    @patch('Connectors.IG.IGService')
+    def test_get_markets_by_id_api_exceeded(self, MockIGService):
+        mock_service = MockIGService.return_value
+        mock_service.fetch_sub_nodes_by_node.side_effect = ApiExceededException
+        self.ig.ig_service = mock_service
+
+        result = self.ig._get_markets_by_id(12345)
+        self.assertTrue(result.empty)
+
+    @patch('Connectors.IG.IGService')
+    def test_get_markets_by_id_exception(self, MockIGService):
+        mock_service = MockIGService.return_value
+        mock_service.fetch_sub_nodes_by_node.side_effect = Exception("Test Exception")
+        self.ig.ig_service = mock_service
+
+        result = self.ig._get_markets_by_id(12345)
+        self.assertTrue(result.empty)
