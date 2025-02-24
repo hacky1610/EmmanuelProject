@@ -1,0 +1,97 @@
+Features,Best Model,Best Model Name,Train Precision,Train Reward,Test Precision,Test Reward,Best Threshold
+"('bb_sqeeze_both_direction_4h', 'adx_max_4h', 'bb_sqeeze_both_direction', 'macd_slope_4h')","RandomForestClassifier(class_weight='balanced', criterion='entropy',
+                       max_depth=10, max_features='log2', min_samples_split=5,
+                       n_estimators=200, random_state=42)",RandomForestClassifier,1.0,2,0.0,0,0.6
+"('rsi_convergence', 'rsi_break_4h', 'adx_max_4h', 'adx_max_21')","RandomForestClassifier(class_weight='balanced', max_depth=10,
+                       max_features='log2', min_samples_leaf=4,
+                       n_estimators=200, random_state=42)",RandomForestClassifier,1.0,5,0.0,-1,0.6
+"('adx', 'bb_middle_crossing_4h', 'rsi_limit_4h', 'macd_slope_4h')","RandomForestClassifier(class_weight='balanced', criterion='entropy',
+                       max_depth=5, max_features=None, min_samples_split=5,
+                       n_estimators=50, random_state=42)",RandomForestClassifier,1.0,3,0.0,0,0.6
+"('rsi_convergence', 'rsi_break_4h', 'adx_max_21', 'macd')","RandomForestClassifier(class_weight='balanced', min_samples_split=5,
+                       random_state=42)",RandomForestClassifier,1.0,5,0.0,0,0.6
+"('rsi_convergence', 'adx_max_4h', 'cci_4h', 'adx_max_48')","RandomForestClassifier(criterion='entropy', max_depth=7, max_features=None,
+                       min_samples_leaf=2, min_samples_split=5,
+                       random_state=42)",RandomForestClassifier,1.0,5,1.0,2,0.55
+"('rsi_convergence', 'williams_break_4h', 'adx_max', 'macd_max')","RandomForestClassifier(class_weight='balanced', max_depth=3,
+                       max_features='log2', min_samples_leaf=2,
+                       n_estimators=500, random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.6
+"('rsi_convergence', 'macd_convergence', 'rsi_break_4h', 'adx_max_21')","RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy',
+                       max_depth=7, max_features='log2', min_samples_leaf=2,
+                       min_samples_split=20, n_estimators=200, random_state=42)",RandomForestClassifier,1.0,5,0.0,-1,0.6
+"('rsi_convergence', 'williams_break_4h', 'macd_slope_4h', 'adx_max_48')","RandomForestClassifier(criterion='entropy', max_depth=5, min_samples_split=5,
+                       random_state=42)",RandomForestClassifier,1.0,8,0.6666666666666666,1,0.5
+"('rsi_convergence', 'williams_break_4h', 'macd_max_12h', 'adx_max_48')","RandomForestClassifier(criterion='entropy', max_depth=10, max_features='log2',
+                       min_samples_split=20, n_estimators=50, random_state=42)",RandomForestClassifier,1.0,8,0.6666666666666666,1,0.45
+"('williams_break_4h', 'adx_max_4h', 'macd', 'ema_10_50')","RandomForestClassifier(class_weight='balanced', criterion='entropy',
+                       max_depth=3, max_features='log2', min_samples_split=20,
+                       n_estimators=500, random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.6
+"('rsi_convergence', 'adx_max', 'adx_max2', 'adx_max_21')","RandomForestClassifier(class_weight='balanced_subsample', max_depth=3,
+                       max_features='log2', min_samples_leaf=4,
+                       min_samples_split=20, n_estimators=200, random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.6
+"('rsi_convergence', 'adx_max_4h', 'rsi', 'macd_max_12h')","RandomForestClassifier(max_depth=5, max_features=None, min_samples_leaf=2,
+                       n_estimators=200, random_state=42)",RandomForestClassifier,1.0,2,1.0,2,0.45
+"('rsi_convergence', 'williams_break_4h', 'adx_max_21', 'cci_4h')","RandomForestClassifier(max_depth=10, min_samples_split=20, random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.55
+"('williams_break_4h', 'bb_sqeeze_both_direction_4h', 'adx_max_4h', 'rsi_limit_12h')","RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy',
+                       max_depth=3, max_features=None, min_samples_split=10,
+                       random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.55
+"('williams_break_4h', 'macd_convergence', 'adx_max_4h', 'adx_max_48')","RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy',
+                       min_samples_leaf=4, min_samples_split=10,
+                       n_estimators=200, random_state=42)",RandomForestClassifier,1.0,5,1.0,1,0.6
+"('macd_convergence', 'adx_max', 'adx_max2', 'macd_max_12h')","RandomForestClassifier(class_weight='balanced', max_depth=3, max_features=None,
+                       min_samples_split=20, n_estimators=500, random_state=42)",RandomForestClassifier,1.0,6,1.0,2,0.55
+"('adx_max_4h', 'rsi', 'cci_4h', 'adx_max_48')","RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy',
+                       max_depth=10, min_samples_leaf=2, random_state=42)",RandomForestClassifier,1.0,2,0.0,0,0.6
+"('williams_break_4h', 'macd_convergence', 'adx_max_21', 'bb_sqeeze_both_direction')","RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy',
+                       max_depth=5, max_features=None, min_samples_leaf=4,
+                       min_samples_split=5, n_estimators=200, random_state=42)",RandomForestClassifier,1.0,5,1.0,1,0.6
+"('rsi_convergence', 'bb_middle_crossing_4h', 'adx_max', 'williams_limit_4h')","RandomForestClassifier(class_weight='balanced_subsample', min_samples_leaf=4,
+                       n_estimators=50, random_state=42)",RandomForestClassifier,1.0,2,0.0,0,0.6
+"('rsi_convergence', 'macd_max_4h', 'adx_max2', 'macd_max_12h')","RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy',
+                       max_depth=5, max_features=None, min_samples_split=5,
+                       n_estimators=50, random_state=42)",RandomForestClassifier,1.0,1,1.0,1,0.55
+"('williams_break_4h', 'adx_max_4h', 'macd_max_4h', 'adx')","RandomForestClassifier(criterion='entropy', max_depth=5, max_features='log2',
+                       n_estimators=500, random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.6
+"('rsi_break_4h', 'rsi', 'adx', 'adx_max_21')","RandomForestClassifier(criterion='entropy', max_depth=3, max_features=None,
+                       min_samples_split=5, n_estimators=50, random_state=42)",RandomForestClassifier,1.0,2,0.0,-1,0.6
+"('macd_convergence', 'bb_middle_crossing_4h', 'adx_max2', 'cci_4h')","RandomForestClassifier(criterion='entropy', max_features=None,
+                       min_samples_leaf=2, n_estimators=50, random_state=42)",RandomForestClassifier,1.0,2,1.0,1,0.5
+"('rsi', 'macd_max_12h', 'cci_4h', 'williams_limit_4h')","RandomForestClassifier(class_weight='balanced_subsample', max_depth=3,
+                       random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.55
+"('williams_break_4h', 'adx_max_4h', 'bb_sqeeze_both_direction', 'ema_10_50')","RandomForestClassifier(class_weight='balanced', criterion='entropy',
+                       max_depth=3, min_samples_split=20, random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.6
+"('rsi_break_4h', 'macd_max_4h', 'macd', 'ema_10_50')","RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy',
+                       max_depth=3, max_features='log2', min_samples_split=20,
+                       random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.55
+"('williams_break_4h', 'rsi', 'macd_slope_4h', 'williams_limit_4h')","RandomForestClassifier(class_weight='balanced', criterion='entropy',
+                       max_depth=10, max_features=None, min_samples_split=10,
+                       n_estimators=50, random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.6
+"('bb_sqeeze_both_direction_4h', 'bb_middle_crossing_4h', 'adx_max', 'macd_max_12h')","RandomForestClassifier(class_weight='balanced', criterion='entropy',
+                       max_features='log2', min_samples_split=20,
+                       random_state=42)",RandomForestClassifier,1.0,4,1.0,2,0.6
+"('rsi', 'rsi_limit_12h', 'cci_4h', 'adx_max_48')","RandomForestClassifier(class_weight='balanced', max_depth=3,
+                       max_features='log2', random_state=42)",RandomForestClassifier,1.0,2,0.0,0,0.55
+"('rsi_convergence', 'adx_max_4h', 'adx_max', 'macd_slope_4h')","RandomForestClassifier(class_weight='balanced_subsample', max_depth=3,
+                       min_samples_leaf=10, n_estimators=50, random_state=42)",RandomForestClassifier,1.0,7,0.8,3,0.6
+"('rsi_convergence', 'adx_max2', 'adx_max_21', 'macd_max_12h')","RandomForestClassifier(class_weight='balanced', criterion='entropy',
+                       max_depth=10, max_features=None, min_samples_leaf=2,
+                       min_samples_split=10, n_estimators=500, random_state=42)",RandomForestClassifier,1.0,1,0.5,0,0.6
+"('williams_break_4h', 'bb_middle_crossing_4h', 'macd_max', 'ema_10_50')","RandomForestClassifier(class_weight='balanced', max_depth=5, max_features=None,
+                       min_samples_split=20, n_estimators=50, random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.55
+"('rsi_break_4h', 'bb_sqeeze_both_direction_4h', 'adx_max_21', 'bb_sqeeze_both_direction')","RandomForestClassifier(class_weight='balanced_subsample', criterion='entropy',
+                       max_depth=5, max_features='log2', min_samples_split=10,
+                       n_estimators=200, random_state=42)",RandomForestClassifier,1.0,2,1.0,3,0.6
+"('rsi_convergence', 'bb_middle_crossing_4h', 'macd', 'macd_slope_4h')","RandomForestClassifier(criterion='entropy', max_depth=5, max_features='log2',
+                       min_samples_leaf=4, min_samples_split=5,
+                       n_estimators=500, random_state=42)",RandomForestClassifier,0.8888888888888888,7,1.0,2,0.5
+"('rsi_convergence', 'rsi_break_4h', 'macd_max_4h', 'adx_max_21')","RandomForestClassifier(class_weight='balanced', criterion='entropy',
+                       max_depth=3, max_features=None, min_samples_leaf=4,
+                       n_estimators=500, random_state=42)",RandomForestClassifier,1.0,5,0.0,-1,0.6
+"('rsi', 'adx_max_21', 'rsi_limit_4h', 'rsi_limit_12h')","RandomForestClassifier(criterion='entropy', max_depth=7, max_features='log2',
+                       min_samples_split=10, n_estimators=50, random_state=42)",RandomForestClassifier,1.0,5,0.0,-1,0.5
+"('rsi', 'bb_middle_crossing_4h', 'adx_max2', 'adx_max_21')","RandomForestClassifier(class_weight='balanced_subsample', max_depth=5,
+                       max_features=None, min_samples_split=10, n_estimators=50,
+                       random_state=42)",RandomForestClassifier,1.0,1,0.0,0,0.6
+"('adx_max_4h', 'macd_max_4h', 'adx_max2', 'rsi_limit_4h')","RandomForestClassifier(criterion='entropy', max_depth=7, max_features=None,
+                       min_samples_leaf=2, min_samples_split=10,
+                       n_estimators=200, random_state=42)",RandomForestClassifier,1.0,7,0.0,0,0.5
