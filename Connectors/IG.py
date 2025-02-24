@@ -432,7 +432,7 @@ class IG:
             else:
                 self._tracer.debug(f"Trade{ deal_id} ist noch im Zeitrahmen wird geschlossen {close_time_with_threshold}")
 
-        elif direction == IG.SELL_DIRECTION
+        elif direction == IG.SELL_DIRECTION:
             # Erlaubte Handelszeit und Threshold berechnen
             trading_hours = predictor.get_trading_hours()
             close_time = open_time + timedelta(hours=trading_hours)
