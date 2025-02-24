@@ -4,9 +4,6 @@ import random
 import traceback
 import dropbox
 import pymongo
-import pandas as pd
-from pandas import DataFrame
-
 from BL.Simulation import Simulation
 from BL.analytics import Analytics
 from BL.combination_trainer import CombinationTrainer
@@ -20,7 +17,6 @@ from Connectors.dropboxservice import DropBoxService
 from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
-from Predictors.generic_predictor import GenericPredictor
 from Predictors.utils import Reporting
 from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
@@ -58,78 +54,10 @@ _dp = DataProcessor()
 _trade_type = TradeType.FX
 _indicators = Indicators()
 _reporting = Reporting(predictor_store=predictor_store)
-
-
 # endregion
-
-def get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor,
-                   dropbox_cache: DropBoxCache) -> (DataFrame, DataFrame):
-    hour_df = f"{symbol}_train_1hour_5.csv"
-    minute_df = f"{symbol}_train_5minute_5.csv"
-
-    if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(minute_df):
-        df_train = dropbox_cache.load_train_cache(hour_df)
-        eval_df_train = dropbox_cache.load_train_cache(minute_df)
-    else:
-        df_train, eval_df_train = tiingo.load_test_data(symbol, data_processor, trade_type=trade_type, use_cache=True)
-        dropbox_cache.save_train_cache(df_train, hour_df)
-        dropbox_cache.save_train_cache(eval_df_train, minute_df)
-
-    df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
-    eval_df_train = eval_df_train.astype(
-        {col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
-    return df_train, eval_df_train
-
-def _create_hash(df):
-    return df.date.iloc[0] + df.date.iloc[-1]
-
-def create_data(tiingo, symbol, trade_type,data_processor,  simulation, hours, factor, indicators, trade_mode:str, cache) -> (DataFrame, DataFrame, str):
-    df_train, eval_df_train = get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
-                                             dropbox_cache=cache)
-    if len(df_train) < 9000:
-        raise Exception("Invalid data")
-
-    hash = _create_hash(df_train )
-    buy_results, sell_results = simulation.simulate(df_train, eval_df_train, symbol,
-                                                 time_frame=hours, factor=factor)
-    simulation.get_signals(symbol, df_train, indicators, GenericPredictor)
-    train_signals_df = simulation.create_combined_indicator_data(indicators, symbol)
-    trade_results = []
-    # Set specific replacement values for each trade type
-    if trade_mode ==  TradeAction.BUY:
-        train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
-        trade_results = buy_results
-    elif trade_mode == TradeAction.SELL:
-        train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1})
-        trade_results = sell_results
-
-    train_signals_df = train_signals_df.infer_objects(copy=False)
-
-    # Prepare results data
-    trade_results = trade_results[['chart_index', 'result']]
-    trade_results['result'] = trade_results['result'].apply(lambda x: 1 if x > 0 else 0)
-    signal_result_df = pd.merge(train_signals_df, trade_results, on='chart_index', how='left')
-    signal_result_df['result'].fillna(0, inplace=True)
-    signal_result_df = signal_result_df.dropna()
-
-    df = signal_result_df.drop(columns=["chart_index"])
-
-    return df, hash
-
 
 def train_symbols(markets,  simulation, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
-    list_fx = [
-                        ("USDCHF",2.0, 16),
-                        ("EURCHF", 2.0, 16),
-                        ("EURGBP",2.0, 16),
-                        ("AUDNZD", 2.0, 16),
-                        ("USDSGD", 2.0, 16),
-                        ("EURNOK", 2.0, 16),
-                        ("EURDKK", 2.0, 16),
-                        ("USDCNH", 2.0, 16),
-                        ("EURUSD", 2.0, 16)
-    ]
     markets = IG.get_markets_offline()
     random.shuffle(markets)
 
@@ -158,7 +86,7 @@ def train_symbols(markets,  simulation, cache, tiingo, data_processor, indicator
                     print(f"Enough training data to train with trade action {trade_action}")
                     continue
 
-                df_train_global, df_hash = create_data(tiingo, fx,
+                df_train_global = ct.create_data(tiingo, fx,
                                                        trade_type, data_processor,
                                                        simulation, hours,
                                                        factor, indicators,

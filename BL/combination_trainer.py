@@ -19,7 +19,12 @@ from sklearn.model_selection import train_test_split, RandomizedSearchCV, cross_
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from xgboost import XGBClassifier
 
+from BL import DataProcessor
+from BL.datatypes import TradeAction
+from Connectors.dropbox_cache import DropBoxCache
+from Connectors.tiingo import Tiingo, TradeType
 from Predictors.deep_predictor import DeepPredictor
+from Predictors.generic_predictor import GenericPredictor
 
 log_filename = f"best_feature_search_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
 
@@ -162,7 +167,8 @@ class CombinationTrainer:
 
     def _best_feature_pair_by_reward(self, df: DataFrame, symbol: str,
                                      trading_hours: int, trade_mode: str,
-                                     num_features: int, atr_factor: float, min_prec: float, best_features: list,
+                                     num_features: int, atr_factor: float,
+                                     min_prec: float, best_features: list,
                                      n_iter=5):
 
         if self._test_mode:
@@ -217,10 +223,6 @@ class CombinationTrainer:
             except Exception as e:
                 traceback_str = traceback.format_exc()
                 print(f"Error: {e} with {features} {traceback_str}")
-
-        return {
-
-        }
 
     def _train_combo(self, df, features, n_iter):
         import warnings
@@ -316,18 +318,71 @@ class CombinationTrainer:
         df[self._target] = y
         return df
 
-    def train(self, df, trading_hours: int, num_features: int,
+    def train(self, df, trading_hours: int,
+              num_features: int,
               trading_mode: str, symbol: str,
-              min_prec: float, atr_factor: float, best_features: List[str]):
+              min_prec: float, atr_factor: float,
+              best_features: List[str]):
 
         if len(best_features) == 0:
             df = self._prepare_df(df, symbol, trading_hours, atr_factor)
 
-        best_combination = self._best_feature_pair_by_reward(df=df,
-                                                             symbol=symbol
-                                                             , num_features=num_features,
-                                                             min_prec=min_prec, trade_mode=trading_mode,
-                                                             trading_hours=trading_hours, atr_factor=atr_factor,
-                                                             best_features=best_features)
-        print(best_combination)
-        return
+        self._best_feature_pair_by_reward(df=df,
+                                          symbol=symbol
+                                          , num_features=num_features,
+                                          min_prec=min_prec, trade_mode=trading_mode,
+                                          trading_hours=trading_hours, atr_factor=atr_factor,
+                                          best_features=best_features)
+
+    def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, hours, factor, indicators,
+                    trade_mode: str,
+                    cache) -> (DataFrame, DataFrame, str):
+        df_train, eval_df_train = self._get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
+                                                       dropbox_cache=cache)
+        if len(df_train) < 9000:
+            raise Exception("Invalid data")
+
+        buy_results, sell_results = simulation.simulate(df_train, eval_df_train, symbol,
+                                                        time_frame=hours, factor=factor)
+        simulation.get_signals(symbol, df_train, indicators, GenericPredictor)
+        train_signals_df = simulation.create_combined_indicator_data(indicators, symbol)
+        trade_results = []
+        # Set specific replacement values for each trade type
+        if trade_mode == TradeAction.BUY:
+            train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
+            trade_results = buy_results
+        elif trade_mode == TradeAction.SELL:
+            train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1})
+            trade_results = sell_results
+
+        train_signals_df = train_signals_df.infer_objects(copy=False)
+
+        # Prepare results data
+        trade_results = trade_results[['chart_index', 'result']]
+        trade_results['result'] = trade_results['result'].apply(lambda x: 1 if x > 0 else 0)
+        signal_result_df = pd.merge(train_signals_df, trade_results, on='chart_index', how='left')
+        signal_result_df['result'].fillna(0, inplace=True)
+        signal_result_df = signal_result_df.dropna()
+
+        df = signal_result_df.drop(columns=["chart_index"])
+
+        return df
+
+    def _get_train_data(self, tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor,
+                        dropbox_cache: DropBoxCache) -> (DataFrame, DataFrame):
+        hour_df = f"{symbol}_train_1hour_5.csv"
+        minute_df = f"{symbol}_train_5minute_5.csv"
+
+        if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(minute_df):
+            df_train = dropbox_cache.load_train_cache(hour_df)
+            eval_df_train = dropbox_cache.load_train_cache(minute_df)
+        else:
+            df_train, eval_df_train = tiingo.load_test_data(symbol, data_processor, trade_type=trade_type,
+                                                            use_cache=True)
+            dropbox_cache.save_train_cache(df_train, hour_df)
+            dropbox_cache.save_train_cache(eval_df_train, minute_df)
+
+        df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
+        eval_df_train = eval_df_train.astype(
+            {col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
+        return df_train, eval_df_train
