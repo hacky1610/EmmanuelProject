@@ -268,7 +268,7 @@ class Trader:
                     currency=market["currency"])
             )
             if result == TradeResult.SUCCESS:
-                self._tracer("Stop predicting because of success")
+                self._tracer.info("Stop predicting because of success")
                 break
 
     @staticmethod
