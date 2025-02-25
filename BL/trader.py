@@ -253,7 +253,7 @@ class Trader:
         sell_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1}).astype(int)
 
         for predictor in predictors:
-            self.trade(
+            result = self.trade(
                 predictor=predictor,
                 trade_df=trade_df,
                 buy_actions_df=buy_actions_df,
@@ -267,6 +267,9 @@ class Trader:
                     size=market["size"],
                     currency=market["currency"])
             )
+            if result == TradeResult.SUCCESS:
+                self._tracer("Stop predicting because of success")
+                break
 
     @staticmethod
     def _evalutaion_up_to_date(last_scan_time):

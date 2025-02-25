@@ -69,9 +69,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         fx = market["symbol"]
         indicators.reset_caches()
 
-        #if predictor_store.count_of_all_by_symbol(fx) > 40:
-        #    print("Enough training data to train")
-        #    continue
+        if predictor_store.count_of_all_by_symbol(fx) < 40:
+            print("Enough training data to train")
+            continue
 
         best_features = predictor_store.get_most_used_features()
 
@@ -85,10 +85,10 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                         test_mode=True)
                 try:
                     print(
-                        f"Evaluate {fx}  for {hours} hours and factor {factor} and quantille {quantile} combination {combination_size}")
+                        f"Retest {fx}  for {hours} hours and factor {factor} and quantille {quantile} combination {combination_size}")
 
                     for trade_action in [TradeAction.BUY, TradeAction.SELL]:
-                        df_train_global  = ct.create_data(tiingo, fx,
+                        df_train_global = ct.create_data(tiingo, fx,
                                                                   trade_type, data_processor,
                                                                   simulation, hours,
                                                                   factor, indicators,

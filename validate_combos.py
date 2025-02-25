@@ -67,11 +67,12 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
     random.shuffle(markets)
     for market in markets:
         fx = market["symbol"]
+        fx = "EURZAR"
         indicators.reset_caches()
 
-        #if predictor_store.count_of_all_by_symbol(fx) > 40:
-        #    print("Enough training data to train")
-        #    continue
+        if predictor_store.count_of_all_by_symbol(fx) < 40:
+            print("Enough training data to train")
+            continue
 
         best_features = predictor_store.get_most_used_features()
 
@@ -83,12 +84,20 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                         indicators=indicators,
                                         predictor_store=predictor_store,
                                         test_mode=True)
+
+                features = predictor_store.get_feature_combo_by_symbol(fx)
+                def foo(num_features, best_features):
+                    return features
+
+
+
+                ct._get_combos_by_best_features = foo
                 try:
                     print(
-                        f"Evaluate {fx}  for {hours} hours and factor {factor} and quantille {quantile} combination {combination_size}")
+                        f"Retest {fx}  for {hours} hours and factor {factor} and quantille {quantile} combination {combination_size}")
 
                     for trade_action in [TradeAction.BUY, TradeAction.SELL]:
-                        df_train_global  = ct.create_data(tiingo, fx,
+                        df_train_global = ct.create_data(tiingo, fx,
                                                                   trade_type, data_processor,
                                                                   simulation, hours,
                                                                   factor, indicators,

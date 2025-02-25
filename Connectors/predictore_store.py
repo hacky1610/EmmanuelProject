@@ -80,6 +80,16 @@ class PredictorStore:
 
         return top_features_list
 
+    def get_feature_combo_by_symbol(self, symbol:str) -> List[str]:
+        features_list = []
+        for doc in self._collection.find({"_symbol":symbol}, {"_features": 1}):
+            if "_features" in doc and isinstance(doc["_features"], list):
+                features_list.append(doc["_features"])
+
+
+
+        return features_list
+
 
     def load_best_by_symbol(self, symbol):
         return self._collection.find({"_symbol": symbol}, sort=[('_reward', -1)])[0]
