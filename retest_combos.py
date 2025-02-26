@@ -74,6 +74,15 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             continue
 
         best_features = predictor_store.get_most_used_features()
+        best_features = [
+            "rsi_convergence", "macd_convergence", "williams_break_4h", "rsi_break_4h",
+            "macd_max_4h", "bb_sqeeze_both_direction_4h", "bb_middle_crossing_4h",
+            "macd_max", "adx_max_4h", "rsi", "adx_max", "adx_max2",
+            "bb_sqeeze_both_direction", "macd_max_12h", "adx_max_21", "adx",
+            "macd", "macd_slope_4h", "rsi_limit_12h", "adx_max_48",
+            "rsi_limit_4h", "ema_10_50", "cci_4h", "williams_limit_4h",
+            "adx_4h", "rsi_convergence5_40"
+        ]
 
         for hours in [16]:
             for factor in [2.0]:

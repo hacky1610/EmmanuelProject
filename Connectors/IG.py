@@ -416,7 +416,11 @@ class IG:
 
         # Setup des Predictors
         predictor = DeepPredictor(cache=None, config=None,  indicators=Indicators(),symbol="")
-        predictor.setup(predictor_store.load_by_id(p_id))
+        predictor_config = predictor_store.load_by_id(p_id)
+        if not predictor_config:
+            self._tracer.warning("No predictor config")
+            return
+        predictor.setup(predictor_config)
 
         # Handelsrichtung überprüfen
         if direction == IG.BUY_DIRECTION:

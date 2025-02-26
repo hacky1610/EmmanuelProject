@@ -153,7 +153,9 @@ class CombinationTrainer:
             'class_weight': ['balanced', 'balanced_subsample', None]  # Gewichtung für unbalancierte Klassen
         }
 
-    def _save_predictor(self, symbol: str, trade_mode: str, trading_hours: int, best_threshold: float, features: List,
+    def _save_predictor(self, symbol: str, trade_mode: str,
+                        trading_hours: int, best_threshold:
+                        float, features: List, train_reward:int,
                         atr_factor: float, model):
         if self._test_mode:
             return
@@ -161,7 +163,7 @@ class CombinationTrainer:
                            indicators=self._indicators, config={})
         dp.set_model_params(trade_mode=trade_mode, trading_hours=trading_hours,
                             threshold=best_threshold, features=list(features),
-                            atr_factor=atr_factor)
+                            atr_factor=atr_factor, train_reward=train_reward)
         dp.set_model(model)
         self._predictor_store.save(dp)
 
@@ -169,7 +171,7 @@ class CombinationTrainer:
                                      trading_hours: int, trade_mode: str,
                                      num_features: int, atr_factor: float,
                                      min_prec: float, best_features: list,
-                                     n_iter=5):
+                                     n_iter=5, min_reward = 4):
 
         if self._test_mode:
             train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -198,7 +200,7 @@ class CombinationTrainer:
                     test_precision, test_reward = 0, 0
 
                 # Mindestbedingungen prüfen
-                if train_precision >= min_prec:
+                if train_precision >= min_prec and train_reward >= min_reward:
                     result = {
                         "Features": features,
                         "Best Model": best_model_candidate,
@@ -219,7 +221,7 @@ class CombinationTrainer:
                     self._save_predictor(symbol=symbol, atr_factor=atr_factor,
                                          features=features, trade_mode=trade_mode,
                                          trading_hours=trading_hours, model=best_model_candidate,
-                                         best_threshold=best_threshold)
+                                         best_threshold=best_threshold, train_reward=train_reward )
             except Exception as e:
                 traceback_str = traceback.format_exc()
                 print(f"Error: {e} with {features} {traceback_str}")

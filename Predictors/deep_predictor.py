@@ -33,6 +33,7 @@ class DeepPredictor(BasePredictor):
         self._trading_hours = 4
         self._threshold = 0.5
         self._atr_factor = 0.0
+        self._train_reward = None
         self._training_time = None
         self._indicators = indicators
         if config is None:
@@ -50,6 +51,7 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_atr_factor")
         self._set_att(config, "_training_time")
         self._set_att(config, "_model_data")
+        self._set_att(config, "_train_reward")
 
 
 
@@ -65,7 +67,8 @@ class DeepPredictor(BasePredictor):
             self._trade_mode,
             self._atr_factor,
             self._training_time,
-            self._model_data
+            self._model_data,
+            self._train_reward
 
         ],
             index=[
@@ -76,7 +79,8 @@ class DeepPredictor(BasePredictor):
                 "_trade_mode",
                 "_atr_factor",
                 "_training_time",
-                "_model_data"
+                "_model_data",
+                "_train_reward"
             ])
         return pd.concat([parent_c, my_conf])
 
@@ -88,12 +92,15 @@ class DeepPredictor(BasePredictor):
         if self._model_data is None:
             self._model_data = pickle.dumps(self._model)
 
-    def set_model_params(self, trade_mode:str,  trading_hours:int, threshold:float, features:List, atr_factor:float):
+    def set_model_params(self, trade_mode:str,  trading_hours:int,
+                         threshold:float, features:List,
+                         atr_factor:float, train_reward:int):
         self._trading_hours = trading_hours
         self._threshold = threshold
         self._features = features
         self._trade_mode = trade_mode
         self._atr_factor = atr_factor
+        self._train_reward = train_reward
         self._training_time = datetime.datetime.now()
 
     def get_trading_hours(self) -> int:
