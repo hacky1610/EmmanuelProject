@@ -252,6 +252,7 @@ class Trader:
         buy_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0}).astype(int)
         sell_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1}).astype(int)
 
+        opened = 0
         for predictor in predictors:
             result = self.trade(
                 predictor=predictor,
@@ -268,8 +269,11 @@ class Trader:
                     currency=market["currency"])
             )
             if result == TradeResult.SUCCESS:
-                self._tracer.info("Stop predicting because of success")
-                break
+                self._tracer.info("One positions opened")
+                opened += 1
+                if opened == 2:
+                    self._tracer.info("Break because 2 positions opened")
+                    break
 
     @staticmethod
     def _evalutaion_up_to_date(last_scan_time):

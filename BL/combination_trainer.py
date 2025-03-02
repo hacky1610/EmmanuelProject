@@ -261,8 +261,8 @@ class CombinationTrainer:
         combos = list(combinations(best_features, num_features))
         random.shuffle(combos)
 
-        # Kürze die Liste auf 20 % der ursprünglichen Länge
-        reduced_size = max(1, int(len(combos) * 0.3))  # Mindestens 1 Element behalten
+        # Kürze die Liste auf 5 % der ursprünglichen Länge
+        reduced_size = max(1, int(len(combos) * 0.05))  # Mindestens 1 Element behalten
         return combos[:reduced_size]
 
     def feature_importance_xgboost(self, df, target):

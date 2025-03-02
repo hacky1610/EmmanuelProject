@@ -11,11 +11,6 @@ db = client["ZuluDB"]
 ps = PredictorStore(db)
 
 
-all = ps.load_all_by_symbol("GBPJPY")
-
-
-for p in all:
-    p['_indicator_names'].sort()
-    print(f"{p['_scan_time']} {p['_indicator_names']}")
+print()
 
 
