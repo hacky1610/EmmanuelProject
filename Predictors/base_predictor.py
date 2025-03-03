@@ -178,3 +178,6 @@ class BasePredictor:
 
     def get_save_data(self) -> Mapping:
         return self.get_config().to_dict()
+
+    def set_tracer(self, tracer):
+        self._tracer = tracer

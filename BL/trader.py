@@ -254,6 +254,7 @@ class Trader:
 
         opened = 0
         for predictor in predictors:
+            predictor.set_tracer(self._tracer)
             result = self.trade(
                 predictor=predictor,
                 trade_df=trade_df,

@@ -128,6 +128,7 @@ class DeepPredictor(BasePredictor):
 
             # Vergleiche mit dem Threshold
             if positive_prob >= self._threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
+                self._tracer.debug(actions_df[self._features])
                 return  self._trade_mode
 
         return TradeAction.NONE
