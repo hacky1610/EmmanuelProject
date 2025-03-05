@@ -200,7 +200,7 @@ class CombinationTrainer:
                     test_precision, test_reward = 0, 0
 
                 # Mindestbedingungen prüfen
-                if train_precision >= min_prec and train_reward >= min_reward:
+                if train_precision >= min_prec and train_reward >= 8:
                     result = {
                         "Features": features,
                         "Best Model": best_model_candidate,

@@ -37,9 +37,10 @@ class BaseCache:
 
 class DropBoxCache(BaseCache):
 
-    def __init__(self, dropbox_servie: DropBoxService, use_local_cache=False ):
+    def __init__(self, dropbox_servie: DropBoxService, use_local_cache=False, prefix=""):
         self.dropbox_servie = dropbox_servie
         self.use_local_cache = use_local_cache
+        self._prefix = prefix
 
     def load_cache(self, name: str) -> DataFrame:
         if self.use_local_cache:
@@ -119,7 +120,7 @@ class DropBoxCache(BaseCache):
         index = day_of_year - (day_of_year % 10)
         index = 50 #HACK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        return f"Training_V29/{heute.year}_D{index}"
+        return f"{self._prefix}Training_V29/{heute.year}_D{index}"
 
     def load_train_cache(self, name: str):
         res = self.dropbox_servie.load(self._get_train_cache_path(name))

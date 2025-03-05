@@ -88,7 +88,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         for hours in [16]:
             for factor in [2.0]:
                 combination_size = 4
-                quantile = 0.88
+                quantile = 0.7
                 ct = CombinationTrainer(cache=cache,
                                         indicators=indicators,
                                         predictor_store=predictor_store,

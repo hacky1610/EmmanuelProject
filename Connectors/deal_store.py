@@ -158,6 +158,16 @@ class DealStore:
     def get_all_deals(self):
         return self._collection.find({"account_type": self._account_type})
 
+    def get_all_deals_opened_after(self):
+        date_filter = datetime.datetime(2025, 3, 3, hour=16)
+
+        query = {
+            "account_type": self._account_type,
+            "open_date_ig_datetime": {"$gte": date_filter}
+        }
+
+        return self._collection.find(query)
+
     def get_open_deals(self) -> List[Deal]:
         deals = []
         for d in self._collection.find({"status": "open", "account_type": self._account_type}):
