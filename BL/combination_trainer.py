@@ -114,6 +114,21 @@ class CombinationTrainer:
 
         return test_precision, test_reward
 
+
+    def _predict_sum(self, df, feature_cols):
+
+        # Fälle, in denen alle Features 1 sind
+        trades = df[list(feature_cols)].sum(axis=1) == len(feature_cols)
+
+        # Berechnung von TP und FP
+        TP = ((trades) & (df['result'] == 1)).sum()
+        FP = ((trades) & (df['result'] == 0)).sum()
+
+        # Precision berechnen
+        precision = TP / (TP + FP) if (TP + FP) > 0 else 0
+        trade_indexes = df.index[trades].tolist()
+        return precision, TP - FP, trade_indexes
+
     def _predict_dynamic_threshold(self, df: DataFrame, features: List[str], model: object) -> (
             float, int, float):
 
@@ -154,17 +169,13 @@ class CombinationTrainer:
         }
 
     def _save_predictor(self, symbol: str, trade_mode: str,
-                        trading_hours: int, best_threshold:
-                        float, features: List, train_reward:int,
-                        atr_factor: float, model):
-        if self._test_mode:
-            return
+                        trading_hours: int, features: List, test_reward:int,
+                        atr_factor: float):
         dp = DeepPredictor(symbol=symbol, cache=self._cache,
                            indicators=self._indicators, config={})
         dp.set_model_params(trade_mode=trade_mode, trading_hours=trading_hours,
-                            threshold=best_threshold, features=list(features),
-                            atr_factor=atr_factor, train_reward=train_reward)
-        dp.set_model(model)
+                            features=list(features),
+                            atr_factor=atr_factor, test_reward=test_reward)
         self._predictor_store.save(dp)
 
     def _best_feature_pair_by_reward(self, df: DataFrame, symbol: str,
@@ -180,51 +191,59 @@ class CombinationTrainer:
 
         results = []
         #combos = self._get_combos(num_features, train_df)
-        combos = self._get_combos_by_best_features(num_features, best_features)
+        combos = self._get_combos_by_best_features(num_features, best_features, 0.8)
         total = len(combos)
         last_shown = -1
         for i, features in enumerate(combos):
             try:
-                percent = int((i / total) * 100)  # Berechne das Prozent als Ganzzahl
-                if percent != last_shown:  # Nur ausgeben, wenn sich der Prozentwert ändert
-                    last_shown = percent
-                    print(f"Progress: {percent}%")
-
-                best_model_candidate = self._train_combo(df, features, n_iter)
-
-                train_precision, train_reward, best_threshold = self._predict_dynamic_threshold(train_df, features,
-                                                                                                best_model_candidate)
+                train_precision, train_reward, trade_indexes_train  = self._predict_sum(train_df,features)
                 if self._test_mode:
-                    test_precision, test_reward = self._predict(test_df, features, best_model_candidate, best_threshold)
+                    test_precision, test_reward, trade_indexes_test = self._predict_sum(test_df,features)
                 else:
                     test_precision, test_reward = 0, 0
 
                 # Mindestbedingungen prüfen
-                if train_precision >= min_prec and train_reward >= 8:
+                if train_precision >= min_prec and train_reward >= 5:
                     result = {
                         "Features": features,
-                        "Best Model": best_model_candidate,
-                        "Best Model Name": best_model_candidate.__class__.__name__,
                         "Train Precision": train_precision,
                         "Train Reward": train_reward,
                         "Test Precision": test_precision,
                         "Test Reward": test_reward,
-                        "Best Threshold": best_threshold
+                        "Test Indexes": trade_indexes_test,
                     }
                     results.append(result)
                     result_df = pandas.DataFrame(results)
                     mean = result_df["Test Reward"].mean()
                     sum = result_df["Test Reward"].sum()
-                    print(
-                        f"{symbol} Best Threshold: {best_threshold:.2f}, Precision: {train_precision:.4f}, Reward: {train_reward} Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} Features: {features} {best_model_candidate.__class__.__name__}")
+                    # print(
+                    #     f"{symbol} {trade_mode} Precision: {train_precision:.4f}, Reward: {train_reward} "
+                    #     f"Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} "
+                    #     f"Features: {features}")
 
-                    self._save_predictor(symbol=symbol, atr_factor=atr_factor,
-                                         features=features, trade_mode=trade_mode,
-                                         trading_hours=trading_hours, model=best_model_candidate,
-                                         best_threshold=best_threshold, train_reward=train_reward )
+
             except Exception as e:
                 traceback_str = traceback.format_exc()
                 print(f"Error: {e} with {features} {traceback_str}")
+
+        df = DataFrame(results)
+        if len(df) > 0:
+            unique_indexes = set(index for sublist in df["Test Indexes"] for index in sublist)
+            print(f"Indexes {len(unique_indexes)}")
+            print(f"Train Reward Mean {df['Train Reward'].mean()}")
+            print(f"Test Reward Mean {df['Test Reward'].mean()}")
+            print(f"Test Reward Sum {df['Test Reward'].sum()}")
+            print(f"Test Precision {df['Test Precision'].mean()}")
+
+            if df['Test Reward'].sum() > 15 and len(unique_indexes) >= 20:
+                print(f"####################GOOD################")
+                for i,r in df.iterrows():
+                    self._save_predictor(symbol=symbol, atr_factor=atr_factor,
+                                         features=list(r["Features"]), trade_mode=trade_mode,
+                                         trading_hours=trading_hours,
+                                          test_reward=r["Test Reward"] )
+
+        return df
 
     def _train_combo(self, df, features, n_iter):
         import warnings
@@ -257,12 +276,12 @@ class CombinationTrainer:
         reduced_size = max(1, int(len(combos) * 0.2))  # Mindestens 1 Element behalten
         return combos[:reduced_size]
 
-    def _get_combos_by_best_features(self, num_features, best_features: List):
+    def _get_combos_by_best_features(self, num_features, best_features: List, size=0.6):
         combos = list(combinations(best_features, num_features))
         random.shuffle(combos)
 
         # Kürze die Liste auf 5 % der ursprünglichen Länge
-        reduced_size = max(1, int(len(combos) * 0.05))  # Mindestens 1 Element behalten
+        reduced_size = max(1, int(len(combos) * size))  # Mindestens 1 Element behalten
         return combos[:reduced_size]
 
     def feature_importance_xgboost(self, df, target):

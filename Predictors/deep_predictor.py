@@ -33,7 +33,7 @@ class DeepPredictor(BasePredictor):
         self._trading_hours = 4
         self._threshold = 0.5
         self._atr_factor = 0.0
-        self._train_reward = None
+        self._test_reward = None
         self._training_time = None
         self._indicators = indicators
         if config is None:
@@ -51,7 +51,7 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_atr_factor")
         self._set_att(config, "_training_time")
         self._set_att(config, "_model_data")
-        self._set_att(config, "_train_reward")
+        self._set_att(config, "_test_reward")
 
 
 
@@ -68,7 +68,7 @@ class DeepPredictor(BasePredictor):
             self._atr_factor,
             self._training_time,
             self._model_data,
-            self._train_reward
+            self._test_reward
 
         ],
             index=[
@@ -80,7 +80,7 @@ class DeepPredictor(BasePredictor):
                 "_atr_factor",
                 "_training_time",
                 "_model_data",
-                "_train_reward"
+                "_test_reward"
             ])
         return pd.concat([parent_c, my_conf])
 
@@ -93,14 +93,13 @@ class DeepPredictor(BasePredictor):
             self._model_data = pickle.dumps(self._model)
 
     def set_model_params(self, trade_mode:str,  trading_hours:int,
-                         threshold:float, features:List,
-                         atr_factor:float, train_reward:int):
+                          features:List,
+                         atr_factor:float, test_reward:int):
         self._trading_hours = trading_hours
-        self._threshold = threshold
         self._features = features
         self._trade_mode = trade_mode
         self._atr_factor = atr_factor
-        self._train_reward = train_reward
+        self._test_reward = test_reward
         self._training_time = datetime.datetime.now()
 
     def get_trading_hours(self) -> int:
@@ -122,15 +121,9 @@ class DeepPredictor(BasePredictor):
         else:
             actions_df = sell_actions_df
 
-        if self._model is not None:
-            probabilities = self._model.predict_proba(actions_df[self._features])
-            positive_prob = probabilities[-1][1]  # Wahrscheinlichkeit des letzten Eintrags für "BUY"
-
-            # Vergleiche mit dem Threshold
-            if positive_prob >= self._threshold:  # self.threshold ist der gewünschte Schwellenwert (z.B. 0.6)
-                self._tracer.debug(actions_df[self._features])
-                return  self._trade_mode
-
+        trades = actions_df[self._features].sum(axis=1) == len(self._features)
+        if trades.iloc[0]:
+            return self._trade_mode
         return TradeAction.NONE
 
     def _clean_list(self, l):

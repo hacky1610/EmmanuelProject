@@ -172,29 +172,22 @@ class Trader:
             return m.get_euro_value(profit, scaling)
 
     @measure_time
-    async def trade_markets(self, trade_type: TradeType, indicators):
-        """Führt den Handel für alle Märkte eines bestimmten Typs asynchron durch,
-           aber begrenzt die Anzahl der gleichzeitig laufenden Threads auf die Anzahl der CPU-Kerne.
-        """
+    def trade_markets(self, trade_type: TradeType, indicators):
+        """Führt den Handel für alle Märkte eines bestimmten Typs durch.
 
+               Args:
+                   trade_type (TradeType): Der Handelstyp.
+               """
         self._tracer.debug("Start")
         currency_markets = IG.IG.get_markets_offline()
-
-        max_workers = os.cpu_count() or 4  # Falls os.cpu_count() None zurückgibt, setze Standardwert 4
-        self._tracer.debug(f"Using max {max_workers} concurrent threads")
-
-        async def trade_single_market(market):
+        for market in currency_markets:
             try:
                 if self.market_tradeble(market["symbol"]):
-                    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                        loop = asyncio.get_running_loop()
-                        await loop.run_in_executor(executor, self.trade_market, indicators, market)
+                    self.trade_market(indicators, market)
             except Exception as EX:
                 self._tracer.error(f"Error while trading {market['symbol']} {EX}")
-                traceback_str = traceback.format_exc()
+                traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 self._tracer.error(f"Error: {EX} File:{traceback_str}")
-
-        await asyncio.gather(*(trade_single_market(market) for market in currency_markets))
 
         self._tracer.debug("End")
 
@@ -342,7 +335,6 @@ class Trader:
             return TradeResult.ERROR
 
         self._tracer.debug(f"{config.symbol} valid to predict")
-        predictor.load_model()
         signal = predictor.predict(buy_actions_df, sell_actions_df)
         market = self._market_store.get_market(config.symbol)
         stop = trade_df.ATR.iloc[-1] * predictor.get_atr_factor() * config.scaling
