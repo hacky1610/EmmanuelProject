@@ -362,6 +362,7 @@ class CombinationTrainer:
         simulation.get_signals(symbol, df_train, indicators, GenericPredictor)
         train_signals_df = simulation.create_combined_indicator_data(indicators, symbol)
         trade_results = []
+        pd.set_option('future.no_silent_downcasting', True)
         # Set specific replacement values for each trade type
         if trade_mode == TradeAction.BUY:
             train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
@@ -369,8 +370,6 @@ class CombinationTrainer:
         elif trade_mode == TradeAction.SELL:
             train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1})
             trade_results = sell_results
-
-        train_signals_df = train_signals_df.infer_objects(copy=False)
 
         # Prepare results data
         trade_results = trade_results[['chart_index', 'result']]
