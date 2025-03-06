@@ -86,7 +86,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                         test_mode=True)
 
                 features = predictor_store.get_feature_combo_by_symbol(fx)
-                def foo(num_features, best_features):
+                def foo(num_features, best_features, size):
                     return features
 
 

@@ -184,10 +184,7 @@ class CombinationTrainer:
                                      min_prec: float, best_features: list,
                                      n_iter=5, min_reward = 4):
 
-        if self._test_mode:
-            train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
-        else:
-            train_df = df
+        train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
         results = []
         #combos = self._get_combos(num_features, train_df)
@@ -197,10 +194,7 @@ class CombinationTrainer:
         for i, features in enumerate(combos):
             try:
                 train_precision, train_reward, trade_indexes_train  = self._predict_sum(train_df,features)
-                if self._test_mode:
-                    test_precision, test_reward, trade_indexes_test = self._predict_sum(test_df,features)
-                else:
-                    test_precision, test_reward = 0, 0
+                test_precision, test_reward, trade_indexes_test = self._predict_sum(test_df,features)
 
                 # Mindestbedingungen prüfen
                 if train_precision >= min_prec and train_reward >= 5:
