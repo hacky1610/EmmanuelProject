@@ -34,6 +34,9 @@ class DeepPredictor(BasePredictor):
         self._threshold = 0.5
         self._atr_factor = 0.0
         self._test_reward = None
+        self._unique_indexes = None
+        self._test_precision = None
+        self._test_trade_count = None
         self._training_time = None
         self._indicators = indicators
         if config is None:
@@ -52,7 +55,9 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_training_time")
         self._set_att(config, "_model_data")
         self._set_att(config, "_test_reward")
-
+        self._set_att(config, "_test_precision")
+        self._set_att(config, "_test_precision")
+        self._set_att(config, "_unique_indexes")
 
 
         super().setup(config)
@@ -68,7 +73,10 @@ class DeepPredictor(BasePredictor):
             self._atr_factor,
             self._training_time,
             self._model_data,
-            self._test_reward
+            self._test_reward,
+            self._test_precision,
+            self._test_trade_count,
+            self._unique_indexes
 
         ],
             index=[
@@ -80,7 +88,10 @@ class DeepPredictor(BasePredictor):
                 "_atr_factor",
                 "_training_time",
                 "_model_data",
-                "_test_reward"
+                "_test_reward",
+                "_test_precision",
+                "_test_trade_count",
+                "_unique_indexes"
             ])
         return pd.concat([parent_c, my_conf])
 
@@ -92,15 +103,24 @@ class DeepPredictor(BasePredictor):
         if self._model_data is None:
             self._model_data = pickle.dumps(self._model)
 
-    def set_model_params(self, trade_mode:str,  trading_hours:int,
-                          features:List,
-                         atr_factor:float, test_reward:int):
+    def set_model_params(self,
+                         trade_mode:str,
+                         trading_hours:int,
+                         features:List,
+                         atr_factor:float,
+                         test_reward:int,
+                         test_precision:float,
+                         test_trade_count:int,
+                         unique_indexes:int):
         self._trading_hours = trading_hours
         self._features = features
         self._trade_mode = trade_mode
         self._atr_factor = atr_factor
         self._test_reward = test_reward
         self._training_time = datetime.datetime.now()
+        self._unique_indexes = unique_indexes
+        self._test_precision = test_precision
+        self._test_trade_count = test_trade_count
 
     def get_trading_hours(self) -> int:
         return self._trading_hours

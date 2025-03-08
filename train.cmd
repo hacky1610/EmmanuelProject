@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 :: Anzahl der Wiederholungen setzen
-set "n=5"
+set "n=8"
 
 :: Python-Skript ausführen n-mal
 for /L %%i in (1,1,%n%) do (

@@ -17,6 +17,7 @@ from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.metrics import precision_score
 from sklearn.model_selection import train_test_split, RandomizedSearchCV, cross_val_score
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from tqdm import tqdm
 from xgboost import XGBClassifier
 
 from BL import DataProcessor
@@ -115,7 +116,7 @@ class CombinationTrainer:
         return test_precision, test_reward
 
 
-    def _predict_sum(self, df, feature_cols):
+    def _predict_sum(self, df, feature_cols) -> (float, int,  List, int ):
 
         # Fälle, in denen alle Features 1 sind
         trades = df[list(feature_cols)].sum(axis=1) == len(feature_cols)
@@ -127,7 +128,7 @@ class CombinationTrainer:
         # Precision berechnen
         precision = TP / (TP + FP) if (TP + FP) > 0 else 0
         trade_indexes = df.index[trades].tolist()
-        return precision, TP - FP, trade_indexes
+        return precision, TP - FP, trade_indexes, trades.sum()
 
     def _predict_dynamic_threshold(self, df: DataFrame, features: List[str], model: object) -> (
             float, int, float):
@@ -170,12 +171,15 @@ class CombinationTrainer:
 
     def _save_predictor(self, symbol: str, trade_mode: str,
                         trading_hours: int, features: List, test_reward:int,
-                        atr_factor: float):
+                        atr_factor: float, test_precision:float, test_trade_count:int, unique_indexes:int):
         dp = DeepPredictor(symbol=symbol, cache=self._cache,
                            indicators=self._indicators, config={})
         dp.set_model_params(trade_mode=trade_mode, trading_hours=trading_hours,
                             features=list(features),
-                            atr_factor=atr_factor, test_reward=test_reward)
+                            atr_factor=atr_factor,
+                            test_reward=test_reward, test_precision=test_precision,
+                            test_trade_count=test_trade_count, unique_indexes=unique_indexes
+                            )
         self._predictor_store.save(dp)
 
     def _best_feature_pair_by_reward(self, df: DataFrame, symbol: str,
@@ -191,10 +195,10 @@ class CombinationTrainer:
         combos = self._get_combos_by_best_features(num_features, best_features, 0.8)
         total = len(combos)
         last_shown = -1
-        for i, features in enumerate(combos):
+        for i, features in tqdm(enumerate(combos)):
             try:
-                train_precision, train_reward, trade_indexes_train  = self._predict_sum(train_df,features)
-                test_precision, test_reward, trade_indexes_test = self._predict_sum(test_df,features)
+                train_precision, train_reward, trade_indexes_train , trade_count_train = self._predict_sum(train_df,features)
+                test_precision, test_reward, trade_indexes_test , trade_count_test= self._predict_sum(test_df,features)
 
                 # Mindestbedingungen prüfen
                 if train_precision >= min_prec and train_reward >= 5:
@@ -204,6 +208,7 @@ class CombinationTrainer:
                         "Train Reward": train_reward,
                         "Test Precision": test_precision,
                         "Test Reward": test_reward,
+                        "Test Trade Count": trade_count_test,
                         "Test Indexes": trade_indexes_test,
                     }
                     results.append(result)
@@ -222,20 +227,27 @@ class CombinationTrainer:
 
         df = DataFrame(results)
         if len(df) > 0:
+            df = df[df["Test Trade Count"] != 0]
             unique_indexes = set(index for sublist in df["Test Indexes"] for index in sublist)
             print(f"Indexes {len(unique_indexes)}")
             print(f"Train Reward Mean {df['Train Reward'].mean()}")
             print(f"Test Reward Mean {df['Test Reward'].mean()}")
+            print(f"Test Reward Median {df['Test Reward'].median()}")
             print(f"Test Reward Sum {df['Test Reward'].sum()}")
-            print(f"Test Precision {df['Test Precision'].mean()}")
+                print(f"Test Precision {df['Test Precision'].mean()}")
+            print(f"Test Trade Count {df['Test Trade Count'].mean()}")
 
-            if df['Test Reward'].sum() > 15 and len(unique_indexes) >= 20:
+            if df['Test Reward'].sum() > 15 and len(unique_indexes) >= 20 and df['Test Precision'].mean() > 0.66 and df['Test Reward'].mean() > 1.2:
                 print(f"####################GOOD################")
                 for i,r in df.iterrows():
-                    self._save_predictor(symbol=symbol, atr_factor=atr_factor,
-                                         features=list(r["Features"]), trade_mode=trade_mode,
-                                         trading_hours=trading_hours,
-                                          test_reward=r["Test Reward"] )
+                    if r["Test Reward"] > 0:
+                        self._save_predictor(symbol=symbol, atr_factor=atr_factor,
+                                             features=list(r["Features"]), trade_mode=trade_mode,
+                                             trading_hours=trading_hours,
+                                             test_reward=r["Test Reward"],
+                                             test_precision=r["Test Precision"],
+                                             test_trade_count=r["Test Trade Count"],
+                                             unique_indexes=len(unique_indexes))
 
         return df
 
@@ -375,7 +387,7 @@ class CombinationTrainer:
         trade_results = trade_results[['chart_index', 'result']]
         trade_results['result'] = trade_results['result'].apply(lambda x: 1 if x > 0 else 0)
         signal_result_df = pd.merge(train_signals_df, trade_results, on='chart_index', how='left')
-        signal_result_df['result'].fillna(0, inplace=True)
+        signal_result_df['result'] = signal_result_df['result'].fillna(0)
         signal_result_df = signal_result_df.dropna()
 
         df = signal_result_df.drop(columns=["chart_index"])

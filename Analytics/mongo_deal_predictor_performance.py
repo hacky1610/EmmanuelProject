@@ -46,7 +46,6 @@ for deal in ds.get_all_deals_opened_after():
     id = deal["predictor_scan_id"]
     predictor = ps.load_by_id(id)
     predictor_object = DeepPredictor(deal["ticker"], cache, Indicators(), config=predictor)
-    predictor_object.load_model()
     print(f'{deal["profit"]} {predictor["_train_reward"]}')
     df, df_eval = tiingo.load_test_data(deal["ticker"], DataProcessor(), trade_type=TradeType.FX,
                                                             use_cache=True, days=30)
