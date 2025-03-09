@@ -192,7 +192,7 @@ class CombinationTrainer:
 
         results = []
         #combos = self._get_combos(num_features, train_df)
-        combos = self._get_combos_by_best_features(num_features, best_features, 0.8)
+        combos = self._get_combos_by_best_features(num_features, best_features, 0.5)
         total = len(combos)
         last_shown = -1
         for i, features in tqdm(enumerate(combos)):
@@ -234,7 +234,7 @@ class CombinationTrainer:
             print(f"Test Reward Mean {df['Test Reward'].mean()}")
             print(f"Test Reward Median {df['Test Reward'].median()}")
             print(f"Test Reward Sum {df['Test Reward'].sum()}")
-                print(f"Test Precision {df['Test Precision'].mean()}")
+            print(f"Test Precision {df['Test Precision'].mean()}")
             print(f"Test Trade Count {df['Test Trade Count'].mean()}")
 
             if df['Test Reward'].sum() > 15 and len(unique_indexes) >= 20 and df['Test Precision'].mean() > 0.66 and df['Test Reward'].mean() > 1.2:
