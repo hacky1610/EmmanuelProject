@@ -94,7 +94,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                  best_features_online,
                                  random.choices( indicators.get_all_indicator_names(), k=25)]:
                     f += 1
-                    combination_size = 5
+                    combination_size = 4
                     quantile = 0.6
                     ct = CombinationTrainer(cache=cache,
                                             indicators=indicators,

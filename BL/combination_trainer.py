@@ -192,7 +192,7 @@ class CombinationTrainer:
 
         results = []
         #combos = self._get_combos(num_features, train_df)
-        combos = self._get_combos_by_best_features(num_features, best_features, 0.5)
+        combos = self._get_combos_by_best_features(num_features, best_features, 0.9)
         total = len(combos)
         last_shown = -1
         for i, features in tqdm(enumerate(combos)):
