@@ -423,15 +423,6 @@
         "min_stop_disance": 1000.0
     },
     {
-        "symbol": "EURTRY",
-        "epic": "CS.D.EURTRY.MINI.IP",
-        "spread": 60.000000000002274,
-        "scaling": 10000,
-        "size": 1.0,
-        "currency": "TRL",
-        "min_stop_disance": 4100.0
-    },
-    {
         "symbol": "USDTRY",
         "epic": "CS.D.USDTRY.MINI.IP",
         "spread": 49.999999999954525,
