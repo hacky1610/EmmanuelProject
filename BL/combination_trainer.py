@@ -27,8 +27,6 @@ from Connectors.tiingo import Tiingo, TradeType
 from Predictors.deep_predictor import DeepPredictor
 from Predictors.generic_predictor import GenericPredictor
 
-log_filename = f"best_feature_search_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-
 
 class CombinationTrainer:
 
@@ -115,8 +113,8 @@ class CombinationTrainer:
 
         return test_precision, test_reward
 
-
-    def _predict_sum(self, df, feature_cols) -> (float, int,  List, int ):
+    @staticmethod
+    def _predict_sum(df, feature_cols) -> (float, int, List, int):
 
         # Fälle, in denen alle Features 1 sind
         trades = df[list(feature_cols)].sum(axis=1) == len(feature_cols)
@@ -130,48 +128,9 @@ class CombinationTrainer:
         trade_indexes = df.index[trades].tolist()
         return precision, TP - FP, trade_indexes, trades.sum()
 
-    def _predict_dynamic_threshold(self, df: DataFrame, features: List[str], model: object) -> (
-            float, int, float):
-
-        X_train = df[list(features)]
-        y_train = df[self._target]
-        # Wahrscheinlichkeiten statt harte Vorhersagen
-        y_prob_train = model.predict_proba(X_train)[:, 1]
-
-        # Optimale Threshold-Suche
-        best_local_threshold = 0.5
-        best_local_precision = 0.0
-
-        for threshold in [0.45, 0.5, 0.55, 0.6]:
-            y_pred_train = (y_prob_train >= threshold).astype(int)
-            precision = precision_score(y_train, y_pred_train, zero_division=0)
-
-            if precision > best_local_precision:
-                best_local_precision = precision
-                best_local_threshold = threshold
-
-        # Mit optimalem Threshold die finale Reward-Berechnung
-        y_pred_train = (y_prob_train >= best_local_threshold).astype(int)
-        true_positives = ((y_pred_train == 1) & (y_train == 1)).sum()
-        false_positives = ((y_pred_train == 1) & (y_train == 0)).sum()
-        reward = true_positives - false_positives
-
-        return best_local_precision, reward, best_local_threshold
-
-    def _get_random_forest_params(self) -> dict:
-        return {
-            'n_estimators': [50, 100, 200, 500],  # Anzahl der Bäume
-            'max_depth': [3, 5, 7, 10, None],  # Maximale Tiefe der Bäume
-            'min_samples_split': [2, 5, 10, 20],  # Mindestanzahl von Samples für Split
-            'min_samples_leaf': [1, 2, 4, 10],  # Mindestanzahl von Samples in einem Blatt
-            'max_features': ['sqrt', 'log2', None],  # Anzahl der betrachteten Features pro Split
-            'criterion': ['gini', 'entropy'],  # Kriterium zur Bestimmung der Qualität eines Splits
-            'class_weight': ['balanced', 'balanced_subsample', None]  # Gewichtung für unbalancierte Klassen
-        }
-
     def _save_predictor(self, symbol: str, trade_mode: str,
-                        trading_hours: int, features: List, test_reward:int,
-                        atr_factor: float, test_precision:float, test_trade_count:int, unique_indexes:int):
+                        trading_hours: int, features: List, test_reward: int,
+                        atr_factor: float, test_precision: float, test_trade_count: int, unique_indexes: int):
         dp = DeepPredictor(symbol=symbol, cache=self._cache,
                            indicators=self._indicators, config={})
         dp.set_model_params(trade_mode=trade_mode, trading_hours=trading_hours,
@@ -186,19 +145,18 @@ class CombinationTrainer:
                                      trading_hours: int, trade_mode: str,
                                      num_features: int, atr_factor: float,
                                      min_prec: float, best_features: list,
-                                     n_iter=5, min_reward = 4):
+                                     n_iter=5, min_reward=4):
 
-        train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+        train_df, test_df = train_test_split(df, test_size=0.5, random_state=42)
 
         results = []
         #combos = self._get_combos(num_features, train_df)
         combos = self._get_combos_by_best_features(num_features, best_features, 0.9)
-        total = len(combos)
-        last_shown = -1
         for i, features in tqdm(enumerate(combos)):
             try:
-                train_precision, train_reward, trade_indexes_train , trade_count_train = self._predict_sum(train_df,features)
-                test_precision, test_reward, trade_indexes_test , trade_count_test= self._predict_sum(test_df,features)
+                train_precision, train_reward, trade_indexes_train, trade_count_train = self._predict_sum(train_df,
+                                                                                                          features)
+                test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df, features)
 
                 # Mindestbedingungen prüfen
                 if train_precision >= min_prec and train_reward >= 5:
@@ -215,10 +173,10 @@ class CombinationTrainer:
                     result_df = pandas.DataFrame(results)
                     mean = result_df["Test Reward"].mean()
                     sum = result_df["Test Reward"].sum()
-                    # print(
-                    #     f"{symbol} {trade_mode} Precision: {train_precision:.4f}, Reward: {train_reward} "
-                    #     f"Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} "
-                    #     f"Features: {features}")
+                # print(
+                #         f"{symbol} {trade_mode} Precision: {train_precision:.4f}, Reward: {train_reward} "
+                #         f"Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} "
+                #         f"Features: {features}")
 
 
             except Exception as e:
@@ -237,9 +195,12 @@ class CombinationTrainer:
             print(f"Test Precision {df['Test Precision'].mean()}")
             print(f"Test Trade Count {df['Test Trade Count'].mean()}")
 
-            if df['Test Reward'].sum() > 15 and len(unique_indexes) >= 20 and df['Test Precision'].mean() > 0.66 and df['Test Reward'].mean() > 1.2:
+            if (df['Test Reward'].sum() > 15 and
+                len(unique_indexes) >= 20 and
+                df['Test Precision'].mean() > 0.66 and
+                df['Test Reward'].mean() > 1.2):
                 print(f"####################GOOD################")
-                for i,r in df.iterrows():
+                for i, r in df.iterrows():
                     if r["Test Reward"] > 0:
                         self._save_predictor(symbol=symbol, atr_factor=atr_factor,
                                              features=list(r["Features"]), trade_mode=trade_mode,
@@ -282,7 +243,8 @@ class CombinationTrainer:
         reduced_size = max(1, int(len(combos) * 0.2))  # Mindestens 1 Element behalten
         return combos[:reduced_size]
 
-    def _get_combos_by_best_features(self, num_features, best_features: List, size=0.6):
+    @staticmethod
+    def _get_combos_by_best_features(num_features, best_features: List, size=0.6):
         combos = list(combinations(best_features, num_features))
         random.shuffle(combos)
 
@@ -290,7 +252,8 @@ class CombinationTrainer:
         reduced_size = max(1, int(len(combos) * size))  # Mindestens 1 Element behalten
         return combos[:reduced_size]
 
-    def feature_importance_xgboost(self, df, target):
+    @staticmethod
+    def feature_importance_xgboost(df, target):
         """
         Berechnet die Feature-Wichtigkeit mit XGBoost.
 
@@ -327,10 +290,10 @@ class CombinationTrainer:
             model = RandomForestClassifier()
 
             # Features und Zielvariable extrahieren
-            X = df.drop(columns=[self._target])
+            x = df.drop(columns=[self._target])
 
             # Features bereinigen
-            cleaned_df = self._filter_features_by_vif_and_precision(X, y, model)
+            cleaned_df = self._filter_features_by_vif_and_precision(x, y, model)
             df = df[cleaned_df.columns]
             df[self._target] = y
 
@@ -355,8 +318,8 @@ class CombinationTrainer:
             df = self._prepare_df(df, symbol, trading_hours, atr_factor)
 
         self._best_feature_pair_by_reward(df=df,
-                                          symbol=symbol
-                                          , num_features=num_features,
+                                          symbol=symbol,
+                                          num_features=num_features,
                                           min_prec=min_prec, trade_mode=trading_mode,
                                           trading_hours=trading_hours, atr_factor=atr_factor,
                                           best_features=best_features)
@@ -394,7 +357,8 @@ class CombinationTrainer:
 
         return df
 
-    def _get_train_data(self, tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor,
+    @staticmethod
+    def _get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor,
                         dropbox_cache: DropBoxCache) -> (DataFrame, DataFrame):
         hour_df = f"{symbol}_train_1hour_5.csv"
         minute_df = f"{symbol}_train_5minute_5.csv"

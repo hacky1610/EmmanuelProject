@@ -78,6 +78,32 @@ class Simulation:
 
         return merged_df
 
+    def create_combined_indicator_data_by_features (self, features, symbol: str) -> DataFrame:
+        # Liste für DataFrames mit einem gemeinsamen Index 'chart_index'
+        df_list = []
+
+        # Durchlaufe alle Indikatornamen und lade die entsprechenden DataFrames
+        for indicator in features:
+            try:
+                df = self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")
+
+                # Füge eine Spalte für den Indikatornamen hinzu
+                df = df.rename(columns={"action": indicator})
+                df = df[["chart_index", indicator]]
+
+                # Setze 'chart_index' als Index
+                df.set_index("chart_index", inplace=True)
+
+                # Hänge den DataFrame zur Liste hinzu
+                df_list.append(df)
+            except Exception as e:
+                print(f"Error: {e}")
+
+        # Konkateniere alle DataFrames anhand des Index 'chart_index', fülle fehlende Werte mit 'none'
+        merged_df = pd.concat(df_list, axis=1, join="outer").fillna("none")
+
+        return merged_df
+
     def _simulate_fixed_timeframe(self,
                                  action: str,
                                  df: DataFrame,

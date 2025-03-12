@@ -10,7 +10,7 @@ from BL.analytics import Analytics
 from BL.datatypes import TradeAction
 from BL.indicators import Indicators
 from Connectors.deal_store import DealStore
-from Connectors.market_store import MarketStore, Market
+from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Predictors.deep_predictor import DeepPredictor
 from Predictors.generic_predictor import GenericPredictor
@@ -28,7 +28,6 @@ from UI.base_viewer import BaseViewer
 
 
 class IG:
-
     BUY_DIRECTION = "BUY"
     SELL_DIRECTION = "SELL"
 
@@ -144,7 +143,8 @@ class IG:
     def get_market_details(self, epic: str):
         return self.ig_service.fetch_market_by_epic(epic)
 
-    def _get_spread(self, market_object):
+    @staticmethod
+    def _get_spread(market_object):
         offer = market_object.offer
         bid = market_object.bid
         scaling = market_object.scalingFactor
@@ -285,8 +285,8 @@ class IG:
             self._tracer.error(f"Error while get limit {e}")
             return -1
 
-
-    def get_stop_distance(self, market, epic: str, scaling_factor: int, intelligent_stop_distance: float = 6.0,
+    def get_stop_distance(self, market, epic: str, scaling_factor: int,
+                          intelligent_stop_distance: float = 6.0,
                           check_min=True) -> (float, bool):
         stop_distance = market.get_pip_value(euro=intelligent_stop_distance,
                                              scaling_factor=scaling_factor)
@@ -304,7 +304,6 @@ class IG:
         self._tracer.debug(f"Calculated stop distance is {stop_distance}")
 
         return stop_distance, False
-
 
     def is_ready_to_set_intelligent_stop(self, diff, limit: float) -> bool:
 
@@ -374,7 +373,7 @@ class IG:
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
             self._tracer.error(f"MainException: {e} File:{traceback_str}")
 
-    def manual_close(self, position: Series,deal_store: DealStore):
+    def manual_close(self, position: Series, deal_store: DealStore):
         bid_price = position.bid
         offer_price = position.offer
         direction = position.direction
@@ -395,7 +394,8 @@ class IG:
                     self._tracer.debug(f"Stop reached {deal}")
                     self.close(IG.BUY_DIRECTION, deal_id, deal.size)
 
-    def manual_close_after_time(self, position: Series,deal_store: DealStore, predictor_store: PredictorStore, time_threshold_minutes=10):
+    def manual_close_after_time(self, position: Series, deal_store: DealStore, predictor_store: PredictorStore,
+                                time_threshold_minutes=10):
         """
           Schließt Trades manuell, wenn die Zeit die Handelszeit (plus Threshold) überschreitet.
 
@@ -415,7 +415,7 @@ class IG:
         p_id = deal.get_predictor_scan_id()
 
         # Setup des Predictors
-        predictor = DeepPredictor(cache=None, config=None,  indicators=Indicators(),symbol="")
+        predictor = DeepPredictor(cache=None, config=None, indicators=Indicators(), symbol="")
         predictor_config = predictor_store.load_by_id(p_id)
         if not predictor_config:
             self._tracer.warning("No predictor config")
@@ -431,10 +431,12 @@ class IG:
 
             # Überprüfen, ob die Zeit überschritten wurde
             if datetime.utcnow() > close_time_with_threshold:
-                self._tracer.info(f"Schließe Kauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
+                self._tracer.info(
+                    f"Schließe Kauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
                 self.close(IG.SELL_DIRECTION, deal_id, deal.size)
             else:
-                self._tracer.debug(f"Trade{ deal_id} ist noch im Zeitrahmen wird geschlossen {close_time_with_threshold}")
+                self._tracer.debug(
+                    f"Trade{deal_id} ist noch im Zeitrahmen wird geschlossen {close_time_with_threshold}")
 
         elif direction == IG.SELL_DIRECTION:
             # Erlaubte Handelszeit und Threshold berechnen
@@ -444,10 +446,12 @@ class IG:
 
             # Überprüfen, ob die Zeit überschritten wurde
             if datetime.utcnow() > close_time_with_threshold:
-                self._tracer.info(f"Schließe Verkauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
+                self._tracer.info(
+                    f"Schließe Verkauf-Trade {deal_id}, da die Zeit überschritten ist {trading_hours} {open_time} {close_time} {close_time_with_threshold}")
                 self.close(IG.BUY_DIRECTION, deal_id, deal.size)
             else:
-                self._tracer.debug(f"Trade{ deal_id} ist noch im Zeitrahmen wird geschlossen {close_time_with_threshold}")
+                self._tracer.debug(
+                    f"Trade{deal_id} ist noch im Zeitrahmen wird geschlossen {close_time_with_threshold}")
 
     def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
         self._tracer.debug(f"Change Stop level to {new_stop_level}")
@@ -487,7 +491,7 @@ class IG:
 
     def get_current_balance(self):
         balance = self.ig_service.fetch_accounts().loc[0].balance
-        if balance == None:
+        if balance is None:
             return 0
         return balance
 
@@ -695,7 +699,6 @@ class IG:
 
         return _currency_markets
 
-
     @staticmethod
     def get_market_by_epic(market_epic: str) -> Optional[Dict]:
         _currency_markets = IG.get_markets_offline()
@@ -704,10 +707,8 @@ class IG:
                 return market
         return None
 
-
-
     @staticmethod
-    def set_markets_offline(currency_markets:List[Dict]):
+    def set_markets_offline(currency_markets: List[Dict]):
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "Data", "markets.json"),
                   'w') as json_file:
             json.dump(currency_markets, json_file, indent=4)

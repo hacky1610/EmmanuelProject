@@ -28,7 +28,7 @@ from UI.plotly_viewer import PlotlyViewer
 conf_reader = ConfigReader()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
-cache = DropBoxCache(ds, prefix="test")
+cache = DropBoxCache(ds, prefix="test2")
 tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
 predictor = GenericPredictor(indicators=Indicators(), symbol="Foo")
@@ -41,19 +41,20 @@ sim = Simulation(cache, Analytics(MarketStore(db), ig))
 ct = CombinationTrainer(cache, Indicators(),ps, test_mode=True)
 ti = Tiingo(conf_reader=conf_reader, cache=cache)
 os.environ["PYTHONWARNINGS"] = "ignore"
+
+pd.set_option('future.no_silent_downcasting', True)
 for deal in ds.get_all_deals_opened_after():
-    print(deal)
+    #print(deal)
     id = deal["predictor_scan_id"]
     predictor = ps.load_by_id(id)
     predictor_object = DeepPredictor(deal["ticker"], cache, Indicators(), config=predictor)
-    print(f'{deal["profit"]} {predictor["_train_reward"]}')
     df, df_eval = tiingo.load_test_data(deal["ticker"], DataProcessor(), trade_type=TradeType.FX,
                                                             use_cache=True, days=30)
 
     buy_results, sell_results = sim.simulate(df, df_eval, deal["ticker"],
                                                     time_frame=16, factor=2, force=True)
     sim.get_signals_by_indicatornames(deal["ticker"], df, predictor_object._features, Indicators(), GenericPredictor)
-    train_signals_df = sim.create_combined_indicator_data(Indicators(), deal["ticker"])
+    train_signals_df = sim.create_combined_indicator_data_by_features(predictor_object._features, deal["ticker"])
     trade_results = []
     # Set specific replacement values for each trade type
     if predictor_object._trade_mode == TradeAction.BUY:
@@ -66,18 +67,14 @@ for deal in ds.get_all_deals_opened_after():
     train_signals_df = train_signals_df.infer_objects(copy=False)
 
     # Prepare results data
-    trade_results = trade_results[['chart_index', 'result']]
+    trade_results = trade_results[['chart_index', 'result', "entry_time"]]
     trade_results['result'] = trade_results['result'].apply(lambda x: 1 if x > 0 else 0)
     signal_result_df = pd.merge(train_signals_df, trade_results, on='chart_index', how='left')
     signal_result_df['result'].fillna(0, inplace=True)
     signal_result_df = signal_result_df.dropna()
 
-    signal_result_df = signal_result_df.drop(columns=["chart_index"])
+    precission, reward, trade_indexes, trade_count  = ct._predict_sum(signal_result_df.drop(columns=["chart_index", "entry_time"]), predictor_object._features)
 
-    a, b = ct._predict(signal_result_df, predictor_object._features, predictor_object._model, predictor_object._threshold)
-
-
-    df = sim.evaluate_fixed_timeframe(predictor_object,df,df_eval,2,2,16)
-    print("FOO")
-    print(df[df.action != "none"])
+    print(f'Real: Profit: {deal["profit"]} Reward: {predictor["_test_reward"]} Time {deal["open_date_ig_str"]}')
+    print(f"Evaluate: Precission: {precission} Reward {reward}")
 

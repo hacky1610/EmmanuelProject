@@ -63,6 +63,6 @@ trader = Trader(
     cache=cache
 )
 
-asyncio.run(trader.trade_markets(TradeType.FX, indicators))
+asyncio.run(trader.trade_markets(indicators))
 
 

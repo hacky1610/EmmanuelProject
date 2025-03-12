@@ -3,11 +3,11 @@ import concurrent.futures
 import os
 import traceback
 from enum import Enum
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Any
 import re
 from datetime import datetime
-
 import pandas as pd
+from bson import ObjectId
 
 from BL import DataProcessor, measure_time
 from BL.analytics import Analytics
@@ -19,10 +19,11 @@ from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType
 from Tracing import Tracer
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from Predictors.base_predictor import BasePredictor
 from Predictors.deep_predictor import DeepPredictor
 
+pd.set_option('future.no_silent_downcasting', True)
 
 class TradeConfig(NamedTuple):
     """Konfigurationsdaten für den Handel.
@@ -141,7 +142,8 @@ class Trader:
                     deal.profit = self._calc_profit(ig_deal, m, scaling)
 
                     self._tracer.warning(
-                        f"Problem with IG Calcululation. Profit is 0 Euro. Real profit is {deal.profit} . Deal {deal.dealId}")
+                        f"Problem with IG Calcululation. Profit is 0 Euro. Real profit is {deal.profit} . "
+                        f"Deal {deal.dealId}")
 
                 if deal.profit > 0:
                     deal.result = 1
@@ -172,7 +174,7 @@ class Trader:
             return m.get_euro_value(profit, scaling)
 
     @measure_time
-    async def trade_markets(self, trade_type: TradeType, indicators):
+    async def trade_markets(self, indicators):
         """Führt den Handel für alle Märkte eines bestimmten Typs asynchron durch,
            aber begrenzt die Anzahl der gleichzeitig laufenden Threads auf die Anzahl der CPU-Kerne.
         """
@@ -185,7 +187,7 @@ class Trader:
 
         async def trade_single_market(market):
             try:
-                if self.market_tradeble(market["symbol"]):
+                if self.market_tradable(market["symbol"]):
                     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                         loop = asyncio.get_running_loop()
                         await loop.run_in_executor(executor, self.trade_market, indicators, market)
@@ -219,39 +221,65 @@ class Trader:
             predictors.append(predictor)
         return predictors
 
-    def market_tradeble(self, market: str):
+    def _get_predictors_by_id(self, symbol: str, indicators, id) -> List[DeepPredictor]:
+        predictors = []
+
+        for predictor_data in [self._predictor_store.load_by_id(id)]:
+            predictor = DeepPredictor(symbol=symbol, tracer=self._tracer, indicators=indicators, cache=self._cache)
+            predictor.setup(predictor_data)
+            predictors.append(predictor)
+        return predictors
+
+    def market_tradable(self, market: str) -> bool:
         return self._predictor_store.count_of_all_by_symbol(market) > 0
 
-    @measure_time
-    def trade_market(self, indicators, market):
-        symbol_ = market["symbol"]
-        self._tracer.set_prefix(symbol_)
+    def trade_market(self, indicators: Any, market: dict) -> TradeResult:
+        """
+        Executes trading for a single market.
+
+        Args:
+            indicators (Any): The indicators used for trading.
+            market (dict): The market data.
+
+        Returns:
+            TradeResult: The result of the trade (SUCCESS, NOACTION, or ERROR).
+        """
+        symbol = market["symbol"]
+        self._tracer.set_prefix(symbol)
         indicators.reset_caches()
-        self._tracer.debug(f"Try to trade {symbol_}")
+        self._tracer.debug(f"Attempting to trade {symbol}")
 
-        trade_df = self._tiingo.load_trade_data(symbol=symbol_, dp=self._dataprocessor,
-                                                trade_type=TradeType.FX)
-
-        if len(trade_df) == 0:
-            self._tracer.error(f"Could not load train data for {symbol_}")
+        trade_df = self._tiingo.load_trade_data(symbol=symbol, dp=self._dataprocessor, trade_type=TradeType.FX)
+        if trade_df.empty:
+            self._tracer.error(f"Could not load trade data for {symbol}")
             return TradeResult.ERROR
 
-        open_deals = self._deal_storage.get_open_deals_by_ticker(symbol_)
-        if len(open_deals) >= 2:
-            self._tracer.debug(f"there are already 2 open position of {symbol_}")
+        if self._has_open_positions(symbol):
+            self._tracer.debug(f"Already 2 open positions for {symbol}")
             return TradeResult.ERROR
-        predictors = self._get_predictors(symbol_, indicators)
-        all_features = set(feature for d in predictors for feature in d._features)
-        actions = {}
 
-        for indicator_name in all_features:
-            action = indicators.predict_single(trade_df, indicator_name)
-            actions[indicator_name] = action
-        actions_df = DataFrame([actions])
+        predictors = self._get_predictors(symbol, indicators)
+        #predictors = self._get_predictors_by_id(symbol, indicators,ObjectId('67cab6aca5f967606f612fbe'))
+        actions_df = self._get_actions_df(predictors, trade_df, indicators)
 
         buy_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0}).astype(int)
         sell_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1}).astype(int)
 
+        return self._execute_trades(predictors, trade_df, buy_actions_df, sell_actions_df, market)
+
+    def _has_open_positions(self, symbol: str) -> bool:
+        open_deals = self._deal_storage.get_open_deals_by_ticker(symbol)
+        return len(open_deals) >= 2
+
+    @staticmethod
+    def _get_actions_df(predictors: List[DeepPredictor], trade_df: DataFrame, indicators: Any) -> DataFrame:
+        all_features = set(feature for predictor in predictors for feature in predictor._features)
+        actions = {indicator_name: indicators.predict_single(trade_df, indicator_name) for indicator_name in
+                   all_features}
+        return DataFrame([actions])
+
+    def _execute_trades(self, predictors: List[DeepPredictor], trade_df: DataFrame, buy_actions_df: DataFrame,
+                        sell_actions_df: DataFrame, market: dict) -> TradeResult:
         opened = 0
         for predictor in predictors:
             predictor.set_tracer(self._tracer)
@@ -261,20 +289,22 @@ class Trader:
                 buy_actions_df=buy_actions_df,
                 sell_actions_df=sell_actions_df,
                 config=TradeConfig(
-                    symbol=symbol_,
+                    symbol=market["symbol"],
                     epic=market["epic"],
                     spread=market["spread"],
                     scaling=market["scaling"],
                     trade_type=TradeType.FX,
                     size=market["size"],
-                    currency=market["currency"])
+                    currency=market["currency"]
+                )
             )
             if result == TradeResult.SUCCESS:
-                self._tracer.info("One positions opened")
+                self._tracer.info("One position opened")
                 opened += 1
                 if opened == 2:
                     self._tracer.info("Break because 2 positions opened")
                     break
+        return TradeResult.SUCCESS if opened > 0 else TradeResult.NOACTION
 
     @staticmethod
     def _evalutaion_up_to_date(last_scan_time):
@@ -305,8 +335,6 @@ class Trader:
                     limit (float): Der Limit-Level für den Trade.
                     size (float): Die Größe des Trades.
                     currency (str): Die Währung des Trades.
-                    config: Die Handelskonfiguration.
-                    last_eval_result: Das letzte Ergebnis der Evaluation.
                     trade_function: Die Handelsfunktion (z.B. self._ig.buy oder self._ig.sell).
 
                 Returns:
@@ -376,7 +404,7 @@ class Trader:
             self._save_result(predictor, deal_response, config.symbol)
             self._tracer.debug("Save Deal in db")
             pd.set_option('display.max_columns', None)
-            self._tracer.debug(trade_df.tail(30))
+            self._tracer.debug(trade_df)
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
             date_string = date_string.group().replace(" ", "T")
             manual_stop_level = None
