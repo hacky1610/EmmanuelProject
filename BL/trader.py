@@ -12,6 +12,7 @@ from bson import ObjectId
 from BL import DataProcessor, measure_time
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
+from BL.indicators import Indicators
 from Connectors import IG
 from Connectors.deal_store import Deal, DealStore
 from Connectors.dropbox_cache import DropBoxCache
@@ -190,7 +191,7 @@ class Trader:
                 if self.market_tradable(market["symbol"]):
                     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                         loop = asyncio.get_running_loop()
-                        await loop.run_in_executor(executor, self.trade_market, indicators, market)
+                        await loop.run_in_executor(executor, self.trade_market, Indicators(), market)
             except Exception as EX:
                 self._tracer.error(f"Error while trading {market['symbol']} {EX}")
                 traceback_str = traceback.format_exc()
@@ -264,6 +265,8 @@ class Trader:
 
         buy_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0}).astype(int)
         sell_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1}).astype(int)
+
+        self._tracer.debug(f"{symbol} DF Cache {indicators._df_cache._4h_cache}")
 
         return self._execute_trades(predictors, trade_df, buy_actions_df, sell_actions_df, market)
 
