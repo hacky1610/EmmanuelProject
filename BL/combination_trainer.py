@@ -147,7 +147,7 @@ class CombinationTrainer:
                                      min_prec: float, best_features: list,
                                      n_iter=5, min_reward=4):
 
-        train_df, test_df = train_test_split(df, test_size=0.5, random_state=42)
+        train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
         results = []
         #combos = self._get_combos(num_features, train_df)

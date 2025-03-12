@@ -71,72 +71,92 @@ class DataFrameCache:
         else:
             return df_24h
 
-    def _convert_1h_to_12h(self,df_1h_ohlc:DataFrame):
-        if len(df_1h_ohlc) == 0:
+    def _convert_1h_to_12h(self, one_h_df: DataFrame):
+        if one_h_df.empty:
             return DataFrame()
 
-        df_1h_ohlc['date_index'] = pd.to_datetime(df_1h_ohlc['date'])
-        # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
-        df_12h: DataFrame = df_1h_ohlc.groupby(pd.Grouper(key='date_index', freq='12h')).agg({
-            'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
-            'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
-            'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
-            'close': 'last',  # Höchster Kurs in der 4-Stunden-Periode
-            'date_index': 'first'  # Erstes Zeitstempel in der 4-Stunden-Periode
-        }).reset_index(drop=True)
-        df_12h.dropna(inplace=True)
-        df_12h.reset_index(inplace=True)
+        one_h_df = one_h_df.copy()
 
-        df_12h = df_12h.filter(["open", "low", "high", "close"])
-        self._dp.addSignals_big_tf(df_12h)
+        # Anzahl der Zeilen im DataFrame
+        n = len(one_h_df)
 
-        return df_12h.dropna()
+        # Feste Endzeit setzen (erste Zeile bekommt diese Zeit)
+        fixed_end_time = pd.Timestamp("2000-01-01 07:00:00")
 
-    def _convert_1h_to_24h(self, df_1h_ohlc: DataFrame):
-        if len(df_1h_ohlc) == 0:
-            return DataFrame()
+        # Neue Zeiten rückwärts vergeben
+        one_h_df['date_index'] = [fixed_end_time - pd.Timedelta(hours=(n - 1 - i)) for i in range(n)]
 
-        df_1h_ohlc['date_index'] = pd.to_datetime(df_1h_ohlc['date'])
-        # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
-        df_12h: DataFrame = df_1h_ohlc.groupby(pd.Grouper(key='date_index', freq='24h')).agg({
-            'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
-            'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
-            'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
-            'close': 'last',  # Höchster Kurs in der 4-Stunden-Periode
-            'date_index': 'first'  # Erstes Zeitstempel in der 4-Stunden-Periode
-        }).reset_index(drop=True)
-        df_12h.dropna(inplace=True)
-        df_12h.reset_index(inplace=True)
+        # Gruppieren nach der neuen Zeitachse
+        df_4h = one_h_df.groupby(pd.Grouper(key='date_index', freq='12h')).agg({
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last'
+        }).dropna().reset_index()
 
-        df_12h = df_12h.filter(["open", "low", "high", "close"])
-        self._dp.addSignals_big_tf(df_12h)
+        df_4h.drop(columns="date_index", inplace=True)
 
-        return df_12h.dropna()
-
-
-
-
-
-    def _convert_1h_to_4h(self, one_h_df: DataFrame):
-        if len(one_h_df) == 0:
-            return DataFrame()
-
-        one_h_df['date_index'] = pd.to_datetime(one_h_df['date'])
-        # Gruppieren nach 4 Stunden und Aggregation der Kursdaten
-        df_4h: DataFrame = one_h_df.groupby(pd.Grouper(key='date_index', freq='4h')).agg({
-            'open': 'first',  # Erster Kurs in der 4-Stunden-Periode
-            'high': 'max',  # Höchster Kurs in der 4-Stunden-Periode
-            'low': 'min',  # Höchster Kurs in der 4-Stunden-Periode
-            'close': 'last',  # Höchster Kurs in der 4-Stunden-Periode
-            'date_index': 'first'  # Erstes Zeitstempel in der 4-Stunden-Periode
-        }).reset_index(drop=True)
-        df_4h.dropna(inplace=True)
-        df_4h.reset_index(inplace=True)
-
-        df_4h = df_4h.filter(["open", "low", "high", "close"])
         self._dp.addSignals_big_tf(df_4h)
 
-        return df_4h.dropna()
+        return df_4h
+
+    def _convert_1h_to_24h(self, one_h_df: DataFrame):
+        if one_h_df.empty:
+            return DataFrame()
+
+        one_h_df = one_h_df.copy()
+
+        # Anzahl der Zeilen im DataFrame
+        n = len(one_h_df)
+
+        # Feste Endzeit setzen (erste Zeile bekommt diese Zeit)
+        fixed_end_time = pd.Timestamp("2000-01-01 07:00:00")
+
+        # Neue Zeiten rückwärts vergeben
+        one_h_df['date_index'] = [fixed_end_time - pd.Timedelta(hours=(n - 1 - i)) for i in range(n)]
+
+        # Gruppieren nach der neuen Zeitachse
+        df_4h = one_h_df.groupby(pd.Grouper(key='date_index', freq='24h')).agg({
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last'
+        }).dropna().reset_index()
+
+        df_4h.drop(columns="date_index", inplace=True)
+
+        self._dp.addSignals_big_tf(df_4h)
+
+        return df_4h
+
+    def _convert_1h_to_4h(self, one_h_df: DataFrame):
+        if one_h_df.empty:
+            return DataFrame()
+
+        one_h_df = one_h_df.copy()
+
+        # Anzahl der Zeilen im DataFrame
+        n = len(one_h_df)
+
+        # Feste Endzeit setzen (erste Zeile bekommt diese Zeit)
+        fixed_end_time = pd.Timestamp("2000-01-01 07:00:00")
+
+        # Neue Zeiten rückwärts vergeben
+        one_h_df['date_index'] = [fixed_end_time - pd.Timedelta(hours=(n - 1 - i)) for i in range(n)]
+
+        # Gruppieren nach der neuen Zeitachse
+        df_4h = one_h_df.groupby(pd.Grouper(key='date_index', freq='4h')).agg({
+            'open': 'first',
+            'high': 'max',
+            'low': 'min',
+            'close': 'last'
+        }).dropna().reset_index()
+
+        df_4h.drop(columns="date_index", inplace=True)
+
+        self._dp.addSignals_big_tf(df_4h)
+
+        return df_4h
 
     def reset(self):
         self._4h_cache = {}
