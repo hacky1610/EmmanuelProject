@@ -403,6 +403,9 @@ class Trader:
         if res == TradeResult.SUCCESS:
             self._save_result(predictor, deal_response, config.symbol)
             self._tracer.debug("Save Deal in db")
+            self._tracer.debug(f"Buy actions {buy_actions_df}")
+            self._tracer.debug(f"Sell actions {sell_actions_df}")
+            self._tracer.debug(f"Features {predictor._features}")
             pd.set_option('display.max_columns', None)
             self._tracer.debug(trade_df)
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
