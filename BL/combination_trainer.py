@@ -212,6 +212,17 @@ class CombinationTrainer:
 
         return df
 
+    def _get_random_forest_params(self) -> dict:
+        return {
+            'n_estimators': [50, 100, 200, 500],  # Anzahl der Bäume
+            'max_depth': [3, 5, 7, 10, None],  # Maximale Tiefe der Bäume
+            'min_samples_split': [2, 5, 10, 20],  # Mindestanzahl von Samples für Split
+            'min_samples_leaf': [1, 2, 4, 10],  # Mindestanzahl von Samples in einem Blatt
+            'max_features': ['sqrt', 'log2', None],  # Anzahl der betrachteten Features pro Split
+            'criterion': ['gini', 'entropy'],  # Kriterium zur Bestimmung der Qualität eines Splits
+            'class_weight': ['balanced', 'balanced_subsample', None]  # Gewichtung für unbalancierte Klassen
+        }
+
     def _train_combo(self, df, features, n_iter):
         import warnings
         warnings.filterwarnings("ignore", category=UserWarning)
