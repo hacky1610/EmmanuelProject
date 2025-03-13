@@ -159,7 +159,7 @@ class DealStore:
         return self._collection.find({"account_type": self._account_type})
 
     def get_all_deals_opened_after(self):
-        date_filter = datetime.datetime(2025, 3, 12, hour=19)
+        date_filter = datetime.datetime(2025, 3, 13, hour=18)
 
         query = {
             "account_type": self._account_type,

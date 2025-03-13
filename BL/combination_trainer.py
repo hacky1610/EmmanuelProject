@@ -156,11 +156,12 @@ class CombinationTrainer:
             try:
                 train_precision, train_reward, trade_indexes_train, trade_count_train = self._predict_sum(train_df,
                                                                                                           features)
-                test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df, features)
 
                 # Mindestbedingungen prüfen
                 if train_precision >= min_prec and train_reward >= 5:
-                    result = {
+                    test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
+                                                                                                          features)
+                    results.append({
                         "Features": features,
                         "Train Precision": train_precision,
                         "Train Reward": train_reward,
@@ -168,16 +169,7 @@ class CombinationTrainer:
                         "Test Reward": test_reward,
                         "Test Trade Count": trade_count_test,
                         "Test Indexes": trade_indexes_test,
-                    }
-                    results.append(result)
-                    result_df = pandas.DataFrame(results)
-                    mean = result_df["Test Reward"].mean()
-                    sum = result_df["Test Reward"].sum()
-                # print(
-                #         f"{symbol} {trade_mode} Precision: {train_precision:.4f}, Reward: {train_reward} "
-                #         f"Test Prec {test_precision} Test reward {test_reward} Test Mean {mean} Test Sum {sum} "
-                #         f"Features: {features}")
-
+                    })
 
             except Exception as e:
                 traceback_str = traceback.format_exc()

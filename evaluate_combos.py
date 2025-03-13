@@ -69,7 +69,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
     random.shuffle(markets)
     for market in markets:
         fx = market["symbol"]
-        fx = "CADNOK"
+        #fx = "EURJPY"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
@@ -89,41 +89,41 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         for hours in [16]:
             for factor in [1.5, 2.0]:
-                f = 0
-                for features in [best_features,
-                                 best_features_online,
-                                 random.choices( indicators.get_all_indicator_names(), k=25)]:
-                    f += 1
-                    combination_size = 4
-                    quantile = 0.6
-                    ct = CombinationTrainer(cache=cache,
-                                            indicators=indicators,
-                                            predictor_store=predictor_store,
-                                            test_mode=True)
-                    try:
+                for combination_size in [4,5]:
+                    f = 0
+                    for features in [best_features_online,
+                                     best_features,
+                                     random.choices( indicators.get_all_indicator_names(), k=25)]:
+                        f += 1
+                        quantile = 0.6
+                        ct = CombinationTrainer(cache=cache,
+                                                indicators=indicators,
+                                                predictor_store=predictor_store,
+                                                test_mode=True)
+                        try:
 
-                        for trade_action in [TradeAction.BUY, TradeAction.SELL]:
-                            print(
-                                f"Evaluate {fx} {trade_action} for {hours} hours and factor "
-                                f"{factor} and quantille {quantile} combination {combination_size} Feature Set {f}")
-                            df_train_global = ct.create_data(tiingo, fx,
-                                                             trade_type, data_processor,
-                                                             simulation, hours,
-                                                             factor, indicators,
-                                                             trade_action, cache)
+                            for trade_action in [TradeAction.BUY, TradeAction.SELL]:
+                                print(
+                                    f"Evaluate {fx} {trade_action} for {hours} hours and factor "
+                                    f"{factor} and quantille {quantile} combination {combination_size} Feature Set {f}")
+                                df_train_global = ct.create_data(tiingo, fx,
+                                                                 trade_type, data_processor,
+                                                                 simulation, hours,
+                                                                 factor, indicators,
+                                                                 trade_action, cache)
 
-                            ct.train(df=df_train_global,
-                                     trading_hours=hours,
-                                     min_prec=quantile,
-                                     num_features=combination_size,
-                                     trading_mode=trade_action,
-                                     symbol=fx,
-                                     atr_factor=factor,
-                                     best_features=features)
+                                ct.train(df=df_train_global,
+                                         trading_hours=hours,
+                                         min_prec=quantile,
+                                         num_features=combination_size,
+                                         trading_mode=trade_action,
+                                         symbol=fx,
+                                         atr_factor=factor,
+                                         best_features=features)
 
-                    except Exception as ex:
-                        traceback_str = traceback.format_exc()
-                        print(f"MainException: {ex} File:{traceback_str}")
+                        except Exception as ex:
+                            traceback_str = traceback.format_exc()
+                            print(f"MainException: {ex} File:{traceback_str}")
 
 
 while True:
