@@ -121,7 +121,7 @@ class DataFrameCache:
 
         self._dp.addSignals_big_tf(df_4h)
 
-        return df_4h
+        return df_4h.dropna()
 
     def reset(self):
         self._4h_cache.clear()

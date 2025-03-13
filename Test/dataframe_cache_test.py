@@ -1,12 +1,20 @@
 import unittest
 from unittest.mock import  MagicMock
 
+import numpy as np
 import pandas as pd
 from pandas import DataFrame
 
 from BL.indicators import Indicators
 from Connectors.dataframe_cache import DataFrameCache
 
+
+class DP:
+    def addSignals_big_tf(self, df):
+        # Füge eine neue Spalte 'new_signal' mit NaN-Werten ein
+        df['new_signal'] = 1
+        df.iloc[0, df.columns.get_loc('new_signal')] = np.nan
+        return df
 
 class DataFrameCacheTest(unittest.TestCase):
 
@@ -207,6 +215,32 @@ class DataFrameCacheTest(unittest.TestCase):
         }
         expected_df = DataFrame(expected_data)
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+
+
+
+    def test_trim(self):
+
+
+        c = DataFrameCache(dataprocessor=DP())
+
+        data = {
+            'date': ['2023-08-05 00:00:00', '2023-08-05 01:00:00', '2023-08-05 02:00:00', '2023-08-05 03:00:00',
+                     '2023-08-05 04:00:00', '2023-08-05 05:00:00', '2023-08-05 06:00:00', '2023-08-05 07:00:00'],
+            'open': [7, 2, 3, 4, 5, 6, 7, 8],
+            'high': [1, 2, 3, 4, 5, 6, 7, 8],
+            'low': [1, 2, 3, 4, 5, 1, 7, 8],
+            'close': [1, 2, 3, 4, 5, 6, 7, 8]
+        }
+        one_h_df = DataFrame(data)
+        c.init_caches(one_h_df)
+        result = c.get_4h_df(one_h_df)
+        self.assertEqual(result.iloc[-1].open, 5)
+        return
+
+
+
+
 
     def test_aggregation_100h_4h(self):
         # Test aggregation on a 100-hour DataFrame
