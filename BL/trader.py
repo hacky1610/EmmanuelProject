@@ -266,6 +266,7 @@ class Trader:
         buy_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0}).astype(int)
         sell_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 0, 'sell': 1}).astype(int)
 
+        pd.set_option('display.max_columns', None)
         self._tracer.debug(f"{symbol} DF Cache {indicators._df_cache._4h_cache}")
 
         return self._execute_trades(predictors, trade_df, buy_actions_df, sell_actions_df, market)

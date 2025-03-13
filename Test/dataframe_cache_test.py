@@ -116,5 +116,26 @@ class DataFrameCacheTest(unittest.TestCase):
         expected_df = DataFrame(expected_data)
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected_df.reset_index(drop=True))
 
+    def test_aggregation_3(self):
+        data = {
+            'date': ['2023-08-05 01:00:00','2023-08-05 02:00:00', '2023-08-05 03:00:00', '2023-08-05 04:00:00', '2023-08-05 05:00:00',
+                     '2023-08-05 06:00:00', '2023-08-05 07:00:00', '2023-08-05 08:00:00', '2023-08-05 09:00:00'],
+            'open': [1,7, 2, 3, 4, 5, 6, 7, 8],
+            'high': [1,1, 2, 3, 4, 5, 6, 7, 8],
+            'low': [1,1, 2, 3, 4, 5, 1, 7, 8],
+            'close': [1,1, 2, 3, 4, 5, 6, 7, 8]
+        }
+        one_h_df = DataFrame(data)
+        result = self.cache.get_4h_df(one_h_df)
+
+        expected_data = {
+            'open': [1,7, 5],
+            'high': [1,4, 8],
+            'low': [1,1, 1],
+            'close': [1,4, 8]
+        }
+        expected_df = DataFrame(expected_data)
+        pd.testing.assert_frame_equal(result.reset_index(drop=True), expected_df.reset_index(drop=True))
+
 
 
