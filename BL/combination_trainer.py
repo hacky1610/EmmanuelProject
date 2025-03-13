@@ -130,12 +130,15 @@ class CombinationTrainer:
 
     def _save_predictor(self, symbol: str, trade_mode: str,
                         trading_hours: int, features: List, test_reward: int,
-                        atr_factor: float, test_precision: float, test_trade_count: int, unique_indexes: int):
+                        atr_factor_stop: float, atr_factor_limit: float, test_precision: float,
+                        test_trade_count: int, unique_indexes: int):
         dp = DeepPredictor(symbol=symbol, cache=self._cache,
                            indicators=self._indicators, config={})
-        dp.set_model_params(trade_mode=trade_mode, trading_hours=trading_hours,
+        dp.set_model_params(trade_mode=trade_mode,
+                            trading_hours=trading_hours,
                             features=list(features),
-                            atr_factor=atr_factor,
+                            atr_factor_limit=atr_factor_limit,
+                            atr_factor_stop=atr_factor_stop,
                             test_reward=test_reward, test_precision=test_precision,
                             test_trade_count=test_trade_count, unique_indexes=unique_indexes
                             )
@@ -143,8 +146,9 @@ class CombinationTrainer:
 
     def _best_feature_pair_by_reward(self, df: DataFrame, symbol: str,
                                      trading_hours: int, trade_mode: str,
-                                     num_features: int, atr_factor: float,
-                                     min_prec: float, best_features: list,
+                                     num_features: int, atr_factor_stop: float,
+                                     atr_factor_limit: float,
+                                     min_prec_train: float,min_prec_test: float, best_features: list,
                                      n_iter=5, min_reward=4):
 
         train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -158,7 +162,7 @@ class CombinationTrainer:
                                                                                                           features)
 
                 # Mindestbedingungen prüfen
-                if train_precision >= min_prec and train_reward >= 5:
+                if train_precision >= min_prec_train and train_reward >= 5:
                     test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
                                                                                                           features)
                     results.append({
@@ -189,12 +193,13 @@ class CombinationTrainer:
 
             if (df['Test Reward'].sum() > 15 and
                 len(unique_indexes) >= 20 and
-                df['Test Precision'].mean() > 0.66 and
+                df['Test Precision'].mean() > min_prec_test and
                 df['Test Reward'].mean() > 1.2):
                 print(f"####################GOOD################")
                 for i, r in df.iterrows():
                     if r["Test Reward"] > 0:
-                        self._save_predictor(symbol=symbol, atr_factor=atr_factor,
+                        self._save_predictor(symbol=symbol, atr_factor_stop=atr_factor_stop,
+                                             atr_factor_limit=atr_factor_limit,
                                              features=list(r["Features"]), trade_mode=trade_mode,
                                              trading_hours=trading_hours,
                                              test_reward=r["Test Reward"],
@@ -314,20 +319,22 @@ class CombinationTrainer:
     def train(self, df, trading_hours: int,
               num_features: int,
               trading_mode: str, symbol: str,
-              min_prec: float, atr_factor: float,
+              min_prec_train: float, min_prec_test: float, atr_factor_stop: float,
+              atr_factor_limit: float,
               best_features: List[str]):
 
-        if len(best_features) == 0:
-            df = self._prepare_df(df, symbol, trading_hours, atr_factor)
+        # if len(best_features) == 0:
+        #     df = self._prepare_df(df, symbol, trading_hours, atr_factor)
 
         self._best_feature_pair_by_reward(df=df,
                                           symbol=symbol,
                                           num_features=num_features,
-                                          min_prec=min_prec, trade_mode=trading_mode,
-                                          trading_hours=trading_hours, atr_factor=atr_factor,
-                                          best_features=best_features)
+                                          min_prec_train=min_prec_train, trade_mode=trading_mode,
+                                          trading_hours=trading_hours, atr_factor_stop=atr_factor_stop,
+                                          atr_factor_limit=atr_factor_limit,
+                                          best_features=best_features, min_prec_test=min_prec_test)
 
-    def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, hours, factor, indicators,
+    def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, hours, factor_stop, factor_limit, indicators,
                     trade_mode: str,
                     cache) -> (DataFrame, DataFrame, str):
         df_train, eval_df_train = self._get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
@@ -336,7 +343,8 @@ class CombinationTrainer:
             raise Exception("Invalid data")
 
         buy_results, sell_results = simulation.simulate(df_train, eval_df_train, symbol,
-                                                        time_frame=hours, factor=factor)
+                                                        time_frame=hours, factor_stop=factor_stop,
+                                                        factor_limit=factor_limit)
         simulation.get_signals(symbol, df_train, indicators, GenericPredictor)
         train_signals_df = simulation.create_combined_indicator_data(indicators, symbol)
         trade_results = []

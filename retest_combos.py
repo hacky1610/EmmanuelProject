@@ -105,7 +105,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
                         ct.train(df=df_train_global,
                                  trading_hours=hours,
-                                 min_prec=quantile,
+                                 min_prec_train=quantile,
                                  num_features=combination_size,
                                  trading_mode=trade_action,
                                  symbol=fx,

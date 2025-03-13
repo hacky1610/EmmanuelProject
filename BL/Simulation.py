@@ -13,13 +13,16 @@ class Simulation:
         self._cache = cache
         self._analytics = analytics
 
-    def simulate(self, df: DataFrame, df_eval: DataFrame, symbol: str, time_frame: int = 4, factor = 1.5, force=False):
-        buy_path = f"simulation_buy{symbol}_{time_frame}{factor}h10.csv"
-        sell_path = f"simulation_sell{symbol}_{time_frame}{factor}h10.csv"
+    def simulate(self, df: DataFrame, df_eval: DataFrame,
+                 symbol: str, time_frame: int,
+                 factor_stop:float, factor_limit:float, force=False):
+        buy_path = f"simulation_buy{symbol}_{time_frame}{factor_stop}{factor_limit}h10.csv"
+        sell_path = f"simulation_sell{symbol}_{time_frame}{factor_stop}{factor_limit}h10.csv"
 
         if not self._cache.simulation_exist(buy_path) or force:
             buy = self._simulate_fixed_timeframe(action="buy",
-                                                            df=df, df_eval=df_eval, timeframe_hours=time_frame, stop_loss_factor=factor, take_profit_factor=factor)
+                                                    df=df, df_eval=df_eval, timeframe_hours=time_frame,
+                                                   stop_factor=factor_stop, limit_factor=factor_limit)
             if buy is not None and force == False:
                 self._cache.save_simulation(buy,buy_path)
         else:
@@ -27,7 +30,7 @@ class Simulation:
 
         if not self._cache.simulation_exist(sell_path) or force:
             sell = self._simulate_fixed_timeframe(action="sell",
-                                            df=df, df_eval=df_eval,  timeframe_hours=time_frame, stop_loss_factor=factor, take_profit_factor=factor)
+                                            df=df, df_eval=df_eval,  timeframe_hours=time_frame, stop_factor=factor_stop, limit_factor=factor_limit)
             if sell is not None and force == False:
                 self._cache.save_simulation(sell,sell_path)
         else:
@@ -108,8 +111,8 @@ class Simulation:
                                  action: str,
                                  df: DataFrame,
                                  df_eval: DataFrame,
-                                 stop_loss_factor: float = 1.5,
-                                 take_profit_factor: float = 1.5,
+                                 stop_factor: float,
+                                 limit_factor: float,
                                  timeframe_hours: int = 4) -> DataFrame:
         """
         Simuliert Trades mit einem festen Zeitrahmen oder bis ein Stop/Limit erreicht wird.
@@ -155,8 +158,8 @@ class Simulation:
             accumulated_time = timedelta(0)
             max_timeframe = timedelta(hours=timeframe_hours)
 
-            stop_loss = df.ATR.iloc[i] * stop_loss_factor
-            take_profit = df.ATR.iloc[i] * take_profit_factor
+            stop_loss = df.ATR.iloc[i] * stop_factor
+            take_profit = df.ATR.iloc[i] * limit_factor
 
             for j in range(len(future)):
                 row = future.iloc[j]

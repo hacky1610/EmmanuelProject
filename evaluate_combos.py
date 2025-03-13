@@ -86,44 +86,50 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             "rsi_limit_4h", "ema_10_50", "cci_4h", "williams_limit_4h",
             "adx_4h", "rsi_convergence5_40"
         ]
+        hours = 16
+        for data in [(1.5,1.5,0.6, 0.66),
+                     (2.0,2.0,0.6, 0.66),
+                     (2.5,5.0,0.85, 0.85)]:
+            atr_factor_stop = data[0]
+            atr_factor_limit = data[1]
+            minimum_precission_train = data[2]
+            minimum_precission_test = data[3]
+            for combination_size in [4,5]:
+                f = 0
+                for features in [best_features_online,
+                                 best_features,
+                                 random.choices( indicators.get_all_indicator_names(), k=25)]:
+                    f += 1
+                    ct = CombinationTrainer(cache=cache,
+                                            indicators=indicators,
+                                            predictor_store=predictor_store,
+                                            test_mode=True)
+                    try:
 
-        for hours in [16]:
-            for factor in [1.5, 2.0]:
-                for combination_size in [4,5]:
-                    f = 0
-                    for features in [best_features_online,
-                                     best_features,
-                                     random.choices( indicators.get_all_indicator_names(), k=25)]:
-                        f += 1
-                        quantile = 0.6
-                        ct = CombinationTrainer(cache=cache,
-                                                indicators=indicators,
-                                                predictor_store=predictor_store,
-                                                test_mode=True)
-                        try:
+                        for trade_action in [TradeAction.BUY, TradeAction.SELL]:
+                            print(
+                                f"Evaluate {fx} {trade_action} for {hours} hours and stop factor "
+                                f"{atr_factor_stop} limit {atr_factor_limit} and min prec {minimum_precission_train} combination {combination_size} Feature Set {f}")
+                            df_train_global = ct.create_data(tiingo=tiingo, symbol=fx,
+                                                             trade_type=trade_type, data_processor=data_processor,
+                                                             simulation=simulation, hours=hours,
+                                                             factor_stop=atr_factor_stop, factor_limit=atr_factor_limit,
+                                                             indicators=indicators,
+                                                             trade_mode=trade_action, cache=cache)
 
-                            for trade_action in [TradeAction.BUY, TradeAction.SELL]:
-                                print(
-                                    f"Evaluate {fx} {trade_action} for {hours} hours and factor "
-                                    f"{factor} and quantille {quantile} combination {combination_size} Feature Set {f}")
-                                df_train_global = ct.create_data(tiingo, fx,
-                                                                 trade_type, data_processor,
-                                                                 simulation, hours,
-                                                                 factor, indicators,
-                                                                 trade_action, cache)
+                            ct.train(df=df_train_global,
+                                     trading_hours=hours,
+                                     min_prec_train=minimum_precission_train,
+                                     num_features=combination_size,
+                                     trading_mode=trade_action,
+                                     symbol=fx,
+                                     atr_factor_stop=atr_factor_stop,
+                                     atr_factor_limit=atr_factor_limit,
+                                     best_features=features, min_prec_test=minimum_precission_test)
 
-                                ct.train(df=df_train_global,
-                                         trading_hours=hours,
-                                         min_prec=quantile,
-                                         num_features=combination_size,
-                                         trading_mode=trade_action,
-                                         symbol=fx,
-                                         atr_factor=factor,
-                                         best_features=features)
-
-                        except Exception as ex:
-                            traceback_str = traceback.format_exc()
-                            print(f"MainException: {ex} File:{traceback_str}")
+                    except Exception as ex:
+                        traceback_str = traceback.format_exc()
+                        print(f"MainException: {ex} File:{traceback_str}")
 
 
 while True:

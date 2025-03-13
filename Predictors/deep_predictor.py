@@ -33,6 +33,8 @@ class DeepPredictor(BasePredictor):
         self._trading_hours = 4
         self._threshold = 0.5
         self._atr_factor = 0.0
+        self._atr_factor_limit = 0.0
+        self._atr_factor_stop = 0.0
         self._test_reward = None
         self._unique_indexes = None
         self._test_precision = None
@@ -59,6 +61,12 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_test_precision")
         self._set_att(config, "_unique_indexes")
 
+        if "_atr_factor_limit" in config and "_atr_factor_stop" in config:
+            self._set_att(config, "_atr_factor_limit")
+            self._set_att(config, "_atr_factor_stop")
+        elif "_atr_factor" in config:
+            self._atr_factor_limit = config["_atr_factor"]
+            self._atr_factor_stop = config["_atr_factor"]
 
         super().setup(config)
 
@@ -71,6 +79,8 @@ class DeepPredictor(BasePredictor):
             self._threshold,
             self._trade_mode,
             self._atr_factor,
+            self._atr_factor_limit,
+            self._atr_factor_stop,
             self._training_time,
             self._model_data,
             self._test_reward,
@@ -86,6 +96,8 @@ class DeepPredictor(BasePredictor):
                 "_threshold",
                 "_trade_mode",
                 "_atr_factor",
+                "_atr_factor_limit",
+                "_atr_factor_stop",
                 "_training_time",
                 "_model_data",
                 "_test_reward",
@@ -107,7 +119,8 @@ class DeepPredictor(BasePredictor):
                          trade_mode:str,
                          trading_hours:int,
                          features:List,
-                         atr_factor:float,
+                         atr_factor_stop:float,
+                         atr_factor_limit: float,
                          test_reward:int,
                          test_precision:float,
                          test_trade_count:int,
@@ -115,7 +128,9 @@ class DeepPredictor(BasePredictor):
         self._trading_hours = trading_hours
         self._features = features
         self._trade_mode = trade_mode
-        self._atr_factor = atr_factor
+        self._atr_factor = atr_factor_stop
+        self._atr_factor_limit = atr_factor_limit
+        self._atr_factor_stop = atr_factor_stop
         self._test_reward = test_reward
         self._training_time = datetime.datetime.now()
         self._unique_indexes = unique_indexes
@@ -127,6 +142,12 @@ class DeepPredictor(BasePredictor):
 
     def get_atr_factor(self) -> float:
         return self._atr_factor
+
+    def get_atr_factor_limit(self) -> float:
+        return self._atr_factor_limit
+
+    def get_atr_factor_stop(self) -> float:
+        return self._atr_factor_stop
 
     def get_threshold(self) -> float:
         return self._threshold
