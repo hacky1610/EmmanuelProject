@@ -248,6 +248,7 @@ class Trader:
         symbol = market["symbol"]
         self._tracer.set_prefix(symbol)
         indicators.reset_caches()
+
         self._tracer.debug(f"Attempting to trade {symbol}")
 
         trade_df = self._tiingo.load_trade_data(symbol=symbol, dp=self._dataprocessor, trade_type=TradeType.FX)
@@ -259,6 +260,7 @@ class Trader:
             self._tracer.debug(f"Already 2 open positions for {symbol}")
             return TradeResult.ERROR
 
+        indicators.init_caches(trade_df)
         predictors = self._get_predictors(symbol, indicators)
         #predictors = self._get_predictors_by_id(symbol, indicators,ObjectId('67cab6aca5f967606f612fbe'))
         actions_df = self._get_actions_df(predictors, trade_df, indicators)
