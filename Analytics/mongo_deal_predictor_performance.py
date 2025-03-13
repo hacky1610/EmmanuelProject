@@ -52,7 +52,7 @@ for deal in ds.get_all_deals_opened_after():
                                                             use_cache=True, days=30)
 
     buy_results, sell_results = sim.simulate(df, df_eval, deal["ticker"],
-                                                    time_frame=16, factor=2, force=True)
+                                                    time_frame=16,factor_limit=2, factor_stop=2, force=True)
     sim.get_signals_by_indicatornames(deal["ticker"], df, predictor_object._features, Indicators(), GenericPredictor)
     train_signals_df = sim.create_combined_indicator_data_by_features(predictor_object._features, deal["ticker"])
     trade_results = []
