@@ -29,6 +29,15 @@ class DataFrameCacheTest(unittest.TestCase):
         }
         self.one_h_df = DataFrame(data)
 
+        data = {
+            'date': pd.date_range('2023-08-05', periods=100, freq='H').strftime('%Y-%m-%d %H:%M:%S').tolist(),
+            'open': [i % 10 for i in range(100)],
+            'high': [i % 10 + 1 for i in range(100)],
+            'low': [i % 10 - 1 for i in range(100)],
+            'close': [i % 10 for i in range(100)],
+        }
+        self.one_h_df_big = DataFrame(data)
+
         self.cache = DataFrameCache(dataprocessor=self.dp)
 
 
@@ -198,6 +207,67 @@ class DataFrameCacheTest(unittest.TestCase):
         }
         expected_df = DataFrame(expected_data)
         pd.testing.assert_frame_equal(result.reset_index(drop=True), expected_df.reset_index(drop=True))
+
+    def test_aggregation_100h_4h(self):
+        # Test aggregation on a 100-hour DataFrame
+        self.cache.init_caches(self.one_h_df_big)
+        result = self.cache.get_4h_df(self.one_h_df_big)
+
+        # Check if the aggregated DataFrame has the expected number of rows (1 row per 4 hours)
+        expected_rows = len(self.one_h_df_big) // 4
+        self.assertEqual(len(result), expected_rows)
+
+        self.assertEqual(result.iloc[-1].close, 9)
+        self.assertEqual(result.iloc[-1].low, 5)
+
+        result = self.cache.get_4h_df(self.one_h_df_big[:-15])
+        self.assertEqual(result.iloc[-1].close, 4)
+        self.assertEqual(result.iloc[-1].open, 1)
+
+        result = self.cache.get_4h_df(self.one_h_df_big[:-33])
+        self.assertEqual(result.iloc[-1].close, 6)
+        self.assertEqual(result.iloc[-1].high, 7)
+
+    def test_aggregation_100h_12h(self):
+        # Test aggregation on a 100-hour DataFrame
+        self.cache.init_caches(self.one_h_df_big)
+        result = self.cache.get_12h_df(self.one_h_df_big)
+
+        # Check if the aggregated DataFrame has the expected number of rows (1 row per 4 hours)
+        #self.assertEqual(len(result), 8)
+
+        #return
+
+        self.assertEqual(result.iloc[-1].close, 9)
+        self.assertEqual(result.iloc[-1].low, -1)
+
+        result = self.cache.get_12h_df(self.one_h_df_big[:-15])
+        self.assertEqual(result.iloc[-1].close, 4)
+        self.assertEqual(result.iloc[-1].high, 10)
+
+    def test_aggregation_100h_24h(self):
+        # Test aggregation on a 100-hour DataFrame
+        self.cache.init_caches(self.one_h_df_big)
+        result = self.cache.get_1d_df(self.one_h_df_big)
+
+        # Check if the aggregated DataFrame has the expected number of rows (1 row per 4 hours)
+        # self.assertEqual(len(result), 8)
+
+        # return
+
+        self.assertEqual(result.iloc[-1].close, 9)
+        self.assertEqual(result.iloc[-1].low, -1)
+        self.assertEqual(result.iloc[-1].open, 6)
+
+        result = self.cache.get_1d_df(self.one_h_df_big[:-15])
+        self.assertEqual(result.iloc[-1].close, 4)
+        self.assertEqual(result.iloc[-1].high, 10)
+
+        result = self.cache.get_1d_df(self.one_h_df_big[:-52])
+        self.assertEqual(result.iloc[-1].close, 7)
+        self.assertEqual(result.iloc[-1].high, 10)
+
+
 
 
     def test_aggregation_2(self):

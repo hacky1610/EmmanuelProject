@@ -27,7 +27,6 @@ class DataFrameCache:
         setattr(self, cache_attr, {})
 
         self._original_1h_df = one_h_df.filter(["open", "high", "low", "close"])
-        self._4h_cache = {}  # Cache zurücksetzen
 
         length = len(self._original_1h_df)
 
@@ -39,13 +38,14 @@ class DataFrameCache:
                 continue  # Falls subset trotzdem leer ist, überspringen
 
             index = self._original_1h_df.iloc[:start_index].index[-1] % hours
+
             getattr(self, cache_attr)[index] = convert_func(subset)
 
     def _build_cache_4h(self, one_h_df: DataFrame):
         self._build_cache(one_h_df, 4, "_4h_cache", self._convert_1h_to_4h)
 
     def _build_cache_12h(self, one_h_df: DataFrame):
-        self._build_cache(one_h_df, 12, "_12h_cache", self._convert_1h_to_24h)
+        self._build_cache(one_h_df, 12, "_12h_cache", self._convert_1h_to_12h)
 
     def _build_cache_24h(self, one_h_df: DataFrame):
         self._build_cache(one_h_df, 24, "_24h_cache", self._convert_1h_to_24h)
@@ -85,15 +85,15 @@ class DataFrameCache:
         return self._get_cache(df_1h_ohlc, "_24h_cache",24)
 
     def _convert_1h_to_12h(self, one_h_df: DataFrame):
-        return self._convert_1h_to_x(one_h_df, 12)
+        return self._convert_1h_to_x(one_h_df, 12, "2000-01-01 11:59:00")
 
     def _convert_1h_to_24h(self, one_h_df: DataFrame):
-        return self._convert_1h_to_x(one_h_df, 24)
+        return self._convert_1h_to_x(one_h_df, 24,"2000-01-01 23:59:00")
 
     def _convert_1h_to_4h(self, one_h_df: DataFrame):
-        return self._convert_1h_to_x(one_h_df, 4)
+        return self._convert_1h_to_x(one_h_df, 4,"2000-01-01 07:00:00")
 
-    def _convert_1h_to_x(self, one_h_df: DataFrame, hours):
+    def _convert_1h_to_x(self, one_h_df: DataFrame, hours, time):
         if one_h_df.empty:
             return DataFrame()
 
@@ -103,10 +103,11 @@ class DataFrameCache:
         n = len(one_h_df)
 
         # Feste Endzeit setzen (erste Zeile bekommt diese Zeit)
-        fixed_end_time = pd.Timestamp("2000-01-01 07:00:00")
+        fixed_end_time = pd.Timestamp(time)
 
         # Neue Zeiten rückwärts vergeben
         one_h_df['date_index'] = [fixed_end_time - pd.Timedelta(hours=(n - 1 - i)) for i in range(n)]
+        #one_h_df['date_index'] = one_h_df['date_index'].dt.floor(f'{hours}H')
 
         # Gruppieren nach der neuen Zeitachse
         df_4h = one_h_df.groupby(pd.Grouper(key='date_index', freq=f'{hours}h')).agg({
@@ -123,6 +124,6 @@ class DataFrameCache:
         return df_4h
 
     def reset(self):
-        self._4h_cache = {}
-        self._12h_cache = {}
-        self._1d_cache = {}
+        self._4h_cache.clear()
+        self._12h_cache.clear()
+        self._1d_cache.clear()
