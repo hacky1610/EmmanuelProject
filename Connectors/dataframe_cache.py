@@ -20,57 +20,57 @@ class DataFrameCache:
         self._build_cache_12h(df)
         self._build_cache_24h(df)
 
-    def _build_cache_4h(self, one_h_df: DataFrame):
+    def _build_cache(self, one_h_df: DataFrame, hours:int,cache_attr, convert_func):
         if one_h_df.empty:
             return
 
-        self._original_1h_df = one_h_df
+        setattr(self, cache_attr, {})
+
+        self._original_1h_df = one_h_df.filter(["open", "high", "low", "close"])
         self._4h_cache = {}  # Cache zurücksetzen
 
-        length = len(one_h_df)
+        length = len( self._original_1h_df)
 
-        for shift in range(4):
-            start_index = max(0, length - shift)  # Von hinten verschieben
-            index = one_h_df.iloc[:start_index].index[-1] % 4
-            self._4h_cache[index] = self._convert_1h_to_4h(one_h_df.iloc[:start_index])
+        for shift in range(hours):
+            start_index = max(1, length - shift)  # Mindestens 1 Eintrag sicherstellen
+
+            subset =  self._original_1h_df.iloc[:start_index]
+            if subset.empty:
+                continue  # Falls subset trotzdem leer ist, überspringen
+
+            index =  self._original_1h_df.iloc[:start_index].index[-1] % hours
+            getattr(self, cache_attr)[index] = convert_func(subset)
+
+    def _build_cache_4h(self, one_h_df: DataFrame):
+        self._build_cache(one_h_df, 4, "_4h_cache", self._convert_1h_to_4h)
 
     def _build_cache_12h(self, one_h_df: DataFrame):
-        if one_h_df.empty:
-            return
-
-        self._original_1h_df = one_h_df
-        self._12h_cache = {}  # Cache zurücksetzen
-
-        length = len(one_h_df)
-
-        for shift in range(12):
-            start_index = max(1, length - shift)  # Mindestens 1 Eintrag sicherstellen
-
-            subset = one_h_df.iloc[:start_index]
-            if subset.empty:
-                continue  # Falls subset trotzdem leer ist, überspringen
-
-            index = one_h_df.iloc[:start_index].index[-1] % 12
-            self._12h_cache[index] = self._convert_1h_to_24h(subset)
+        self._build_cache(one_h_df, 12, "_12h_cache", self._convert_1h_to_24h)
 
     def _build_cache_24h(self, one_h_df: DataFrame):
-        if one_h_df.empty:
-            return
+        self._build_cache(one_h_df, 24, "_24h_cache", self._convert_1h_to_24h)
 
-        self._original_1h_df = one_h_df
-        self._24h_cache = {}  # Cache zurücksetzen
+    def _get_cache(self, df_1h_ohlc:DataFrame, cache_attr):
 
-        length = len(one_h_df)
+        cache = getattr(self, cache_attr)
 
-        for shift in range(24):
-            start_index = max(1, length - shift)  # Mindestens 1 Eintrag sicherstellen
+        if not cache:
+            raise ValueError("Cache wurde nicht erstellt. Rufe zuerst _build_cache auf!")
 
-            subset = one_h_df.iloc[:start_index]
-            if subset.empty:
-                continue  # Falls subset trotzdem leer ist, überspringen
+        if df_1h_ohlc.empty:
+            return DataFrame()
 
-            index = one_h_df.iloc[:start_index].index[-1] % 24
-            self._24h_cache[index] = self._convert_1h_to_24h(subset)
+        index = df_1h_ohlc.index[-1] % 4
+
+        df_4h = cache[index]
+
+        # Anzahl der 4h-Blöcke bestimmen
+        # Maximale Anzahl an 4h-Blöcken bestimmen
+        max_entries = (len(self._original_1h_df) - len(df_1h_ohlc)) // 4
+        if max_entries > 0:
+            return df_4h.iloc[:max_entries * -1].copy()
+        else:
+            return df_4h
 
     def get_4h_df(self, df_1h_ohlc:DataFrame):
 
