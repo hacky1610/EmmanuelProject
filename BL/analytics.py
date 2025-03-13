@@ -33,6 +33,8 @@ class Analytics:
 
         trades = DataFrame()
 
+        predictor.init_caches(df)
+
         for i in range(len(df) - 1):
             current_index = i + 1
             action = predictor.predict(df[:current_index])

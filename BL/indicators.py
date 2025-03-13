@@ -305,6 +305,9 @@ class Indicators:
     def reset_caches(self):
         self._df_cache.reset()
 
+    def init_caches(self, df):
+        self._df_cache.init_caches(df)
+
     def convert_1h_to_4h(self, one_h_df: DataFrame):
         return self._df_cache.get_4h_df(one_h_df)
 

@@ -52,6 +52,10 @@ class GenericPredictor(BasePredictor):
             ])
         return parent_c.append(my_conf)
 
+    def init_caches(self, df: DataFrame):
+        self._indicators.init_caches(df)
+
+
     def predict(self, df: DataFrame) -> str:
         all = self._indicator_names + []
         action = self._indicators.predict_some(df, all, max_none=0)

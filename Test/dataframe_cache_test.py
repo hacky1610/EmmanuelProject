@@ -35,40 +35,144 @@ class DataFrameCacheTest(unittest.TestCase):
     def test_foo(self):
 
         #Test 1
+        self.cache._build_cache_4h(self.one_h_df)
+
         test_df = self.one_h_df[:-2]
 
-        result_old = self.indicators.convert_1h_to_4h(test_df)
+        result_old = self.cache._convert_1h_to_4h(test_df)
         result_new = self.cache.get_4h_df(test_df)
 
         assert result_old.equals(result_new)
 
-        result_old = self.indicators.convert_1h_to_4h(test_df)
+        result_old = self.cache._convert_1h_to_4h(test_df)
         result_new = self.cache.get_4h_df(test_df)
 
         assert result_old.equals(result_new)
 
         #Test 2
         test_df = self.one_h_df[:-4]
-        result_old = self.indicators.convert_1h_to_4h(test_df)
+        result_old = self.cache._convert_1h_to_4h(test_df)
         result_new = self.cache.get_4h_df(test_df)
 
         assert result_old.equals(result_new)
 
-        result_old = self.indicators.convert_1h_to_4h(test_df)
+        result_old = self.cache._convert_1h_to_4h(test_df)
         result_new = self.cache.get_4h_df(test_df)
 
         assert result_old.equals(result_new)
 
         #Test 2
         test_df = self.one_h_df
-        result_old = self.indicators.convert_1h_to_4h(test_df)
+        result_old = self.cache._convert_1h_to_4h(test_df)
         result_new = self.cache.get_4h_df(test_df)
 
         assert result_old.equals(result_new)
 
         test_df = self.one_h_df[:-5]
-        result_old = self.indicators.convert_1h_to_4h(test_df)
+        result_old = self.cache._convert_1h_to_4h(test_df)
         result_new = self.cache.get_4h_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        test_df = self.one_h_df[:-7]
+        result_old = self.cache._convert_1h_to_4h(test_df)
+        result_new = self.cache.get_4h_df(test_df)
+
+        assert result_old.equals(result_new)
+
+    def test_foo_12(self):
+
+        #Test 1
+        self.cache.init_caches(self.one_h_df)
+
+        test_df = self.one_h_df[:-2]
+
+        result_old = self.cache._convert_1h_to_12h(test_df)
+        result_new = self.cache.get_12h_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        result_old = self.cache._convert_1h_to_12h(test_df)
+        result_new = self.cache.get_12h_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        #Test 2
+        test_df = self.one_h_df[:-4]
+        result_old = self.cache._convert_1h_to_12h(test_df)
+        result_new = self.cache.get_12h_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        result_old = self.cache._convert_1h_to_12h(test_df)
+        result_new = self.cache.get_12h_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        #Test 2
+        test_df = self.one_h_df
+        result_old = self.cache._convert_1h_to_12h(test_df)
+        result_new = self.cache.get_12h_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        test_df = self.one_h_df[:-5]
+        result_old = self.cache._convert_1h_to_12h(test_df)
+        result_new = self.cache.get_12h_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        test_df = self.one_h_df[:-7]
+        result_old = self.cache._convert_1h_to_12h(test_df)
+        result_new = self.cache.get_12h_df(test_df)
+
+        assert result_old.equals(result_new)
+
+    def test_foo_24(self):
+
+        #Test 1
+        self.cache.init_caches(self.one_h_df)
+
+        test_df = self.one_h_df[:-2]
+
+        result_old = self.cache._convert_1h_to_24h(test_df)
+        result_new = self.cache.get_1d_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        result_old = self.cache._convert_1h_to_24h(test_df)
+        result_new = self.cache.get_1d_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        #Test 2
+        test_df = self.one_h_df[:-4]
+        result_old = self.cache._convert_1h_to_24h(test_df)
+        result_new = self.cache.get_1d_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        result_old = self.cache._convert_1h_to_24h(test_df)
+        result_new = self.cache.get_1d_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        #Test 2
+        test_df = self.one_h_df
+        result_old = self.cache._convert_1h_to_24h(test_df)
+        result_new = self.cache.get_1d_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        test_df = self.one_h_df[:-5]
+        result_old = self.cache._convert_1h_to_24h(test_df)
+        result_new = self.cache.get_1d_df(test_df)
+
+        assert result_old.equals(result_new)
+
+        test_df = self.one_h_df[:-7]
+        result_old = self.cache._convert_1h_to_24h(test_df)
+        result_new = self.cache.get_1d_df(test_df)
 
         assert result_old.equals(result_new)
 
@@ -83,6 +187,7 @@ class DataFrameCacheTest(unittest.TestCase):
             'close': [1, 2, 3, 4, 5, 6, 7, 8]
         }
         one_h_df = DataFrame(data)
+        self.cache._build_cache_4h(one_h_df)
         result = self.cache.get_4h_df(one_h_df)
 
         expected_data = {
@@ -105,6 +210,7 @@ class DataFrameCacheTest(unittest.TestCase):
             'close': [1, 2, 3, 4, 5, 6, 7, 8]
         }
         one_h_df = DataFrame(data)
+        self.cache._build_cache_4h(one_h_df)
         result = self.cache.get_4h_df(one_h_df)
 
         expected_data = {
@@ -126,6 +232,7 @@ class DataFrameCacheTest(unittest.TestCase):
             'close': [1,1, 2, 3, 4, 5, 6, 7, 8]
         }
         one_h_df = DataFrame(data)
+        self.cache._build_cache_4h(one_h_df)
         result = self.cache.get_4h_df(one_h_df)
 
         expected_data = {
