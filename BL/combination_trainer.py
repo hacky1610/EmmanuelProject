@@ -167,7 +167,7 @@ class CombinationTrainer:
 
         results = []
         # Kombis aus besten Features generieren
-        combos = self._get_combos_by_best_features(num_features, best_features, 0.9)
+        combos = self._get_combos_by_best_features(num_features, best_features, 0.3)
 
 
         for i, features in tqdm(enumerate(combos)):
