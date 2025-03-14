@@ -73,7 +73,8 @@ for deal in ds.get_all_deals_opened_after():
     signal_result_df['result'].fillna(0, inplace=True)
     signal_result_df = signal_result_df.dropna()
 
-    precission, reward, trade_indexes, trade_count  = ct._predict_sum(signal_result_df.drop(columns=["chart_index", "entry_time"]), predictor_object._features)
+    precission, reward, trade_indexes, trade_count  = ct._predict_sum(signal_result_df.drop(columns=["chart_index", "entry_time"]),
+                                                                      predictor_object._features,1,1)
 
     print(f'Real: Profit: {deal["profit"]} Reward: {predictor["_test_reward"]} Time {deal["open_date_ig_str"]}')
     print(f"Evaluate: Precission: {precission} Reward {reward}")

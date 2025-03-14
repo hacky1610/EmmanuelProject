@@ -69,7 +69,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
     random.shuffle(markets)
     for market in markets:
         fx = market["symbol"]
-        #fx = "EURJPY"
+        fx = "NZDUSD"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:

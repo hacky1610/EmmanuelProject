@@ -114,8 +114,7 @@ class CombinationTrainer:
         return test_precision, test_reward
 
     @staticmethod
-    def _predict_sum(df, feature_cols) -> (float, int, List, int):
-
+    def _predict_sum(df, feature_cols, atr_factor_stop, atr_factor_limit):
         # Fälle, in denen alle Features 1 sind
         trades = df[list(feature_cols)].sum(axis=1) == len(feature_cols)
 
@@ -123,10 +122,23 @@ class CombinationTrainer:
         TP = ((trades) & (df['result'] == 1)).sum()
         FP = ((trades) & (df['result'] == 0)).sum()
 
-        # Precision berechnen
-        precision = TP / (TP + FP) if (TP + FP) > 0 else 0
+        # Berechnung des ATR-Verhältnisses
+        atr_ratio = atr_factor_limit / atr_factor_stop
+
+        # Nur die True Positives skalieren
+        TP_scaled = TP * atr_ratio  # Skaliere die True Positives
+
+        # Precision ist weiterhin die Standard-Precision (True Positives / (True Positives + False Positives))
+        total = TP_scaled + FP
+        precision = TP_scaled / total if total > 0 else 0
+
+        # Reward ist die Differenz von TP und FP, aber skaliere nur TP
+        reward = TP_scaled - FP
+
+        # Liste der Indizes, an denen ein Trade gemacht wurde
         trade_indexes = df.index[trades].tolist()
-        return precision, TP - FP, trade_indexes, trades.sum()
+
+        return precision, reward, trade_indexes, trades.sum()
 
     def _save_predictor(self, symbol: str, trade_mode: str,
                         trading_hours: int, features: List, test_reward: int,
@@ -148,23 +160,26 @@ class CombinationTrainer:
                                      trading_hours: int, trade_mode: str,
                                      num_features: int, atr_factor_stop: float,
                                      atr_factor_limit: float,
-                                     min_prec_train: float,min_prec_test: float, best_features: list,
+                                     min_prec_train: float, min_prec_test: float, best_features: list,
                                      n_iter=5, min_reward=4):
 
         train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
         results = []
-        #combos = self._get_combos(num_features, train_df)
+        # Kombis aus besten Features generieren
         combos = self._get_combos_by_best_features(num_features, best_features, 0.9)
+
+
         for i, features in tqdm(enumerate(combos)):
             try:
                 train_precision, train_reward, trade_indexes_train, trade_count_train = self._predict_sum(train_df,
-                                                                                                          features)
+                                                                                                          features,atr_factor_stop,atr_factor_limit)
 
                 # Mindestbedingungen prüfen
                 if train_precision >= min_prec_train and train_reward >= 5:
                     test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
-                                                                                                          features)
+                                                                                                          features,atr_factor_stop,atr_factor_limit)
+
                     results.append({
                         "Features": features,
                         "Train Precision": train_precision,
@@ -183,6 +198,7 @@ class CombinationTrainer:
         if len(df) > 0:
             df = df[df["Test Trade Count"] != 0]
             unique_indexes = set(index for sublist in df["Test Indexes"] for index in sublist)
+
             print(f"Indexes {len(unique_indexes)}")
             print(f"Train Reward Mean {df['Train Reward'].mean()}")
             print(f"Test Reward Mean {df['Test Reward'].mean()}")
@@ -191,11 +207,14 @@ class CombinationTrainer:
             print(f"Test Precision {df['Test Precision'].mean()}")
             print(f"Test Trade Count {df['Test Trade Count'].mean()}")
 
+            # Erfolgsbewertung für verschiedene ATR-Setups
             if (df['Test Reward'].sum() > 15 and
-                len(unique_indexes) >= 20 and
-                df['Test Precision'].mean() > min_prec_test and
-                df['Test Reward'].mean() > 1.2):
-                print(f"####################GOOD################")
+                    len(unique_indexes) >= 20 and
+                    df['Test Precision'].mean() > min_prec_test and
+                    df['Test Reward'].mean() > 1.2):
+
+                print(f"#################### GOOD ################")
+
                 for i, r in df.iterrows():
                     if r["Test Reward"] > 0:
                         self._save_predictor(symbol=symbol, atr_factor_stop=atr_factor_stop,
