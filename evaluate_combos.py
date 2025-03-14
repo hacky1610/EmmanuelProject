@@ -87,9 +87,10 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             "adx_4h", "rsi_convergence5_40"
         ]
         hours = 16
-        for data in [(1.5,1.5,0.7, 0.7),
+        for data in [(1.5,2.6,0.6, 0.66),
+                     (1.5,1.5,0.7, 0.7),
                      (2.0,2.0,0.7, 0.7),
-                     (2.5,4.0,0.6, 0.66)]:
+                     ]:
             atr_factor_stop = data[0]
             atr_factor_limit = data[1]
             minimum_precission_train = data[2]
