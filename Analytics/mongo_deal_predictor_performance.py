@@ -62,7 +62,9 @@ def search_index(df, date):
 
 pd.set_option('future.no_silent_downcasting', True)
 for deal in ds.get_all_deals_opened_after():
-    #print(deal)
+    # if deal["dealId"] != "DIAAAAS2KELNCAK":
+    #     continue
+
     id = deal["predictor_scan_id"]
     predictor = ps.load_by_id(id)
     predictor_object = DeepPredictor(deal["ticker"], cache, Indicators(), config=predictor)
@@ -77,6 +79,7 @@ for deal in ds.get_all_deals_opened_after():
     sim.get_signals_by_indicatornames(deal["ticker"], df, predictor_object._features, Indicators(), GenericPredictor)
     train_signals_df = sim.create_combined_indicator_data_by_features(predictor_object._features, deal["ticker"])
     trade_results = []
+    pd.set_option('future.no_silent_downcasting', True)
     # Set specific replacement values for each trade type
     if predictor_object._trade_mode == TradeAction.BUY:
         train_signals_df = train_signals_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0})
@@ -93,7 +96,7 @@ for deal in ds.get_all_deals_opened_after():
     trade_results = trade_results[['chart_index', 'result', "entry_time"]]
     trade_results['result'] = trade_results['result'].apply(lambda x: 1 if x > 0 else 0)
     signal_result_df = pd.merge(train_signals_df, trade_results, on='chart_index', how='left')
-    signal_result_df['result'].fillna(0, inplace=True)
+    signal_result_df['result'] = signal_result_df['result'].fillna(0)
     signal_result_df = signal_result_df.dropna()
 
     if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 0 and deal["profit"] < 0:

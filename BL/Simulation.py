@@ -49,11 +49,10 @@ class Simulation:
     def get_signals_by_indicatornames(self, symbol: str, df: DataFrame, features: [], indicators,predictor_class, force=False):
         for indicator in features:
             path = f"signal_{symbol}_{indicator}.csv"
-            if not self._cache.signal_exist(path):
-                predictor = predictor_class(symbol=symbol, indicators=indicators)
-                predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
-                trades = predictor.get_signals(df, self._analytics)
-                self._cache.save_signal(trades, path)
+            predictor = predictor_class(symbol=symbol, indicators=indicators)
+            predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
+            trades = predictor.get_signals(df, self._analytics)
+            self._cache.save_signal(trades, path)
 
     def create_combined_indicator_data(self, indicators: Indicators, symbol: str) -> DataFrame:
         # Liste für DataFrames mit einem gemeinsamen Index 'chart_index'
