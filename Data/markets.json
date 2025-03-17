@@ -477,15 +477,6 @@
         "min_stop_disance": 60.0
     },
     {
-        "symbol": "GBPTRY",
-        "epic": "CS.D.GBPTRY.MINI.IP",
-        "spread": 139.99999999995794,
-        "scaling": 10000,
-        "size": 1.0,
-        "currency": "TRL",
-        "min_stop_disance": 4600.0
-    },
-    {
         "symbol": "TRYJPY",
         "epic": "CS.D.TRYJPY.MINI.IP",
         "spread": 8.000000000000007,
