@@ -41,6 +41,9 @@ class DeepPredictor(BasePredictor):
         self._test_trade_count = None
         self._training_time = None
         self._indicators = indicators
+        self._train_reward = None
+        self._train_precision = None
+        self._train_trade_count = None
         if config is None:
             config = {}
 
@@ -58,8 +61,12 @@ class DeepPredictor(BasePredictor):
         self._set_att(config, "_model_data")
         self._set_att(config, "_test_reward")
         self._set_att(config, "_test_precision")
-        self._set_att(config, "_test_precision")
+        self._set_att(config, "_test_trade_count")
         self._set_att(config, "_unique_indexes")
+
+        self._set_att(config, "_train_reward")
+        self._set_att(config, "_train_precision")
+        self._set_att(config, "_train_trade_count")
 
         if "_atr_factor_limit" in config and "_atr_factor_stop" in config:
             self._set_att(config, "_atr_factor_limit")
@@ -86,7 +93,10 @@ class DeepPredictor(BasePredictor):
             self._test_reward,
             self._test_precision,
             self._test_trade_count,
-            self._unique_indexes
+            self._unique_indexes,
+            self._train_reward,
+            self._train_precision,
+            self._train_trade_count,
 
         ],
             index=[
@@ -103,7 +113,10 @@ class DeepPredictor(BasePredictor):
                 "_test_reward",
                 "_test_precision",
                 "_test_trade_count",
-                "_unique_indexes"
+                "_unique_indexes",
+                "_train_reward",
+                "_train_precision",
+                "_train_trade_count"
             ])
         return pd.concat([parent_c, my_conf])
 
@@ -124,6 +137,9 @@ class DeepPredictor(BasePredictor):
                          test_reward:int,
                          test_precision:float,
                          test_trade_count:int,
+                         train_reward: int,
+                         train_precision: float,
+                         train_trade_count: int,
                          unique_indexes:int):
         self._trading_hours = trading_hours
         self._features = features
@@ -136,6 +152,10 @@ class DeepPredictor(BasePredictor):
         self._unique_indexes = unique_indexes
         self._test_precision = test_precision
         self._test_trade_count = test_trade_count
+
+        self._train_reward = train_reward
+        self._train_precision = train_precision
+        self._train_trade_count = train_trade_count
 
     def get_trading_hours(self) -> int:
         return self._trading_hours

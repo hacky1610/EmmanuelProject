@@ -68,8 +68,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
     markets = IG.get_markets_offline()
     random.shuffle(markets)
     for market in markets:
+        predictor_store._collection.delete_many({ "_train_reward": { "$exists": False } })
         fx = market["symbol"]
-        #fx = "NZDUSD"
+        #fx = "EURJPY"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
@@ -87,15 +88,15 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             "adx_4h", "rsi_convergence5_40"
         ]
         hours = 16
-        for data in [(1.5,2.0,0.75, 0.66),
-                     (1.5,1.5,0.75, 0.66),
-                     (2.0,2.0,0.75, 0.66),
+        for data in [(1.5,2.0,0.66, 0.66),
+                     (1.5,1.5,0.66, 0.66),
+                     (2.0,2.0,0.66, 0.66),
                      ]:
             atr_factor_stop = data[0]
             atr_factor_limit = data[1]
             minimum_precission_train = data[2]
             minimum_precission_test = data[3]
-            for combination_size in [5,6]:
+            for combination_size in [4, 5,6]:
                 f = 0
                 for features in [best_features_online,
                                  best_features,

@@ -1,5 +1,7 @@
 import os
+import string
 from datetime import datetime, timedelta
+from random import random, choices
 
 import pandas
 import pandas as pd
@@ -26,10 +28,16 @@ from Predictors.generic_predictor import GenericPredictor
 from UI.base_viewer import BaseViewer
 from UI.plotly_viewer import PlotlyViewer
 
+def generate_random_string(length=10):
+    characters = string.ascii_letters + string.digits  # Includes A-Z, a-z, 0-9
+    return ''.join(choices(characters, k=length))
+
+
+
 conf_reader = ConfigReader()
 dbx = dropbox.Dropbox(conf_reader.get("dropbox"))
 ds = DropBoxService(dbx,"DEMO")
-cache = DropBoxCache(ds, prefix="test2")
+cache = DropBoxCache(ds, prefix=generate_random_string(12))
 tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
 predictor = GenericPredictor(indicators=Indicators(), symbol="Foo")

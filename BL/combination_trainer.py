@@ -141,8 +141,13 @@ class CombinationTrainer:
         return precision, reward, trade_indexes, trades.sum()
 
     def _save_predictor(self, symbol: str, trade_mode: str,
-                        trading_hours: int, features: List, test_reward: int,
-                        atr_factor_stop: float, atr_factor_limit: float, test_precision: float,
+                        trading_hours: int, features: List,
+                        test_reward: int,
+                        train_reward: int,
+                        train_trade_count: int,
+                        atr_factor_stop: float, atr_factor_limit: float,
+                        test_precision: float,
+                        train_precision: float,
                         test_trade_count: int, unique_indexes: int):
         dp = DeepPredictor(symbol=symbol, cache=self._cache,
                            indicators=self._indicators, config={})
@@ -152,7 +157,10 @@ class CombinationTrainer:
                             atr_factor_limit=atr_factor_limit,
                             atr_factor_stop=atr_factor_stop,
                             test_reward=test_reward, test_precision=test_precision,
-                            test_trade_count=test_trade_count, unique_indexes=unique_indexes
+                            test_trade_count=test_trade_count, unique_indexes=unique_indexes,
+                            train_reward=train_reward,
+                            train_precision=train_precision,
+                            train_trade_count=train_trade_count
                             )
         self._predictor_store.save(dp)
 
@@ -197,8 +205,15 @@ class CombinationTrainer:
         df = DataFrame(results)
         if len(df) > 0:
             df = df[df["Test Trade Count"] != 0]
-            unique_indexes = set(index for sublist in df["Test Indexes"] for index in sublist)
+            df = df[df["Train Reward"] > 25]
+            df = df[df["Test Reward"] > 0]
 
+            if len(df) == 0:
+                print("No valid results")
+                return
+
+            unique_indexes = set(index for sublist in df["Test Indexes"] for index in sublist)
+            print(df[["Train Reward", "Train Precision", "Test Precision"]].head(10))
             print(f"Indexes {len(unique_indexes)}")
             print(f"Train Reward Mean {df['Train Reward'].mean()}")
             print(f"Test Reward Mean {df['Test Reward'].mean()}")
@@ -207,24 +222,18 @@ class CombinationTrainer:
             print(f"Test Precision {df['Test Precision'].mean()}")
             print(f"Test Trade Count {df['Test Trade Count'].mean()}")
 
-            # Erfolgsbewertung für verschiedene ATR-Setups
-            if (df['Test Reward'].sum() > 15 and
-                    len(unique_indexes) >= 20 and
-                    df['Test Precision'].mean() > min_prec_test and
-                    df['Test Reward'].mean() > 1.2):
-
-                print(f"#################### GOOD ################")
-
-                for i, r in df.iterrows():
-                    if r["Test Reward"] > 0:
-                        self._save_predictor(symbol=symbol, atr_factor_stop=atr_factor_stop,
-                                             atr_factor_limit=atr_factor_limit,
-                                             features=list(r["Features"]), trade_mode=trade_mode,
-                                             trading_hours=trading_hours,
-                                             test_reward=r["Test Reward"],
-                                             test_precision=r["Test Precision"],
-                                             test_trade_count=r["Test Trade Count"],
-                                             unique_indexes=len(unique_indexes))
+            for i, r in df.iterrows():
+                self._save_predictor(symbol=symbol, atr_factor_stop=atr_factor_stop,
+                                     atr_factor_limit=atr_factor_limit,
+                                     features=list(r["Features"]), trade_mode=trade_mode,
+                                     trading_hours=trading_hours,
+                                     test_reward=r["Test Reward"],
+                                     test_precision=r["Test Precision"],
+                                     test_trade_count=r["Test Trade Count"],
+                                     unique_indexes=len(unique_indexes),
+                                     train_reward=r["Train Reward"],
+                                     train_precision=r["Train Precision"],
+                                     train_trade_count=r['Test Trade Count'])
 
         return df
 
