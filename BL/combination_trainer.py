@@ -206,7 +206,7 @@ class CombinationTrainer:
         if len(df) > 0:
             df = df[df["Test Trade Count"] != 0]
             df = df[df["Train Reward"] > 25]
-            df = df[df["Test Reward"] > 0]
+            df = df[df["Test Precision"] > min_prec_test]
 
             if len(df) == 0:
                 print("No valid results")
