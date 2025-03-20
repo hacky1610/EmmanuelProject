@@ -96,7 +96,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             atr_factor_limit = data[1]
             minimum_precission_train = data[2]
             minimum_precission_test = data[3]
-            for combination_size in [3, 4, 5,6]:
+            for combination_size in [7, 5,6]:
                 f = 0
                 for features in [best_features_online,
                                  best_features,
