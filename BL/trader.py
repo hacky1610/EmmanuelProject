@@ -19,6 +19,7 @@ from Connectors.dropbox_cache import DropBoxCache
 from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType
+from Predictors.generic_predictor import GenericPredictor
 from Tracing import Tracer
 from pandas import DataFrame
 from Predictors.base_predictor import BasePredictor
@@ -437,3 +438,66 @@ class Trader:
                                          stop_factor=stop, limit_factor=limit, predictor_scan_id=predictor.get_id(),
                                          size=config.size))
         return res
+
+    def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore,
+                                   predictor_store: PredictorStore):
+        open_price = position.level
+        bid_price = position.bid
+        offer_price = position.offer
+        stop_level = position.stopLevel
+        limit_level = position.limitLevel
+        direction = position.direction
+        deal_id = position.dealId
+        scaling_factor = position.scalingFactor
+        ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
+
+        self._tracer.debug(
+            f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
+
+        try:
+            p = GenericPredictor(ticker, Indicators(), {}, self._tracer)
+            p.setup(predictor_store.load_active_by_symbol(ticker))
+            market = market_store.get_market(ticker)
+            if p.get_open_limit_isl():
+                limit_level = None
+            if direction == "BUY":
+                if bid_price > open_price:
+                    diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
+                    if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
+                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
+                        new_stop_level = offer_price - distance
+                        if new_stop_level > stop_level:
+                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+            else:
+                if offer_price < open_price:
+                    diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
+                    if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
+                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
+                        new_stop_level = offer_price + distance
+                        if new_stop_level < stop_level:
+                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+        except Exception as e:
+            self._tracer.error(f"Bid or offer price is none {position}")
+            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+            self._tracer.error(f"MainException: {e} File:{traceback_str}")
+
+    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
+        self._tracer.debug(f"Change Stop level to {new_stop_level}")
+        res = self.adapt_stop_level(deal_id=deal_id, limit_level=limit_level, stop_level=new_stop_level)
+        self._tracer.debug(res)
+        if res["dealStatus"] != "ACCEPTED":
+            self._tracer.error("Stop level cant be adapted")
+        else:
+            deal = deal_store.get_deal_by_deal_id(deal_id)
+            if deal is not None:
+                deal.set_intelligent_stop_level(new_stop_level)
+                deal_store.save(deal)
+            else:
+                self._tracer.debug(f"deal {deal_id} is not in our db")
+
+    def _intelligent_update(self):
+        self._tracer.debug("Intelligent Update")
+        for _, item in self._ig.get_opened_positions().iterrows():
+            deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
+            if deal is not None:
+                self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
