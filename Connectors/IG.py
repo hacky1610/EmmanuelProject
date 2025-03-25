@@ -335,7 +335,7 @@ class IG:
         ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
 
         self._tracer.debug(
-            f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
+            f"{ticker} {direction} {deal_id} Open {open_price} Bid {bid_price} Offer {offer_price} Stop {stop_level} Limit {limit_level}")
 
         if bid_price is None or offer_price is None:
             self._tracer.debug(f"Bid or offer price is none {position}")
@@ -357,9 +357,11 @@ class IG:
 
             if direction == IG.BUY_DIRECTION:
                 if bid_price > open_price:
+                    self._tracer.debug(f"{ticker} Trade winning")
                     current_diff = bid_price - open_price
                     expected_diff = (limit_level - open_price) * 0.5  # 50% des Gewinnziels
                     if current_diff > expected_diff:
+                        self._tracer.debug(f"{ticker} better than 0.5 atr")
                         # Dynamischer Stop: ATR-basiert oder fester Abstand
                         new_stop_level = max(stop_level, bid_price - 1.5 *  self._get_atr(tiingo,ticker) )
 
@@ -372,9 +374,11 @@ class IG:
 
             else:  # Sell-Trade
                 if offer_price < open_price:
+                    self._tracer.debug(f"{ticker} Trade winning")
                     current_diff = open_price - offer_price
                     expected_diff = (open_price - limit_level) * 0.5
                     if current_diff > expected_diff:
+                        self._tracer.debug(f"{ticker} better than 0.5 atr")
                         new_stop_level = min(stop_level, offer_price + 1.5 *  self._get_atr(tiingo,ticker) )
 
                         if new_stop_level < stop_level:
