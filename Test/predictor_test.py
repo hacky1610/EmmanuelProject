@@ -43,11 +43,11 @@ class TestBasePredictor(unittest.TestCase):
             1.5,
             True,
             "",
-            False,
+            True,
             False,
             0.7,
             6.0,
-            14.0
+            7
         ], index=["_type", "_stop", "_limit", "_active", "_symbol", "_use_isl", "_isl_open_end", "_isl_factor", "_isl_distance", "_isl_entry"])
 
         self.assertTrue(expected_series.equals(config_series))

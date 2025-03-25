@@ -19,11 +19,11 @@ class BasePredictor:
         self._stop = 20
         self._id = ""
         self._active = True
-        self._use_isl = False
+        self._use_isl = True
         self._isl_open_end = False
         self._isl_distance = 6.0
         self._isl_factor = 0.7
-        self._isl_entry = self._stop * 0.7
+        self._isl_entry = 7
         self._symbol = symbol
         self._indicator_names = [Indicators.RSI, Indicators.EMA]
 

@@ -204,6 +204,7 @@ class Trader:
 
     def update_markets(self):
         self._close_after_time()
+        self._intelligent_update()
         self.update_deals()
         self._fix_deals()
 
@@ -439,47 +440,6 @@ class Trader:
                                          size=config.size))
         return res
 
-    def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore,
-                                   predictor_store: PredictorStore):
-        open_price = position.level
-        bid_price = position.bid
-        offer_price = position.offer
-        stop_level = position.stopLevel
-        limit_level = position.limitLevel
-        direction = position.direction
-        deal_id = position.dealId
-        scaling_factor = position.scalingFactor
-        ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
-
-        self._tracer.debug(
-            f"{ticker} {direction} {deal_id} {open_price} {bid_price} {offer_price} {stop_level} {limit_level}")
-
-        try:
-            p = GenericPredictor(ticker, Indicators(), {}, self._tracer)
-            p.setup(predictor_store.load_active_by_symbol(ticker))
-            market = market_store.get_market(ticker)
-            if p.get_open_limit_isl():
-                limit_level = None
-            if direction == "BUY":
-                if bid_price > open_price:
-                    diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
-                    if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
-                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
-                        new_stop_level = offer_price - distance
-                        if new_stop_level > stop_level:
-                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
-            else:
-                if offer_price < open_price:
-                    diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
-                    if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
-                        distance = self.get_stop_distance(market, position.epic, scaling_factor)
-                        new_stop_level = offer_price + distance
-                        if new_stop_level < stop_level:
-                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
-        except Exception as e:
-            self._tracer.error(f"Bid or offer price is none {position}")
-            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
-            self._tracer.error(f"MainException: {e} File:{traceback_str}")
 
 
 
@@ -488,7 +448,8 @@ class Trader:
         for _, item in self._ig.get_opened_positions().iterrows():
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
             if deal is not None:
-                self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
+                self._ig.set_intelligent_stop_level(item, self._market_store,
+                                                    self._deal_storage, self._predictor_store, self._tiingo)
 
     def is_ready_to_set_intelligent_stop(self, diff, limit: float):
 
@@ -497,31 +458,11 @@ class Trader:
             self._tracer.debug(f"Current profit {diff} is greate than limit {limit * 0.7}")
         return ready
 
-    def get_stop_distance(self, market, epic: str, scaling_factor: int, intelligent_stop_distance: float = 6.0,
-                          check_min=True) -> float:
-        stop_distance = market.get_pip_value(euro=intelligent_stop_distance,
-                                             scaling_factor=scaling_factor)
 
-        if check_min:
-            min_stop_distance = self.get_min_stop_distance(epic) / scaling_factor
-        else:
-            min_stop_distance = 0
 
-        if stop_distance <= min_stop_distance:
-            self._tracer.debug(
-                f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")
-            return min_stop_distance
 
-        self._tracer.debug(f"Calculated stop distance is {stop_distance}")
 
-        return stop_distance
 
-    def get_min_stop_distance(self, epic: str) -> float:
-        try:
-            ms = self.get_market_details(epic)
-            return ms["dealingRules"]["minNormalStopOrLimitDistance"]["value"]
-        except Exception as e:
-            self._tracer.error(f"Error while get limit {e}")
-            return -1
+
 
 

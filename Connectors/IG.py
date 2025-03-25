@@ -31,7 +31,10 @@ class IG:
     BUY_DIRECTION = "BUY"
     SELL_DIRECTION = "SELL"
 
-    def __init__(self, conf_reader: BaseReader, tracer: Tracer = ConsoleTracer(), live: bool = False):
+    def __init__(self,
+                 conf_reader: BaseReader,
+                 tracer: Tracer = ConsoleTracer(),
+                 live: bool = False):
         self.ig_service = None
         self.user = conf_reader.get("ig_demo_user")
         self.password = conf_reader.get("ig_demo_pass")
@@ -312,8 +315,16 @@ class IG:
             self._tracer.debug(f"Current profit {diff} is greate than limit {limit}")
         return ready
 
-    def set_intelligent_stop_level(self, position: Series, market_store: MarketStore, deal_store: DealStore,
-                                   predictor_store: PredictorStore):
+    def _get_atr(self, tiingo, symbol:str):
+        df = tiingo.load_trade_data(symbol=symbol, dp=DataProcessor(), trade_type=TradeType.FX)
+        return df.iloc[-1].ATR
+
+    def set_intelligent_stop_level(self,
+                                   position: Series,
+                                   market_store: MarketStore,
+                                   deal_store: DealStore,
+                                   predictor_store: PredictorStore,
+                                   tiingo):
         open_price = position.level
         bid_price = position.bid
         offer_price = position.offer
@@ -321,7 +332,6 @@ class IG:
         limit_level = position.limitLevel
         direction = position.direction
         deal_id = position.dealId
-        scaling_factor = position.scalingFactor
         ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
 
         self._tracer.debug(
@@ -344,33 +354,39 @@ class IG:
             if p.get_open_limit_isl():
                 self._tracer.debug(f"Limit is open")
                 limit_level = None
+
             if direction == IG.BUY_DIRECTION:
                 if bid_price > open_price:
-                    diff = market.get_euro_value(pips=bid_price - open_price, scaling_factor=scaling_factor)
-                    if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
-                        distance, adapted = self.get_stop_distance(market, position.epic, scaling_factor)
-                        new_stop_level = offer_price - distance
+                    current_diff = bid_price - open_price
+                    expected_diff = (limit_level - open_price) * 0.5  # 50% des Gewinnziels
+                    if current_diff > expected_diff:
+                        # Dynamischer Stop: ATR-basiert oder fester Abstand
+                        new_stop_level = max(stop_level, bid_price - 1.5 *  self._get_atr(tiingo,ticker) )
+
                         if new_stop_level > stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
-                        if deal.is_manual_stop:
-                            if new_stop_level > deal.manual_stop_level:
-                                deal.manual_stop_level = new_stop_level
-                                deal_store.save(deal)
-            else:
+
+                        if deal.is_manual_stop and new_stop_level > deal.manual_stop_level:
+                            deal.manual_stop_level = new_stop_level
+                            deal_store.save(deal)
+
+            else:  # Sell-Trade
                 if offer_price < open_price:
-                    diff = market.get_euro_value(pips=open_price - offer_price, scaling_factor=scaling_factor)
-                    if self.is_ready_to_set_intelligent_stop(diff, p.get_isl_entry()):
-                        distance, adapted = self.get_stop_distance(market, position.epic, scaling_factor)
-                        new_stop_level = offer_price + distance
+                    current_diff = open_price - offer_price
+                    expected_diff = (open_price - limit_level) * 0.5
+                    if current_diff > expected_diff:
+                        new_stop_level = min(stop_level, offer_price + 1.5 *  self._get_atr(tiingo,ticker) )
+
                         if new_stop_level < stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
-                        if deal.is_manual_stop:
-                            if new_stop_level < deal.manual_stop_level:
-                                deal.manual_stop_level = new_stop_level
-                                deal_store.save(deal)
+
+                        if deal.is_manual_stop and new_stop_level < deal.manual_stop_level:
+                            deal.manual_stop_level = new_stop_level
+                            deal_store.save(deal)
+
         except Exception as e:
             self._tracer.error(f"Bid or offer price is none {position}")
-            traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
+            traceback_str = traceback.format_exc()
             self._tracer.error(f"MainException: {e} File:{traceback_str}")
 
     def manual_close(self, position: Series, deal_store: DealStore):
