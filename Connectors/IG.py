@@ -346,7 +346,6 @@ class IG:
 
             p = GenericPredictor(ticker, Indicators(), {}, self._tracer)
             p.setup(predictor_store.load_by_id(deal.predictor_scan_id))
-            market = market_store.get_market(ticker)
             if not p.use_isl():
                 self._tracer.debug("ISL is not activated")
                 return
@@ -359,9 +358,9 @@ class IG:
                 if bid_price > open_price:
                     self._tracer.debug(f"{ticker} Trade winning")
                     current_diff = bid_price - open_price
-                    expected_diff = (limit_level - open_price) * 0.5  # 50% des Gewinnziels
+                    expected_diff = (limit_level - open_price) * 0.4  # 50% des Gewinnziels
                     if current_diff > expected_diff:
-                        self._tracer.debug(f"{ticker} better than 0.5 atr")
+                        self._tracer.debug(f"{ticker} better than 0.4 atr")
                         # Dynamischer Stop: ATR-basiert oder fester Abstand
                         new_stop_level = max(stop_level, bid_price - 1.5 *  self._get_atr(tiingo,ticker) )
 
@@ -376,10 +375,10 @@ class IG:
                 if offer_price < open_price:
                     self._tracer.debug(f"{ticker} Trade winning")
                     current_diff = open_price - offer_price
-                    expected_diff = (open_price - limit_level) * 0.5
+                    expected_diff = (open_price - limit_level) * 0.4
                     if current_diff > expected_diff:
                         self._tracer.debug(f"{ticker} better than 0.5 atr")
-                        new_stop_level = min(stop_level, offer_price + 1.5 *  self._get_atr(tiingo,ticker) )
+                        new_stop_level = min(stop_level, offer_price + 1.4 *  self._get_atr(tiingo,ticker) )
 
                         if new_stop_level < stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)

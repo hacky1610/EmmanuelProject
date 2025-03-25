@@ -214,6 +214,8 @@ class Trader:
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
             if deal is not None:
                 self._ig.manual_close_after_time(item, self._deal_storage, self._predictor_store)
+            else:
+                self._tracer.error(f"Unable to find deal for {item.dealId}")
 
     def _get_predictors(self, symbol: str, indicators) -> List[DeepPredictor]:
         predictors = []
@@ -450,6 +452,8 @@ class Trader:
             if deal is not None:
                 self._ig.set_intelligent_stop_level(item, self._market_store,
                                                     self._deal_storage, self._predictor_store, self._tiingo)
+            else:
+                self._tracer.error(f"Unable to find deal for {item.dealId}")
 
     def is_ready_to_set_intelligent_stop(self, diff, limit: float):
 
