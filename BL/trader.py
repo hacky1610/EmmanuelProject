@@ -481,19 +481,7 @@ class Trader:
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
             self._tracer.error(f"MainException: {e} File:{traceback_str}")
 
-    def _adjust_stop_level(self, deal_id: str, limit_level: float, new_stop_level: float, deal_store: DealStore):
-        self._tracer.debug(f"Change Stop level to {new_stop_level}")
-        res = self.adapt_stop_level(deal_id=deal_id, limit_level=limit_level, stop_level=new_stop_level)
-        self._tracer.debug(res)
-        if res["dealStatus"] != "ACCEPTED":
-            self._tracer.error("Stop level cant be adapted")
-        else:
-            deal = deal_store.get_deal_by_deal_id(deal_id)
-            if deal is not None:
-                deal.set_intelligent_stop_level(new_stop_level)
-                deal_store.save(deal)
-            else:
-                self._tracer.debug(f"deal {deal_id} is not in our db")
+
 
     def _intelligent_update(self):
         self._tracer.debug("Intelligent Update")
@@ -501,3 +489,31 @@ class Trader:
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
             if deal is not None:
                 self._ig.set_intelligent_stop_level(item, self._market_store, self._deal_storage, self._predictor_store)
+
+    def is_ready_to_set_intelligent_stop(self, diff, limit: float):
+
+        ready = diff > limit
+        if ready:
+            self._tracer.debug(f"Current profit {diff} is greate than limit {limit * 0.7}")
+        return ready
+
+    def get_stop_distance(self, market, epic: str, scaling_factor: int, intelligent_stop_distance: float = 6.0,
+                          check_min=True) -> float:
+        stop_distance = market.get_pip_value(euro=intelligent_stop_distance,
+                                             scaling_factor=scaling_factor)
+
+        if check_min:
+            min_stop_distance = self.get_min_stop_distance(epic) / scaling_factor
+        else:
+            min_stop_distance = 0
+
+        if stop_distance <= min_stop_distance:
+            self._tracer.debug(
+                f"The calculated stop distance {stop_distance} is smaller than the min {min_stop_distance}")
+            return min_stop_distance
+
+        self._tracer.debug(f"Calculated stop distance is {stop_distance}")
+
+        return stop_distance
+
+
