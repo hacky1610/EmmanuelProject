@@ -516,4 +516,12 @@ class Trader:
 
         return stop_distance
 
+    def get_min_stop_distance(self, epic: str) -> float:
+        try:
+            ms = self.get_market_details(epic)
+            return ms["dealingRules"]["minNormalStopOrLimitDistance"]["value"]
+        except Exception as e:
+            self._tracer.error(f"Error while get limit {e}")
+            return -1
+
 
