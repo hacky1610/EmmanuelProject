@@ -96,8 +96,14 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             atr_factor_limit = data[1]
             minimum_precission_train = data[2]
             minimum_precission_test = data[3]
-            for combination_size in [7, 5,6]:
+            for combination_size_tuple in [(8,0.1),
+                                           (7,0.2),
+                                           (5,0.5),
+                                           (6,0.3)]:
+
                 f = 0
+                combination_size = combination_size_tuple[0]
+                part = combination_size_tuple[1]
                 for features in [best_features_online,
                                  best_features,
                                  random.choices( indicators.get_all_indicator_names(), k=25)]:
@@ -127,7 +133,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                      symbol=fx,
                                      atr_factor_stop=atr_factor_stop,
                                      atr_factor_limit=atr_factor_limit,
-                                     best_features=features, min_prec_test=minimum_precission_test)
+                                     best_features=features, min_prec_test=minimum_precission_test, part=part)
 
                     except Exception as ex:
                         traceback_str = traceback.format_exc()

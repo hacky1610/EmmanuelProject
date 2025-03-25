@@ -169,16 +169,17 @@ class CombinationTrainer:
                                      num_features: int, atr_factor_stop: float,
                                      atr_factor_limit: float,
                                      min_prec_train: float, min_prec_test: float, best_features: list,
+                                     part:float,
                                      n_iter=5, min_reward=4):
 
         train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
         results = []
         # Kombis aus besten Features generieren
-        combos = self._get_combos_by_best_features(num_features, best_features, 0.3)
+        combos = self._get_combos_by_best_features(num_features, best_features, part)
 
 
-        for i, features in tqdm(enumerate(combos)):
+        for features in tqdm(combos):
             try:
                 train_precision, train_reward, trade_indexes_train, trade_count_train = self._predict_sum(train_df,
                                                                                                           features,atr_factor_stop,atr_factor_limit)
@@ -285,7 +286,7 @@ class CombinationTrainer:
         random.shuffle(combos)
 
         # Kürze die Liste auf 5 % der ursprünglichen Länge
-        reduced_size = max(1, int(len(combos) * size))  # Mindestens 1 Element behalten
+        reduced_size = min(72000, int(len(combos)))  # Mindestens 1 Element behalten
         return combos[:reduced_size]
 
     @staticmethod
@@ -349,7 +350,8 @@ class CombinationTrainer:
               trading_mode: str, symbol: str,
               min_prec_train: float, min_prec_test: float, atr_factor_stop: float,
               atr_factor_limit: float,
-              best_features: List[str]):
+              best_features: List[str],
+              part:float):
 
         # if len(best_features) == 0:
         #     df = self._prepare_df(df, symbol, trading_hours, atr_factor)
@@ -360,7 +362,7 @@ class CombinationTrainer:
                                           min_prec_train=min_prec_train, trade_mode=trading_mode,
                                           trading_hours=trading_hours, atr_factor_stop=atr_factor_stop,
                                           atr_factor_limit=atr_factor_limit,
-                                          best_features=best_features, min_prec_test=min_prec_test)
+                                          best_features=best_features, min_prec_test=min_prec_test, part=part)
 
     def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, hours, factor_stop, factor_limit, indicators,
                     trade_mode: str,
