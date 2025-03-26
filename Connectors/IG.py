@@ -34,7 +34,8 @@ class IG:
     def __init__(self,
                  conf_reader: BaseReader,
                  tracer: Tracer = ConsoleTracer(),
-                 live: bool = False):
+                 live: bool = False,
+                 connect:bool = True):
         self.ig_service = None
         self.user = conf_reader.get("ig_demo_user")
         self.password = conf_reader.get("ig_demo_pass")
@@ -53,7 +54,8 @@ class IG:
             self._gold_id = 104139
             self._silver_id = 264211
         self._tracer: Tracer = tracer
-        self.connect()
+        if connect:
+            self.connect()
         self._excludedMarkets = ["CHFHUF", "EMFX USDTWD ($1 Contract)", "EMFX USDPHP ($1 Contract)",
                                  "EMFX USDKRW ($1 Contract)",
                                  "EMFX USDINR ($1 Contract)", "EMFX USDIDR ($1 Contract)", "EMFX INRJPY",
@@ -324,7 +326,7 @@ class IG:
                                    market_store: MarketStore,
                                    deal_store: DealStore,
                                    predictor_store: PredictorStore,
-                                   tiingo):
+                                   tiingo) -> dict:
         open_price = position.level
         bid_price = position.bid
         offer_price = position.offer
@@ -339,7 +341,7 @@ class IG:
 
         if bid_price is None or offer_price is None:
             self._tracer.debug(f"Bid or offer price is none {position}")
-            return
+            return {"status": "error", "message": "Missing bid or offer price"}
 
         try:
             deal = deal_store.get_deal_by_deal_id(deal_id)
@@ -348,49 +350,51 @@ class IG:
             p.setup(predictor_store.load_by_id(deal.predictor_scan_id))
             if not p.use_isl():
                 self._tracer.debug("ISL is not activated")
-                return
+                return {"status": "no_change", "message": "ISL not activated"}
 
             if p.get_open_limit_isl():
                 self._tracer.debug(f"Limit is open")
                 limit_level = None
 
+            atr = self._get_atr(tiingo, ticker)
+
             if direction == IG.BUY_DIRECTION:
                 if bid_price > open_price:
-                    self._tracer.debug(f"{ticker} Trade winning")
                     current_diff = bid_price - open_price
-                    expected_diff = (limit_level - open_price) * 0.4  # 50% des Gewinnziels
-                    if current_diff > expected_diff:
-                        self._tracer.debug(f"{ticker} better than 0.4 atr")
-                        # Dynamischer Stop: ATR-basiert oder fester Abstand
-                        new_stop_level = max(stop_level, bid_price - 1.5 *  self._get_atr(tiingo,ticker) )
+                    max_possible_profit = (limit_level - open_price) if limit_level else current_diff
+                    profit_percent = (current_diff / max_possible_profit) * 100 if max_possible_profit != 0 else 0
 
+                    self._tracer.debug(f"{ticker} Trade winning ({profit_percent:.2f}%)")
+
+                    expected_diff = max_possible_profit * 0.4
+                    if current_diff > expected_diff:
+                        new_stop_level = max(stop_level, bid_price - 1.5 * atr)
                         if new_stop_level > stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+                            return {"status": "success", "message": "Stop level adjusted"}
 
-                        if deal.is_manual_stop and new_stop_level > deal.manual_stop_level:
-                            deal.manual_stop_level = new_stop_level
-                            deal_store.save(deal)
-
-            else:  # Sell-Trade
+            else:  # SELL Trade
                 if offer_price < open_price:
-                    self._tracer.debug(f"{ticker} Trade winning")
                     current_diff = open_price - offer_price
-                    expected_diff = (open_price - limit_level) * 0.4
-                    if current_diff > expected_diff:
-                        self._tracer.debug(f"{ticker} better than 0.5 atr")
-                        new_stop_level = min(stop_level, offer_price + 1.4 *  self._get_atr(tiingo,ticker) )
+                    max_possible_profit = (open_price - limit_level) if limit_level else current_diff
+                    profit_percent = (current_diff / max_possible_profit) * 100 if max_possible_profit != 0 else 0
 
+                    self._tracer.debug(f"{ticker} Trade winning ({profit_percent:.2f}%)")
+
+                    expected_diff = max_possible_profit * 0.4
+                    if current_diff > expected_diff:
+                        new_stop_level = min(stop_level, offer_price + 1.4 * atr)
                         if new_stop_level < stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
+                            return {"status": "success", "message": "Stop level adjusted"}
 
-                        if deal.is_manual_stop and new_stop_level < deal.manual_stop_level:
-                            deal.manual_stop_level = new_stop_level
-                            deal_store.save(deal)
+            return {"status": "no_change", "message": "Conditions not met"}
 
         except Exception as e:
-            self._tracer.error(f"Bid or offer price is none {position}")
+            self._tracer.error(f"Error processing position {position}")
             traceback_str = traceback.format_exc()
-            self._tracer.error(f"MainException: {e} File:{traceback_str}")
+            self._tracer.error(f"MainException: {e}\n{traceback_str}")
+            return {"status": "error", "message": str(e)}
 
     def manual_close(self, position: Series, deal_store: DealStore):
         bid_price = position.bid
