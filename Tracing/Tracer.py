@@ -24,7 +24,7 @@ class Tracer:
     @staticmethod
     def _get_function():
         stack = inspect.stack()
-        if len(stack) >= 3:
-            return inspect.stack()[2].function
+        if len(stack) >= 4:
+            return inspect.stack()[3].function
         return ""
 

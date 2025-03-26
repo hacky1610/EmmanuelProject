@@ -368,6 +368,7 @@ class IG:
 
                     expected_diff = max_possible_profit * 0.4
                     if current_diff > expected_diff:
+                        self._tracer.debug(f"{ticker} Trade better than expected")
                         new_stop_level = max(stop_level, bid_price - 1.5 * atr)
                         if new_stop_level > stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
@@ -383,6 +384,7 @@ class IG:
 
                     expected_diff = max_possible_profit * 0.4
                     if current_diff > expected_diff:
+                        self._tracer.debug(f"{ticker} Trade better than expected")
                         new_stop_level = min(stop_level, offer_price + 1.4 * atr)
                         if new_stop_level < stop_level:
                             self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)

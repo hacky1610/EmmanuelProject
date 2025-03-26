@@ -9,6 +9,7 @@ from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType, Tiingo
 from Predictors.generic_predictor import GenericPredictor
+from Tracing.ConsoleTracer import ConsoleTracer
 from Tracing.LogglyTracer import LogglyTracer
 from Connectors.IG import IG
 from BL import EnvReader, DataProcessor, ConfigReader
