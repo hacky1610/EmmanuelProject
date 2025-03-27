@@ -27,6 +27,7 @@ from Predictors.deep_predictor import DeepPredictor
 from Predictors.generic_predictor import GenericPredictor
 from UI.base_viewer import BaseViewer
 from UI.plotly_viewer import PlotlyViewer
+import mpld3
 
 def generate_random_string(length=10):
     characters = string.ascii_letters + string.digits  # Includes A-Z, a-z, 0-9
@@ -70,7 +71,7 @@ def search_index(df, date):
 
 
 class StockChart:
-    def __init__(self, df):
+    def __init__(self, df, title):
         """
         Erstellt eine Instanz des StockChart-Plotters.
         :param df: DataFrame mit den Spalten ['timestamp', 'open', 'high', 'low', 'close']
@@ -79,6 +80,7 @@ class StockChart:
         self.signals = []
         self.limits = []
         self.stops = []
+        self._title = title
 
     def add_trade_signal(self, time, price, signal_type):
         """
@@ -103,35 +105,74 @@ class StockChart:
         """
         self.stops.append(price)
 
-    def plot(self):
+    def plot(self, save_as_html=False, filename="plot.html"):
         """
         Plottet den Aktienkursverlauf mit den Trading-Signalen, Limits und Stops.
+        Optional kann der Plot als HTML gespeichert werden.
         """
-        plt.figure(figsize=(12, 6))
-        plt.plot(self.df['date'], self.df['close'], label='Close Price', color='blue')
+        fig, ax = plt.subplots(figsize=(14, 8))  # Größeren Plot setzen
+
+        ax.plot(self.df['date'], self.df['close'], label='Close Price', color='blue')
 
         # Signale einzeichnen
+        signal_labels = set()
         for time, price, signal_type in self.signals:
             color = 'green' if signal_type == 'start' else 'red'
-            plt.scatter(time, price, color=color, marker='o', label=f'{signal_type.capitalize()} Signal')
+            label = f'{signal_type.capitalize()} Signal'
+            if label not in signal_labels:
+                ax.scatter(time, price, color=color, marker='o', label=label)
+                signal_labels.add(label)
+            else:
+                ax.scatter(time, price, color=color, marker='o')
 
-        # Limit-Linien
-        for price in self.limits:
-            plt.axhline(y=price, color='orange', linestyle='--', label='Limit')
+        # Limit- und Stop-Loss-Linien
+        if self.limits:
+            ax.hlines(self.limits, xmin=self.df['date'].min(), xmax=self.df['date'].max(),
+                      colors='orange', linestyles='--', label='Limit')
+        if self.stops:
+            ax.hlines(self.stops, xmin=self.df['date'].min(), xmax=self.df['date'].max(),
+                      colors='red', linestyles='--', label='Stop-Loss')
 
-        # Stop-Loss-Linien
-        for price in self.stops:
-            plt.axhline(y=price, color='red', linestyle='--', label='Stop-Loss')
+        ax.set_xlabel('Zeit')
+        ax.set_ylabel('Preis')
+        ax.set_title(self._title)
+        ax.legend()
 
-        plt.xlabel('Zeit')
-        plt.ylabel('Preis')
-        plt.legend()
-        plt.title('Aktienkursverlauf mit Trading-Signalen')
-        plt.show()
+        if save_as_html:
+            html_str = f"""
+            <html>
+            <head>
+                <style>
+                    .container {{
+                        width: 100%;
+                        height: 100vh;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                    }}
+                    .plot {{
+                        width: 90%;
+                        height: 90%;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="plot">{mpld3.fig_to_html(fig)}</div>
+                </div>
+            </body>
+            </html>
+            """
+
+            with open(filename, "w") as f:
+                f.write(html_str)
+            print(f"Plot als HTML gespeichert: {filename}")
+        else:
+            plt.show()
 
 pd.set_option('future.no_silent_downcasting', True)
-for deal in ds.get_all_deals_opened_after():
-    # if deal["dealId"] != "DIAAAAS2KELNCAK":
+for deal in reversed(list(ds.get_all_deals_opened_after())):
+    #if deal['ticker'] != "GBPCHF":
     #     continue
 
     id = deal["predictor_scan_id"]
@@ -143,13 +184,23 @@ for deal in ds.get_all_deals_opened_after():
     chart_index_open = search_index(df, deal["open_date_ig_datetime"])
     chart_index_close = search_index(df, deal["close_date_ig_datetime"])
 
-    chart = StockChart(df)
+    chart = StockChart(df, f"{deal['ticker']} - {deal['direction']}")
     chart.add_trade_signal(df['date'][chart_index_open], df['close'][chart_index_open], 'start')
     chart.add_trade_signal(df['date'][chart_index_close], df['close'][chart_index_close], 'end')
-    #chart.add_limit(120)
-    #chart.add_stop(90)
 
-    chart.plot()
-    exit(0)
+    if deal['direction'] == "buy":
+        chart.add_limit(df['close'][chart_index_open] + df['ATR'][chart_index_open] * predictor_object.get_atr_factor_limit() )
+
+        chart.add_stop(df['close'][chart_index_open] - df['ATR'][chart_index_open] * predictor_object.get_atr_factor_stop())
+    else:
+        chart.add_limit(
+            df['close'][chart_index_open] - df['ATR'][chart_index_open] * predictor_object.get_atr_factor_limit())
+
+        chart.add_stop(
+            df['close'][chart_index_open] + df['ATR'][chart_index_open] * predictor_object.get_atr_factor_stop())
+
+    chart.plot(save_as_html=True, filename=f"{id}.html")
+    print("")
+
 
 

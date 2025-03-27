@@ -203,7 +203,7 @@ class Trader:
         self._tracer.debug("End")
 
     def update_markets(self):
-        self._close_after_time()
+        #self._close_after_time()
         self._intelligent_update()
         self.update_deals()
         self._fix_deals()
@@ -381,6 +381,7 @@ class Trader:
 
         self._tracer.debug(f"{config.symbol} valid to predict")
         signal = predictor.predict(buy_actions_df, sell_actions_df)
+        #signal = TradeAction.SELL
         market = self._market_store.get_market(config.symbol)
         stop = trade_df.ATR.iloc[-1] * predictor.get_atr_factor_stop() * config.scaling
         limit = trade_df.ATR.iloc[-1] * predictor.get_atr_factor_limit() * config.scaling
@@ -447,11 +448,15 @@ class Trader:
 
     def _intelligent_update(self):
         self._tracer.debug("Intelligent Update")
+        data = self._ig.get_markets_offline()
         for _, item in self._ig.get_opened_positions().iterrows():
             deal = self._deal_storage.get_deal_by_deal_id(item.dealId)
             if deal is not None:
-                self._ig.set_intelligent_stop_level(item, self._market_store,
-                                                    self._deal_storage, self._predictor_store, self._tiingo)
+
+                market = [item for item in data if item['epic'] == deal.epic]
+
+                self._ig.set_intelligent_stop_level(item, deal,
+                                                    self._deal_storage, market[0]["scaling"],  self._tiingo)
             else:
                 self._tracer.error(f"Unable to find deal for {item.dealId}")
 

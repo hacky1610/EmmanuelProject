@@ -9,7 +9,7 @@ from BL import DataProcessor, BaseReader
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
 from BL.indicators import Indicators
-from Connectors.deal_store import DealStore
+from Connectors.deal_store import DealStore, Deal
 from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Predictors.deep_predictor import DeepPredictor
@@ -321,85 +321,88 @@ class IG:
         df = tiingo.load_trade_data(symbol=symbol, dp=DataProcessor(), trade_type=TradeType.FX)
         return df.iloc[-1].ATR
 
-    def set_intelligent_stop_level(self,
-                                   position: Series,
-                                   market_store: MarketStore,
-                                   deal_store: DealStore,
-                                   predictor_store: PredictorStore,
-                                   tiingo) -> dict:
+    def set_intelligent_stop_level(self, position, deal, deal_store, scaling, tiingo):
+        """Hauptmethode zur intelligenten Anpassung des Stop-Levels."""
         open_price = position.level
         bid_price = position.bid
-        offer_price = position.offer
         stop_level = position.stopLevel
         limit_level = position.limitLevel
         direction = position.direction
         deal_id = position.dealId
         ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
+        atr = self._get_atr(tiingo, ticker)
+        min_stop_distance = self.get_min_stop_distance(deal.epic) / scaling
 
-        self._tracer.debug(
-            f"{ticker} {direction} {deal_id} Open {open_price} Bid {bid_price} Offer {offer_price} Stop {stop_level} Limit {limit_level}")
+        self._tracer.info(f"{ticker} {direction} Trade {deal_id}")
+        self._tracer.info(f" Open: {open_price}, Bid: {bid_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr}")
 
-        if bid_price is None or offer_price is None:
-            self._tracer.debug(f"Bid or offer price is none {position}")
-            return {"status": "error", "message": "Missing bid or offer price"}
+        profit_percent, _ = self._calculate_profit_percentage(direction, open_price, limit_level, bid_price)
+        self._tracer.info(f" Trade {deal_id} - Gewinn: {profit_percent:.2f}%")
 
-        try:
-            deal = deal_store.get_deal_by_deal_id(deal_id)
+        # 1️⃣ Prüfen, ob der manuelle Stop erreicht wurde
+        if deal.is_manual_stop and bid_price <= deal.manual_stop_level:
+            self._tracer.warning(f" Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!")
+            self._close_trade(deal_id, deal.size, direction)
+            return {"status": "closed", "message": f"Trade geschlossen bei {deal.manual_stop_level}"}
 
-            p = GenericPredictor(ticker, Indicators(), {}, self._tracer)
-            p.setup(predictor_store.load_by_id(deal.predictor_scan_id))
-            if not p.use_isl():
-                self._tracer.debug("ISL is not activated")
-                return {"status": "no_change", "message": "ISL not activated"}
+        # 2️⃣ Berechnung des neuen Stop-Levels
+        new_stop_level = self._calculate_new_stop(stop_level, bid_price, atr, profit_percent)
+        self._tracer.info(f" Neuer berechneter Stop: {new_stop_level}")
 
-            if p.get_open_limit_isl():
-                self._tracer.debug(f"Limit is open")
-                limit_level = None
+        new_stop_level = self._apply_break_even_stop(new_stop_level, open_price, stop_level, 0, profit_percent)
+        self._tracer.info(f" Break-Even angepasst: {new_stop_level}")
 
-            atr = self._get_atr(tiingo, ticker)
+        # 3️⃣ Stop-Level validieren
+        if abs(new_stop_level - bid_price) < min_stop_distance:
+            self._tracer.warning(f"Neuer Stop {new_stop_level} ist zu nah am Preis {bid_price}. Verwende manuellen Stop.")
 
-            if direction == IG.BUY_DIRECTION:
-                if bid_price > open_price:
-                    current_diff = bid_price - open_price
-                    max_possible_profit = (limit_level - open_price) if limit_level else current_diff
-                    profit_percent = (current_diff / max_possible_profit) * 100 if max_possible_profit != 0 else 0
+            if not deal.is_manual_stop or new_stop_level > deal.manual_stop_level:
+                deal.manual_stop_level = new_stop_level
+                deal.is_manual_stop = True
+                self._tracer.info(f" Manuellen Stop auf {new_stop_level} gesetzt.")
 
+            provider_stop_level = bid_price - min_stop_distance
+            self._tracer.info(f" Trading-Provider bekommt stattdessen Stop-Level: {provider_stop_level}")
+        else:
+            provider_stop_level = new_stop_level
+            deal.is_manual_stop = False
+            self._tracer.info(f" Stop-Level {provider_stop_level} ist gültig. Kein manueller Stop nötig.")
 
+        deal_store.save(deal)
 
-                    expected_diff = max_possible_profit * 0.4
-                    self._tracer.debug(f"{ticker} Trade winning ({profit_percent:.2f}%) Current diff {current_diff} "
-                                       f"Max Dixx {max_possible_profit} Exp Diff: {expected_diff} ")
+        if provider_stop_level <= stop_level:
+            self._tracer.info(" Keine Anpassung nötig.")
+            return {"status": "unchanged", "message": "Keine Anpassung erforderlich"}
 
-                    if current_diff > expected_diff:
-                        self._tracer.debug(f"{ticker} Trade better than expected")
-                        new_stop_level = max(stop_level, bid_price - 1.5 * atr)
-                        if new_stop_level > stop_level:
-                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
-                            return {"status": "success", "message": "Stop level adjusted"}
+        self._adjust_stop_level(deal_id, limit_level, provider_stop_level, deal_store)
+        return {"status": "success", "message": "Stop-Level aktualisiert"}
 
-            else:  # SELL Trade
-                if offer_price < open_price:
-                    current_diff = open_price - offer_price
-                    max_possible_profit = (open_price - limit_level) if limit_level else current_diff
-                    profit_percent = (current_diff / max_possible_profit) * 100 if max_possible_profit != 0 else 0
+    def _calculate_new_stop(self, stop_level, bid_price, atr, profit_percent):
+        """Berechnet das neue Stop-Level basierend auf ATR."""
+        new_stop = bid_price - (atr * 1.5)
+        self._tracer.debug(f"Stop-Level Berechnung: Bid {bid_price} - (ATR {atr} * 1.5) = {new_stop}")
+        return new_stop
 
-                    expected_diff = max_possible_profit * 0.4
-                    self._tracer.debug(f"{ticker} Trade winning ({profit_percent:.2f}%) Current diff {current_diff} "
-                                       f"Max Dixx {max_possible_profit} Exp Diff: {expected_diff} ")
-                    if current_diff > expected_diff:
-                        self._tracer.debug(f"{ticker} Trade better than expected")
-                        new_stop_level = min(stop_level, offer_price + 1.4 * atr)
-                        if new_stop_level < stop_level:
-                            self._adjust_stop_level(deal_id, limit_level, new_stop_level, deal_store)
-                            return {"status": "success", "message": "Stop level adjusted"}
+    def _apply_break_even_stop(self, new_stop_level, open_price, old_stop_level, buffer, profit_percent):
+        """Passt den Stop an, um nicht unter den Einstiegspreis zu fallen."""
+        if profit_percent > 2.0 and new_stop_level < open_price:
+            self._tracer.debug(f" Break-Even: Stop von {new_stop_level} auf {open_price} erhöht.")
+            return open_price
+        return new_stop_level
 
-            return {"status": "no_change", "message": "Conditions not met"}
+    def _close_trade(self, deal_id, size, direction):
+        """Schließt den Trade basierend auf der Richtung."""
+        close_direction = IG.SELL_DIRECTION if direction == IG.BUY_DIRECTION else IG.BUY_DIRECTION
+        self.close(close_direction, deal_id, size)
 
-        except Exception as e:
-            self._tracer.error(f"Error processing position {position}")
-            traceback_str = traceback.format_exc()
-            self._tracer.error(f"MainException: {e}\n{traceback_str}")
-            return {"status": "error", "message": str(e)}
+    def _calculate_profit_percentage(self, direction, open_price, limit_level, bid_price):
+        """Berechnet die aktuelle Profit-Rate."""
+        if direction == "BUY":
+            profit = (bid_price - open_price) / (limit_level - open_price) * 100
+        else:
+            profit = (open_price - bid_price) / (open_price - limit_level) * 100
+        return profit, profit * 0.01
+
 
     def manual_close(self, position: Series, deal_store: DealStore):
         bid_price = position.bid
