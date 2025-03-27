@@ -27,7 +27,6 @@ from Predictors.deep_predictor import DeepPredictor
 from Predictors.generic_predictor import GenericPredictor
 from UI.base_viewer import BaseViewer
 from UI.plotly_viewer import PlotlyViewer
-import mpld3
 
 def generate_random_string(length=10):
     characters = string.ascii_letters + string.digits  # Includes A-Z, a-z, 0-9
@@ -158,7 +157,7 @@ class StockChart:
             </head>
             <body>
                 <div class="container">
-                    <div class="plot">{mpld3.fig_to_html(fig)}</div>
+                    <div class="plot"></div>
                 </div>
             </body>
             </html>
