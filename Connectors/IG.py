@@ -364,9 +364,12 @@ class IG:
                     max_possible_profit = (limit_level - open_price) if limit_level else current_diff
                     profit_percent = (current_diff / max_possible_profit) * 100 if max_possible_profit != 0 else 0
 
-                    self._tracer.debug(f"{ticker} Trade winning ({profit_percent:.2f}%)")
+
 
                     expected_diff = max_possible_profit * 0.4
+                    self._tracer.debug(f"{ticker} Trade winning ({profit_percent:.2f}%) Current diff {current_diff} "
+                                       f"Max Dixx {max_possible_profit} Exp Diff: {expected_diff} ")
+
                     if current_diff > expected_diff:
                         self._tracer.debug(f"{ticker} Trade better than expected")
                         new_stop_level = max(stop_level, bid_price - 1.5 * atr)
@@ -380,9 +383,9 @@ class IG:
                     max_possible_profit = (open_price - limit_level) if limit_level else current_diff
                     profit_percent = (current_diff / max_possible_profit) * 100 if max_possible_profit != 0 else 0
 
-                    self._tracer.debug(f"{ticker} Trade winning ({profit_percent:.2f}%)")
-
                     expected_diff = max_possible_profit * 0.4
+                    self._tracer.debug(f"{ticker} Trade winning ({profit_percent:.2f}%) Current diff {current_diff} "
+                                       f"Max Dixx {max_possible_profit} Exp Diff: {expected_diff} ")
                     if current_diff > expected_diff:
                         self._tracer.debug(f"{ticker} Trade better than expected")
                         new_stop_level = min(stop_level, offer_price + 1.4 * atr)
