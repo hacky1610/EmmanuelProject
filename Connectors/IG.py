@@ -352,6 +352,8 @@ class IG:
         new_stop_level = self._apply_break_even_stop(new_stop_level, open_price, stop_level, 0, profit_percent)
         self._tracer.info(f" Break-Even angepasst: {new_stop_level}")
 
+        limit_level = self._adjust_limit_level(limit_level, atr, profit_percent)
+
         # 3️⃣ Stop-Level validieren
         if abs(new_stop_level - bid_price) < min_stop_distance:
             self._tracer.warning(f"Neuer Stop {new_stop_level} ist zu nah am Preis {bid_price}. Verwende manuellen Stop.")
@@ -377,17 +379,29 @@ class IG:
         self._adjust_stop_level(deal_id, limit_level, provider_stop_level, deal_store)
         return {"status": "success", "message": "Stop-Level aktualisiert"}
 
+    def _adjust_limit_level(self, limit_level, atr, profit_percent):
+        """Erhöht das Limit-Level um 0.5 ATR, wenn der Preis > 80% des Limits ist."""
+        if profit_percent > 80 and limit_level:
+            self._tracer.debug("new limit")
+            return limit_level + 0.5 * atr
+        return limit_level
+
     def _calculate_new_stop(self, stop_level, bid_price, atr, profit_percent):
         """Berechnet das neue Stop-Level basierend auf ATR."""
-        new_stop = bid_price - (atr * 1.5)
-        self._tracer.debug(f"Stop-Level Berechnung: Bid {bid_price} - (ATR {atr} * 1.5) = {new_stop}")
-        return new_stop
+        if profit_percent > 80:
+            self._tracer.info(f"more than 80")
+            return max(stop_level, bid_price - (0.8 * atr))
+        elif profit_percent > 50:
+            self._tracer.info(f"more than 50")
+            return max(stop_level, bid_price - (1.0 * atr))
+        else:
+            self._tracer.info(f"less than 50")
+            return max(stop_level, bid_price - (1.5 * atr))
 
-    def _apply_break_even_stop(self, new_stop_level, open_price, old_stop_level, buffer, profit_percent):
-        """Passt den Stop an, um nicht unter den Einstiegspreis zu fallen."""
-        if profit_percent > 2.0 and new_stop_level < open_price:
-            self._tracer.debug(f" Break-Even: Stop von {new_stop_level} auf {open_price} erhöht.")
-            return open_price
+    def _apply_break_even_stop(self, new_stop_level, open_price, stop_level, spread, profit_percent):
+        """Setzt den Stop auf Break-Even, wenn >50% Gewinn erreicht sind."""
+        if profit_percent > 50 and stop_level < open_price:
+            return max(new_stop_level, open_price + spread)
         return new_stop_level
 
     def _close_trade(self, deal_id, size, direction):
@@ -397,11 +411,12 @@ class IG:
 
     def _calculate_profit_percentage(self, direction, open_price, limit_level, bid_price):
         """Berechnet die aktuelle Profit-Rate."""
-        if direction == "BUY":
-            profit = (bid_price - open_price) / (limit_level - open_price) * 100
-        else:
-            profit = (open_price - bid_price) / (open_price - limit_level) * 100
-        return profit, profit * 0.01
+        current_diff = (bid_price - open_price) if direction == IG.BUY_DIRECTION else (open_price - bid_price)
+        max_possible_profit = (limit_level - open_price) if direction == IG.BUY_DIRECTION else (
+                    open_price - limit_level)
+        max_possible_profit = max_possible_profit if max_possible_profit != 0 else current_diff
+        profit_percent = (current_diff / max_possible_profit) * 100 if max_possible_profit != 0 else 0
+        return profit_percent, max_possible_profit
 
 
     def manual_close(self, position: Series, deal_store: DealStore):
