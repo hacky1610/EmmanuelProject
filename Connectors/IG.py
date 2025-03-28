@@ -331,7 +331,8 @@ class IG:
         deal_id = position.dealId
         ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
         atr = self._get_atr(tiingo, ticker)
-        min_stop_distance = self.get_min_stop_distance(deal.epic) / scaling
+        min_stop_distance = max(self.get_min_stop_distance(deal.epic) / scaling, 0.5 * atr)
+        self._tracer.info(f" Dynamische Mindest-Stop-Distanz: {min_stop_distance}")
 
         self._tracer.info(f"{ticker} {direction} Trade {deal_id}")
         self._tracer.info(f" Open: {open_price}, Bid: {bid_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr}")
@@ -372,8 +373,8 @@ class IG:
 
         deal_store.save(deal)
 
-        if provider_stop_level <= stop_level:
-            self._tracer.info(" Keine Anpassung nötig.")
+        if abs(provider_stop_level - stop_level) < 0.1 * atr:
+            self._tracer.info(" Stop-Level hat sich nur minimal verändert. Kein API-Update nötig.")
             return {"status": "unchanged", "message": "Keine Anpassung erforderlich"}
 
         self._adjust_stop_level(deal_id, limit_level, provider_stop_level, deal_store)
@@ -387,16 +388,12 @@ class IG:
         return limit_level
 
     def _calculate_new_stop(self, stop_level, bid_price, atr, profit_percent):
-        """Berechnet das neue Stop-Level basierend auf ATR."""
-        if profit_percent > 80:
-            self._tracer.info(f"more than 80")
-            return max(stop_level, bid_price - (0.8 * atr))
-        elif profit_percent > 50:
-            self._tracer.info(f"more than 50")
-            return max(stop_level, bid_price - (1.0 * atr))
-        else:
-            self._tracer.info(f"less than 50")
-            return max(stop_level, bid_price - (1.5 * atr))
+        """Berechnet das neue Stop-Level mit dynamischen ATR-Multiplikatoren."""
+        atr_multiplier = max(1.0, 2.0 - (profit_percent / 100))  # Dynamischer Faktor
+
+        new_stop = max(stop_level, bid_price - (atr_multiplier * atr))
+        self._tracer.info(f" ATR Multiplikator: {atr_multiplier}, Neuer Stop: {new_stop}")
+        return new_stop
 
     def _apply_break_even_stop(self, new_stop_level, open_price, stop_level, spread, profit_percent):
         """Setzt den Stop auf Break-Even, wenn >50% Gewinn erreicht sind."""
