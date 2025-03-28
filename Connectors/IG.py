@@ -381,9 +381,9 @@ class IG:
         # Log der ATR-Faktoren
         self._tracer.info(
             f"++++ATR-Faktoren für Trade {deal_id}: "
-            f"Limit: {limit_atr_factor:.2f} ATR, "
-            f"Manueller Stop: {manual_stop_atr_factor:.2f} ATR, "
-            f"Provider Stop: {provider_stop_atr_factor:.2f} ATR"
+            f"Limit: {limit_atr_factor:.2f} ATR, " if limit_atr_factor is not None else "Limit: N/A, "
+                                                                                        f"Manueller Stop: {manual_stop_atr_factor:.2f} ATR, " if manual_stop_atr_factor is not None else "Manueller Stop: N/A, "
+                                                                                                                                                                                         f"Provider Stop: {provider_stop_atr_factor:.2f} ATR"
         )
 
         if abs(provider_stop_level - stop_level) < 0.1 * atr:
