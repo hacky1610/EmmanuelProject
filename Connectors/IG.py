@@ -342,7 +342,7 @@ class IG:
 
         # 1️⃣ Prüfen, ob der manuelle Stop erreicht wurde
         if deal.is_manual_stop and bid_price <= deal.manual_stop_level:
-            self._tracer.warning(f" Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!")
+            self._tracer.warning(f" #######Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!")
             self._close_trade(deal_id, deal.size, direction)
             return {"status": "closed", "message": f"Trade geschlossen bei {deal.manual_stop_level}"}
 
@@ -362,7 +362,7 @@ class IG:
             if not deal.is_manual_stop or new_stop_level > deal.manual_stop_level:
                 deal.manual_stop_level = new_stop_level
                 deal.is_manual_stop = True
-                self._tracer.info(f" Manuellen Stop auf {new_stop_level} gesetzt.")
+                self._tracer.info(f"######Manuellen Stop auf {new_stop_level} gesetzt#########")
 
             provider_stop_level = bid_price - min_stop_distance
             self._tracer.info(f" Trading-Provider bekommt stattdessen Stop-Level: {provider_stop_level}")
@@ -373,10 +373,24 @@ class IG:
 
         deal_store.save(deal)
 
+        # ATR-Faktoren berechnen
+        limit_atr_factor = (limit_level - bid_price) / atr if limit_level else None
+        manual_stop_atr_factor = (deal.manual_stop_level - bid_price) / atr if deal.is_manual_stop else None
+        provider_stop_atr_factor = (provider_stop_level - bid_price) / atr
+
+        # Log der ATR-Faktoren
+        self._tracer.info(
+            f"++++ATR-Faktoren für Trade {deal_id}: "
+            f"Limit: {limit_atr_factor:.2f} ATR, "
+            f"Manueller Stop: {manual_stop_atr_factor:.2f} ATR, "
+            f"Provider Stop: {provider_stop_atr_factor:.2f} ATR"
+        )
+
         if abs(provider_stop_level - stop_level) < 0.1 * atr:
             self._tracer.info(" Stop-Level hat sich nur minimal verändert. Kein API-Update nötig.")
             return {"status": "unchanged", "message": "Keine Anpassung erforderlich"}
 
+        self._tracer.info(f"#######Provider Stop auf {provider_stop_level} gesetzt.#######")
         self._adjust_stop_level(deal_id, limit_level, provider_stop_level, deal_store)
         return {"status": "success", "message": "Stop-Level aktualisiert"}
 
