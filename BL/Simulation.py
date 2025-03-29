@@ -4,6 +4,7 @@ import pandas as pd
 from pandas import DataFrame, Timestamp
 from tqdm import tqdm
 
+from BL.datatypes import TradeAction
 from BL.indicators import Indicators
 from Connectors.dropbox_cache import DropBoxCache
 
@@ -16,8 +17,8 @@ class Simulation:
     def simulate(self, df: DataFrame, df_eval: DataFrame,
                  symbol: str, time_frame: int,
                  factor_stop:float, factor_limit:float, force=False):
-        buy_path = f"simulation_buy{symbol}_{time_frame}{factor_stop}{factor_limit}h10.csv"
-        sell_path = f"simulation_sell{symbol}_{time_frame}{factor_stop}{factor_limit}h10.csv"
+        buy_path = f"simulation_buy{symbol}_{time_frame}{factor_stop}{factor_limit}h10_v2.csv"
+        sell_path = f"simulation_sell{symbol}_{time_frame}{factor_stop}{factor_limit}h10_v2.csv"
 
         if not self._cache.simulation_exist(buy_path) or force:
             buy = self._simulate_fixed_timeframe(action="buy",
@@ -207,7 +208,7 @@ class Simulation:
             if exit_time is None:
                 exit_time = future.iloc[-1].date
                 exit_price = future.iloc[-1].close
-                profit = (exit_price - entry_price) if action == "BUY" else (entry_price - exit_price)
+                profit = (exit_price - entry_price) if action == TradeAction.BUY else (entry_price - exit_price)
 
             # Speichere das Ergebnis
             simulation_result.append({

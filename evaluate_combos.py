@@ -87,6 +87,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             "rsi_limit_4h", "ema_10_50", "cci_4h", "williams_limit_4h",
             "adx_4h", "rsi_convergence5_40"
         ]
+        best_features_online_old = ['macd_convergence', 'rsi_limit_4h', 'bb_sqeeze_both_direction', 'bb_sqeeze_both_direction_4h', 'rsi_convergence', 'macd_max_4h', 'adx_max_21', 'adx_max2', 'adx_max_4h', 'adx_max', 'macd_max', 'rsi_limit_12h', 'macd_slope_4h', 'adx_max_48', 'rsi', 'rsi_convergence5_40', 'williams_limit_4h']
+
         hours = 16
         for data in [(1.5,2.0,0.75, 0.7),
                      (1.5,1.5,0.75, 0.7),
@@ -96,7 +98,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             atr_factor_limit = data[1]
             minimum_precission_train = data[2]
             minimum_precission_test = data[3]
-            for combination_size_tuple in [(8,0.1),
+            for combination_size_tuple in [(6,0.1),
+                                            (8,0.1),
                                            (7,0.2),
                                            (9,0.5),
                                            (10,0.3)]:
@@ -104,7 +107,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                 f = 0
                 combination_size = combination_size_tuple[0]
                 part = combination_size_tuple[1]
-                for features in [best_features_online,
+                for features in [
+                                 best_features_online_old,
                                  best_features,
                                  random.choices( indicators.get_all_indicator_names(), k=25)]:
                     f += 1
@@ -114,7 +118,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                             test_mode=True)
                     try:
 
-                        for trade_action in [TradeAction.BUY, TradeAction.SELL]:
+                        for trade_action in [TradeAction.SELL]:
                             print(
                                 f"Evaluate {fx} {trade_action} for {hours} hours and stop factor "
                                 f"{atr_factor_stop} limit {atr_factor_limit} and min prec {minimum_precission_train} combination {combination_size} Feature Set {f}")
