@@ -118,7 +118,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                             test_mode=True)
                     try:
 
-                        for trade_action in [TradeAction.SELL]:
+                        for trade_action in [TradeAction.BUY,TradeAction.SELL]:
                             print(
                                 f"Evaluate {fx} {trade_action} for {hours} hours and stop factor "
                                 f"{atr_factor_stop} limit {atr_factor_limit} and min prec {minimum_precission_train} combination {combination_size} Feature Set {f}")
