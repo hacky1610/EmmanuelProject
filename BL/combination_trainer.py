@@ -185,7 +185,7 @@ class CombinationTrainer:
                                                                                                           features,atr_factor_stop,atr_factor_limit)
 
                 # Mindestbedingungen prüfen
-                if train_precision >= min_prec_train and train_reward >= 5:
+                if train_precision >= min_prec_train and train_reward >= 35:
                     test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
                                                                                                           features,atr_factor_stop,atr_factor_limit)
 
@@ -206,7 +206,7 @@ class CombinationTrainer:
         df = DataFrame(results)
         if len(df) > 0:
             df = df[df["Test Trade Count"] != 0]
-            df = df[df["Train Reward"] > 25]
+            df = df[df["Train Reward"] > 40]
             df = df[df["Test Precision"] > min_prec_test]
 
             if len(df) == 0:

@@ -98,8 +98,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             minimum_precission_test = data[3]
             for combination_size_tuple in [(8,0.1),
                                            (7,0.2),
-                                           (5,0.5),
-                                           (6,0.3)]:
+                                           (9,0.5),
+                                           (10,0.3)]:
 
                 f = 0
                 combination_size = combination_size_tuple[0]
