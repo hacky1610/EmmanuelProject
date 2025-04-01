@@ -60,6 +60,9 @@ class Indicators:
     MACDSINGALDIFF = "macd_signal_diff"
     MACD_CONVERGENCE = "macd_convergence"
     MACD_CONVERGENCE_4H = "macd_convergence_4h"
+    MACD_CONVERGENCE_5 = "macd_convergence_5"
+    MACD_CONVERGENCE_2 = "macd_convergence_2"
+    MACD_CONVERGENCE_11 = "macd_convergence_11"
     MACD_MAX = "macd_max"
     MACD_MAX_2 = "macd_max_2"
     MACD_MAX_4H = "macd_max_4h"
@@ -205,6 +208,9 @@ class Indicators:
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
         self._add_indicator(self.MACD_CONVERGENCE_4H, self._macd_convergence_predict_4h)
+        self._add_indicator(self.MACD_CONVERGENCE_2, self._macd_convergence_predict_2)
+        self._add_indicator(self.MACD_CONVERGENCE_5, self._macd_convergence_predict_5)
+        self._add_indicator(self.MACD_CONVERGENCE_11, self._macd_convergence_predict_11)
         self._add_indicator(self.MACDSINGALDIFF, self._macd_signal_diff_predict)
 
         # EMA
@@ -989,6 +995,15 @@ class Indicators:
 
     def _macd_convergence_predict(self, df):
         return self._convergence_predict(df, "MACD")
+
+    def _macd_convergence_predict_2(self, df):
+        return self._convergence_predict(df, "MACD", 2)
+
+    def _macd_convergence_predict_5(self, df):
+        return self._convergence_predict(df, "MACD",5,30)
+
+    def _macd_convergence_predict_11(self, df):
+        return self._convergence_predict(df, "MACD",11, 50)
 
     def _macd_convergence_predict_4h(self, df):
         return self._convergence_predict(self.convert_1h_to_4h(df), "MACD")
