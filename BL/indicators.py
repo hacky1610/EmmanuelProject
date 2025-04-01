@@ -794,17 +794,17 @@ class Indicators:
         pv.set_lookback(look_back)
 
         pv.scan(df)
-        highs = df[df.pivot_point == 3.0]
+        highs = df[df.pivot_point == 2.0]
         sorted_highs = highs.sort_values(by=["high"], ascending=False)  # Höchster Wert zuerst
 
-        if len(sorted_highs) >= 2 and sorted_highs.index[0] < sorted_highs.index[1]:
+        if len(sorted_highs) >= 2 and sorted_highs.index[0] > sorted_highs.index[1]:
             # Abwärtstrend (analog zur Buy-Logik)
-            if sorted_highs.iloc[0][indicator_name] < sorted_highs.iloc[1][indicator_name]:
+            if sorted_highs.iloc[0][indicator_name].item() < sorted_highs.iloc[1][indicator_name].item():
                 return TradeAction.SELL
 
         lows = df[df.pivot_point == 1.0]
         sorted_lows = lows.sort_values(by=["low"])
-        if len(lows) >= 2 and sorted_lows[:1].index.item() < sorted_lows[1:2].index.item():
+        if len(lows) >= 2 and sorted_lows[:1].index.item() > sorted_lows[1:2].index.item():
             # Aufwärtstrend
             if sorted_lows[:1][indicator_name].item() > sorted_lows[1:2][indicator_name].item():
                 return TradeAction.BUY

@@ -65,8 +65,8 @@ class TestIndicators(unittest.TestCase):
     def test_rsi_convergence_predict(self):
         # Teste Buy-Pfad
         data = DataFrame()
-        data['high'] = [110, 110, 110, 110, 110, 80, 110, 110, 110, 110, 110, 70, 110]
-        data['low'] = [90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
+        data['high'] = [110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110]
+        data['low'] = [90, 90, 90, 90, 30, 90, 90, 90, 90, 90, 90, 10, 90]
         data['RSI'] = [50, 50, 50, 50, 30, 90, 50, 50, 50, 50, 50, 40, 50]
         data = self.indicators._rsi_convergence_predict3(data)
         self.assertEqual(data, TradeAction.BUY)
@@ -74,7 +74,7 @@ class TestIndicators(unittest.TestCase):
 
         # Teste Sell-Pfad
         data = DataFrame()
-        data['high'] = [110, 110, 110, 110, 110, 130, 110, 110, 110, 110, 110, 140, 110]
+        data['high'] = [110, 110, 110, 110, 110, 130, 110, 110, 110, 110, 110, 190, 110]
         data['low'] = [90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90]
         data['RSI'] = [50,50 , 50, 50, 50, 90, 50, 50, 50, 50, 50, 60, 50]
         data = self.indicators._rsi_convergence_predict3(data)
@@ -660,10 +660,10 @@ class TestIndicators(unittest.TestCase):
     def sample_dataframe_buy(self):
         """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
         data =  {
-        "low":         [0, -1, 0, -1, 0, 0, 0, 0, 0, 0],
+        "low":         [0, -5, 0, 0, 0, 0, 0, 0, -10, 0],
         "high":        [0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-        "pivot_point": [0, 1, 0, 1, 0, 0, 0, 0, 0, 3],  # Hochs = 3, Tiefs = 1
-        "indicator":   [5, 20, 5, 5, 5, 5, 5, 5, 5, 0],  # Indikator schwankt
+        "pivot_point": [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],  # Hochs = 3, Tiefs = 1
+        "indicator":   [5, 1, 5, 5, 5, 5, 5, 5, 5, 0],  # Indikator schwankt
         }
         df = pd.DataFrame(data)
         return df
@@ -673,7 +673,7 @@ class TestIndicators(unittest.TestCase):
         data = {
             "low": [0, -1, 0, -1, 0, 0, 0, 0, 0, 0],
             "high": [0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-            "pivot_point": [0, 1, 0, 1, 0, 0, 0, 0, 0, 3],  # Hochs = 3, Tiefs = 1
+            "pivot_point": [0, 1, 0, 1, 0, 0, 0, 0, 0, 2],  # Hochs = 3, Tiefs = 1
             "indicator": [5, 0, 5, 5, 5, 5, 5, 5, 5, 10],  # Indikator schwankt
         }
         df = pd.DataFrame(data)
@@ -682,10 +682,10 @@ class TestIndicators(unittest.TestCase):
     def sample_dataframe_sell(self):
         """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
         data = {
-            "low": [0, 0, 0, 0, 0, 0, 0, 0, 0, -1],
-            "high": [0, 2, 0, 2, 0, 0, 0, 0, 0, 0],
-            "pivot_point": [0, 3, 0, 3, 0, 0, 0, 0, 0, 1],  # Hochs = 3, Tiefs = 1
-            "indicator": [5, 0, 5, 5, 5, 5, 5, 5, 5, 20],  # Indikator schwankt
+            "low": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            "high": [0, 10, 0, 0, 0, 0, 0, 0, 100, 0],
+            "pivot_point": [0, 2, 0, 0, 0, 0, 0, 0, 2, 0],  # Hochs = 3, Tiefs = 1
+            "indicator": [5, 30, 5, 5, 5, 5, 5, 5, 20, 5],  # Indikator schwankt
         }
         df = pd.DataFrame(data)
         return df

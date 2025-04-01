@@ -74,10 +74,11 @@ class PivotScanner:
             end = len(df)
 
         for i in range(start, end):
-            if df.low[line] > df.low[i]:
-                pividlow = 0
-            if df.high[line] < df.high[i]:
-                pividhigh = 0
+            if i != line:
+                if df.low[line] >= df.low[i]:
+                    pividlow = 0
+                if df.high[line] <= df.high[i]:
+                    pividhigh = 0
         if pividlow and pividhigh:
             return 3
         elif pividlow:
