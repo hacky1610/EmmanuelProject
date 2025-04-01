@@ -129,7 +129,7 @@ class Trader:
 
         for _, ig_deal in hist.iterrows():
             ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/", "")
-            deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
+            deal:Deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
             if deal is not None:
                 deal.profit = float(ig_deal.profitAndLoss[1:])
                 deal.open_level = float(ig_deal["openLevel"])
@@ -153,6 +153,7 @@ class Trader:
                     deal.result = -1
 
                 deal.close()
+                self._tracer.debug(f"Update deal for {deal.dealId} and {ticker}")
                 self._deal_storage.save(deal)
             else:
                 self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
