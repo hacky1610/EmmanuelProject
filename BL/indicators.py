@@ -309,7 +309,8 @@ class Indicators:
         self._df_cache.init_caches(df)
 
     def convert_1h_to_4h(self, one_h_df: DataFrame):
-        return self._df_cache.get_4h_df(one_h_df)
+        df = self._df_cache.get_4h_df(one_h_df)
+        return df.reset_index(drop=True)
 
     def convert_1h_to_12h(self, one_h_df: DataFrame):
         return self._df_cache.get_12h_df(one_h_df)
@@ -804,9 +805,9 @@ class Indicators:
 
         lows = df[df.pivot_point == 1.0]
         sorted_lows = lows.sort_values(by=["low"])
-        if len(lows) >= 2 and sorted_lows[:1].index.item() > sorted_lows[1:2].index.item():
+        if len(lows) >= 2 and sorted_lows.index[0] > sorted_lows.index[1]:
             # Aufwärtstrend
-            if sorted_lows[:1][indicator_name].item() > sorted_lows[1:2][indicator_name].item():
+            if sorted_lows.iloc[0][indicator_name].item() > sorted_lows.iloc[1][indicator_name].item():
                 return TradeAction.BUY
 
         return TradeAction.NONE

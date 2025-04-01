@@ -170,13 +170,16 @@ class CombinationTrainer:
                                      atr_factor_limit: float,
                                      min_prec_train: float, min_prec_test: float, best_features: list,
                                      part:float,
-                                     n_iter=5, min_reward=4):
+                                     existing_combos: List = None) -> DataFrame:
 
         train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
         results = []
         # Kombis aus besten Features generieren
         combos = self._get_combos_by_best_features(num_features, best_features, part)
+
+        if existing_combos is not None:
+            combos = existing_combos + combos
 
 
         for features in tqdm(combos):
@@ -351,7 +354,7 @@ class CombinationTrainer:
               min_prec_train: float, min_prec_test: float, atr_factor_stop: float,
               atr_factor_limit: float,
               best_features: List[str],
-              part:float):
+              part:float, existing_combos: List = None):
 
         # if len(best_features) == 0:
         #     df = self._prepare_df(df, symbol, trading_hours, atr_factor)
@@ -362,7 +365,7 @@ class CombinationTrainer:
                                           min_prec_train=min_prec_train, trade_mode=trading_mode,
                                           trading_hours=trading_hours, atr_factor_stop=atr_factor_stop,
                                           atr_factor_limit=atr_factor_limit,
-                                          best_features=best_features, min_prec_test=min_prec_test, part=part)
+                                          best_features=best_features, min_prec_test=min_prec_test, part=part, existing_combos=existing_combos)
 
     def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, hours, factor_stop, factor_limit, indicators,
                     trade_mode: str,

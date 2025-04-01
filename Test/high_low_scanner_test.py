@@ -32,18 +32,16 @@ class HighLowScannerTest(unittest.TestCase):
         df = DataFrame()
         df = self.add_line(df, 10,10)
         df = self.add_line(df, 10, 10)
+        df = self.add_line(df, 15, 10)
         df = self.add_line(df, 10, 10)
         df = self.add_line(df, 10, 10)
         df = self.add_line(df, 10, 10)
         df = self.add_line(df, 10, 10)
         df = self.add_line(df, 10, 10)
+        df = self.add_line(df, 16, 10)
+        df = self.add_line(df, 15, 5)
         df = self.add_line(df, 10, 10)
         df = self.add_line(df, 10, 10)
-        df = self.add_line(df, 10, 10)
-        df = self.add_line(df, 10, 10)
-        df = self.add_line(df, 10, 10)
-
-
 
         res = self.scanner.get_pivot_ids(df)
         print(res)
@@ -62,6 +60,7 @@ class HighLowScannerTest(unittest.TestCase):
         self.assertEqual(pivot_scanner.get_pivotid(df, 2, 2, 2), 0)  # Both pivots at index 2
         self.assertEqual(pivot_scanner.get_pivotid(df, 3, 2, 2), 0)  # Only pivot low at index 3
         self.assertEqual(pivot_scanner.get_pivotid(df, 4, 2, 2), 2)  # Only pivot high at index 4
+        self.assertEqual(pivot_scanner.get_pivotid(df, 3, 1, 1), 1)  # Only pivot low at index 3
 
         self.assertEqual(pivot_scanner.get_pivotid(df, 0, 1, 1), 0)  # No pivot at index 0
         self.assertEqual(pivot_scanner.get_pivotid(df, 1, 1, 1), 1)

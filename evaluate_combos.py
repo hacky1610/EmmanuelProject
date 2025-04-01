@@ -6,6 +6,8 @@ import dropbox
 import pymongo
 import pandas as pd
 from pandas import DataFrame
+
+import Data.combos
 from BL.Simulation import Simulation
 from BL.analytics import Analytics
 from BL.combination_trainer import CombinationTrainer
@@ -71,23 +73,16 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         fx = market["symbol"]
 
-        #fx = "GBPJPY"
+        fx = "GBPJPY"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
         #    print("Enough training data to train")
         #    continue
 
+        offline_combos = Data.combos.get_combos()
+
         best_features_online = predictor_store.get_most_used_features()
-        best_features = [
-            "rsi_convergence", "macd_convergence", "williams_break_4h", "rsi_break_4h",
-            "macd_max_4h", "bb_sqeeze_both_direction_4h", "bb_middle_crossing_4h",
-            "macd_max", "adx_max_4h", "rsi", "adx_max", "adx_max2",
-            "bb_sqeeze_both_direction", "macd_max_12h", "adx_max_21", "adx",
-            "macd", "macd_slope_4h", "rsi_limit_12h", "adx_max_48",
-            "rsi_limit_4h", "ema_10_50", "cci_4h", "williams_limit_4h",
-            "adx_4h", "rsi_convergence5_40"
-        ]
         best_features_online_old = ['macd_convergence', 'rsi_limit_4h', 'bb_sqeeze_both_direction', 'bb_sqeeze_both_direction_4h', 'rsi_convergence', 'macd_max_4h', 'adx_max_21', 'adx_max2', 'adx_max_4h', 'adx_max', 'macd_max', 'rsi_limit_12h', 'macd_slope_4h', 'adx_max_48', 'rsi', 'rsi_convergence5_40', 'williams_limit_4h']
 
         hours = 16
@@ -138,7 +133,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                  symbol=fx,
                                  atr_factor_stop=atr_factor_stop,
                                  atr_factor_limit=atr_factor_limit,
-                                 best_features=features, min_prec_test=minimum_precission_test, part=part)
+                                 best_features=features, min_prec_test=minimum_precission_test,
+                                 part=part,existing_combos=offline_combos)
 
                 except Exception as ex:
                     traceback_str = traceback.format_exc()

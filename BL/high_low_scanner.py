@@ -73,6 +73,9 @@ class PivotScanner:
         if line + after >= len(df):
             end = len(df)
 
+        if end < start:
+            raise ValueError("End is smaller than start")
+
         for i in range(start, end):
             if i != line:
                 if df.low[line] >= df.low[i]:

@@ -71,6 +71,14 @@ class TestIndicators(unittest.TestCase):
         data = self.indicators._rsi_convergence_predict3(data)
         self.assertEqual(data, TradeAction.BUY)
 
+        # Teste Buy-Pfad
+        data = DataFrame()
+        data['high'] = [110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110]
+        data['low'] = [50, 90, 90, 40, 30, 90, 90, 90, 90, 90, 90, 10, 5]
+        data['RSI'] = [50, 50, 50, 50, 30, 90, 50, 50, 50, 50, 50, 40, 50]
+        data = self.indicators._rsi_convergence_predict3(data)
+        self.assertEqual(data, TradeAction.BUY)
+
 
         # Teste Sell-Pfad
         data = DataFrame()
@@ -660,10 +668,10 @@ class TestIndicators(unittest.TestCase):
     def sample_dataframe_buy(self):
         """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
         data =  {
-        "low":         [0, -5, 0, 0, 0, 0, 0, 0, -10, 0],
-        "high":        [0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-        "pivot_point": [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],  # Hochs = 3, Tiefs = 1
-        "indicator":   [5, 1, 5, 5, 5, 5, 5, 5, 5, 0],  # Indikator schwankt
+        "low":         [-4, -5, 0, 0, 0, 0, 0, 0, -10, 0],
+        "high":        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "pivot_point": [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],  # Hochs = 3, Tiefs = 1
+        "indicator":   [1, 1, 5, 5, 5, 5, 5, 5, 5, 0],  # Indikator schwankt
         }
         df = pd.DataFrame(data)
         return df
@@ -683,9 +691,9 @@ class TestIndicators(unittest.TestCase):
         """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
         data = {
             "low": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            "high": [0, 10, 0, 0, 0, 0, 0, 0, 100, 0],
-            "pivot_point": [0, 2, 0, 0, 0, 0, 0, 0, 2, 0],  # Hochs = 3, Tiefs = 1
-            "indicator": [5, 30, 5, 5, 5, 5, 5, 5, 20, 5],  # Indikator schwankt
+            "high": [0, 10, 9, 0, 0, 0, 0, 0, 100, 0],
+            "pivot_point": [0, 2, 2, 0, 0, 0, 0, 0, 2, 0],  # Hochs = 3, Tiefs = 1
+            "indicator": [5, 30, 30, 5, 5, 5, 5, 5, 20, 5],  # Indikator schwankt
         }
         df = pd.DataFrame(data)
         return df
