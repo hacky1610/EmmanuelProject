@@ -53,6 +53,12 @@ class PivotScanner:
         self._rectangle_line_slope = _rectangle_line_slope
         self._tracer = tracer
 
+    def set_b4after(self,b4after):
+        self._be4after = b4after
+
+    def set_lookback(self,lookback):
+        self._lookback = lookback
+
     @staticmethod
     def get_pivotid(df, line, before, after):  # n1 n2 before and after candle l
         if line - before < 0:

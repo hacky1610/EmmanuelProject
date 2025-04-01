@@ -68,16 +68,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
     markets = IG.get_markets_offline()
     random.shuffle(markets)
     for market in markets:
-        predictor_store._collection.delete_many({ "_train_reward": { "$exists": False } })
+
         fx = market["symbol"]
 
-        if fx not in  [
-                "EURJPY", "GBPAUD", "GBPNZD", "EURAUD",
-                "EURUSD", "USDJPY", "AUDJPY", "GBPCAD",
-                "USDCAD", "EURGBP", "CHFJPY", "EURCHF",
-                "NZDJPY", "GBPUSD", "AUDNZD", "CADJPY"
-            ]:
-            continue
         #fx = "EURJPY"
         indicators.reset_caches()
 
@@ -98,9 +91,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         best_features_online_old = ['macd_convergence', 'rsi_limit_4h', 'bb_sqeeze_both_direction', 'bb_sqeeze_both_direction_4h', 'rsi_convergence', 'macd_max_4h', 'adx_max_21', 'adx_max2', 'adx_max_4h', 'adx_max', 'macd_max', 'rsi_limit_12h', 'macd_slope_4h', 'adx_max_48', 'rsi', 'rsi_convergence5_40', 'williams_limit_4h']
 
         hours = 16
-        data = random.choice([(1.5,2.0,0.75, 0.7),
-                     (1.5,1.5,0.75, 0.7),
-                     (2.0,2.0,0.75, 0.7),
+        data = random.choice([(1.5,2.0,0.75, 0.7)
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]

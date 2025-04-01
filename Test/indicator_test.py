@@ -657,6 +657,58 @@ class TestIndicators(unittest.TestCase):
         self.assertEqual(data, TradeAction.BUY)
 
 
+    def sample_dataframe_buy(self):
+        """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
+        data =  {
+        "low":         [0, -1, 0, -1, 0, 0, 0, 0, 0, 0],
+        "high":        [0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+        "pivot_point": [0, 1, 0, 1, 0, 0, 0, 0, 0, 3],  # Hochs = 3, Tiefs = 1
+        "indicator":   [5, 20, 5, 5, 5, 5, 5, 5, 5, 0],  # Indikator schwankt
+        }
+        df = pd.DataFrame(data)
+        return df
+
+    def sample_dataframe_none(self):
+        """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
+        data = {
+            "low": [0, -1, 0, -1, 0, 0, 0, 0, 0, 0],
+            "high": [0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+            "pivot_point": [0, 1, 0, 1, 0, 0, 0, 0, 0, 3],  # Hochs = 3, Tiefs = 1
+            "indicator": [5, 0, 5, 5, 5, 5, 5, 5, 5, 10],  # Indikator schwankt
+        }
+        df = pd.DataFrame(data)
+        return df
+
+    def sample_dataframe_sell(self):
+        """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
+        data = {
+            "low": [0, 0, 0, 0, 0, 0, 0, 0, 0, -1],
+            "high": [0, 2, 0, 2, 0, 0, 0, 0, 0, 0],
+            "pivot_point": [0, 3, 0, 3, 0, 0, 0, 0, 0, 1],  # Hochs = 3, Tiefs = 1
+            "indicator": [5, 0, 5, 5, 5, 5, 5, 5, 5, 20],  # Indikator schwankt
+        }
+        df = pd.DataFrame(data)
+        return df
+
+    def test_convergence_predict_sell(self):
+
+        df = self.sample_dataframe_sell()
+        result = self.indicators._convergence_predict(df, "indicator", pv=MagicMock())
+        assert result == TradeAction.SELL, f"Erwartet: SELL, erhalten: {result}"
+
+    def test_convergence_predict_buy(self):
+        """Testet, ob ein BUY-Signal korrekt erkannt wird."""
+        df = self.sample_dataframe_buy()
+        result = self.indicators._convergence_predict(df, "indicator", pv=MagicMock())
+        assert result == TradeAction.BUY, f"Erwartet: BUY, erhalten: {result}"
+
+    def test_convergence_predict_none(self):
+        """Testet, ob die Funktion korrekt NONE zurückgibt, wenn kein Signal vorliegt."""
+        df = self.sample_dataframe_none()
+        result = self.indicators._convergence_predict(df, "indicator", pv=MagicMock())
+        assert result == TradeAction.NONE, f"Erwartet: BUY, erhalten: {result}"
+
+
 
 
 
