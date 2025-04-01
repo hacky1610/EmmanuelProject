@@ -71,7 +71,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         fx = market["symbol"]
 
-        fx = "GBPJPY"
+        #fx = "GBPJPY"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
