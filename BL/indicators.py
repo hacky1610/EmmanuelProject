@@ -42,6 +42,7 @@ class Indicators:
     RSI_CONVERGENCE5_30 = "rsi_convergence5_30"
     RSI_CONVERGENCE5_40 = "rsi_convergence5_40"
     RSI_CONVERGENCE7 = "rsi_convergence7"
+    RSI_HIDDEN_STRENGTH = "rsi_hidden_strength"
     # endregion
     # region Williams
     WILLIAMS_LIMIT = "williams_limit"
@@ -63,6 +64,7 @@ class Indicators:
     MACD_CONVERGENCE_5 = "macd_convergence_5"
     MACD_CONVERGENCE_2 = "macd_convergence_2"
     MACD_CONVERGENCE_11 = "macd_convergence_11"
+    MACD_HIDDEN_STRENGTH = "macd_hidden_strength"
     MACD_MAX = "macd_max"
     MACD_MAX_2 = "macd_max_2"
     MACD_MAX_4H = "macd_max_4h"
@@ -178,6 +180,7 @@ class Indicators:
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         #self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict) #BAD
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
+        self._add_indicator(self.RSI_HIDDEN_STRENGTH, self._rsi_convergence_hidden_strength3)
         #self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
         #self._add_indicator(self.RSI_CONVERGENCE5_30, self._rsi_convergence_predict5_30) #BAD
         self._add_indicator(self.RSI_CONVERGENCE5_40, self._rsi_convergence_predict5_40)
@@ -211,6 +214,7 @@ class Indicators:
         self._add_indicator(self.MACD_CONVERGENCE_2, self._macd_convergence_predict_2)
         self._add_indicator(self.MACD_CONVERGENCE_5, self._macd_convergence_predict_5)
         self._add_indicator(self.MACD_CONVERGENCE_11, self._macd_convergence_predict_11)
+        self._add_indicator(self.MACD_HIDDEN_STRENGTH, self._macd_hidden_strength)
         self._add_indicator(self.MACDSINGALDIFF, self._macd_signal_diff_predict)
 
         # EMA
@@ -792,6 +796,31 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _hidden_stength_breakdown(self, df, indicator_name, b4after: int = 3, look_back: int = 20, pv = PivotScanner()):
+        if len(df) < 3:
+            return TradeAction.NONE
+
+        pv.set_b4after(b4after)
+        pv.set_lookback(look_back)
+
+        pv.scan(df)
+        highs = df[df.pivot_point == 2.0][-2:]
+        sorted_highs = highs.sort_values(by=["high"])
+
+        if len(highs) >= 2 and sorted_highs[-1:].index.item() < sorted_highs[-2:-1].index.item():
+            # Aufwärtstrend
+            if sorted_highs[-1:][indicator_name].item() < sorted_highs[-2:-1][indicator_name].item():
+                return TradeAction.SELL
+
+        lows = df[df.pivot_point == 1.0][-2:]
+        sorted_lows = lows.sort_values(by=["low"])
+        if len(lows) >= 2 and sorted_lows[:1].index.item() < sorted_lows[1:2].index.item():
+            # Aufwärtstrend
+            if sorted_lows[:1][indicator_name].item() > sorted_lows[1:2][indicator_name].item():
+                return TradeAction.BUY
+
+        return TradeAction.NONE
+
     def _convergence_predict(self, df, indicator_name, b4after: int = 3,
                              look_back: int = 20, pv = PivotScanner()):
         if len(df) < 3:
@@ -832,6 +861,9 @@ class Indicators:
 
     def _rsi_convergence_predict3(self, df):
         return self._convergence_predict(df, "RSI")
+
+    def _rsi_convergence_hidden_strength3(self, df):
+        return self._hidden_stength_breakdown(df, "RSI")
 
     def _rsi_convergence_predict3_4h(self, df):
         df4h = self.convert_1h_to_4h(df)
@@ -995,6 +1027,9 @@ class Indicators:
 
     def _macd_convergence_predict(self, df):
         return self._convergence_predict(df, "MACD")
+
+    def _macd_hidden_strength(self, df):
+        return self._hidden_stength_breakdown(df, "MACD")
 
     def _macd_convergence_predict_2(self, df):
         return self._convergence_predict(df, "MACD", 2)

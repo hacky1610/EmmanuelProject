@@ -676,6 +676,28 @@ class TestIndicators(unittest.TestCase):
         df = pd.DataFrame(data)
         return df
 
+    def sample_dataframe_hidden_stength_buy(self):
+        """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
+        data =  {
+        "low":         [-8, -5, 0, 0, 0, 0, 0, 0, -3, 0],
+        "high":        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "pivot_point": [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],  # Hochs = 3, Tiefs = 1
+        "indicator":   [20, 10, 5, 5, 5, 5, 5, 5, 5, 0],  # Indikator schwankt
+        }
+        df = pd.DataFrame(data)
+        return df
+
+    def sample_dataframe_hidden_stength_sell(self):
+        """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
+        data =  {
+        "low":         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "high":        [12, 10, 0, 0, 0, 0, 0, 0, 0, 7],
+        "pivot_point": [2, 2, 0, 0, 0, 0, 0, 0, 0, 2],  # Hochs = 3, Tiefs = 1
+        "indicator":   [20, 50, 5, 5, 5, 5, 5, 5, 5, 100],  # Indikator schwankt
+        }
+        df = pd.DataFrame(data)
+        return df
+
     def sample_dataframe_none(self):
         """Erstellt einen Beispiel-DataFrame mit Hoch- und Tiefpunkten sowie einem Indikator."""
         data = {
@@ -715,6 +737,18 @@ class TestIndicators(unittest.TestCase):
         df = self.sample_dataframe_none()
         result = self.indicators._convergence_predict(df, "indicator", pv=MagicMock())
         assert result == TradeAction.NONE, f"Erwartet: BUY, erhalten: {result}"
+
+    def test_fake_breakdown_buy(self):
+        """Testet, ob ein BUY-Signal korrekt erkannt wird."""
+        df = self.sample_dataframe_hidden_stength_buy()
+        result = self.indicators._hidden_stength_breakdown(df, "indicator", pv=MagicMock())
+        assert result == TradeAction.BUY, f"Erwartet: BUY, erhalten: {result}"
+
+    def test_fake_breakdown_sell(self):
+        """Testet, ob ein BUY-Signal korrekt erkannt wird."""
+        df = self.sample_dataframe_hidden_stength_sell()
+        result = self.indicators._hidden_stength_breakdown(df, "indicator", pv=MagicMock())
+        assert result == TradeAction.SELL, f"Erwartet: SELL, erhalten: {result}"
 
 
 
