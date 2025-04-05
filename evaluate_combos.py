@@ -80,7 +80,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         #    print("Enough training data to train")
         #    continue
 
-        offline_combos = Data.combos.get_combos()
+        online_combos = predictor_store.get_all_combos()
 
         best_features_online = predictor_store.get_most_used_features()
         best_features_online_old = ['macd_convergence', 'rsi_limit_4h', 'bb_sqeeze_both_direction', 'bb_sqeeze_both_direction_4h', 'rsi_convergence', 'macd_max_4h', 'adx_max_21', 'adx_max2', 'adx_max_4h', 'adx_max', 'macd_max', 'rsi_limit_12h', 'macd_slope_4h', 'adx_max_48', 'rsi', 'rsi_convergence5_40', 'williams_limit_4h']
@@ -134,7 +134,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                  atr_factor_stop=atr_factor_stop,
                                  atr_factor_limit=atr_factor_limit,
                                  best_features=features, min_prec_test=minimum_precission_test,
-                                 part=part,existing_combos=offline_combos)
+                                 part=part,existing_combos=online_combos)
 
                 except Exception as ex:
                     traceback_str = traceback.format_exc()

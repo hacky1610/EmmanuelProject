@@ -41,6 +41,7 @@ class Indicators:
     RSI_CONVERGENCE5 = "rsi_convergence5"
     RSI_CONVERGENCE5_30 = "rsi_convergence5_30"
     RSI_CONVERGENCE5_40 = "rsi_convergence5_40"
+    RSI_CONVERGENCE8_60 = "rsi_convergence8_60"
     RSI_CONVERGENCE7 = "rsi_convergence7"
     RSI_HIDDEN_STRENGTH = "rsi_hidden_strength"
     # endregion
@@ -147,6 +148,11 @@ class Indicators:
     BB_SQUEEZE_BOTH = "bb_sqeeze_both_direction"
     BB_SQUEEZE_BOTH_4H = "bb_sqeeze_both_direction_4h"
     BB_SQUEEZE_BOTH_12H = "bb_sqeeze_both_direction_12h"
+    BB_SQUEEZE_BREAKOUT = "bb_sqeeze_breakout"
+    BB_SQUEEZE_BREAKOUT_4H = "bb_sqeeze_breakout_4h"
+    BB_SQUEEZE_LENGTH_BREAKOUT = "bb_sqeeze_length_breakout"
+    BB_SQUEEZE_LENGTH_BREAKOUT_4H = "bb_sqeeze_length__breakout_4h"
+
 
     # ICHIMOKU
     ICHIMOKU = "ichi"
@@ -184,6 +190,7 @@ class Indicators:
         #self._add_indicator(self.RSI_CONVERGENCE5, self._rsi_convergence_predict5)
         #self._add_indicator(self.RSI_CONVERGENCE5_30, self._rsi_convergence_predict5_30) #BAD
         self._add_indicator(self.RSI_CONVERGENCE5_40, self._rsi_convergence_predict5_40)
+        self._add_indicator(self.RSI_CONVERGENCE8_60, self._rsi_convergence_predict8_60)
         #self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
         #self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict) #BAD
         self._add_indicator(self.RSI_SLOPE, self._rsi_smooth_slope_predict)
@@ -296,6 +303,10 @@ class Indicators:
         self._add_indicator(self.BB_SQUEEZE, self._bb_squeeze)
         self._add_indicator(self.BB_SQUEEZE_BOTH, self._bb_squeeze_both)
         self._add_indicator(self.BB_SQUEEZE_BOTH_4H, self._bb_squeeze_both_4h)
+        self._add_indicator(self.BB_SQUEEZE_BREAKOUT, self._bb_squeeze_breakout)
+        self._add_indicator(self.BB_SQUEEZE_BREAKOUT_4H, self._bb_squeeze_breakout_4h)
+        self._add_indicator(self.BB_SQUEEZE_LENGTH_BREAKOUT, self._bb_squeeze_length_breakout)
+        self._add_indicator(self.BB_SQUEEZE_LENGTH_BREAKOUT_4H, self._bb_squeeze_length_breakout_4h)
 
         #self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
 
@@ -856,6 +867,9 @@ class Indicators:
     def _rsi_convergence_predict5_40(self, df):
         return self._convergence_predict(df, "RSI", 5, look_back=40)
 
+    def _rsi_convergence_predict8_60(self, df):
+        return self._convergence_predict(df, "RSI", 8, look_back=60)
+
     def _rsi_convergence_predict7(self, df):
         return self._convergence_predict(df, "RSI", 7)
 
@@ -1164,11 +1178,36 @@ class Indicators:
         else:
             return TradeAction.NONE
 
+    def _bb_squeeze_breakout(self, df):
+        if len(df) < 1:
+            return TradeAction.NONE
+
+        # Letzter Wert für die Entscheidung
+        if df.iloc[-2]['BBS'] < 1 and df.iloc[-1]['BBS'] >= 1:
+            return TradeAction.BOTH
+        else:
+            return TradeAction.NONE
+
+    def _bb_squeeze_length_breakout(self, df):
+        if len(df) < 1:
+            return TradeAction.NONE
+        squeeze_duration = (df['BBS'] < 1).tail(10).sum()
+        if squeeze_duration >= 4 and df.iloc[-1]['BBS'] >= 1:
+            return TradeAction.BOTH
+        else:
+            return TradeAction.NONE
+
     def _bb_squeeze_both_4h(self, df):
         return self._bb_squeeze_both(self.convert_1h_to_4h(df))
 
     def _bb_squeeze_both_12h(self, df):
         return self._bb_squeeze_both(self.convert_1h_to_12h(df))
+
+    def _bb_squeeze_breakout_4h(self, df):
+        return self._bb_squeeze_breakout(self.convert_1h_to_4h(df))
+
+    def _bb_squeeze_length_breakout_4h(self, df):
+        return self._bb_squeeze_length_breakout(self.convert_1h_to_4h(df))
 
 
     def _adx_predict(self, df):
