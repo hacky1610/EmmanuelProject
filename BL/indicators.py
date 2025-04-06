@@ -1179,7 +1179,7 @@ class Indicators:
             return TradeAction.NONE
 
     def _bb_squeeze_breakout(self, df):
-        if len(df) < 1:
+        if len(df) < 2:
             return TradeAction.NONE
 
         # Letzter Wert für die Entscheidung
@@ -1189,9 +1189,9 @@ class Indicators:
             return TradeAction.NONE
 
     def _bb_squeeze_length_breakout(self, df):
-        if len(df) < 1:
+        if len(df) < 10:
             return TradeAction.NONE
-        squeeze_duration = (df['BBS'] < 1).tail(10).sum()
+        squeeze_duration = (df['BBS'] < 1).tail(7).sum()
         if squeeze_duration >= 4 and df.iloc[-1]['BBS'] >= 1:
             return TradeAction.BOTH
         else:
