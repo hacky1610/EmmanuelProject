@@ -31,6 +31,7 @@ class Indicators:
     RSI_LIMIT = "rsi_limit"
     RSI_LIMIT_4H = "rsi_limit_4h"
     RSI_LIMIT_12H = "rsi_limit_12h"
+    RSI_LIMIT_1d = "rsi_limit_1d"
     RSI_BREAK = "rsi_break"
     RSI_BREAK_4H = "rsi_break_4h"
     RSI_BREAK3070 = "rsi_break_30_70"
@@ -122,6 +123,7 @@ class Indicators:
     ADX_BREAK = "adx_break"
     ADX_MAX = "adx_max"
     ADX_MAX_4H = "adx_max_4h"
+    ADX_MAX_12H = "adx_max_12h"
     ADX_MAX2 = "adx_max2"
     ADX_MAX_21 = "adx_max_21"
     ADX_MAX_48 = "adx_max_48"
@@ -159,6 +161,7 @@ class Indicators:
     ICHIMOKU_KIJUN_CONFIRM = "ichi_kijun_confirm"
     ICHIMOKU_KIJUN_CONFIRM_4H = "ichi_kijun_confirm_4h"
     ICHIMOKU_KIJUN_CONFIRM_12H = "ichi_kijun_confirm_12h"
+    ICHIMOKU_KIJUN_CONFIRM_1d = "ichi_kijun_confirm_1d"
     ICHIMOKU_KIJUN_CROSS_CONFIRM = "ichi_kijun_cross_confirm"
     ICHIMOKU_CLOUD_CONFIRM = "ichi_cloud_confirm"
     ICHIMOKU_CLOUD_THICKNESS = "ichi_cloud_thickness"
@@ -183,6 +186,7 @@ class Indicators:
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
         self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
         self._add_indicator(self.RSI_LIMIT_12H, self._rsi_limit_predict_12h)
+        self._add_indicator(self.RSI_LIMIT_1d, self._rsi_limit_predict_1d)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         #self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict) #BAD
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
@@ -263,6 +267,7 @@ class Indicators:
         #self._add_indicator(self.ADX_SLOPE_48, self._adx_slope_predict_48) #BAD
         self._add_indicator(self.ADX_MAX, self._adx_max_predict)
         self._add_indicator(self.ADX_MAX_4H, self._adx_max_predict_4h)
+        self._add_indicator(self.ADX_MAX_12H, self._adx_max_predict_12h)
         self._add_indicator(self.ADX_MAX_21, self._adx_max_predict_21)
         self._add_indicator(self.ADX_MAX_48, self._adx_max_predict_48)
         self._add_indicator(self.ADX_MAX2, self._adx_max_predict2)
@@ -315,6 +320,7 @@ class Indicators:
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_4H, self._ichimoku_kijun_close_predict_4h)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_12H, self._ichimoku_kijun_close_predict_12h)
+        self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_1d, self._ichimoku_kijun_close_predict_1d)
         self._add_indicator(self.ICHIMOKU_KIJUN_CROSS_CONFIRM, self._ichimoku_kijun_close_cross_predict)
         #self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_THICKNESS, self._ichimoku_cloud_thickness_predict)
@@ -761,6 +767,9 @@ class Indicators:
 
     def _rsi_limit_predict_12h(self, df):
         return self._oscillator_limit(self.convert_1h_to_12h(df), "RSI", 50, 70, 30)
+
+    def _rsi_limit_predict_1d(self, df):
+        return self._oscillator_limit(self.convert_1h_to_1d(df), "RSI", 50, 70, 30)
 
     def _williams_limit_predict(self, df):
         return self._oscillator_limit(df, "WILLIAMS", -50, -20, -80)
@@ -1280,6 +1289,9 @@ class Indicators:
         df4h = self.convert_1h_to_4h(df)
         return self._oszi_max(df4h, "ADX", 7, 0.9)
 
+    def _adx_max_predict_12h(self, df):
+        return self._oszi_max( self.convert_1h_to_12h(df), "ADX", 7, 0.9)
+
     def _adx_max_predict_21(self, df):
         return self._oszi_max(df, "ADX_21", 7, 0.9)
 
@@ -1416,34 +1428,13 @@ class Indicators:
     def _ichimoku_kijun_close_predict_4h(self, df):
         # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
         # Linie nur Long-Trades vorgenommen werden sollten, und unterhalb entsprechend nur Short-Trades.
-        df4h = self.convert_1h_to_4h(df)
-
-        if len(df4h) == 0:
-            return TradeAction.NONE
-
-        kijun = df4h.KIJUN.iloc[-1]
-        close = df.close.iloc[-1]
-
-        if close > kijun:
-            return TradeAction.BUY
-        else:
-            return TradeAction.SELL
+        return  self._ichimoku_kijun_close_predict(self.convert_1h_to_4h(df))
 
     def _ichimoku_kijun_close_predict_12h(self, df):
-        # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
-        # Linie nur Long-Trades vorgenommen werden sollten, und unterhalb entsprechend nur Short-Trades.
-        df12h = self.convert_1h_to_12h(df)
+        return  self._ichimoku_kijun_close_predict(self.convert_1h_to_12h(df))
 
-        if len(df12h) == 0:
-            return TradeAction.NONE
-
-        kijun = df12h.KIJUN.iloc[-1]
-        close = df.close.iloc[-1]
-
-        if close > kijun:
-            return TradeAction.BUY
-        else:
-            return TradeAction.SELL
+    def _ichimoku_kijun_close_predict_1d(self, df):
+        return self._ichimoku_kijun_close_predict(self.convert_1h_to_1d(df))
 
     def _ichimoku_kijun_close_cross_predict(self, df):
         # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
