@@ -73,17 +73,16 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         fx = market["symbol"]
 
-        #fx = "GBPJPY"
+        #fx = "NZDUSD"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
         #    print("Enough training data to train")
         #    continue
 
-        online_combos = predictor_store.get_all_combos()
+        online_combos = predictor_store.get_all_combos(fx)
 
         best_features_online = predictor_store.get_most_used_features()
-        best_features_online_old = ['macd_convergence', 'rsi_limit_4h', 'bb_sqeeze_both_direction', 'bb_sqeeze_both_direction_4h', 'rsi_convergence', 'macd_max_4h', 'adx_max_21', 'adx_max2', 'adx_max_4h', 'adx_max', 'macd_max', 'rsi_limit_12h', 'macd_slope_4h', 'adx_max_48', 'rsi', 'rsi_convergence5_40', 'williams_limit_4h']
 
         hours = 16
         data = random.choice([(1.5,2.0,0.75, 0.7)
@@ -105,8 +104,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             combination_size = combination_size_tuple[0]
             part = combination_size_tuple[1]
             for features in [best_features_online,
-                             best_features_online_old,
-                             random.choices( indicators.get_all_indicator_names(), k=25)]:
+                             random.choices( indicators.get_all_indicator_names(), k=45)]:
                 f += 1
                 ct = CombinationTrainer(cache=cache,
                                         indicators=indicators,

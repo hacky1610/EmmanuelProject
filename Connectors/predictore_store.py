@@ -75,9 +75,9 @@ class PredictorStore:
 
         return top_features_list
 
-    def get_all_combos(self) -> List[str]:
+    def get_all_combos(self,filter_symbol) -> List[str]:
         combo_list = []
-        for doc in self._collection.find({}, {"_features": 1}):
+        for doc in self._collection.find({"_symbol": {"$ne": filter_symbol}}, {"_features": 1}):
             if "_features" in doc and isinstance(doc["_features"], list):
                 combo_list.append(doc["_features"])
 
