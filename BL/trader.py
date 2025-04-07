@@ -292,6 +292,7 @@ class Trader:
     def _execute_trades(self, predictors: List[DeepPredictor], trade_df: DataFrame, buy_actions_df: DataFrame,
                         sell_actions_df: DataFrame, market: dict) -> TradeResult:
         opened = 0
+        self._tracer.debug(f"{market['symbol']} valid to predict")
         for predictor in predictors:
             predictor.set_tracer(self._tracer)
             result = self.trade(
@@ -380,7 +381,6 @@ class Trader:
         if len(trade_df) == 0:
             return TradeResult.ERROR
 
-        self._tracer.debug(f"{config.symbol} valid to predict")
         signal = predictor.predict(buy_actions_df, sell_actions_df)
         #signal = TradeAction.SELL
         market = self._market_store.get_market(config.symbol)
