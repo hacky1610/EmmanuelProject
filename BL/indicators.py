@@ -1417,6 +1417,9 @@ class Indicators:
     def _ichimoku_kijun_close_predict(self, df):
         # Kijun Sen. Allgemein gilt für diesen zunächst, dass bei Kursen oberhalb der
         # Linie nur Long-Trades vorgenommen werden sollten, und unterhalb entsprechend nur Short-Trades.
+        if len(df) < 1:
+            return TradeAction.NONE
+
         kijun = df.KIJUN.iloc[-1]
         close = df.close.iloc[-1]
 
