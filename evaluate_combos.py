@@ -104,7 +104,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             combination_size = combination_size_tuple[0]
             part = combination_size_tuple[1]
             for features in [best_features_online,
-                             random.choices( indicators.get_all_indicator_names(), k=45)]:
+                             random.choices( indicators.get_all_indicator_names(), k=25)]:
                 f += 1
                 ct = CombinationTrainer(cache=cache,
                                         indicators=indicators,
