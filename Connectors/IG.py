@@ -343,13 +343,13 @@ class IG:
         self._tracer.info(f" Trade {deal_id} - Gewinn: {profit_percent:.2f}%")
 
         if not deal.reached_level:
-            if abs(profit_percent) >= 20:
+            if abs(profit_percent) >= 40:
                 deal.reached_level = True
-                self._tracer.info(f" Trade {deal_id} hat 20% Gewinn erreicht. Stop-Logik wird ab jetzt aktiviert.")
+                self._tracer.info(f" Trade {deal_id} hat 40% Gewinn erreicht. Stop-Logik wird ab jetzt aktiviert.")
                 deal_store.save(deal)
             else:
                 self._tracer.info(
-                    f" Trade {deal_id} hat noch nicht 20% des Weges zum Limit erreicht ({profit_percent:.2f}%). Kein Stop-Update.")
+                    f" Trade {deal_id} hat noch nicht 40% des Weges zum Limit erreicht ({profit_percent:.2f}%). Kein Stop-Update.")
                 return {"status": "pending", "message": "Noch kein Stop-Update nötig"}
 
 
