@@ -332,6 +332,7 @@ class IG:
         ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
         atr = self._get_atr(tiingo, ticker)
         min_stop_distance = max(self.get_min_stop_distance(deal.epic) / scaling, 0.5 * atr)
+        self._tracer.set_prefix(f"{ticker} {deal_id}")
         self._tracer.info(f" Dynamische Mindest-Stop-Distanz: {min_stop_distance}")
 
         self._tracer.info(f"{ticker} {direction} Trade {deal_id}")
@@ -341,10 +342,26 @@ class IG:
         profit_percent, _ = self._calculate_profit_percentage(direction, open_price, limit_level, bid_price)
         self._tracer.info(f" Trade {deal_id} - Gewinn: {profit_percent:.2f}%")
 
-        # 1️⃣ Prüfen, ob der manuelle Stop erreicht wurde
-        if deal.is_manual_stop and bid_price <= deal.manual_stop_level:
+        if not deal.reached_level:
+            if abs(profit_percent) >= 20:
+                deal.reached_level = True
+                self._tracer.info(f" Trade {deal_id} hat 20% Gewinn erreicht. Stop-Logik wird ab jetzt aktiviert.")
+                deal_store.save(deal)
+            else:
+                self._tracer.info(
+                    f" Trade {deal_id} hat noch nicht 20% des Weges zum Limit erreicht ({profit_percent:.2f}%). Kein Stop-Update.")
+                return {"status": "pending", "message": "Noch kein Stop-Update nötig"}
+
+
+
+        # 1️⃣ Prüfen, ob der manuelle Stop erreicht wurde (BUY vs SELL)
+        if (
+                (direction == "BUY" and deal.is_manual_stop and bid_price <= deal.manual_stop_level) or
+                (direction == "SELL" and deal.is_manual_stop and bid_price >= deal.manual_stop_level)
+        ):
             self._tracer.warning(
-                f" #######Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!")
+                f" #######Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!"
+            )
             self._close_trade(deal_id, deal.size, direction)
             return {"status": "closed", "message": f"Trade geschlossen bei {deal.manual_stop_level}"}
 
