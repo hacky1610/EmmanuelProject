@@ -332,6 +332,7 @@ class IG:
         ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
         atr = self._get_atr(tiingo, ticker)
         min_stop_distance = max(self.get_min_stop_distance(deal.epic) / scaling, 0.5 * atr)
+        self._tracer.set_prefix(ticker)
         self._tracer.info(f" Dynamische Mindest-Stop-Distanz: {min_stop_distance}")
 
         self._tracer.info(f"{ticker} {direction} Trade {deal_id}")
