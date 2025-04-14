@@ -335,14 +335,16 @@ class IG:
         self._tracer.info(f" Dynamische Mindest-Stop-Distanz: {min_stop_distance}")
 
         self._tracer.info(f"{ticker} {direction} Trade {deal_id}")
-        self._tracer.info(f" Open: {open_price}, Bid: {bid_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr}")
+        self._tracer.info(
+            f" Open: {open_price}, Bid: {bid_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr}")
 
         profit_percent, _ = self._calculate_profit_percentage(direction, open_price, limit_level, bid_price)
         self._tracer.info(f" Trade {deal_id} - Gewinn: {profit_percent:.2f}%")
 
         # 1️⃣ Prüfen, ob der manuelle Stop erreicht wurde
         if deal.is_manual_stop and bid_price <= deal.manual_stop_level:
-            self._tracer.warning(f" #######Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!")
+            self._tracer.warning(
+                f" #######Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!")
             self._close_trade(deal_id, deal.size, direction)
             return {"status": "closed", "message": f"Trade geschlossen bei {deal.manual_stop_level}"}
 
@@ -353,11 +355,19 @@ class IG:
         new_stop_level = self._apply_break_even_stop(new_stop_level, open_price, stop_level, 0, profit_percent)
         self._tracer.info(f" Break-Even angepasst: {new_stop_level}")
 
+        # 2.5️⃣ Schutz: Niemals zurück unter vorher gesetzten manuellen Stop (z. B. Break-Even)
+        if deal.is_manual_stop and new_stop_level < deal.manual_stop_level:
+            self._tracer.info(
+                f" Neuer Stop {new_stop_level} würde unter manuellen Stop {deal.manual_stop_level} fallen – beibehalten."
+            )
+            new_stop_level = deal.manual_stop_level
+
         limit_level = self._adjust_limit_level(limit_level, atr, profit_percent)
 
         # 3️⃣ Stop-Level validieren
         if abs(new_stop_level - bid_price) < min_stop_distance:
-            self._tracer.warning(f"Neuer Stop {new_stop_level} ist zu nah am Preis {bid_price}. Verwende manuellen Stop.")
+            self._tracer.warning(
+                f"Neuer Stop {new_stop_level} ist zu nah am Preis {bid_price}. Verwende manuellen Stop.")
 
             if not deal.is_manual_stop or new_stop_level > deal.manual_stop_level:
                 deal.manual_stop_level = new_stop_level
@@ -380,7 +390,7 @@ class IG:
 
         # Log der ATR-Faktoren
         self._tracer.info(
-            f"++++ATR-Faktoren für Trade {deal_id}: Limit: {limit_atr_factor:.2f} ATR Manueller Stop: {manual_stop_atr_factor:.2f} ATR Provider Stop: {provider_stop_atr_factor:.2f} ATR"                                                                                                                                                                                         f"Provider Stop: {provider_stop_atr_factor:.2f} ATR"
+            f"++++ATR-Faktoren für Trade {deal_id}: Limit: {limit_atr_factor:.2f} ATR Manueller Stop: {manual_stop_atr_factor:.2f} ATR Provider Stop: {provider_stop_atr_factor:.2f} ATR"
         )
 
         if abs(provider_stop_level - stop_level) < 0.1 * atr:

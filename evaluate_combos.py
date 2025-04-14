@@ -82,7 +82,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         online_combos = predictor_store.get_all_combos(fx)
 
-        best_features_online = predictor_store.get_most_used_features()
+        best_features_online_0_5 = predictor_store.get_most_used_features(0.5)
+        best_features_online_0_2 = predictor_store.get_most_used_features(0.2)
 
         hours = 16
         data = random.choice([(1.5,2.0,0.75, 0.7)
@@ -103,7 +104,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             f = 0
             combination_size = combination_size_tuple[0]
             part = combination_size_tuple[1]
-            for features in [best_features_online,
+            for features in [best_features_online_0_5,
+                             best_features_online_0_2,
                              random.choices( indicators.get_all_indicator_names(), k=25)]:
                 f += 1
                 ct = CombinationTrainer(cache=cache,

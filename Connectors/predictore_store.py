@@ -54,7 +54,7 @@ class PredictorStore:
     def count_of_all_by_symbol_and_trade_mode(self, symbol, trade_mode) -> int:
         return self._collection.count_documents({"_symbol": symbol, "_trade_mode":trade_mode})
 
-    def get_most_used_features(self) -> List[str]:
+    def get_most_used_features(self, top_factor=0.5) -> List[str]:
         features_list = []
         for doc in self._collection.find({}, {"_features": 1}):
             if "_features" in doc and isinstance(doc["_features"], list):
@@ -68,7 +68,7 @@ class PredictorStore:
         #for feature, count in feature_counts.most_common():
         #    print(f"{feature}: {count}")
 
-        top_n = int(len(feature_counts) * 0.50)
+        top_n = int(len(feature_counts) * top_factor)
 
 
         top_features_list = [feature for feature, _ in feature_counts.most_common(top_n)]
