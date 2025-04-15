@@ -343,7 +343,7 @@ class IG:
         self._tracer.info(f" Trade {deal_id} - Gewinn: {profit_percent:.2f}%")
 
         if not deal.reached_level:
-            if abs(profit_percent) >= 40:
+            if profit_percent >= 40:
                 deal.reached_level = True
                 self._tracer.info(f" Trade {deal_id} hat 40% Gewinn erreicht. Stop-Logik wird ab jetzt aktiviert.")
                 deal_store.save(deal)

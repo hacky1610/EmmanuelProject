@@ -32,4 +32,5 @@ class MultiTracer(Tracer):
             t.result(message)
 
     def set_prefix(self, prefix):
-        self._prefix = prefix
+        for t in self._tracers:
+            t._prefix = prefix
