@@ -69,9 +69,11 @@ def search_index(df, date):
     return chart_index
 
 pd.set_option('future.no_silent_downcasting', True)
-for deal in ds.get_all_deals_opened_after():
-    # if deal["dealId"] != "DIAAAAS2KELNCAK":
-    #     continue
+for deal in reversed(list(ds.get_closed_deals())):
+    # if deal['dealId'] != "DIAAAATFAPCUBA7":
+    #      continue
+    if deal["open_date_ig_datetime"] > datetime.now() - timedelta(hours=24):
+        continue
 
     id = deal["predictor_scan_id"]
     predictor = ps.load_by_id(id)

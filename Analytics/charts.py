@@ -79,6 +79,8 @@ class StockChart:
         self.signals = []
         self.limits = []
         self.stops = []
+        self.manual_stops = []
+        self.i_stops = []
         self._title = title
 
     def add_trade_signal(self, time, price, signal_type):
@@ -103,6 +105,20 @@ class StockChart:
         :param price: Preis der Stop-Loss-Linie
         """
         self.stops.append(price)
+
+    def add_manual_stop(self, price):
+        """
+        Fügt eine Stop-Loss-Linie hinzu.
+        :param price: Preis der Stop-Loss-Linie
+        """
+        self.manual_stops.append(price)
+
+    def add_i_stop(self, price):
+        """
+        Fügt eine Stop-Loss-Linie hinzu.
+        :param price: Preis der Stop-Loss-Linie
+        """
+        self.i_stops.append(price)
 
     def plot(self, save_as_html=False, filename="plot.html"):
         """
@@ -131,6 +147,14 @@ class StockChart:
         if self.stops:
             ax.hlines(self.stops, xmin=self.df['date'].min(), xmax=self.df['date'].max(),
                       colors='red', linestyles='--', label='Stop-Loss')
+
+        if self.manual_stops:
+            ax.hlines(self.manual_stops, xmin=self.df['date'].min(), xmax=self.df['date'].max(),
+                      colors='orange', linestyles='--', label='Manual Stop')
+
+        if self.i_stops:
+            ax.hlines(self.i_stops, xmin=self.df['date'].min(), xmax=self.df['date'].max(),
+                      colors='purple', linestyles='--', label='I Stop')
 
         ax.set_xlabel('Zeit')
         ax.set_ylabel('Preis')
@@ -167,12 +191,14 @@ class StockChart:
                 f.write(html_str)
             print(f"Plot als HTML gespeichert: {filename}")
         else:
-            plt.show()
+            plt.show(block=True)
 
 pd.set_option('future.no_silent_downcasting', True)
-for deal in reversed(list(ds.get_all_deals_opened_after())):
-    #if deal['ticker'] != "GBPCHF":
-    #     continue
+for deal in reversed(list(ds.get_closed_deals())):
+    # if deal['dealId'] != "DIAAAATFAPCUBA7":
+    #      continue
+    if deal["open_date_ig_datetime"] > datetime.now() - timedelta(hours=24):
+        continue
 
     id = deal["predictor_scan_id"]
     predictor = ps.load_by_id(id)
@@ -183,14 +209,19 @@ for deal in reversed(list(ds.get_all_deals_opened_after())):
     chart_index_open = search_index(df, deal["open_date_ig_datetime"])
     chart_index_close = search_index(df, deal["close_date_ig_datetime"])
 
-    chart = StockChart(df, f"{deal['ticker']} - {deal['direction']}")
-    chart.add_trade_signal(df['date'][chart_index_open], df['close'][chart_index_open], 'start')
-    chart.add_trade_signal(df['date'][chart_index_close], df['close'][chart_index_close], 'end')
+    chart = StockChart(df, f"{deal['ticker']} - {deal['direction']} {deal['profit']}")
+    chart.add_trade_signal(df['date'][chart_index_open], deal["open_level"], 'start')
+    chart.add_trade_signal(df['date'][chart_index_close], deal["close_level"], 'end')
 
     if deal['direction'] == "buy":
         chart.add_limit(df['close'][chart_index_open] + df['ATR'][chart_index_open] * predictor_object.get_atr_factor_limit() )
 
         chart.add_stop(df['close'][chart_index_open] - df['ATR'][chart_index_open] * predictor_object.get_atr_factor_stop())
+        chart.add_manual_stop(
+            deal["manual_stop_level"])
+        chart.add_i_stop(
+            deal["intelligent_stop_level"])
+
     else:
         chart.add_limit(
             df['close'][chart_index_open] - df['ATR'][chart_index_open] * predictor_object.get_atr_factor_limit())
@@ -198,8 +229,8 @@ for deal in reversed(list(ds.get_all_deals_opened_after())):
         chart.add_stop(
             df['close'][chart_index_open] + df['ATR'][chart_index_open] * predictor_object.get_atr_factor_stop())
 
-    chart.plot(save_as_html=True, filename=f"{id}.html")
-    print("")
+    chart.plot(save_as_html=False, filename=f"{id}.html")
+input("Drücke Enter zum Beenden...")
 
 
 

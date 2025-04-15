@@ -324,10 +324,15 @@ class IG:
     def set_intelligent_stop_level(self, position, deal, deal_store, scaling, tiingo):
         """Hauptmethode zur intelligenten Anpassung des Stop-Levels."""
         open_price = position.level
-        bid_price = position.bid
+        direction = position.direction
+
+        if direction == "BUY":
+            current_price = position.bid
+        else:
+            current_price = position.offer
+
         stop_level = position.stopLevel
         limit_level = position.limitLevel
-        direction = position.direction
         deal_id = position.dealId
         ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
         atr = self._get_atr(tiingo, ticker)
@@ -337,9 +342,9 @@ class IG:
 
         self._tracer.info(f"{ticker} {direction} Trade {deal_id}")
         self._tracer.info(
-            f" Open: {open_price}, Bid: {bid_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr}")
+            f" Open: {open_price}, Current: {current_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr}")
 
-        profit_percent, _ = self._calculate_profit_percentage(direction, open_price, limit_level, bid_price)
+        profit_percent, _ = self._calculate_profit_percentage(direction, open_price, limit_level, current_price)
         self._tracer.info(f" Trade {deal_id} - Gewinn: {profit_percent:.2f}%")
 
         if not deal.reached_level:
@@ -356,8 +361,8 @@ class IG:
 
         # 1️⃣ Prüfen, ob der manuelle Stop erreicht wurde (BUY vs SELL)
         if (
-                (direction == "BUY" and deal.is_manual_stop and bid_price <= deal.manual_stop_level) or
-                (direction == "SELL" and deal.is_manual_stop and bid_price >= deal.manual_stop_level)
+                (direction == "BUY" and deal.is_manual_stop and current_price <= deal.manual_stop_level) or
+                (direction == "SELL" and deal.is_manual_stop and current_price >= deal.manual_stop_level)
         ):
             self._tracer.warning(
                 f" #######Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!"
@@ -366,7 +371,7 @@ class IG:
             return {"status": "closed", "message": f"Trade geschlossen bei {deal.manual_stop_level}"}
 
         # 2️⃣ Berechnung des neuen Stop-Levels
-        new_stop_level = self._calculate_new_stop(stop_level, bid_price, atr, profit_percent)
+        new_stop_level = self._calculate_new_stop(stop_level, current_price, atr, profit_percent)
         self._tracer.info(f" Neuer berechneter Stop: {new_stop_level}")
 
         new_stop_level = self._apply_break_even_stop(new_stop_level, open_price, stop_level, 0, profit_percent)
@@ -376,11 +381,11 @@ class IG:
 
         # 3️⃣ Stop-Level validieren
         if (
-                (direction == "BUY" and new_stop_level > bid_price - min_stop_distance) or
-                (direction == "SELL" and new_stop_level < bid_price + min_stop_distance)
+                (direction == "BUY" and new_stop_level > current_price - min_stop_distance) or
+                (direction == "SELL" and new_stop_level < current_price + min_stop_distance)
         ):
             self._tracer.warning(
-                f"Neuer Stop {new_stop_level} ist zu nah am Preis {bid_price}. Verwende manuellen Stop.")
+                f"Neuer Stop {new_stop_level} ist zu nah am Preis {current_price}. Verwende manuellen Stop.")
 
             if (
                     not deal.is_manual_stop or
@@ -391,7 +396,7 @@ class IG:
                 deal.is_manual_stop = True
                 self._tracer.info(f"######Manuellen Stop auf {new_stop_level} gesetzt#########")
 
-            provider_stop_level = bid_price - min_stop_distance if direction == "BUY" else bid_price + min_stop_distance
+            provider_stop_level = current_price - min_stop_distance if direction == "BUY" else current_price + min_stop_distance
             self._tracer.info(f" Trading-Provider bekommt stattdessen Stop-Level: {provider_stop_level}")
         else:
             provider_stop_level = new_stop_level
@@ -402,13 +407,13 @@ class IG:
 
         # ATR-Faktoren berechnen (richtungsabhängig)
         if direction == "BUY":
-            limit_atr_factor = (limit_level - bid_price) / atr if limit_level else 0
-            manual_stop_atr_factor = (deal.manual_stop_level - bid_price) / atr if deal.is_manual_stop else 0
-            provider_stop_atr_factor = (provider_stop_level - bid_price) / atr
+            limit_atr_factor = (limit_level - current_price) / atr if limit_level else 0
+            manual_stop_atr_factor = (deal.manual_stop_level - current_price) / atr if deal.is_manual_stop else 0
+            provider_stop_atr_factor = (provider_stop_level - current_price) / atr
         else:  # SELL
-            limit_atr_factor = (bid_price - limit_level) / atr if limit_level else 0
-            manual_stop_atr_factor = (bid_price - deal.manual_stop_level) / atr if deal.is_manual_stop else 0
-            provider_stop_atr_factor = (bid_price - provider_stop_level) / atr
+            limit_atr_factor = (current_price - limit_level) / atr if limit_level else 0
+            manual_stop_atr_factor = (current_price - deal.manual_stop_level) / atr if deal.is_manual_stop else 0
+            provider_stop_atr_factor = (current_price - provider_stop_level) / atr
 
         # Log der ATR-Faktoren
         self._tracer.info(
