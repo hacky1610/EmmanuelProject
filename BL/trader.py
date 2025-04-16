@@ -384,11 +384,11 @@ class Trader:
         signal = predictor.predict(buy_actions_df, sell_actions_df)
         #signal = TradeAction.SELL
         market = self._market_store.get_market(config.symbol)
-        stop = trade_df.ATR.iloc[-1] * 1.33 * config.scaling
-        limit = trade_df.ATR.iloc[-1] * 0.5 * config.scaling
+        stop = trade_df.ATR.iloc[-1] * predictor.get_atr_factor_stop() * config.scaling
+        limit = trade_df.ATR.iloc[-1] * predictor.get_atr_factor_limit() * config.scaling
 
         if signal == TradeAction.NONE or signal == TradeAction.BOTH:
-            return TradeResult.NOACTION
+                return TradeResult.NOACTION
 
         is_manual_stop = False
         minimal_stop = self._ig.get_min_stop_distance(config.epic)
