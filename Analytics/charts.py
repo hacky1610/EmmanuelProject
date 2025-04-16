@@ -209,7 +209,7 @@ for deal in reversed(list(ds.get_closed_deals())):
     chart_index_open = search_index(df, deal["open_date_ig_datetime"])
     chart_index_close = search_index(df, deal["close_date_ig_datetime"])
 
-    chart = StockChart(df, f"{deal['ticker']} - {deal['direction']} {deal['profit']}")
+    chart = StockChart(df, f"{deal['ticker']} - {deal['direction']} {deal['profit']} {deal['dealId']}")
     chart.add_trade_signal(df['date'][chart_index_open], deal["open_level"], 'start')
     chart.add_trade_signal(df['date'][chart_index_close], deal["close_level"], 'end')
 
