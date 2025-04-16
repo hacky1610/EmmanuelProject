@@ -188,19 +188,23 @@ class CombinationTrainer:
                                                                                                           features,atr_factor_stop,atr_factor_limit)
 
                 # Mindestbedingungen prüfen
-                if train_precision >= min_prec_train and train_reward >= 35:
-                    test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
+                if train_precision >= min_prec_train:
+                    if train_reward >= 20:
+                        test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
                                                                                                           features,atr_factor_stop,atr_factor_limit)
 
-                    results.append({
-                        "Features": features,
-                        "Train Precision": train_precision,
-                        "Train Reward": train_reward,
-                        "Test Precision": test_precision,
-                        "Test Reward": test_reward,
-                        "Test Trade Count": trade_count_test,
-                        "Test Indexes": trade_indexes_test,
-                    })
+                        results.append({
+                            "Features": features,
+                            "Train Precision": train_precision,
+                            "Train Reward": train_reward,
+                            "Test Precision": test_precision,
+                            "Test Reward": test_reward,
+                            "Test Trade Count": trade_count_test,
+                            "Test Indexes": trade_indexes_test,
+                        })
+                        print(f"Train Reward {train_reward}")
+
+
 
             except Exception as e:
                 traceback_str = traceback.format_exc()
@@ -209,7 +213,7 @@ class CombinationTrainer:
         df = DataFrame(results)
         if len(df) > 0:
             df = df[df["Test Trade Count"] != 0]
-            df = df[df["Train Reward"] > 35]
+            df = df[df["Train Reward"] > 20]
             df = df[df["Test Precision"] > min_prec_test]
 
             if len(df) == 0:

@@ -80,15 +80,13 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         #    print("Enough training data to train")
         #    continue
 
-        online_combos = predictor_store.get_all_combos(fx)
+        online_combos = Data.combos.get_combos()
 
         best_features_online_0_5 = predictor_store.get_most_used_features(0.5)
         best_features_online_0_2 = predictor_store.get_most_used_features(0.2)
 
         hours = 16
-        data = random.choice([(1.3,0.5,0.75, 0.7),
-                              (2.0, 0.66, 0.75, 0.7),
-                              (1.5, 1.5, 0.75, 0.7),
+        data = random.choice([(1.3,0.5,0.75, 0.7)
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]
