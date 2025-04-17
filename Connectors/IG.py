@@ -357,7 +357,13 @@ class IG:
                     f" Trade {deal_id} hat noch nicht 40% des Weges zum Limit erreicht ({profit_percent:.2f}%). Kein Stop-Update.")
                 return {"status": "pending", "message": "Noch kein Stop-Update nötig"}
 
+        if profit_percent >= 80:  # Kurs hat 80 % des Wegs zum Limit erreicht
+            limit_level = open_price + 1.2 * atr if direction == "BUY" else open_price - 1.2 * atr
+            self._tracer.info(f"Take-Profit-Level auf 1.2 ATR angehoben: {limit_level}")
 
+            # Trailing Stop ab hier setzen
+            new_stop_level = current_price - 0.3 * atr if direction == "BUY" else current_price + 0.3 * atr
+            self._tracer.info(f"Trailing Stop aktiviert bei: {new_stop_level}")
 
         # 1️⃣ Prüfen, ob der manuelle Stop erreicht wurde (BUY vs SELL)
         if (

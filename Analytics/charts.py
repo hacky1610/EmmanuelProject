@@ -195,7 +195,7 @@ class StockChart:
 
 pd.set_option('future.no_silent_downcasting', True)
 for deal in reversed(list(ds.get_closed_deals())):
-    # if deal['dealId'] != "DIAAAATFAPCUBA7":
+    # if deal['dealId'] != "DIAAAATGT8KLDAZ":
     #      continue
     if deal["open_date_ig_datetime"] > datetime.now() - timedelta(hours=24):
         continue
