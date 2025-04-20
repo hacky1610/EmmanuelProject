@@ -73,20 +73,20 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         fx = market["symbol"]
 
-        #fx = "NZDUSD"
+        #fx = "USDSEK"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
         #    print("Enough training data to train")
         #    continue
 
-        online_combos = Data.combos.get_combos()
+        online_combos = predictor_store.get_all_combos(fx)
 
         best_features_online_0_5 = predictor_store.get_most_used_features(0.5)
         best_features_online_0_2 = predictor_store.get_most_used_features(0.2)
 
         hours = 16
-        data = random.choice([(1.3,0.5,0.75, 0.7)
+        data = random.choice([(1.3,0.5,0.75, 0.7), (1.0,0.4,0.75, 0.7)
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]
@@ -108,6 +108,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                              best_features_online_0_2,
                              random.choices( indicators.get_all_indicator_names(), k=25)]:
                 f += 1
+
                 ct = CombinationTrainer(cache=cache,
                                         indicators=indicators,
                                         predictor_store=predictor_store,
@@ -135,6 +136,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                  atr_factor_limit=atr_factor_limit,
                                  best_features=features, min_prec_test=minimum_precission_test,
                                  part=part,existing_combos=online_combos)
+
+                        online_combos = [] #Reset after one training
 
                 except Exception as ex:
                     traceback_str = traceback.format_exc()
