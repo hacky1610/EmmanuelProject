@@ -131,6 +131,8 @@ class Indicators:
     PSAR_CHANGE = "psar_change"
     SQUEEZE_MOMENTUM = "squeeze_momentum"
     SUPER_TREND = "super_trend"
+    PIVOT_BREAKOUT_15 = "pivot_break_15"
+    TREND_BREAK = "trend_break"
 
     CANDLE = "candle"
     CANDLEPATTERN = "candle_pattern"
@@ -254,6 +256,7 @@ class Indicators:
         self._add_indicator(self.PIVOT_SR_TRADING, self._pivot_sr_trading)
         self._add_indicator(self.PIVOT_SR_TRADING_4H, self._pivot_sr_trading_4h)
         self._add_indicator(self.PIVOT_EMA_20_CROSS, self._pivot_ema_20_cross)
+        #self._add_indicator(self.PIVOT_BREAKOUT_15, self.calculate_pivot_breaks)
 
         #Fibonacci
         self._add_indicator(self.PIVOT_FIB_BOUNCE, self._pivot_fib_bounce)
@@ -292,6 +295,8 @@ class Indicators:
         self._add_indicator(self.CANDLE_TYPE_4H, self._candle_type_predict_4h)
         self._add_indicator(self.SUPER_TREND, self._super_trend)
         self._add_indicator(self.SQUEEZE_MOMENTUM, self._squeeze_momentum)
+        self._add_indicator(self.TREND_BREAK, self.trend_break)
+
 
 
 
@@ -1525,4 +1530,123 @@ class Indicators:
                 return TradeAction.SELL
 
         return TradeAction.NONE
+
+    def calculate_pivot_breaks(self,df, left_bars=15, right_bars=15):
+
+        if len(df) < 2:
+            return TradeAction.NONE
+
+        # Hilfsfunktion zur Berechnung von Pivot-Hochs
+        def pivot_high(series, left, right):
+            return series[(series.shift(left) < series) & (series.shift(-right) < series)]
+
+        # Hilfsfunktion zur Berechnung von Pivot-Tiefs
+        def pivot_low(series, left, right):
+            return series[(series.shift(left) > series) & (series.shift(-right) > series)]
+
+        # Pivot-Werte berechnen
+        high_pivots = pivot_high(df['high'], left_bars, right_bars)
+        low_pivots = pivot_low(df['low'], left_bars, right_bars)
+
+        # Letzten Pivot-Werte extrahieren
+        last_high_pivot = high_pivots.dropna().iloc[-1] if not high_pivots.dropna().empty else None
+        last_low_pivot = low_pivots.dropna().iloc[-1] if not low_pivots.dropna().empty else None
+
+        # Letzte Zeile des DataFrames
+        last_row = df.iloc[-1]
+        last_close = last_row['close']
+        last_open = last_row['open']
+        last_high = last_row['high']
+        last_low = last_row['low']
+
+        result = {
+            "support_broken": False,
+            "resistance_broken": False,
+            "bull_wick": False,
+            "bear_wick": False
+        }
+
+        # Überprüfung auf Support- und Resistance-Breaks
+        if last_low_pivot is not None and last_close < last_low_pivot and (last_open - last_close) < (
+                last_high - last_open):
+            result["support_broken"] = True
+
+        if last_high_pivot is not None and last_close > last_high_pivot and (last_open - last_low) > (
+                last_close - last_open):
+            result["resistance_broken"] = True
+
+        # Überprüfung auf Bull/Bear Wick
+        if last_high_pivot is not None and last_close > last_high_pivot and (last_open - last_low) > (
+                last_close - last_open):
+            result["bull_wick"] = True
+
+        if last_low_pivot is not None and last_close < last_low_pivot and (last_open - last_close) < (
+                last_high - last_open):
+            result["bear_wick"] = True
+
+        if result.get("resistance_broken") and not result.get("bull_wick"):
+            return TradeAction.BUY
+
+        if result.get("support_broken") and not result.get("bear_wick"):
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def trend_break(self, df: pd.DataFrame, length: int = 14, mult: float = 1.0) -> dict:
+
+        if len(df) < length + 2:
+            return TradeAction.NONE  # nicht genug Daten
+
+        df = df.copy()
+
+        # ATR berechnen
+        df['tr'] = np.maximum.reduce([
+            df['high'] - df['low'],
+            np.abs(df['high'] - df['close'].shift(1)),
+            np.abs(df['low'] - df['close'].shift(1))
+        ])
+        df['atr'] = df['tr'].rolling(length).mean()
+
+        # Swing Highs & Lows
+        df['swing_high'] = df['high'][
+            (df['high'].shift(length) < df['high']) & (df['high'].shift(-length) < df['high'])]
+        df['swing_low'] = df['low'][(df['low'].shift(length) > df['low']) & (df['low'].shift(-length) > df['low'])]
+
+        # letzte Swing-High / -Low finden (zurückliegend)
+        last_swing_high_idx = df['swing_high'].last_valid_index()
+        last_swing_low_idx = df['swing_low'].last_valid_index()
+
+        if last_swing_high_idx is None or last_swing_low_idx is None:
+            return TradeAction.NONE
+
+        current_idx = df.index[-1]
+
+        atr = df['atr'].iloc[-1]
+        slope = (atr / length) * mult
+
+        # obere Trendlinie von letztem Swing High
+        bars_since_high = current_idx - last_swing_high_idx
+        high_level = df.at[last_swing_high_idx, 'swing_high']
+        upper_trendline = high_level - slope * bars_since_high
+
+        # untere Trendlinie von letztem Swing Low
+        bars_since_low = current_idx - last_swing_low_idx
+        low_level = df.at[last_swing_low_idx, 'swing_low']
+        lower_trendline = low_level + slope * bars_since_low
+
+        # aktuelle Kerze
+        close = df['close'].iloc[-1]
+        low = df['low'].iloc[-1]
+        high = df['high'].iloc[-1]
+
+        # Breakout nach oben
+        if close > upper_trendline and low < upper_trendline:
+            return TradeAction.BUY
+
+        # Breakout nach unten
+        if close < lower_trendline and high > lower_trendline:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
     # endregion
