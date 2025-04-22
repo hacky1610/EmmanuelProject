@@ -424,7 +424,7 @@ class IG:
         # Log der ATR-Faktoren
         self._tracer.info(
             f"++++ATR-Faktoren für Trade {deal_id}: "
-            f"Limit: {limit_atr_factor:.2f} ATR "
+            f"Limit: {limit_atr_factor:.2f} ATR {limit_level} old {position.limitLevel}"
             f"Manueller Stop: {manual_stop_atr_factor:.2f} ATR "
             f"Provider Stop: {provider_stop_atr_factor:.2f} ATR"
         )
