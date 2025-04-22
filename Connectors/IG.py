@@ -383,7 +383,7 @@ class IG:
         new_stop_level = self._apply_break_even_stop(new_stop_level, open_price, stop_level, 0, profit_percent)
         self._tracer.info(f" Break-Even angepasst: {new_stop_level}")
 
-        limit_level = self._adjust_limit_level(limit_level, atr, profit_percent)
+        limit_level = self._adjust_limit_level(limit_level, atr, profit_percent, direction)
 
         # 3️⃣ Stop-Level validieren
         if (
@@ -447,11 +447,17 @@ class IG:
         self._adjust_stop_level(deal_id, limit_level, provider_stop_level, deal_store)
         return {"status": "success", "message": "Stop-Level aktualisiert"}
 
-    def _adjust_limit_level(self, limit_level, atr, profit_percent):
+    def _adjust_limit_level(self, limit_level, atr, profit_percent, direction):
         """Erhöht das Limit-Level um 0.5 ATR, wenn der Preis > 80% des Limits ist."""
         if profit_percent > 80 and limit_level:
-            self._tracer.debug("new limit")
-            return limit_level + 0.5 * atr
+            self._tracer.debug("Limit-Level wird angepasst (80% erreicht)")
+
+            if direction == "BUY":
+                return limit_level + 0.88 * atr
+            else:  # SELL
+                return limit_level - 0.88 * atr
+
+
         return limit_level
 
     def _calculate_new_stop(self, stop_level, bid_price, atr, profit_percent):
