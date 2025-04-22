@@ -429,8 +429,18 @@ class IG:
             f"Provider Stop: {provider_stop_atr_factor:.2f} ATR"
         )
 
-        if abs(provider_stop_level - stop_level) < 0.1 * atr:
-            self._tracer.info(" Stop-Level hat sich nur minimal verändert. Kein API-Update nötig.")
+        limit_changed = abs(limit_level - position.limitLevel) >= 0.05 * atr
+        stop_changed = abs(provider_stop_level - stop_level) >= 0.1 * atr
+
+        if stop_changed and not limit_changed:
+            self._tracer.info(" Nur der Stop-Level hat sich signifikant verändert.")
+        elif limit_changed and not stop_changed:
+            self._tracer.info(" Nur der Limit-Level hat sich signifikant verändert.")
+        elif stop_changed and limit_changed:
+            self._tracer.info(" Sowohl Stop- als auch Limit-Level haben sich signifikant verändert.")
+
+        if not stop_changed and not limit_changed:
+            self._tracer.info(" Weder Stop- noch Limit-Level haben sich wesentlich verändert. Kein API-Update nötig.")
             return {"status": "unchanged", "message": "Keine Anpassung erforderlich"}
 
         self._tracer.info(f"#######Provider Stop auf {provider_stop_level} gesetzt.#######")
