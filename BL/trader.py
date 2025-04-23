@@ -184,13 +184,35 @@ class Trader:
 
         self._tracer.debug("Start")
         currency_markets = IG.IG.get_markets_offline()
+        low_spread_pairs = [
+            "EURUSD",
+            "USDJPY",
+            "GBPUSD",
+            "AUDUSD",
+            "USDCHF",
+            "NZDUSD",
+            "EURJPY",
+            "EURGBP",
+            "USDCAD",
+            "GBPJPY",
+            "AUDJPY",
+            "EURCHF",
+            "EURAUD",
+            "GBPCHF",
+            "EURCAD",
+            "GBPAUD",
+            "CHFJPY",
+            "CADJPY",
+            "NZDJPY",
+            "GBPNZD"
+        ]
 
         max_workers = os.cpu_count() or 4  # Falls os.cpu_count() None zurückgibt, setze Standardwert 4
         self._tracer.debug(f"Using max {max_workers} concurrent threads")
 
         async def trade_single_market(market):
             try:
-                if self.market_tradable(market["symbol"]):
+                if self.market_tradable(market["symbol"]) and market["symbol"] in low_spread_pairs:
                     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                         loop = asyncio.get_running_loop()
                         await loop.run_in_executor(executor, self.trade_market, Indicators(), market)
@@ -251,7 +273,6 @@ class Trader:
             TradeResult: The result of the trade (SUCCESS, NOACTION, or ERROR).
         """
         symbol = market["symbol"]
-        self._tracer.set_prefix(symbol)
         indicators.reset_caches()
 
         self._tracer.debug(f"Attempting to trade {symbol}")

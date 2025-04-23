@@ -1,5 +1,6 @@
 from typing import List
 
+import finta
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
@@ -131,7 +132,7 @@ class Indicators:
     PSAR_CHANGE = "psar_change"
     SQUEEZE_MOMENTUM = "squeeze_momentum"
     SQUEEZE_MOMENTUM_SIGNAL =  "squeeze_momentum_signal"
-    PSAR_RSI = "psar_rsi"
+    PSAR_RSI = "psar_rsi_strategy"
 
     SUPER_TREND = "super_trend"
     PIVOT_BREAKOUT_15 = "pivot_break_15"
@@ -299,8 +300,8 @@ class Indicators:
         self._add_indicator(self.SUPER_TREND, self._super_trend)
         self._add_indicator(self.SQUEEZE_MOMENTUM, self._squeeze_momentum)
         self._add_indicator(self.TREND_BREAK, self.trend_break)
-        self._add_indicator(self.SQUEEZE_MOMENTUM_SIGNAL, self.squeeze_momentum_signal)
-        self._add_indicator(self.PSAR_RSI, self.parabolic_rsi_strategy)
+        #self._add_indicator(self.SQUEEZE_MOMENTUM_SIGNAL, self.squeeze_momentum_signal)
+        #self._add_indicator(self.PSAR_RSI, self.parabolic_rsi_strategy)
 
 
 
@@ -1700,91 +1701,19 @@ class Indicators:
         else:
             return TradeAction.NONE
 
-    def parabolic_rsi_strategy(self, df, len_rsi=14, upper=70, lower=30, start=0.02, inc=0.02, max_acc=0.2):
-        # RSI und CCI sind bereits im DataFrame
-        # Berechnung des SAR (Parabolic Stop and Reverse)
-        def pine_sar(src, start, inc, max_acc, length):
-            result = [None] * length
-            maxMin = [None] * length
-            acceleration = [None] * length
-            isBelow = [False] * length
-            isFirstTrendBar = [False] * length
+    def parabolic_rsi_strategy(self,df, len_rsi=14, upper=70, lower=30, start=0.02, inc=0.02, max_acc=0.2):
 
-            for i in range(length, len(src)):
-                src_high = src[i] + 1
-                src_low = src[i] - 1
+        finta.TA.PSAR()
 
-                if i <= length + 2:
-                    if src[i] > src[i - 1]:
-                        isBelow[i] = True
-                        maxMin[i] = src_high
-                        result[i] = src_low
-                    else:
-                        isBelow[i] = False
-                        maxMin[i] = src_low
-                        result[i] = src_high
+        s_sig_up = sig_up & (sar_rsi <= lower)
+        s_sig_dn = sig_dn & (sar_rsi >= upper)
 
-                    isFirstTrendBar[i] = True
-                    acceleration[i] = start
-                else:
-                    result[i] = result[i - 1] + acceleration[i - 1] * (maxMin[i - 1] - result[i - 1])
-
-                    if isBelow[i]:
-                        if result[i] > src_low:
-                            isFirstTrendBar[i] = True
-                            isBelow[i] = False
-                            result[i] = max(src_high, maxMin[i])
-                            maxMin[i] = src_low
-                            acceleration[i] = start
-                    else:
-                        if result[i] < src_high:
-                            isFirstTrendBar[i] = True
-                            isBelow[i] = True
-                            result[i] = min(src_low, maxMin[i])
-                            maxMin[i] = src_high
-                            acceleration[i] = start
-
-                    if not isFirstTrendBar[i]:
-                        if isBelow[i]:
-                            if src_high > maxMin[i]:
-                                maxMin[i] = src_high
-                                acceleration[i] = min(acceleration[i - 1] + inc, max_acc)
-                        else:
-                            if src_low < maxMin[i]:
-                                maxMin[i] = src_low
-                                acceleration[i] = min(acceleration[i - 1] + inc, max_acc)
-
-                    if isBelow[i]:
-                        result[i] = min(result[i], src_low)
-                        if i > 1:
-                            result[i] = min(result[i], src_low)
-                    else:
-                        result[i] = max(result[i], src_high)
-                        if i > 1:
-                            result[i] = max(result[i], src_high)
-
-            return result[-1], isBelow[-1]
-
-        # RSI und CCI sind bereits im DataFrame vorhanden
-        rsi = df['RSI']
-        cci = df['CCI']
-
-        # Berechne den SAR basierend auf dem RSI
-        sar_rsi, isBelow = pine_sar(rsi, start, inc, max_acc, len_rsi)
-
-        # Signale für Kauf oder Verkauf
-        sig_up = (isBelow != isBelow.shift(1)) & isBelow
-        sig_dn = (isBelow != isBelow.shift(1)) & ~isBelow
-
-        s_sig_up = (isBelow != isBelow.shift(1)) & isBelow & (sar_rsi <= lower)
-        s_sig_dn = (isBelow != isBelow.shift(1)) & ~isBelow & (sar_rsi >= upper)
-
-        # Entscheide, was zu tun ist
+        # Entscheidung für die letzte Kerze
         if s_sig_up.iloc[-1]:
-            return "Kaufen"
+            return TradeAction.BUY
         elif s_sig_dn.iloc[-1]:
-            return "Verkaufen"
+            return TradeAction.SELL
         else:
-            return "Nichts tun"
+            return TradeAction.NONE
 
     # endregion

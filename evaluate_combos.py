@@ -63,6 +63,29 @@ _reporting = Reporting(predictor_store=predictor_store)
 
 # endregion
 
+low_spread_pairs = [
+    "EURUSD",
+    "USDJPY",
+    "GBPUSD",
+    "AUDUSD",
+    "USDCHF",
+    "NZDUSD",
+    "EURJPY",
+    "EURGBP",
+    "USDCAD",
+    "GBPJPY",
+    "AUDJPY",
+    "EURCHF",
+    "EURAUD",
+    "GBPCHF",
+    "EURCAD",
+    "GBPAUD",
+    "CHFJPY",
+    "CADJPY",
+    "NZDJPY",
+    "GBPNZD"
+]
+
 
 def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
@@ -72,6 +95,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
     for market in markets:
 
         fx = market["symbol"]
+
+        if fx not in low_spread_pairs:
+            continue
 
         #fx = "USDSEK"
         indicators.reset_caches()
