@@ -377,11 +377,9 @@ class IG:
             return {"status": "closed", "message": f"Trade geschlossen bei {deal.manual_stop_level}"}
 
         # 2️⃣ Berechnung des neuen Stop-Levels
-        new_stop_level = self._calculate_new_stop(stop_level, current_price, atr, profit_percent)
+        new_stop_level = self._calculate_new_stop(stop_level, current_price, atr, direction, profit_percent)
         self._tracer.info(f" Neuer berechneter Stop: {new_stop_level}")
 
-        new_stop_level = self._apply_break_even_stop(new_stop_level, open_price, stop_level, 0, profit_percent)
-        self._tracer.info(f" Break-Even angepasst: {new_stop_level}")
 
         limit_level = self._adjust_limit_level(limit_level, atr, profit_percent, direction)
 
@@ -451,21 +449,42 @@ class IG:
         """Erhöht das Limit-Level um 0.5 ATR, wenn der Preis > 80% des Limits ist."""
         if profit_percent > 80 and limit_level:
             self._tracer.debug("Limit-Level wird angepasst (80% erreicht)")
+            atr_factor = 0.88
+        elif profit_percent > 100 and limit_level:
+            atr_factor = 1
+        else:
+            return limit_level
 
-            if direction == "BUY":
-                return limit_level + 0.88 * atr
-            else:  # SELL
-                return limit_level - 0.88 * atr
+        if direction == "BUY":
+            return limit_level + atr_factor * atr
+        else:  # SELL
+            return limit_level - atr_factor * atr
 
 
-        return limit_level
 
-    def _calculate_new_stop(self, stop_level, bid_price, atr, profit_percent):
-        """Berechnet das neue Stop-Level mit dynamischen ATR-Multiplikatoren."""
-        atr_multiplier = max(1.0, 2.0 - (profit_percent / 100))  # Dynamischer Faktor
+    def _calculate_new_stop(self, stop_level, price, atr, direction, profit):
+        """Berechnet ein dynamisches Stop-Level anhand des Profits und der Positionrichtung."""
 
-        new_stop = max(stop_level, bid_price - (atr_multiplier * atr))
-        self._tracer.info(f" ATR Multiplikator: {atr_multiplier}, Neuer Stop: {new_stop}")
+        # Dynamischer ATR-Multiplikator basierend auf Profit-Stufen
+        if profit < 30:
+            atr_multiplier = 1.3
+        elif profit < 70:
+            atr_multiplier = 1.0
+        elif profit < 90:
+            atr_multiplier = 0.6
+        else:
+            atr_multiplier = 0.3
+
+        if direction == "BUY":
+            new_stop = max(stop_level, price - (atr_multiplier * atr))
+        else:  # SELL
+            new_stop = min(stop_level, price + (atr_multiplier * atr))
+
+        self._tracer.info(
+            f"[Stop-Berechnung] Profit: {profit:.2f}%, ATR: {atr:.5f}, Richtung: {direction}, "
+            f"Multiplikator: {atr_multiplier}, Alter Stop: {stop_level}, Neuer Stop: {new_stop}"
+        )
+
         return new_stop
 
     def _apply_break_even_stop(self, new_stop_level, open_price, stop_level, spread, profit_percent):
