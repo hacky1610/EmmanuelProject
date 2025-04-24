@@ -112,7 +112,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         best_features_online_0_2 = predictor_store.get_most_used_features(0.2)
 
         hours = 16
-        data = random.choice([(1.3,0.5,0.75, 0.7), (1.0,0.4,0.75, 0.7)
+        data = random.choice([(1.3,0.5,0.75, 0.7),
+                              (1.0,0.4,0.75, 0.7),
+                              (0.8, 0.8, 0.75, 0.7)
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]
