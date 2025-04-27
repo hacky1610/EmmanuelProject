@@ -170,7 +170,9 @@ class CombinationTrainer:
                                      atr_factor_limit: float,
                                      min_prec_train: float, min_prec_test: float, best_features: list,
                                      part:float,
-                                     existing_combos: List = None) -> DataFrame:
+                                     min_train_reward:int,
+                                     existing_combos: List = None,
+                                     ) -> DataFrame:
 
         train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
@@ -189,7 +191,7 @@ class CombinationTrainer:
 
                 # Mindestbedingungen prüfen
                 if train_precision >= min_prec_train:
-                    if train_reward >= 20:
+                    if train_reward >= min_train_reward:
                         test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
                                                                                                           features,atr_factor_stop,atr_factor_limit)
 
@@ -213,7 +215,7 @@ class CombinationTrainer:
         df = DataFrame(results)
         if len(df) > 0:
             df = df[df["Test Trade Count"] != 0]
-            df = df[df["Train Reward"] > 20]
+            df = df[df["Train Reward"] > min_train_reward]
             df = df[df["Test Precision"] > min_prec_test]
 
             if len(df) == 0:
@@ -358,6 +360,7 @@ class CombinationTrainer:
               min_prec_train: float, min_prec_test: float, atr_factor_stop: float,
               atr_factor_limit: float,
               best_features: List[str],
+              min_train_reward:int,
               part:float, existing_combos: List = None):
 
         # if len(best_features) == 0:
@@ -369,7 +372,8 @@ class CombinationTrainer:
                                           min_prec_train=min_prec_train, trade_mode=trading_mode,
                                           trading_hours=trading_hours, atr_factor_stop=atr_factor_stop,
                                           atr_factor_limit=atr_factor_limit,
-                                          best_features=best_features, min_prec_test=min_prec_test, part=part, existing_combos=existing_combos)
+                                          best_features=best_features, min_prec_test=min_prec_test,
+                                          part=part, existing_combos=existing_combos, min_train_reward=min_train_reward)
 
     def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, hours, factor_stop, factor_limit, indicators,
                     trade_mode: str,

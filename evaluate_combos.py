@@ -112,15 +112,16 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         best_features_online_0_2 = predictor_store.get_most_used_features(0.15)
 
         hours = 16
-        data = random.choice([(1.3,0.5,0.75, 0.7),
-                              (1.0,0.4,0.75, 0.7),
-                              (0.8, 0.8, 0.75, 0.7),
-                              (0.5, 0.5, 0.75, 0.7)
+        data = random.choice([(1.3,0.5,0.75, 0.7,22),
+                              (1.0,0.4,0.75, 0.7,22),
+                              (0.8, 0.8, 0.8, 0.7,29),
+                              (0.5, 0.5, 0.8, 0.7,29)
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]
         minimum_precission_train = data[2]
         minimum_precission_test = data[3]
+        min_train_reward=data[4]
 
         combis = [
                   (6, 0.1),
@@ -164,7 +165,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                  atr_factor_stop=atr_factor_stop,
                                  atr_factor_limit=atr_factor_limit,
                                  best_features=features, min_prec_test=minimum_precission_test,
-                                 part=part,existing_combos=online_combos)
+                                 part=part,existing_combos=online_combos,
+                                 min_train_reward=min_train_reward)
 
                         online_combos = [] #Reset after one training
 
