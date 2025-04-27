@@ -322,86 +322,66 @@ class IG:
         return df.iloc[-1].ATR
 
     def set_intelligent_stop_level(self, position, deal, deal_store, scaling, tiingo):
-        """Hauptmethode zur intelligenten Anpassung des Stop-Levels."""
+        """Hauptmethode zur intelligenten Anpassung von Stop- und Limit-Level."""
         open_price = position.level
         direction = position.direction
 
-        if direction == "BUY":
-            current_price = position.bid
-        else:
-            current_price = position.offer
-
+        current_price = position.bid if direction == "BUY" else position.offer
         stop_level = position.stopLevel
         limit_level = position.limitLevel
         deal_id = position.dealId
         ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
         atr = self._get_atr(tiingo, ticker)
         min_stop_distance = max(self.get_min_stop_distance(deal.epic) / scaling, 0.5 * atr)
+
         self._tracer.set_prefix(f"{ticker} {deal_id}")
         self._tracer.info(f" Dynamische Mindest-Stop-Distanz: {min_stop_distance}")
-
-        self._tracer.info(f"{ticker} {direction} Trade {deal_id}")
         self._tracer.info(
             f" Open: {open_price}, Current: {current_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr}")
 
         profit_percent, _ = self._calculate_profit_percentage(direction, open_price, limit_level, current_price)
         self._tracer.info(f" Trade {deal_id} - Gewinn: {profit_percent:.2f}%")
 
+        # 1️⃣ Deal-Status-Update
         if not deal.reached_level:
             if profit_percent >= 40:
                 deal.reached_level = True
                 self._tracer.info(f" Trade {deal_id} hat 40% Gewinn erreicht. Stop-Logik wird ab jetzt aktiviert.")
                 deal_store.save(deal)
             else:
-                self._tracer.info(
-                    f" Trade {deal_id} hat noch nicht 40% des Weges zum Limit erreicht ({profit_percent:.2f}%). Kein Stop-Update.")
+                self._tracer.info(f" Trade {deal_id} hat noch nicht 40% erreicht. Kein Stop-Update.")
                 return {"status": "pending", "message": "Noch kein Stop-Update nötig"}
 
-        if profit_percent >= 80:  # Kurs hat 80 % des Wegs zum Limit erreicht
-            limit_level = open_price + 1.2 * atr if direction == "BUY" else open_price - 1.2 * atr
-            self._tracer.info(f"Take-Profit-Level auf 1.2 ATR angehoben: {limit_level}")
+        # 2️⃣ Limit und Trailing-Stop ab 80% Gewinn
+        if profit_percent >= 80:
+            limit_level = self._calculate_trailing_limit(current_price, atr, direction)
+            self._tracer.info(f"Take-Profit-Level wird dynamisch angepasst auf: {limit_level}")
 
-            # Trailing Stop ab hier setzen
-            new_stop_level = current_price - 0.3 * atr if direction == "BUY" else current_price + 0.3 * atr
-            self._tracer.info(f"Trailing Stop aktiviert bei: {new_stop_level}")
+        # 3️⃣ Prüfe manuellen Stop
+        if deal.is_manual_stop:
+            if (direction == "BUY" and current_price <= deal.manual_stop_level) or \
+                    (direction == "SELL" and current_price >= deal.manual_stop_level):
+                self._tracer.warning(
+                    f" ####### Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!")
+                self._close_trade(deal_id, deal.size, direction)
+                return {"status": "closed", "message": f"Trade geschlossen bei {deal.manual_stop_level}"}
 
-        # 1️⃣ Prüfen, ob der manuelle Stop erreicht wurde (BUY vs SELL)
-        if (
-                (direction == "BUY" and deal.is_manual_stop and current_price <= deal.manual_stop_level) or
-                (direction == "SELL" and deal.is_manual_stop and current_price >= deal.manual_stop_level)
-        ):
-            self._tracer.warning(
-                f" #######Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!"
-            )
-            self._close_trade(deal_id, deal.size, direction)
-            return {"status": "closed", "message": f"Trade geschlossen bei {deal.manual_stop_level}"}
-
-        # 2️⃣ Berechnung des neuen Stop-Levels
+        # 4️⃣ Berechne neuen Stop-Level
         new_stop_level = self._calculate_new_stop(stop_level, current_price, atr, direction, profit_percent)
         self._tracer.info(f" Neuer berechneter Stop: {new_stop_level}")
 
-
-        limit_level = self._adjust_limit_level(limit_level, atr, profit_percent, direction)
-
-        # 3️⃣ Stop-Level validieren
-        if (
-                (direction == "BUY" and new_stop_level > current_price - min_stop_distance) or
-                (direction == "SELL" and new_stop_level < current_price + min_stop_distance)
-        ):
+        # 5️⃣ Validierung Stop-Level
+        if (direction == "BUY" and new_stop_level > current_price - min_stop_distance) or \
+                (direction == "SELL" and new_stop_level < current_price + min_stop_distance):
             self._tracer.warning(
-                f"Neuer Stop {new_stop_level} ist zu nah am Preis {current_price}. Verwende manuellen Stop.")
-
-            if (
-                    not deal.is_manual_stop or
-                    (direction == "BUY" and new_stop_level > deal.manual_stop_level) or
-                    (direction == "SELL" and new_stop_level < deal.manual_stop_level)
-            ):
+                f" Neuer Stop {new_stop_level} zu nah am aktuellen Preis {current_price}. Verwende manuellen Stop.")
+            if not deal.is_manual_stop or \
+                    (direction == "BUY" and new_stop_level > deal.manual_stop_level) or \
+                    (direction == "SELL" and new_stop_level < deal.manual_stop_level):
                 deal.manual_stop_level = new_stop_level
                 deal.is_manual_stop = True
-                self._tracer.info(f"######Manuellen Stop auf {new_stop_level} gesetzt#########")
-
+                self._tracer.info(f" Manuellen Stop auf {new_stop_level} gesetzt.")
             provider_stop_level = current_price - min_stop_distance if direction == "BUY" else current_price + min_stop_distance
-            self._tracer.info(f" Trading-Provider bekommt stattdessen Stop-Level: {provider_stop_level}")
         else:
             provider_stop_level = new_stop_level
             deal.is_manual_stop = False
@@ -409,83 +389,60 @@ class IG:
 
         deal_store.save(deal)
 
-        # ATR-Faktoren berechnen (richtungsabhängig)
-        if direction == "BUY":
-            limit_atr_factor = (limit_level - current_price) / atr if limit_level else 0
-            manual_stop_atr_factor = (deal.manual_stop_level - current_price) / atr if deal.is_manual_stop else 0
-            provider_stop_atr_factor = (provider_stop_level - current_price) / atr
-        else:  # SELL
-            limit_atr_factor = (current_price - limit_level) / atr if limit_level else 0
-            manual_stop_atr_factor = (current_price - deal.manual_stop_level) / atr if deal.is_manual_stop else 0
-            provider_stop_atr_factor = (current_price - provider_stop_level) / atr
+        # 6️⃣ ATR-Faktoren berechnen (zum Loggen)
+        limit_atr_factor = self._calculate_atr_factor(limit_level, current_price, atr, direction)
+        manual_stop_atr_factor = self._calculate_atr_factor(deal.manual_stop_level, current_price, atr,
+                                                            direction) if deal.is_manual_stop else 0
+        provider_stop_atr_factor = self._calculate_atr_factor(provider_stop_level, current_price, atr, direction)
 
-        # Log der ATR-Faktoren
         self._tracer.info(
-            f"++++ATR-Faktoren für Trade {deal_id}: "
-            f"Limit: {limit_atr_factor:.2f} ATR {limit_level} old {position.limitLevel}"
-            f"Manueller Stop: {manual_stop_atr_factor:.2f} ATR "
+            f"++++ ATR-Faktoren für Trade {deal_id}: "
+            f"Limit: {limit_atr_factor:.2f} ATR {limit_level}, "
+            f"Manueller Stop: {manual_stop_atr_factor:.2f} ATR, "
             f"Provider Stop: {provider_stop_atr_factor:.2f} ATR"
         )
 
+        # 7️⃣ Änderungsprüfung
         limit_changed = abs(limit_level - position.limitLevel) >= 0.05 * atr
         stop_changed = abs(provider_stop_level - stop_level) >= 0.1 * atr
 
-        if stop_changed and not limit_changed:
-            self._tracer.info(" Nur der Stop-Level hat sich signifikant verändert.")
-        elif limit_changed and not stop_changed:
-            self._tracer.info(" Nur der Limit-Level hat sich signifikant verändert.")
-        elif stop_changed and limit_changed:
-            self._tracer.info(" Sowohl Stop- als auch Limit-Level haben sich signifikant verändert.")
-
-        if not stop_changed and not limit_changed:
-            self._tracer.info(" Weder Stop- noch Limit-Level haben sich wesentlich verändert. Kein API-Update nötig.")
+        if stop_changed or limit_changed:
+            self._tracer.info(f" Stop- oder Limit-Level wird aktualisiert.")
+            self._adjust_stop_level(deal_id, limit_level, provider_stop_level, deal_store)
+            return {"status": "success", "message": "Stop-Level aktualisiert"}
+        else:
+            self._tracer.info(f" Keine wesentliche Änderung. Kein Update nötig.")
             return {"status": "unchanged", "message": "Keine Anpassung erforderlich"}
 
-        self._tracer.info(f"#######Provider Stop auf {provider_stop_level} gesetzt.#######")
-        self._adjust_stop_level(deal_id, limit_level, provider_stop_level, deal_store)
-        return {"status": "success", "message": "Stop-Level aktualisiert"}
+    def _calculate_trailing_limit(self, current_price, atr, direction):
+        """Berechnet dynamisches Limit-Level bei 80% Gewinn."""
+        offset = 0.3 * atr
+        return current_price + offset if direction == "BUY" else current_price - offset
 
-    def _adjust_limit_level(self, limit_level, atr, profit_percent, direction):
-        """Erhöht das Limit-Level um 0.5 ATR, wenn der Preis > 80% des Limits ist."""
-        if profit_percent > 80 and limit_level:
-            self._tracer.debug("Limit-Level wird angepasst (80% erreicht)")
-            atr_factor = 0.88
-        elif profit_percent > 100 and limit_level:
-            atr_factor = 1
-        else:
-            return limit_level
-
-        if direction == "BUY":
-            return limit_level + atr_factor * atr
-        else:  # SELL
-            return limit_level - atr_factor * atr
-
-
-
-    def _calculate_new_stop(self, stop_level, price, atr, direction, profit):
-        """Berechnet ein dynamisches Stop-Level anhand des Profits und der Positionrichtung."""
-
-        # Dynamischer ATR-Multiplikator basierend auf Profit-Stufen
-        if profit < 30:
-            atr_multiplier = 1.3
-        elif profit < 70:
+    def _calculate_new_stop(self, stop_level, price, atr, direction, profit_percent):
+        """Berechnet ein dynamisches Stop-Level anhand des Profits."""
+        if profit_percent < 30:
             atr_multiplier = 1.0
-        elif profit < 90:
-            atr_multiplier = 0.6
+        elif profit_percent < 70:
+            atr_multiplier = 0.7
+        elif profit_percent < 90:
+            atr_multiplier = 0.4
         else:
             atr_multiplier = 0.3
 
         if direction == "BUY":
-            new_stop = max(stop_level, price - (atr_multiplier * atr))
+            return max(stop_level, price - (atr_multiplier * atr))
         else:  # SELL
-            new_stop = min(stop_level, price + (atr_multiplier * atr))
+            return min(stop_level, price + (atr_multiplier * atr))
 
-        self._tracer.info(
-            f"[Stop-Berechnung] Profit: {profit:.2f}%, ATR: {atr:.5f}, Richtung: {direction}, "
-            f"Multiplikator: {atr_multiplier}, Alter Stop: {stop_level}, Neuer Stop: {new_stop}"
-        )
-
-        return new_stop
+    def _calculate_atr_factor(self, level, current_price, atr, direction):
+        """Hilfsfunktion zur ATR-Faktor-Berechnung."""
+        if not level:
+            return 0
+        if direction == "BUY":
+            return (level - current_price) / atr
+        else:  # SELL
+            return (current_price - level) / atr
 
     def _apply_break_even_stop(self, new_stop_level, open_price, stop_level, spread, profit_percent):
         """Setzt den Stop auf Break-Even, wenn >50% Gewinn erreicht sind."""

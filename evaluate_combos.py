@@ -108,24 +108,25 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         online_combos = predictor_store.get_all_combos(fx)
 
-        best_features_online_0_5 = predictor_store.get_most_used_features(0.5)
-        best_features_online_0_2 = predictor_store.get_most_used_features(0.2)
+        best_features_online_0_5 = predictor_store.get_most_used_features(0.33)
+        best_features_online_0_2 = predictor_store.get_most_used_features(0.15)
 
         hours = 16
         data = random.choice([(1.3,0.5,0.75, 0.7),
                               (1.0,0.4,0.75, 0.7),
-                              (0.8, 0.8, 0.75, 0.7)
+                              (0.8, 0.8, 0.75, 0.7),
+                              (0.5, 0.5, 0.75, 0.7)
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]
         minimum_precission_train = data[2]
         minimum_precission_test = data[3]
 
-        combis = [(6, 0.1),
+        combis = [
+                  (6, 0.1),
                   (8, 0.1),
                   (7, 0.2),
-                  (9, 0.5),
-                  (10, 0.3)]
+                  (9, 0.5)]
 
         for combination_size_tuple in random.choices(combis,k=3):
 
