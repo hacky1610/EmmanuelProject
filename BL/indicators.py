@@ -79,9 +79,11 @@ class Indicators:
     EMA = "ema"
     EMA_10_SLOPE = "ema_10_slope"
     EMA_30_SLOPE = "ema_30_slope"
+    EMA_30_SLOPE_7 = "ema_30_slope_7"
     EMA_50_SLOPE = "ema_50_slope"
     EMA_HIST = "ema_hist"
     EMA_ALLIGATOR = "ema_alligator"
+    EMA_ALLIGATOR_2 = "ema_alligator_2"
     EMA_ALLIGATOR_HIST = "ema_alligator_hist"
     EMA10_50 = "ema_10_50"
     EMA20_CLOSE = "ema_20_close"
@@ -238,9 +240,11 @@ class Indicators:
         self._add_indicator(self.EMA, self._ema_predict)
         self._add_indicator(self.EMA_10_SLOPE, self._ema_10_slope)
         self._add_indicator(self.EMA_30_SLOPE, self._ema_30_slope)
+        self._add_indicator(self.EMA_30_SLOPE_7, self._ema_30_slope_7)
         self._add_indicator(self.EMA_50_SLOPE, self._ema_50_slope)
 
         self._add_indicator(self.EMA_ALLIGATOR, self._ema_alligator_predict)
+        self._add_indicator(self.EMA_ALLIGATOR_2, self._ema_alligator_predict_2)
         self._add_indicator(self.EMA_HIST, self._ema_hist_predict)
         self._add_indicator(self.EMA_ALLIGATOR_HIST, self._ema_alligator_hist_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
@@ -459,19 +463,22 @@ class Indicators:
     def _ema_30_slope(self, df):
         return self._check_slope(df.EMA_30)
 
+    def _ema_30_slope_7(self, df):
+        return self._check_slope(df.EMA_30,7)
+
     def _ema_50_slope(self, df):
         return self._check_slope(df.EMA_50)
 
-    def _check_slope(self, s:Series):
+    def _check_slope(self, s:Series, length:int = 3):
 
         diffs = s.diff()
         pos_sloap = diffs > 0
-        if pos_sloap[-3:].all():
+        if pos_sloap[-1 * length:].all():
             return TradeAction.BUY
 
         neg_sloap = diffs < 0
 
-        if neg_sloap[-3:].all():
+        if neg_sloap[-1 * length:].all():
             return TradeAction.SELL
 
         return TradeAction.NONE
@@ -620,6 +627,20 @@ class Indicators:
             return TradeAction.SELL
 
         return TradeAction.NONE
+
+    def _ema_alligator_predict_2(self, df):
+        current_ema_13 = df.EMA_13.iloc[-1]
+        current_ema_8 = df.EMA_8.iloc[-1]
+        current_ema_20 = df.EMA_20.iloc[-1]
+
+        if current_ema_8 > current_ema_13 > current_ema_20:
+            return TradeAction.BUY
+        elif current_ema_20 > current_ema_13 > current_ema_8:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+    
+
 
     def _ema_50_100(self, df):
         current_ema_50 = df.EMA_50.iloc[-1]

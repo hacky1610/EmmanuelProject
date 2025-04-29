@@ -86,6 +86,17 @@ low_spread_pairs = [
     "GBPNZD"
 ]
 
+def create_new_combos(original_list, replacement_values):
+    new_list = []
+
+    for item in original_list:
+        position = random.randint(0, len(item) - 1)  # Zufällige Position wählen
+        for replacement in random.choices(replacement_values, k=25):
+            new_item = item.copy()  # Kopie machen, damit Original nicht verändert wird
+            new_item[position] = replacement
+            new_list.append(new_item)
+
+    return new_list
 
 def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
@@ -107,6 +118,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         #    continue
 
         online_combos = predictor_store.get_all_combos(fx)
+        online_combos = online_combos + create_new_combos(online_combos, indicators.get_all_indicator_names())
 
         best_features_online_0_5 = predictor_store.get_most_used_features(0.33)
         best_features_online_0_2 = predictor_store.get_most_used_features(0.15)
