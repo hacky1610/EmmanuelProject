@@ -110,7 +110,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         if fx not in low_spread_pairs:
             continue
 
-        #fx = "USDSEK"
+        #fx = "EURCHF"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:

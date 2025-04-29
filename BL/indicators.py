@@ -80,6 +80,8 @@ class Indicators:
     EMA_10_SLOPE = "ema_10_slope"
     EMA_30_SLOPE = "ema_30_slope"
     EMA_30_SLOPE_7 = "ema_30_slope_7"
+    EMA_30_MOMENTUM = "ema_30_momentum"
+    EMA_30_MOMENTUM_0_5 = "ema_30_momentum_0_5"
     EMA_50_SLOPE = "ema_50_slope"
     EMA_PB = "ema_pb"
     EMA_PB_3 = "ema_pb_3"
@@ -249,6 +251,8 @@ class Indicators:
         self._add_indicator(self.EMA_ALLIGATOR_2, self._ema_alligator_predict_2)
         self._add_indicator(self.EMA_PB, self._ema_pullback_predict_default)
         self._add_indicator(self.EMA_PB_3, self._ema_pullback_predict_3atr)
+        self._add_indicator(self.EMA_MOMENTUM, self._ema_momentum_predict_default)
+        self._add_indicator(self.EMA_MOMENTUM_0_5, self._ema_momentum_predict_0_5)
         self._add_indicator(self.EMA_HIST, self._ema_hist_predict)
         self._add_indicator(self.EMA_ALLIGATOR_HIST, self._ema_alligator_hist_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
@@ -651,6 +655,27 @@ class Indicators:
             return TradeAction.BUY  # Rückkehr nach oben wahrscheinlich
         elif distance > threshold:
             return TradeAction.SELL  # Rückkehr nach unten wahrscheinlich
+
+        return TradeAction.NONE
+
+    def _ema_momentum_predict_default(self, df):
+        return self._ema_momentum_predict(df)
+
+    def _ema_momentum_predict_0_5(self, df):
+        return self._ema_momentum_predict(df,0.5)
+
+    def _ema_momentum_predict(self, df, factor=1.0):
+        current_ema = df.EMA_20.iloc[-1]
+        past_ema = df.EMA_20.iloc[-3]  # z. B. Veränderung über 5 Perioden
+        current_atr = df.ATR.iloc[-1]
+
+        threshold_factor = 1.0  # EMA muss mindestens um 1x ATR steigen
+        ema_increase = current_ema - past_ema
+
+        if ema_increase > threshold_factor * current_atr:
+            return TradeAction.BUY
+        elif ema_increase < -threshold_factor * current_atr:
+            return TradeAction.SELL  # optional: nur Long-Trades zulassen
 
         return TradeAction.NONE
 

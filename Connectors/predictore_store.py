@@ -63,11 +63,6 @@ class PredictorStore:
         # Feature-Häufigkeit berechnen
         feature_counts = Counter(features_list)
 
-        # Ergebnisse ausgeben
-        print("Feature-Häufigkeiten:")
-        #for feature, count in feature_counts.most_common():
-        #    print(f"{feature}: {count}")
-
         top_n = int(len(feature_counts) * top_factor)
 
 
