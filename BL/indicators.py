@@ -665,6 +665,9 @@ class Indicators:
         return self._ema_momentum_predict(df,0.5)
 
     def _ema_momentum_predict(self, df, factor=1.0):
+        if len(df) < 4:
+            return TradeAction.NONE
+
         current_ema = df.EMA_20.iloc[-1]
         past_ema = df.EMA_20.iloc[-3]  # z. B. Veränderung über 5 Perioden
         current_atr = df.ATR.iloc[-1]
