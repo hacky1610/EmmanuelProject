@@ -81,6 +81,8 @@ class Indicators:
     EMA_30_SLOPE = "ema_30_slope"
     EMA_30_SLOPE_7 = "ema_30_slope_7"
     EMA_50_SLOPE = "ema_50_slope"
+    EMA_PB = "ema_pb"
+    EMA_PB_3 = "ema_pb_3"
     EMA_HIST = "ema_hist"
     EMA_ALLIGATOR = "ema_alligator"
     EMA_ALLIGATOR_2 = "ema_alligator_2"
@@ -245,6 +247,8 @@ class Indicators:
 
         self._add_indicator(self.EMA_ALLIGATOR, self._ema_alligator_predict)
         self._add_indicator(self.EMA_ALLIGATOR_2, self._ema_alligator_predict_2)
+        self._add_indicator(self.EMA_PB, self._ema_pullback_predict_default)
+        self._add_indicator(self.EMA_PB_3, self._ema_pullback_predict_3atr)
         self._add_indicator(self.EMA_HIST, self._ema_hist_predict)
         self._add_indicator(self.EMA_ALLIGATOR_HIST, self._ema_alligator_hist_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
@@ -625,6 +629,28 @@ class Indicators:
             return TradeAction.BUY
         elif current_ema_13 > current_ema_8 > current_ema_5:
             return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _ema_pullback_predict_default(self,df):
+        return self._ema_pullback_predict(df)
+
+    def _ema_pullback_predict_3atr(self, df):
+        return self._ema_pullback_predict(df, threshold_factor=3)
+
+    def _ema_pullback_predict(self, df, ema="EMA_20", threshold_factor =2 ):
+        current_close = df.close.iloc[-1]
+        current_ema = df[ema].iloc[-1]
+        current_atr = df.ATR.iloc[-1]
+
+        threshold = threshold_factor * current_atr
+
+        distance = current_close - current_ema
+
+        if distance < -threshold:
+            return TradeAction.BUY  # Rückkehr nach oben wahrscheinlich
+        elif distance > threshold:
+            return TradeAction.SELL  # Rückkehr nach unten wahrscheinlich
 
         return TradeAction.NONE
 
