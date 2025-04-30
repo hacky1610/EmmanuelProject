@@ -1776,19 +1776,4 @@ class Indicators:
         else:
             return TradeAction.NONE
 
-    def parabolic_rsi_strategy(self,df, len_rsi=14, upper=70, lower=30, start=0.02, inc=0.02, max_acc=0.2):
-
-        finta.TA.PSAR()
-
-        s_sig_up = sig_up & (sar_rsi <= lower)
-        s_sig_dn = sig_dn & (sar_rsi >= upper)
-
-        # Entscheidung für die letzte Kerze
-        if s_sig_up.iloc[-1]:
-            return TradeAction.BUY
-        elif s_sig_dn.iloc[-1]:
-            return TradeAction.SELL
-        else:
-            return TradeAction.NONE
-
     # endregion
