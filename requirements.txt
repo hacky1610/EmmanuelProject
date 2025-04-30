@@ -9,7 +9,7 @@ dropbox==12.0.2
 pymongo==4.10.1
 tqdm==4.66.4
 scipy
-pylint==2.17.7
+pylint==3.3.4
 matplotlib
 
 
