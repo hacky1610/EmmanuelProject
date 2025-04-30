@@ -335,12 +335,11 @@ class IG:
         min_stop_distance = max(self.get_min_stop_distance(deal.epic) / scaling, 0.5 * atr)
 
         self._tracer.set_prefix(f"{ticker} {deal_id}")
-        self._tracer.info(f" Dynamische Mindest-Stop-Distanz: {min_stop_distance}")
-        self._tracer.info(
-            f" Open: {open_price}, Current: {current_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr}")
+        self._tracer.debug(f"Dynamische Mindest-Stop-Distanz: {min_stop_distance}")
 
         profit_percent, _ = self._calculate_profit_percentage(direction, open_price, limit_level, current_price)
-        self._tracer.info(f" Trade {deal_id} - Gewinn: {profit_percent:.2f}%")
+        self._tracer.info(
+            f"Open: {open_price}, Current: {current_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr} Gewinn: {profit_percent:.2f}%")
 
         # 1️⃣ Deal-Status-Update
         if not deal.reached_level:
@@ -349,7 +348,7 @@ class IG:
                 self._tracer.info(f" Trade {deal_id} hat 40% Gewinn erreicht. Stop-Logik wird ab jetzt aktiviert.")
                 deal_store.save(deal)
             else:
-                self._tracer.info(f" Trade {deal_id} hat noch nicht 40% erreicht. Kein Stop-Update.")
+                self._tracer.debug(f" Trade {deal_id} hat noch nicht 40% erreicht. Kein Stop-Update.")
                 return {"status": "pending", "message": "Noch kein Stop-Update nötig"}
 
         # 2️⃣ Limit und Trailing-Stop ab 80% Gewinn
@@ -361,14 +360,14 @@ class IG:
         if deal.is_manual_stop:
             if (direction == "BUY" and current_price <= deal.manual_stop_level) or \
                     (direction == "SELL" and current_price >= deal.manual_stop_level):
-                self._tracer.warning(
-                    f" ####### Trade {deal_id} erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!")
+                self._tracer.info(
+                    f"Erreicht manuellen Stop bei {deal.manual_stop_level} -> Schließe Trade!")
                 self._close_trade(deal_id, deal.size, direction)
                 return {"status": "closed", "message": f"Trade geschlossen bei {deal.manual_stop_level}"}
 
         # 4️⃣ Berechne neuen Stop-Level
         new_stop_level = self._calculate_new_stop(stop_level, current_price, atr, direction, profit_percent)
-        self._tracer.info(f" Neuer berechneter Stop: {new_stop_level}")
+        self._tracer.debug(f"Neuer berechneter Stop: {new_stop_level}")
 
         # 5️⃣ Validierung Stop-Level
         if (direction == "BUY" and new_stop_level > current_price - min_stop_distance) or \
@@ -385,7 +384,7 @@ class IG:
         else:
             provider_stop_level = new_stop_level
             deal.is_manual_stop = False
-            self._tracer.info(f" Stop-Level {provider_stop_level} ist gültig. Kein manueller Stop nötig.")
+            self._tracer.debug(f" Stop-Level {provider_stop_level} ist gültig. Kein manueller Stop nötig.")
 
         deal_store.save(deal)
 
@@ -395,8 +394,8 @@ class IG:
                                                             direction) if deal.is_manual_stop else 0
         provider_stop_atr_factor = self._calculate_atr_factor(provider_stop_level, current_price, atr, direction)
 
-        self._tracer.info(
-            f"++++ ATR-Faktoren für Trade {deal_id}: "
+        self._tracer.debug(
+            f"New ATR:"
             f"Limit: {limit_atr_factor:.2f} ATR {limit_level}, "
             f"Manueller Stop: {manual_stop_atr_factor:.2f} ATR, "
             f"Provider Stop: {provider_stop_atr_factor:.2f} ATR"
@@ -411,7 +410,7 @@ class IG:
             self._adjust_stop_level(deal_id, limit_level, provider_stop_level, deal_store)
             return {"status": "success", "message": "Stop-Level aktualisiert"}
         else:
-            self._tracer.info(f" Keine wesentliche Änderung. Kein Update nötig.")
+            self._tracer.debug(f" Keine wesentliche Änderung. Kein Update nötig.")
             return {"status": "unchanged", "message": "Keine Anpassung erforderlich"}
 
     def _calculate_trailing_limit(self, current_price, atr, direction):

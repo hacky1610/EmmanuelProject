@@ -226,7 +226,6 @@ class Trader:
         self._tracer.debug("End")
 
     def update_markets(self):
-        #self._close_after_time()
         self._intelligent_update()
         self.update_deals()
         self._fix_deals()
