@@ -7,8 +7,6 @@ from typing import List, NamedTuple, Any
 import re
 from datetime import datetime
 import pandas as pd
-from bson import ObjectId
-
 from BL import DataProcessor, measure_time
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
@@ -19,7 +17,6 @@ from Connectors.dropbox_cache import DropBoxCache
 from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Connectors.tiingo import TradeType
-from Predictors.generic_predictor import GenericPredictor
 from Tracing import Tracer
 from pandas import DataFrame
 from Predictors.base_predictor import BasePredictor
@@ -94,24 +91,9 @@ class Trader:
         self._cache = cache
         self._check_ig_performance = check_ig_performance
 
-    @staticmethod
-    def _get_spread(df: DataFrame, scaling: float) -> float:
-        """Berechnet den Spread basierend auf den Daten eines DataFrame.
-
-          Args:
-              df (DataFrame): Der DataFrame mit den Handelsdaten.
-              scaling (float): Der Skalierungsfaktor.
-
-          Returns:
-              float: Der berechnete Spread.
-          """
-        return (abs((df.close - df.close.shift(1))).median() * scaling) * 1.5
-
-    def _is_good_ticker(self, ticker: str, min_avg_profit: float, min_deal_count: int, days: int = 30) -> bool:
-        if not self._check_ig_performance:
-            return True
+    def _is_good_ticker(self, ticker: str, min_avg_profit: float, min_deal_count: int, days: int = 1) -> bool:
         deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker, days)
-        if len(deals) > min_deal_count:
+        if len(deals) >= min_deal_count:
             min_profit = min_avg_profit * len(deals)
             if deals.profit.sum() > min_profit:
                 self._tracer.debug(f"Profit {deals.profit.sum()} is greater than {min_profit}")
@@ -122,7 +104,7 @@ class Trader:
         else:
             self._tracer.debug("To less deals")
 
-        return False
+        return True
 
     def update_deals(self):
         hist = self._ig.get_transaction_history(3)
@@ -284,6 +266,11 @@ class Trader:
         if self._has_open_positions(symbol):
             self._tracer.debug(f"Already 2 open positions for {symbol}")
             return TradeResult.ERROR
+
+        if not self._is_good_ticker(symbol, 0.5, 4):
+            self._tracer.debug(f"BAD ticker {symbol}")
+            return TradeResult.ERROR
+
 
         indicators.init_caches(trade_df)
         predictors = self._get_predictors(symbol, indicators)
