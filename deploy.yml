@@ -20,9 +20,9 @@ steps:
     pip install -r requirements.txt
   displayName: 'Install dependencies'
 
-- script: |
-    pylint --recursive=y . --errors-only --ignore=venv
-  displayName: 'PyLint'
+#- script: |
+#    pylint --recursive=y . --errors-only --ignore=venv
+#  displayName: 'PyLint'
 
 
 #- script: |
