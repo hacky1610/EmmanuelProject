@@ -341,6 +341,9 @@ class IG:
         self._tracer.info(
             f"Open: {open_price}, Current: {current_price}, Stop: {stop_level}, Limit: {limit_level}, ATR: {atr} Gewinn: {profit_percent:.2f}%")
 
+        deal.current_profit_percentage = profit_percent
+        deal_store.save(deal)
+
         # 1️⃣ Deal-Status-Update
         if not deal.reached_level:
             if profit_percent >= 40:

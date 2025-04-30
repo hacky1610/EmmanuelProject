@@ -31,7 +31,9 @@ class Deal:
                  is_manual_stop: bool = False,
                  manual_stop:float = None,
                  touched_50:bool = False,
-                 reached_level:bool = False):
+                 reached_level:bool = False,
+                 closed_by_error:bool = False,
+                 current_profit_percentage: float = 0.0):
         self.ticker = ticker
         self.status = status
         self.dealId = dealId
@@ -57,6 +59,8 @@ class Deal:
         self.manual_stop_level = manual_stop_level
         self.touched_50 = touched_50
         self.reached_level = reached_level
+        self.closed_by_error = closed_by_error
+        self.current_profit_percentage = current_profit_percentage
 
     @staticmethod
     def Create(data: dict):
@@ -85,13 +89,26 @@ class Deal:
             is_manual_stop=data.get("is_manual_stop", False),
             manual_stop_level=data.get("manual_stop_level", None),
             touched_50=data.get("touched_50", False),
-            reached_level=data.get("reached_level", False)
+            reached_level=data.get("reached_level", False),
+            closed_by_error=data.get("closed_by_error", False),
+            current_profit_percentage=data.get("current_profit_percentage", 0.0)
         )
 
     def __str__(self):
         return f"{self.epic} {self.direction} {self.size} {self.open_date_ig_str} {self.close_date_ig_datetime} {self.profit} "
 
     def close(self):
+        self.status = "Closed"
+
+    def is_closed(self):
+        return self.status == "Closed"
+
+    def close_by_error(self):
+        self.closed_by_error = True
+        if self.current_profit_percentage > 0:
+            self.profit = 5
+        else:
+            self.profit = -5
         self.status = "Closed"
 
     def get_predictor_scan_id(self):
@@ -130,7 +147,10 @@ class Deal:
             "size": self.size,
             "manual_stop_level":self.manual_stop_level,
             "touched_50": self.touched_50,
-            "reached_level": self.reached_level
+            "reached_level": self.reached_level,
+            "closed_by_error": self.closed_by_error,
+            "current_profit_percentage": self.current_profit_percentage
+
         }
 
 

@@ -145,9 +145,10 @@ class Trader:
         deals = self._deal_storage.get_open_deals()
         for deal in deals:
             if deal.dealId not in opened.dealId.values:
-                self._tracer.error(f"Unable to find open {deal.ticker} {deal.open_date_ig_str}")
-                deal.close()
-                self._deal_storage.save(deal)
+                if not deal.is_closed():
+                    self._tracer.error(f"Unable to find open {deal.ticker} {deal.open_date_ig_str}")
+                    deal.close_by_error()
+                    self._deal_storage.save(deal)
 
     @staticmethod
     def _calc_profit(ig_deal, m, scaling) -> float:
