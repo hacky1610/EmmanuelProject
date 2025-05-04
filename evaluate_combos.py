@@ -64,26 +64,12 @@ _reporting = Reporting(predictor_store=predictor_store)
 # endregion
 
 low_spread_pairs = [
-    "EURUSD",
-    "USDJPY",
-    "GBPUSD",
-    "AUDUSD",
-    "USDCHF",
-    "NZDUSD",
-    "EURJPY",
-    "EURGBP",
-    "USDCAD",
-    "GBPJPY",
-    "AUDJPY",
-    "EURCHF",
-    "EURAUD",
-    "GBPCHF",
-    "EURCAD",
-    "GBPAUD",
-    "CHFJPY",
-    "CADJPY",
-    "NZDJPY",
-    "GBPNZD"
+    "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "USDCHF", "NZDUSD",
+    "EURJPY", "EURGBP", "USDCAD", "GBPJPY", "AUDJPY", "EURCHF",
+    "EURAUD", "GBPCHF", "EURCAD", "GBPAUD", "CHFJPY", "CADJPY",
+    "NZDJPY", "GBPNZD",
+    "USDHKD", "USDSGD", "EURSGD", "AUDNZD", "CADCHF", "NZDCAD",
+    "EURNZD", "AUDCAD", "NOKSEK", "USDNOK"
 ]
 
 def create_new_combos(original_list, replacement_values):
@@ -110,7 +96,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         if fx not in low_spread_pairs:
             continue
 
-        #fx = "EURCHF"
+        #fx = "EURAUD"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:

@@ -168,26 +168,12 @@ class Trader:
         self._tracer.debug("Start")
         currency_markets = IG.IG.get_markets_offline()
         low_spread_pairs = [
-            "EURUSD",
-            "USDJPY",
-            "GBPUSD",
-            "AUDUSD",
-            "USDCHF",
-            "NZDUSD",
-            "EURJPY",
-            "EURGBP",
-            "USDCAD",
-            "GBPJPY",
-            "AUDJPY",
-            "EURCHF",
-            "EURAUD",
-            "GBPCHF",
-            "EURCAD",
-            "GBPAUD",
-            "CHFJPY",
-            "CADJPY",
-            "NZDJPY",
-            "GBPNZD"
+            "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "USDCHF", "NZDUSD",
+            "EURJPY", "EURGBP", "USDCAD", "GBPJPY", "AUDJPY", "EURCHF",
+            "EURAUD", "GBPCHF", "EURCAD", "GBPAUD", "CHFJPY", "CADJPY",
+            "NZDJPY", "GBPNZD",
+            "USDHKD", "USDSGD", "EURSGD", "AUDNZD", "CADCHF", "NZDCAD",
+            "EURNZD", "AUDCAD", "NOKSEK", "USDNOK"
         ]
 
         max_workers = os.cpu_count() or 4  # Falls os.cpu_count() None zurückgibt, setze Standardwert 4
