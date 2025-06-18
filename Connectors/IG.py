@@ -389,7 +389,7 @@ class IG:
         deal.current_profit_percentage = profit_percent
         deal_store.save(deal)
 
-        if profit_percent != 0:
+        if profit_percent < -70:
             if deal.size == len(deal_store.get_open_deals_by_ticker(deal.ticker)) and deal.size <= 4:
                 m = IG.find_market_by_symbol(deal.ticker)
                 stop = atr * 1.2 * m["scaling"]
