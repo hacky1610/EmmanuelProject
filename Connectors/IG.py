@@ -9,6 +9,7 @@ from BL import DataProcessor, BaseReader
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
 from BL.indicators import Indicators
+from BL.trader import TradeResult
 from Connectors.deal_store import DealStore, Deal
 from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
@@ -321,6 +322,50 @@ class IG:
         df = tiingo.load_trade_data(symbol=symbol, dp=DataProcessor(), trade_type=TradeType.FX)
         return df.iloc[-1].ATR
 
+    def _execute_trade(self,
+                       symbol,
+                       epic,
+                       stop,
+                       limit,
+                       size,
+                       currency,
+                       trade_function) -> (TradeResult, dict):
+        """Führt den Handel für ein bestimmtes Symbol durch.
+
+                Args:
+                    symbol (str): Das Handelssymbol.
+                    epic (str): Die Epic-Nummer für das Handelsinstrument.
+                    stop (float): Der Stop-Level für den Trade.
+                    limit (float): Der Limit-Level für den Trade.
+                    size (float): Die Größe des Trades.
+                    currency (str): Die Währung des Trades.
+                    trade_function: Die Handelsfunktion (z.B. self._ig.buy oder self._ig.sell).
+
+                Returns:
+                    TradeResult: Das Ergebnis des Handels (SUCCESS, NOACTION oder ERROR).
+                """
+        result, deal_response = trade_function(epic, stop, limit, size, currency)
+        if result:
+            self._tracer.write(f"Trade {symbol} and evaluation result.")
+            return TradeResult.SUCCESS, deal_response
+        else:
+            self._tracer.error(f"Error while trading {symbol}")
+            return TradeResult.ERROR, deal_response
+
+    @staticmethod
+    def find_market_by_symbol(symbol):
+        """
+        Sucht nach einem Markt mit einem bestimmten Symbol in der Markt-Liste.
+
+        :param markets: Liste von Markt-Dictionaries
+        :param symbol: Das Symbol, nach dem gesucht werden soll (z.B. 'EURUSD')
+        :return: Das Markt-Dictionary mit dem passenden Symbol oder None, wenn nicht gefunden
+        """
+        for market in IG.get_markets_offline():
+            if market['symbol'] == symbol:
+                return market
+        return None
+
     def set_intelligent_stop_level(self, position, deal, deal_store, scaling, tiingo):
         """Hauptmethode zur intelligenten Anpassung von Stop- und Limit-Level."""
         open_price = position.level
@@ -343,6 +388,39 @@ class IG:
 
         deal.current_profit_percentage = profit_percent
         deal_store.save(deal)
+
+        if profit_percent != 0:
+            if deal.size == len(deal_store.get_open_deals_by_ticker(deal.ticker)) and deal.size <= 4:
+                m = IG.find_market_by_symbol(deal.ticker)
+                stop = atr * 1.2 * m["scaling"]
+                limit = atr * 0.8 * m["scaling"]
+                if deal.direction == "buy":
+
+                    res, deal_response = self._execute_trade(deal.ticker,deal.epic,stop, limit,deal.size + 1,m["currency"],self.buy)
+                else:
+                    res, deal_response = self._execute_trade(deal.ticker, deal.epic, stop,
+                                                             limit, deal.size + 1, m["currency"],
+                                                             self.sell)
+
+                    if res == TradeResult.SUCCESS:
+                        self._tracer.debug("Save Deal in db")
+                        date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
+                        date_string = date_string.group().replace(" ", "T")
+                        manual_stop_level = None
+
+
+                        deal_store.save(Deal(ticker=deal.ticker,
+                                                     is_manual_stop=False,
+                                                     dealReference=deal_response["dealReference"],
+                                                     dealId=deal_response["dealId"],
+                                                     epic=deal.epic, direction=deal.direction, account_type="DEMO",
+                                                     open_date_ig_str=date_string,
+                                                     manual_stop_level=manual_stop_level,
+                                                     open_date_ig_datetime=datetime.strptime(date_string,
+                                                                                             '%Y-%m-%dT%H:%M:%S'),
+                                                     stop_factor=stop, limit_factor=limit,
+                                                     predictor_scan_id=deal.predictor_scan_id,
+                                                     size=deal.size + 1))
 
         # 1️⃣ Deal-Status-Update
         if not deal.reached_level:

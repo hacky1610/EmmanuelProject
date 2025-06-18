@@ -251,7 +251,7 @@ class Trader:
             return TradeResult.ERROR
 
         if self._has_open_positions(symbol):
-            self._tracer.debug(f"Already 2 open positions for {symbol}")
+            self._tracer.debug(f"Already 1 open positions for {symbol}")
             return TradeResult.ERROR
 
         if not self._is_good_ticker(symbol, 0.5, 4):
@@ -274,7 +274,7 @@ class Trader:
 
     def _has_open_positions(self, symbol: str) -> bool:
         open_deals = self._deal_storage.get_open_deals_by_ticker(symbol)
-        return len(open_deals) >= 2
+        return len(open_deals) >= 1
 
     @staticmethod
     def _get_actions_df(predictors: List[DeepPredictor], trade_df: DataFrame, indicators: Any) -> DataFrame:
@@ -307,8 +307,8 @@ class Trader:
             if result == TradeResult.SUCCESS:
                 self._tracer.info("One position opened")
                 opened += 1
-                if opened == 2:
-                    self._tracer.info("Break because 2 positions opened")
+                if opened == 1:
+                    self._tracer.info("Break because 1 positions opened")
                     break
         return TradeResult.SUCCESS if opened > 0 else TradeResult.NOACTION
 
@@ -376,10 +376,9 @@ class Trader:
             return TradeResult.ERROR
 
         signal = predictor.predict(buy_actions_df, sell_actions_df)
-        #signal = TradeAction.SELL
         market = self._market_store.get_market(config.symbol)
-        stop = trade_df.ATR.iloc[-1] * predictor.get_atr_factor_stop() * config.scaling
-        limit = trade_df.ATR.iloc[-1] * predictor.get_atr_factor_limit() * config.scaling
+        stop = trade_df.ATR.iloc[-1] * 0.8 * config.scaling
+        limit = trade_df.ATR.iloc[-1] * 1.2 * config.scaling
 
         if signal == TradeAction.NONE or signal == TradeAction.BOTH:
                 return TradeResult.NOACTION

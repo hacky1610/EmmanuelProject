@@ -18,7 +18,7 @@ import dropbox
 from Tracing.MultiTracer import MultiTracer
 from Tracing.StreamTracer import StreamTracer
 
-if os.name == 'nt':
+if os.name == 'nt' or os.name == "posix":
     account_type = "DEMO"
     conf_reader = ConfigReader(False)
 else:
