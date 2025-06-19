@@ -13,7 +13,7 @@ class PredictorStore:
 
     def __init__(self, db: Database):
 
-        self._collection = db["Predictors_Combo2"]
+        self._collection = db["Predictors_Combo"]
 
     def save(self, predictor: BasePredictor, overwrite: bool = True):
         query = {"_id": predictor.get_id()}
