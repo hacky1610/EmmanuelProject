@@ -29,6 +29,7 @@ class Indicators:
     # region Static Members
     # region RSI
     RSI = "rsi"
+    RSI_BORDER = "rsi_border"
     RSI_LIMIT = "rsi_limit"
     RSI_LIMIT_4H = "rsi_limit_4h"
     RSI_LIMIT_12H = "rsi_limit_12h"
@@ -59,6 +60,7 @@ class Indicators:
     # endregion
     # MACD
     MACD = "macd"
+    MACD_TURN = "macd_turn"
     MACD_ZERO = "macd_zero"
     MACDCROSSING = "macd_crossing"
     MACDSINGALDIFF = "macd_signal_diff"
@@ -158,6 +160,7 @@ class Indicators:
     BB_MIDDLE_CROSS = "bb_middle_crossing"
     BB_MIDDLE_CROSS_4H = "bb_middle_crossing_4h"
     BB_BORDER_CROSS = "bb_border_crossing"
+    BB_BORDER_LIMIT = "bb_border_limit"
     BB_SQUEEZE = "bb_sqeeze"
     BB_SQUEEZE_BOTH = "bb_sqeeze_both_direction"
     BB_SQUEEZE_BOTH_4H = "bb_sqeeze_both_direction_4h"
@@ -195,6 +198,7 @@ class Indicators:
 
         self._add_indicator(self.RSI_CONVERGENCE_4H, self._rsi_convergence_predict3_4h)
         self._add_indicator(self.RSI, self._rsi_predict)
+        self._add_indicator(self.RSI_BORDER,self._rsi_border_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
         self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
         self._add_indicator(self.RSI_LIMIT_12H, self._rsi_limit_predict_12h)
@@ -223,6 +227,7 @@ class Indicators:
 
         # MACD
         self._add_indicator(self.MACD, self._macd_predict)
+        self._add_indicator(self.MACD_TURN, self._macd_turn)
         self._add_indicator(self.MACD_SLOPE, self._macd_slope_predict)
         self._add_indicator(self.MACD_SLOPE_4H, self._macd_slope_predict_4h)
         self._add_indicator(self.MACD_MAX, self._macd_max_predict)
@@ -337,6 +342,7 @@ class Indicators:
         self._add_indicator(self.BB_SQUEEZE_LENGTH_BREAKOUT_4H, self._bb_squeeze_length_breakout_4h)
 
         self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
+        self._add_indicator(self.BB_BORDER_LIMIT, self._bb_border_limit_predict)  # BAD
 
         # ICHIMOKU
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
@@ -845,6 +851,15 @@ class Indicators:
 
         return TradeAction.NONE
 
+    def _rsi_border_predict(self, df):
+        current_rsi = df.RSI.iloc[-1]
+        if current_rsi < 30:
+            return TradeAction.BUY
+        elif current_rsi > 70:
+            return TradeAction.SEll
+
+        return TradeAction.NONE
+
     def _rsi_limit_predict(self, df):
         return self._oscillator_limit(df, "RSI", 50, 70, 30)
 
@@ -1134,6 +1149,30 @@ class Indicators:
         else:
             return TradeAction.SELL
 
+    def _macd_turn(elf, df):
+        if len(df) < 3:
+            return TradeAction.NONE
+
+        # Aktuelle und vorherige Histogramm-Differenz berechnen
+        macd_now = df.MACD.iloc[-1]
+        signal_now = df.SIGNAL.iloc[-1]
+        macd_prev = df.MACD.iloc[-2]
+        signal_prev = df.SIGNAL.iloc[-2]
+
+        hist_now = macd_now - signal_now
+        hist_prev = macd_prev - signal_prev
+
+        # Bedingung: Histogramm dreht nach oben
+        if hist_now > hist_prev and hist_prev < 0:
+            return TradeAction.BUY
+
+        if hist_now < hist_prev and hist_prev > 0:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+
+
     def _macd_convergence_predict(self, df):
         return self._convergence_predict(df, "MACD")
 
@@ -1242,6 +1281,18 @@ class Indicators:
         if close > bb_lower and len(period[period.close < period.BB_LOWER]) > 0:
             return TradeAction.BUY
         elif close < bb_upper and len(period[close > period.BB_UPPER]) > 0:
+            return TradeAction.SELL
+
+        return TradeAction.NONE
+
+    def _bb_border_limit_predict(self, df):
+        bb_lower = df.BB_LOWER.iloc[-1]
+        bb_upper = df.BB_UPPER.iloc[-1]
+        close = df.close.iloc[-1]
+
+        if close < bb_lower:
+            return TradeAction.BUY
+        elif close > bb_upper:
             return TradeAction.SELL
 
         return TradeAction.NONE

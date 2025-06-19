@@ -93,6 +93,15 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         fx = market["symbol"]
 
+        ct = CombinationTrainer(cache=cache,
+                                indicators=indicators,
+                                predictor_store=predictor_store,
+                                test_mode=True)
+
+        ct._save_predictor(fx,"",6, ["rsi_border","bb_border_limit", "adx", "macd_turn"],1,1,10,1.2,0.8,1,1,10,100)
+        continue
+
+
         if fx not in low_spread_pairs:
             continue
 
@@ -182,6 +191,7 @@ while True:
                       tracer=_tracer,
                       cache=_cache,
                       simulation=_simulation)
+        print("")
     except Exception as ex:
         traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
         print(f"MainException: {ex} File:{traceback_str}")
