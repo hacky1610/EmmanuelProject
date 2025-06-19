@@ -856,7 +856,7 @@ class Indicators:
         if current_rsi < 30:
             return TradeAction.BUY
         elif current_rsi > 70:
-            return TradeAction.SEll
+            return TradeAction.SELL
 
         return TradeAction.NONE
 
