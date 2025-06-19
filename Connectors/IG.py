@@ -392,8 +392,16 @@ class IG:
         if profit_percent < -70:
             if deal.size == len(deal_store.get_open_deals_by_ticker(deal.ticker)) and deal.size <= 4:
                 m = IG.find_market_by_symbol(deal.ticker)
-                stop = atr * 1.2 * m["scaling"]
-                limit = atr * 0.8 * m["scaling"]
+                if deal.size == 1:
+                    stop = atr * 2.0 * m["scaling"]
+                    limit = atr * 1.7 * m["scaling"]
+                if deal.size == 2:
+                    stop = atr * 1.5 * m["scaling"]
+                    limit = atr * 1.1 * m["scaling"]
+                if deal.size == 3:
+                    stop = atr * 1.0 * m["scaling"]
+                    limit = atr * 0.7 * m["scaling"]
+
                 if deal.direction == "buy":
 
                     res, deal_response = self._execute_trade(deal.ticker,deal.epic,stop, limit,deal.size + 1,m["currency"],self.buy)
@@ -502,11 +510,11 @@ class IG:
     def _calculate_new_stop(self, stop_level, price, atr, direction, profit_percent):
         """Berechnet ein dynamisches Stop-Level anhand des Profits."""
         if profit_percent < 30:
-            atr_multiplier = 1.0
+            atr_multiplier = 1.5
         elif profit_percent < 70:
-            atr_multiplier = 0.7
+            atr_multiplier = 1.0
         elif profit_percent < 90:
-            atr_multiplier = 0.4
+            atr_multiplier = 0.6
         else:
             atr_multiplier = 0.3
 

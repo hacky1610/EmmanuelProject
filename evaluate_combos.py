@@ -93,13 +93,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         fx = market["symbol"]
 
-        ct = CombinationTrainer(cache=cache,
-                                indicators=indicators,
-                                predictor_store=predictor_store,
-                                test_mode=True)
 
-        ct._save_predictor(fx,"",6, ["rsi_border","bb_border_limit", "adx", "macd_turn"],1,1,10,1.2,0.8,1,1,10,100)
-        continue
+        #ct._save_predictor(fx,"",6, ["rsi_border","bb_border_limit", "adx", "macd_turn"],1,1,10,1.2,0.8,1,1,10,100)
+        #continue
 
 
         if fx not in low_spread_pairs:
@@ -119,10 +115,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         best_features_online_0_2 = predictor_store.get_most_used_features(0.15)
 
         hours = 16
-        data = random.choice([(1.3,0.5,0.75, 0.7,22),
-                              (1.0,0.4,0.75, 0.7,22),
-                              (0.8, 0.8, 0.8, 0.7,29),
-                              (0.5, 0.5, 0.8, 0.7,29)
+        data = random.choice([(2.5,1.9,0.75, 0.7,22),
+                              (2.5,1.9,0.66, 0.66,22),
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]
