@@ -172,7 +172,7 @@ class Trader:
             "EURJPY", "EURGBP", "USDCAD", "GBPJPY", "AUDJPY", "EURCHF",
             "EURAUD", "GBPCHF", "EURCAD", "GBPAUD", "CHFJPY", "CADJPY",
             "NZDJPY", "GBPNZD",
-            "USDHKD", "USDSGD", "EURSGD", "AUDNZD", "CADCHF", "NZDCAD",
+            "USDHKD", "USDSGD", "AUDNZD", "CADCHF", "NZDCAD",
             "EURNZD", "AUDCAD", "NOKSEK", "USDNOK"
         ]
 
