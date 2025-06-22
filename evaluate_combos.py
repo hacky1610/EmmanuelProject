@@ -124,11 +124,10 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         minimum_precission_test = data[3]
         min_train_reward=data[4]
 
-        combis = [
+        combis = [(4, 0.1),
                   (6, 0.1),
                   (8, 0.1),
-                  (7, 0.2),
-                  (9, 0.5)]
+                  (7, 0.2)]
 
         for combination_size_tuple in random.choices(combis,k=3):
 

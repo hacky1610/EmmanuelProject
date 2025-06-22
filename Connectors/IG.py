@@ -318,8 +318,8 @@ class IG:
             self._tracer.debug(f"Current profit {diff} is greate than limit {limit}")
         return ready
 
-    def _get_atr(self, tiingo, symbol:str):
-        df = tiingo.load_trade_data(symbol=symbol, dp=DataProcessor(), trade_type=TradeType.FX)
+    def _get_atr(self, df):
+
         return df.iloc[-1].ATR
 
     def _execute_trade(self,
@@ -376,7 +376,8 @@ class IG:
         limit_level = position.limitLevel
         deal_id = position.dealId
         ticker = position.instrumentName.replace("/", "").replace(" Mini", "")
-        atr = self._get_atr(tiingo, ticker)
+        df = tiingo.load_trade_data(symbol=ticker, dp=DataProcessor(), trade_type=TradeType.FX)
+        atr = self._get_atr(df)
         min_stop_distance = max(self.get_min_stop_distance(deal.epic) / scaling, 0.5 * atr)
 
         self._tracer.set_prefix(f"{ticker} {deal_id}")
@@ -401,13 +402,16 @@ class IG:
                 if deal.size == 3:
                     stop = atr * 1.0 * m["scaling"]
                     limit = atr * 0.7 * m["scaling"]
+                new_deal_size = deal.size + 1
+
+                self._tracer.info(f"Open dragen trade {deal.direction} {deal.dealId} Size: {new_deal_size}")
 
                 if deal.direction == "buy":
 
-                    res, deal_response = self._execute_trade(deal.ticker,deal.epic,stop, limit,deal.size + 1,m["currency"],self.buy)
+                    res, deal_response = self._execute_trade(deal.ticker,deal.epic,stop, limit,new_deal_size,m["currency"],self.buy)
                 else:
                     res, deal_response = self._execute_trade(deal.ticker, deal.epic, stop,
-                                                             limit, deal.size + 1, m["currency"],
+                                                             limit, new_deal_size, m["currency"],
                                                              self.sell)
 
                     if res == TradeResult.SUCCESS:
@@ -428,7 +432,7 @@ class IG:
                                                                                              '%Y-%m-%dT%H:%M:%S'),
                                                      stop_factor=stop, limit_factor=limit,
                                                      predictor_scan_id=deal.predictor_scan_id,
-                                                     size=deal.size + 1))
+                                                     size=new_deal_size))
 
         # 1️⃣ Deal-Status-Update
         if not deal.reached_level:
