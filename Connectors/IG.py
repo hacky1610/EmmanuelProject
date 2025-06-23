@@ -421,18 +421,18 @@ class IG:
                     manual_stop_level = None
 
 
-                    deal_store.save(Deal(ticker=deal.ticker,
-                                                 is_manual_stop=False,
-                                                 dealReference=deal_response["dealReference"],
-                                                 dealId=deal_response["dealId"],
-                                                 epic=deal.epic, direction=deal.direction, account_type="DEMO",
-                                                 open_date_ig_str=date_string,
-                                                 manual_stop_level=manual_stop_level,
-                                                 open_date_ig_datetime=datetime.strptime(date_string,
-                                                                                         '%Y-%m-%dT%H:%M:%S'),
-                                                 stop_factor=stop, limit_factor=limit,
-                                                 predictor_scan_id=deal.predictor_scan_id,
-                                                 size=new_deal_size))
+                deal_store.save(Deal(ticker=deal.ticker,
+                                             is_manual_stop=False,
+                                             dealReference=deal_response["dealReference"],
+                                             dealId=deal_response["dealId"],
+                                             epic=deal.epic, direction=deal.direction, account_type="DEMO",
+                                             open_date_ig_str=date_string,
+                                             manual_stop_level=manual_stop_level,
+                                             open_date_ig_datetime=datetime.strptime(date_string,
+                                                                                     '%Y-%m-%dT%H:%M:%S'),
+                                             stop_factor=stop, limit_factor=limit,
+                                             predictor_scan_id=deal.predictor_scan_id,
+                                             size=new_deal_size))
 
         # 1️⃣ Deal-Status-Update
         if not deal.reached_level:
@@ -475,9 +475,17 @@ class IG:
                 self._tracer.info(f" Manuellen Stop auf {new_stop_level} gesetzt.")
             provider_stop_level = current_price - min_stop_distance if direction == "BUY" else current_price + min_stop_distance
         else:
-            provider_stop_level = new_stop_level
+            # Nur anpassen, wenn der neue Stop günstiger ist
+            if direction == "BUY" and new_stop_level > stop_level:
+                provider_stop_level = new_stop_level
+                self._tracer.debug(f" Stop-Level {provider_stop_level} ist gültig. Kein manueller Stop nötig.")
+            elif direction == "SELL" and new_stop_level < stop_level:
+                provider_stop_level = new_stop_level
+                self._tracer.debug(f" Stop-Level {provider_stop_level} ist gültig. Kein manueller Stop nötig.")
+            else:
+                provider_stop_level = stop_level  # Behalte alten Stop
+                self._tracer.debug(f" Stop-Level {stop_level} beibehalten")
             deal.is_manual_stop = False
-            self._tracer.debug(f" Stop-Level {provider_stop_level} ist gültig. Kein manueller Stop nötig.")
 
         deal_store.save(deal)
 
