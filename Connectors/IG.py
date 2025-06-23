@@ -390,7 +390,7 @@ class IG:
         deal.current_profit_percentage = profit_percent
         deal_store.save(deal)
 
-        if profit_percent < -700:
+        if profit_percent < -70:
             if deal.size == len(deal_store.get_open_deals_by_ticker(deal.ticker)) and deal.size <= 4:
                 m = IG.find_market_by_symbol(deal.ticker)
                 if deal.size == 1:
@@ -414,25 +414,25 @@ class IG:
                                                              limit, new_deal_size, m["currency"],
                                                              self.sell)
 
-                    if res == TradeResult.SUCCESS:
-                        self._tracer.debug("Save Deal in db")
-                        date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
-                        date_string = date_string.group().replace(" ", "T")
-                        manual_stop_level = None
+                if res == TradeResult.SUCCESS:
+                    self._tracer.debug("Save Deal in db")
+                    date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
+                    date_string = date_string.group().replace(" ", "T")
+                    manual_stop_level = None
 
 
-                        deal_store.save(Deal(ticker=deal.ticker,
-                                                     is_manual_stop=False,
-                                                     dealReference=deal_response["dealReference"],
-                                                     dealId=deal_response["dealId"],
-                                                     epic=deal.epic, direction=deal.direction, account_type="DEMO",
-                                                     open_date_ig_str=date_string,
-                                                     manual_stop_level=manual_stop_level,
-                                                     open_date_ig_datetime=datetime.strptime(date_string,
-                                                                                             '%Y-%m-%dT%H:%M:%S'),
-                                                     stop_factor=stop, limit_factor=limit,
-                                                     predictor_scan_id=deal.predictor_scan_id,
-                                                     size=new_deal_size))
+                    deal_store.save(Deal(ticker=deal.ticker,
+                                                 is_manual_stop=False,
+                                                 dealReference=deal_response["dealReference"],
+                                                 dealId=deal_response["dealId"],
+                                                 epic=deal.epic, direction=deal.direction, account_type="DEMO",
+                                                 open_date_ig_str=date_string,
+                                                 manual_stop_level=manual_stop_level,
+                                                 open_date_ig_datetime=datetime.strptime(date_string,
+                                                                                         '%Y-%m-%dT%H:%M:%S'),
+                                                 stop_factor=stop, limit_factor=limit,
+                                                 predictor_scan_id=deal.predictor_scan_id,
+                                                 size=new_deal_size))
 
         # 1️⃣ Deal-Status-Update
         if not deal.reached_level:
