@@ -1,6 +1,7 @@
 import datetime
 from typing import List, Optional
 
+from bson import ObjectId
 from pandas import DataFrame
 from pymongo.database import Database
 from pymongo.results import UpdateResult
@@ -33,7 +34,8 @@ class Deal:
                  touched_50:bool = False,
                  reached_level:bool = False,
                  closed_by_error:bool = False,
-                 current_profit_percentage: float = 0.0):
+                 current_profit_percentage: float = 0.0,
+                 next_dragen_deal_id: ObjectId = None):
         self.ticker = ticker
         self.status = status
         self.dealId = dealId
@@ -61,6 +63,7 @@ class Deal:
         self.reached_level = reached_level
         self.closed_by_error = closed_by_error
         self.current_profit_percentage = current_profit_percentage
+        self.next_dragen_deal_id = next_dragen_deal_id
 
     @staticmethod
     def Create(data: dict):
@@ -91,7 +94,8 @@ class Deal:
             touched_50=data.get("touched_50", False),
             reached_level=data.get("reached_level", False),
             closed_by_error=data.get("closed_by_error", False),
-            current_profit_percentage=data.get("current_profit_percentage", 0.0)
+            current_profit_percentage=data.get("current_profit_percentage", 0.0),
+            next_dragen_deal_id=data.get("next_dragen_deal_id",None)
         )
 
     def __str__(self):
@@ -110,6 +114,12 @@ class Deal:
         else:
             self.profit = -5
         self.status = "Closed"
+
+    def get_next_dragen_id(self):
+        return self.next_dragen_deal_id
+
+    def set_next_dragen_id(self, dragen_id):
+        self.next_dragen_deal_id = dragen_id
 
     def get_predictor_scan_id(self):
         return self.predictor_scan_id
@@ -149,7 +159,8 @@ class Deal:
             "touched_50": self.touched_50,
             "reached_level": self.reached_level,
             "closed_by_error": self.closed_by_error,
-            "current_profit_percentage": self.current_profit_percentage
+            "current_profit_percentage": self.current_profit_percentage,
+            "next_dragen_deal_id": self.next_dragen_deal_id
 
         }
 
@@ -165,9 +176,11 @@ class DealStore:
         if self._collection.find_one({"open_date_ig_str": deal.open_date_ig_str, "account_type": self._account_type}):
             self._collection.update_one({"open_date_ig_str": deal.open_date_ig_str,
                                          "account_type": self._account_type}, {"$set": deal.to_dict()})
+            return None
         else:
             deal.account_type = self._account_type  #TODO
-            self._collection.insert_one(deal.to_dict())
+            inserted_element = self._collection.insert_one(deal.to_dict())
+            return inserted_element.inserted_id
 
     def get_deal_by_ig_id(self, ig_date: str, ticker: str) -> Optional[Deal]:
         res = self._collection.find_one(
