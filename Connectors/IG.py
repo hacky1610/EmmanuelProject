@@ -466,14 +466,33 @@ class IG:
         if (direction == "BUY" and new_stop_level > current_price - min_stop_distance) or \
                 (direction == "SELL" and new_stop_level < current_price + min_stop_distance):
             self._tracer.warning(
-                f" Neuer Stop {new_stop_level} zu nah am aktuellen Preis {current_price}. Verwende manuellen Stop.")
-            if not deal.is_manual_stop or \
-                    (direction == "BUY" and new_stop_level > deal.manual_stop_level) or \
-                    (direction == "SELL" and new_stop_level < deal.manual_stop_level):
+                f"Neuer Stop {new_stop_level} zu nah am aktuellen Preis {current_price}. Verwende manuellen Stop.")
+
+            should_update_manual_stop = False
+
+            if not deal.is_manual_stop:
+                should_update_manual_stop = True  # Noch kein manueller Stop vorhanden
+            elif direction == "BUY" and new_stop_level > deal.manual_stop_level:
+                should_update_manual_stop = True  # Nur wenn besser (höher)
+            elif direction == "SELL" and new_stop_level < deal.manual_stop_level:
+                should_update_manual_stop = True  # Nur wenn besser (tiefer)
+
+            if should_update_manual_stop:
                 deal.manual_stop_level = new_stop_level
                 deal.is_manual_stop = True
                 self._tracer.info(f" Manuellen Stop auf {new_stop_level} gesetzt.")
-            provider_stop_level = current_price - min_stop_distance if direction == "BUY" else current_price + min_stop_distance
+            else:
+                self._tracer.debug(f" Neuer manueller Stop wäre schlechter – bestehender bleibt bestehen.")
+
+            # Provider Stop immer auf Mindestabstand setzen, aber nur, wenn besser als alter Stop
+            fallback_stop = current_price - min_stop_distance if direction == "BUY" else current_price + min_stop_distance
+            if direction == "BUY" and fallback_stop > stop_level:
+                provider_stop_level = fallback_stop
+            elif direction == "SELL" and fallback_stop < stop_level:
+                provider_stop_level = fallback_stop
+            else:
+                provider_stop_level = stop_level
+                self._tracer.debug(f" Fallback-Stop wäre schlechter – behalte alten Stop-Level bei.")
         else:
             # Nur anpassen, wenn der neue Stop günstiger ist
             if direction == "BUY" and new_stop_level > stop_level:
