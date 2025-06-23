@@ -36,4 +36,4 @@ steps:
     repository: 'hacky1610/emmanuel_ti'
     command: 'buildAndPush'
     Dockerfile: '**/Dockerfile'
-    tags: 'v110.10'
+    tags: 'v110.11'
