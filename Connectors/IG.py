@@ -57,6 +57,13 @@ class IG:
         self._tracer: Tracer = tracer
         if connect:
             self.connect()
+        self.stop_stages = [
+            (30, 1.5),  # < 30% Gewinn → Stop weiter weg
+            (70, 1.0),  # 30–70% Gewinn → etwas enger
+            (85, 0.6),  # 70–85% → enger
+            (95, 0.4),  # 85–95% → sehr eng
+            (float("inf"), 0.3)  # >95% → maximal enger Stop
+        ]
         self._excludedMarkets = ["CHFHUF", "EMFX USDTWD ($1 Contract)", "EMFX USDPHP ($1 Contract)",
                                  "EMFX USDKRW ($1 Contract)",
                                  "EMFX USDINR ($1 Contract)", "EMFX USDIDR ($1 Contract)", "EMFX INRJPY",
@@ -539,16 +546,13 @@ class IG:
         return current_price + offset if direction == "BUY" else current_price - offset
 
     def _calculate_new_stop(self, stop_level, price, atr, direction, profit_percent):
-        """Berechnet ein dynamisches Stop-Level anhand des Profits."""
-        if profit_percent < 30:
-            atr_multiplier = 1.5
-        elif profit_percent < 70:
-            atr_multiplier = 1.0
-        elif profit_percent < 90:
-            atr_multiplier = 0.6
-        else:
-            atr_multiplier = 0.3
+        """Berechnet ein dynamisches Stop-Level anhand von ATR und konfigurierbaren Gewinnstufen."""
 
+        # Suche passenden ATR-Multiplikator basierend auf Gewinn
+        atr_multiplier = next(
+            multiplier for threshold, multiplier in self.stop_stages if profit_percent < threshold
+        )
+        self._tracer.debug(f"Use atr multiplier {atr_multiplier}")
         if direction == "BUY":
             return max(stop_level, price - (atr_multiplier * atr))
         else:  # SELL
