@@ -398,7 +398,7 @@ class IG:
         deal_store.save(deal)
 
         if profit_percent < -70:
-            if deal.size == len(deal_store.get_open_deals_by_ticker(deal.ticker)) and deal.size <= 4:
+            if deal.get_next_dragen_id() is None and deal.size <= 4:
                 m = IG.find_market_by_symbol(deal.ticker)
                 if deal.size == 1:
                     stop = atr * 2.0 * m["scaling"]
@@ -428,7 +428,7 @@ class IG:
                     manual_stop_level = None
 
 
-                    deal_store.save(Deal(ticker=deal.ticker,
+                    inserted_id = deal_store.save(Deal(ticker=deal.ticker,
                                                  is_manual_stop=False,
                                                  dealReference=deal_response["dealReference"],
                                                  dealId=deal_response["dealId"],
@@ -440,6 +440,8 @@ class IG:
                                                  stop_factor=stop, limit_factor=limit,
                                                  predictor_scan_id=deal.predictor_scan_id,
                                                  size=new_deal_size))
+                    deal.set_next_dragen_id(inserted_id)
+                    deal_store.save(deal)
 
         # 1️⃣ Deal-Status-Update
         if not deal.reached_level:
