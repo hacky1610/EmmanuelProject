@@ -184,7 +184,7 @@ class CombinationTrainer:
             combos = existing_combos + combos
 
 
-        for features in tqdm(combos):
+        for features in combos:
             try:
                 train_precision, train_reward, trade_indexes_train, trade_count_train = self._predict_sum(train_df,
                                                                                                           features,atr_factor_stop,atr_factor_limit)
@@ -204,7 +204,6 @@ class CombinationTrainer:
                             "Test Trade Count": trade_count_test,
                             "Test Indexes": trade_indexes_test,
                         })
-                        print(f"Train Reward {train_reward}")
 
 
 

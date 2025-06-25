@@ -428,18 +428,18 @@ class IG:
                     manual_stop_level = None
 
 
-                deal_store.save(Deal(ticker=deal.ticker,
-                                             is_manual_stop=False,
-                                             dealReference=deal_response["dealReference"],
-                                             dealId=deal_response["dealId"],
-                                             epic=deal.epic, direction=deal.direction, account_type="DEMO",
-                                             open_date_ig_str=date_string,
-                                             manual_stop_level=manual_stop_level,
-                                             open_date_ig_datetime=datetime.strptime(date_string,
-                                                                                     '%Y-%m-%dT%H:%M:%S'),
-                                             stop_factor=stop, limit_factor=limit,
-                                             predictor_scan_id=deal.predictor_scan_id,
-                                             size=new_deal_size))
+                    deal_store.save(Deal(ticker=deal.ticker,
+                                                 is_manual_stop=False,
+                                                 dealReference=deal_response["dealReference"],
+                                                 dealId=deal_response["dealId"],
+                                                 epic=deal.epic, direction=deal.direction, account_type="DEMO",
+                                                 open_date_ig_str=date_string,
+                                                 manual_stop_level=manual_stop_level,
+                                                 open_date_ig_datetime=datetime.strptime(date_string,
+                                                                                         '%Y-%m-%dT%H:%M:%S'),
+                                                 stop_factor=stop, limit_factor=limit,
+                                                 predictor_scan_id=deal.predictor_scan_id,
+                                                 size=new_deal_size))
 
         # 1️⃣ Deal-Status-Update
         if not deal.reached_level:

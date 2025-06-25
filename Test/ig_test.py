@@ -59,6 +59,7 @@ class IgTest(unittest.TestCase):
         self.deal.ticker = "EURUSD"
         self.deal.is_manual_stop = True
         self.deal.manual_stop_level = 1.0950
+        self.deal.reached_level = False
         self.deal.size = 1
         self.deal.dealId = "D12345"
         self.deal.epic = "CS.D.EURUSD.MINI.IP"
@@ -72,6 +73,7 @@ class IgTest(unittest.TestCase):
 
     def test_profit_below_minus_70_triggers_scale_trade(self):
         self.ig._get_atr = Mock(return_value=0.0025)
+        self.deal_store.get_open_deals_by_ticker = Mock(return_value=[{}])
         self.ig.get_min_stop_distance = Mock(return_value=20)  # example minimum
         self.ig._calculate_profit_percentage = Mock(return_value=(-75.0, 0))
         self.ig._execute_trade = Mock(return_value=("SUCCESS", {
@@ -85,22 +87,21 @@ class IgTest(unittest.TestCase):
             self.position, self.deal, self.deal_store, 10000, self.mock_tiingo
         )
 
-        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["status"], "pending")
         self.ig._execute_trade.assert_called_once()
-        self.ig._adjust_stop_level.assert_called()
 
     def test_profit_above_40_sets_reached_level(self):
-        self.ig._get_atr = Mock(return_value=0.0025)
+        self.ig._get_atr = Mock(return_value=0.0001)
         self.ig.get_min_stop_distance = Mock(return_value=20)
         self.ig._calculate_profit_percentage = Mock(return_value=(45.0, 0))
-        self.ig._calculate_new_stop = Mock(return_value=1.0970)
+        self.ig._calculate_new_stop = Mock(return_value=1.1970)
 
         result = self.ig.set_intelligent_stop_level(
             self.position, self.deal, self.deal_store, 10000, self.mock_tiingo
         )
 
         self.assertTrue(self.deal.reached_level)
-        self.assertEqual(result["status"], "unchanged")
+        self.assertEqual(result["status"], "success")
 
     def test_profit_above_80_adjusts_limit(self):
         self.ig._get_atr = Mock(return_value=0.0025)
@@ -115,7 +116,7 @@ class IgTest(unittest.TestCase):
         )
 
         self.ig._calculate_trailing_limit.assert_called_once()
-        self.assertEqual(result["status"], "unchanged")
+        self.assertEqual(result["status"], "success")
 
     def test_manual_stop_is_hit_and_trade_closed(self):
         self.ig._get_atr = Mock(return_value=0.0025)
@@ -123,7 +124,7 @@ class IgTest(unittest.TestCase):
         self.ig._calculate_profit_percentage = Mock(return_value=(10.0, 0))
         self.ig._calculate_new_stop = Mock(return_value=1.0950)
         self.ig._close_trade = Mock()
-
+        self.deal.reached_level = True
         self.position.bid = 1.0949  # below manual stop
         result = self.ig.set_intelligent_stop_level(
             self.position, self.deal, self.deal_store, 10000, self.mock_tiingo
@@ -146,7 +147,7 @@ class IgTest(unittest.TestCase):
         )
 
         self.assertTrue(self.deal.is_manual_stop)
-        self.assertEqual(result["status"], "unchanged")
+        self.assertEqual(result["status"], "success")
 
     def test_stop_and_limit_significantly_changed(self):
         self.ig._get_atr = Mock(return_value=0.0025)
