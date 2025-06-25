@@ -307,7 +307,7 @@ class Trader:
             if result == TradeResult.SUCCESS:
                 self._tracer.info("One position opened")
                 opened += 1
-                if opened == 1:
+                if opened > 0:
                     self._tracer.info("Break because 1 positions opened")
                     break
         return TradeResult.SUCCESS if opened > 0 else TradeResult.NOACTION
@@ -377,31 +377,38 @@ class Trader:
 
         signal = predictor.predict(buy_actions_df, sell_actions_df)
         market = self._market_store.get_market(config.symbol)
-        stop = trade_df.ATR.iloc[-1] * 2.5 * config.scaling
-        limit = trade_df.ATR.iloc[-1] * 2.1 * config.scaling
+        stop_factor_1 = 2.5
+        limit_factor_1 = 2.1
+        stop_factor_2 = 2.0
+        limit_factor_2 = 2.5
+
+        stop_1 = trade_df.ATR.iloc[-1] * stop_factor_1 * config.scaling
+        limit_1 = trade_df.ATR.iloc[-1] * limit_factor_1 * config.scaling
+        stop_2 = trade_df.ATR.iloc[-1] * stop_factor_2 * config.scaling
+        limit_2 = trade_df.ATR.iloc[-1] * limit_factor_2 * config.scaling
 
         if signal == TradeAction.NONE or signal == TradeAction.BOTH:
                 return TradeResult.NOACTION
 
         is_manual_stop = False
         minimal_stop = self._ig.get_min_stop_distance(config.epic)
-        if stop < minimal_stop:
-            self._tracer.debug(f"Current stop {stop} is lower than min stop distance {minimal_stop}")
+        if stop_1 < minimal_stop:
+            self._tracer.debug(f"Current stop {stop_1} is lower than min stop distance {minimal_stop}")
             self._tracer.debug("Use manual stop")
             is_manual_stop = True
             new_stop = minimal_stop * 1.01
             self._tracer.debug(f"Set stop to {new_stop}")
-            stop = new_stop
+            stop_1 = new_stop
 
         self._tracer.info(f"Trade {signal} ")
 
         if signal == TradeAction.BUY:
-            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
+            res, deal_response = self._execute_trade(config.symbol, config.epic, stop_1, limit_1, config.size,
                                                      config.currency,
                                                      self._ig.buy)
 
         else:
-            res, deal_response = self._execute_trade(config.symbol, config.epic, stop, limit, config.size,
+            res, deal_response = self._execute_trade(config.symbol, config.epic, stop_1, limit_1, config.size,
                                                      config.currency,
                                                      self._ig.sell)
 
@@ -418,12 +425,12 @@ class Trader:
             manual_stop_level = None
 
             if is_manual_stop:
-                pip_diff = market.get_pip_value(stop, config.scaling)
+                pip_diff = market.get_pip_value(stop_1, config.scaling)
                 if signal == TradeAction.BUY:
-                    manual_stop_level = deal_response["level"] - pip_diff
+                    manual_stop_level_1 = deal_response["level"] - pip_diff
                 elif signal == TradeAction.SELL:
-                    manual_stop_level = deal_response["level"] + pip_diff
-                self._tracer.debug(f"set manual stop to {manual_stop_level} - level {deal_response['level']}")
+                    manual_stop_level_1 = deal_response["level"] + pip_diff
+                self._tracer.debug(f"set manual stop to {manual_stop_level_1} - level {deal_response['level']}")
 
             self._deal_storage.save(Deal(ticker=config.symbol,
                                          is_manual_stop=is_manual_stop,
@@ -431,10 +438,52 @@ class Trader:
                                          dealId=deal_response["dealId"],
                                          epic=config.epic, direction=signal, account_type="DEMO",
                                          open_date_ig_str=date_string,
-                                         manual_stop_level=manual_stop_level,
+                                         manual_stop_level=manual_stop_level_1,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
-                                         stop_factor=stop, limit_factor=limit, predictor_scan_id=predictor.get_id(),
+                                         stop_factor=stop_1, limit_factor=limit_1, predictor_scan_id=predictor.get_id(),
                                          size=config.size))
+
+            if signal == TradeAction.BUY:
+                res, deal_response = self._execute_trade(config.symbol, config.epic, stop_2, limit_2, config.size,
+                                                         config.currency,
+                                                         self._ig.buy)
+
+            else:
+                res, deal_response = self._execute_trade(config.symbol, config.epic, stop_2, limit_2, config.size,
+                                                         config.currency,
+                                                         self._ig.sell)
+
+            if res == TradeResult.SUCCESS:
+                self._save_result(predictor, deal_response, config.symbol)
+                self._tracer.debug("Save Deal in db")
+                self._tracer.debug(f"Buy actions {buy_actions_df}")
+                self._tracer.debug(f"Sell actions {sell_actions_df}")
+                self._tracer.debug(f"Features {predictor._features}")
+                pd.set_option('display.max_columns', None)
+                self._tracer.debug(trade_df)
+                date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
+                date_string = date_string.group().replace(" ", "T")
+                manual_stop_level = None
+
+                if is_manual_stop:
+                    pip_diff = market.get_pip_value(stop_2, config.scaling)
+                    if signal == TradeAction.BUY:
+                        manual_stop_level_2 = deal_response["level"] - pip_diff
+                    elif signal == TradeAction.SELL:
+                        manual_stop_level_2 = deal_response["level"] + pip_diff
+                    self._tracer.debug(f"set manual stop to {manual_stop_level_2} - level {deal_response['level']}")
+
+                self._deal_storage.save(Deal(ticker=config.symbol,
+                                             is_manual_stop=is_manual_stop,
+                                             dealReference=deal_response["dealReference"],
+                                             dealId=deal_response["dealId"],
+                                             epic=config.epic, direction=signal, account_type="DEMO",
+                                             open_date_ig_str=date_string,
+                                             manual_stop_level=manual_stop_level_2,
+                                             open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
+                                             stop_factor=stop_2, limit_factor=limit_2,
+                                             predictor_scan_id=predictor.get_id(),
+                                             size=config.size))
         return res
 
 
