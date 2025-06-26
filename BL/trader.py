@@ -222,17 +222,11 @@ class Trader:
             predictors.append(predictor)
         return predictors
 
-    def _get_predictors_by_id(self, symbol: str, indicators, id) -> List[DeepPredictor]:
-        predictors = []
 
-        for predictor_data in [self._predictor_store.load_by_id(id)]:
-            predictor = DeepPredictor(symbol=symbol, tracer=self._tracer, indicators=indicators, cache=self._cache)
-            predictor.setup(predictor_data)
-            predictors.append(predictor)
-        return predictors
 
     def market_tradable(self, market: str) -> bool:
-        return self._predictor_store.count_of_all_by_symbol(market) > 0
+        lent = len(self._predictors_df[self._predictors_df._symbol == market])
+        return lent != 0
 
     def trade_market(self, indicators: Any, market: dict) -> TradeResult:
         """
