@@ -398,7 +398,7 @@ class IG:
         deal_store.save(deal)
 
         if profit_percent < -70:
-            if deal.get_next_dragen_id() is None and deal.size <= 4:
+            if deal.get_next_dragen_id() is None and deal.size <= 0:
                 m = IG.find_market_by_symbol(deal.ticker)
                 if deal.size == 1:
                     stop = atr * 2.0 * m["scaling"]
