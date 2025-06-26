@@ -187,6 +187,7 @@ class Trader:
                 if self.market_tradable(market["symbol"]) and market["symbol"] in low_spread_pairs:
                     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                         loop = asyncio.get_running_loop()
+                        self._tracer.debug(f"Trade {market['symbol']}")
                         await loop.run_in_executor(executor, self.trade_market, Indicators(), market)
             except Exception as EX:
                 self._tracer.error(f"Error while trading {market['symbol']} {EX}")
@@ -248,9 +249,6 @@ class Trader:
         indicators.reset_caches()
 
         self._tracer.debug(f"Attempting to trade {symbol}")
-
-
-
 
         trade_df = self._tiingo.load_trade_data(symbol=symbol, dp=self._dataprocessor, trade_type=TradeType.FX)
         if trade_df.empty:
