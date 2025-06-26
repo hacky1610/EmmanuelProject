@@ -11,5 +11,6 @@ tqdm==4.66.4
 scipy
 pylint==3.3.4
 matplotlib
+pyarrow
 
 

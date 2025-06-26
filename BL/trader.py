@@ -176,7 +176,7 @@ class Trader:
             "EURNZD", "AUDCAD", "NOKSEK", "USDNOK"
         ]
 
-        max_workers = os.cpu_count() or 4  # Falls os.cpu_count() None zurückgibt, setze Standardwert 4
+        max_workers = min(os.cpu_count(), 4)  # Falls os.cpu_count() None zurückgibt, setze Standardwert 4
         self._tracer.debug(f"Using max {max_workers} concurrent threads")
 
         async def trade_single_market(market):
@@ -211,7 +211,9 @@ class Trader:
     def _get_predictors(self, symbol: str, indicators) -> List[DeepPredictor]:
         predictors = []
 
-        for predictor_data in self._predictor_store.load_all_by_symbol(symbol):
+        df = pd.read_parquet("predictors.parquet")
+        filtered:DataFrame = df[df._symbol == symbol]
+        for predictor_data in filtered.to_dict(orient='records'):
             predictor = DeepPredictor(symbol=symbol, tracer=self._tracer, indicators=indicators, cache=self._cache)
             predictor.setup(predictor_data)
             predictors.append(predictor)
@@ -245,6 +247,9 @@ class Trader:
 
         self._tracer.debug(f"Attempting to trade {symbol}")
 
+        predictors = self._get_predictors(symbol, indicators)
+
+
         trade_df = self._tiingo.load_trade_data(symbol=symbol, dp=self._dataprocessor, trade_type=TradeType.FX)
         if trade_df.empty:
             self._tracer.error(f"Could not load trade data for {symbol}")
@@ -260,7 +265,6 @@ class Trader:
 
 
         indicators.init_caches(trade_df)
-        predictors = self._get_predictors(symbol, indicators)
         #predictors = self._get_predictors_by_id(symbol, indicators,ObjectId('67cab6aca5f967606f612fbe'))
         actions_df = self._get_actions_df(predictors, trade_df, indicators)
 
@@ -376,6 +380,7 @@ class Trader:
             return TradeResult.ERROR
 
         signal = predictor.predict(buy_actions_df, sell_actions_df)
+        signal = TradeAction.BUY
         market = self._market_store.get_market(config.symbol)
         stop_factor_1 = 2.5
         limit_factor_1 = 2.1
