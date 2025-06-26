@@ -420,8 +420,8 @@ class Trader:
             self._tracer.debug(trade_df)
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
             date_string = date_string.group().replace(" ", "T")
-            manual_stop_level1 = None
-            manual_stop_level2 = None
+            manual_stop_level_1 = None
+            manual_stop_level_2 = None
 
             if is_manual_stop:
                 pip_diff = market.get_pip_value(stop_1, config.scaling)
