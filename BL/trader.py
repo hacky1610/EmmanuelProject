@@ -91,6 +91,9 @@ class Trader:
         self._cache = cache
         self._check_ig_performance = check_ig_performance
 
+        file_path = os.path.join(os.path.dirname(__file__),".." ,"predictors.parquet")
+        self._predictors_df = pd.read_parquet(file_path)
+
     def _is_good_ticker(self, ticker: str, min_avg_profit: float, min_deal_count: int, days: int = 1) -> bool:
         deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker, days)
         if len(deals) >= min_deal_count:
@@ -211,8 +214,7 @@ class Trader:
     def _get_predictors(self, symbol: str, indicators) -> List[DeepPredictor]:
         predictors = []
 
-        df = pd.read_parquet("predictors.parquet")
-        filtered:DataFrame = df[df._symbol == symbol]
+        filtered:DataFrame = self._predictors_df[self._predictors_df._symbol == symbol]
         for predictor_data in filtered.to_dict(orient='records'):
             predictor = DeepPredictor(symbol=symbol, tracer=self._tracer, indicators=indicators, cache=self._cache)
             predictor.setup(predictor_data)
@@ -247,7 +249,7 @@ class Trader:
 
         self._tracer.debug(f"Attempting to trade {symbol}")
 
-        predictors = self._get_predictors(symbol, indicators)
+
 
 
         trade_df = self._tiingo.load_trade_data(symbol=symbol, dp=self._dataprocessor, trade_type=TradeType.FX)
@@ -265,7 +267,7 @@ class Trader:
 
 
         indicators.init_caches(trade_df)
-        #predictors = self._get_predictors_by_id(symbol, indicators,ObjectId('67cab6aca5f967606f612fbe'))
+        predictors = self._get_predictors(symbol, indicators)
         actions_df = self._get_actions_df(predictors, trade_df, indicators)
 
         buy_actions_df = actions_df.replace({'none': 0, 'both': 1, 'buy': 1, 'sell': 0}).astype(int)
