@@ -33,7 +33,7 @@ tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
 predictor = GenericPredictor(indicators=Indicators(), symbol="Foo")
 viewer = PlotlyViewer(cache)
-client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster1.uo3fjln.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ds = DealStore(db, "DEMO")
 ps = PredictorStore(db)

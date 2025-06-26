@@ -21,7 +21,7 @@ dp = DataProcessor()
 ig = IG(conf_reader)
 ti = Tiingo(conf_reader=conf_reader, cache=df_cache)
 indicators = Indicators()
-client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster1.uo3fjln.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ps = PredictorStore(db)
 ms = MarketStore(db)

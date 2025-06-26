@@ -42,7 +42,7 @@ tracer = MultiTracer([loggly_tracer, StreamTracer()])
 tiingo = Tiingo(tracer=tracer, conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader, tracer=tracer, live=live)
 predictor_class_list = [GenericPredictor]
-client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster0.3dbopdi.mongodb.net/?retryWrites=true&w=majority")
+client = pymongo.MongoClient(f"mongodb+srv://emmanuel:{conf_reader.get('mongo_db')}@cluster1.uo3fjln.mongodb.net/?retryWrites=true&w=majority")
 db = client["ZuluDB"]
 ms = MarketStore(db)
 ds = DealStore(db, account_type)
