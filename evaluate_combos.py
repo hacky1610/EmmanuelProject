@@ -84,6 +84,41 @@ def create_new_combos(original_list, replacement_values):
 
     return new_list
 
+import pandas as pd
+
+def remove_duplicates_with_unordered_list_column(df, subset, list_column):
+    """
+    Entfernt doppelte Zeilen aus einem DataFrame basierend auf bestimmten Spalten,
+    wobei eine der Spalten eine Liste ist, deren Reihenfolge ignoriert werden soll.
+
+    Parameter:
+    - df: pd.DataFrame – der zu bereinigende DataFrame
+    - subset: list[str] – Liste von Spaltennamen, nach denen Duplikate gefiltert werden sollen
+    - list_column: str – Name der Spalte mit einer Liste von Strings (Reihenfolge wird ignoriert)
+
+    Rückgabe:
+    - pd.DataFrame – bereinigter DataFrame
+    """
+    if list_column not in subset:
+        raise ValueError(f"Die Spalte '{list_column}' muss in der subset-Liste enthalten sein.")
+
+    # Hilfsspalte mit sortierter Liste
+    sorted_column = f'__sorted_{list_column}'
+    df = df.copy()
+    df[sorted_column] = df[list_column].apply(lambda x: tuple(sorted(x)) if isinstance(x, list) else x)
+
+    # Ersetze die list_column im subset durch die Hilfsspalte
+    subset_modified = [sorted_column if col == list_column else col for col in subset]
+
+    # Duplikate entfernen
+    df_cleaned = df.drop_duplicates(subset=subset_modified)
+
+    # Hilfsspalte wieder entfernen
+    df_cleaned = df_cleaned.drop(columns=[sorted_column])
+
+    return df_cleaned
+
+
 def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
     # General configuration and data processing
@@ -101,22 +136,23 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         if fx not in low_spread_pairs:
             continue
 
-        #fx = "EURAUD"
+        #fx = "EURSGD"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
         #    print("Enough training data to train")
         #    continue
 
-        online_combos = predictor_store.get_all_combos(fx)
-        online_combos = online_combos + create_new_combos(online_combos, indicators.get_all_indicator_names())
+        #online_combos = predictor_store.get_all_combos(fx)
+        #online_combos = online_combos + create_new_combos(online_combos, indicators.get_all_indicator_names())
 
-        best_features_online_0_5 = predictor_store.get_most_used_features(0.33)
-        best_features_online_0_2 = predictor_store.get_most_used_features(0.15)
+        #best_features_online_0_5 = predictor_store.get_most_used_features(0.33)
+        #best_features_online_0_2 = predictor_store.get_most_used_features(0.15)
 
         hours = 16
-        data = random.choice([(2.5,1.9,0.75, 0.7,22),
-                              (2.5,1.9,0.66, 0.66,22),
+        data = random.choice([(2.0,2.1,0.8, 0.7,6),
+                              (2.0,2.7,0.8, 0.7,6),
+                              (2.0, 2.7, 0.8, 0.7, 25)
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]
@@ -124,7 +160,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         minimum_precission_test = data[3]
         min_train_reward=data[4]
 
-        combis = [(4, 0.1),
+        combis = [(5, 0.1),
                   (6, 0.1),
                   (8, 0.1),
                   (7, 0.2)]
@@ -134,8 +170,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             f = 0
             combination_size = combination_size_tuple[0]
             part = combination_size_tuple[1]
-            for features in [best_features_online_0_5,
-                             best_features_online_0_2,
+            for features in [
                              random.choices( indicators.get_all_indicator_names(), k=25)]:
                 f += 1
 
@@ -156,7 +191,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                                          indicators=indicators,
                                                          trade_mode=trade_action, cache=cache)
 
-                        ct.train(df=df_train_global,
+                        train_df = ct.train(df=df_train_global,
                                  trading_hours=hours,
                                  min_prec_train=minimum_precission_train,
                                  num_features=combination_size,
@@ -165,10 +200,19 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                  atr_factor_stop=atr_factor_stop,
                                  atr_factor_limit=atr_factor_limit,
                                  best_features=features, min_prec_test=minimum_precission_test,
-                                 part=part,existing_combos=online_combos,
+                                 part=part,existing_combos=[],
                                  min_train_reward=min_train_reward)
+                        train_df["_symbol"] = fx
+                        train_df["_atr_factor_stop"] = atr_factor_stop
+                        train_df["_atr_factor_limit"] = atr_factor_limit
+                        all_df = DataFrame()
+                        all_df = pd.concat([all_df,train_df],  ignore_index=True)
+                        all_df = remove_duplicates_with_unordered_list_column(all_df,["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features"], "_features")
+                        all_df.to_parquet('predictor_2.parquet')
+                        print("")
 
-                        online_combos = [] #Reset after one training
+
+
 
                 except Exception as ex:
                     traceback_str = traceback.format_exc()

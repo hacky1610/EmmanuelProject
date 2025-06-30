@@ -16,9 +16,10 @@ class DataFrameCache:
         self._dp = dataprocessor
 
     def init_caches(self, df):
-        self._build_cache_4h(df)
-        self._build_cache_12h(df)
-        self._build_cache_24h(df)
+        #self._build_cache_4h(df)
+        #self._build_cache_12h(df)
+        #self._build_cache_24h(df)
+        return
 
     def _build_cache(self, one_h_df: DataFrame, hours: int, cache_attr, convert_func):
         if one_h_df.empty:

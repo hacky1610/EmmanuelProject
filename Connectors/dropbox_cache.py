@@ -120,7 +120,7 @@ class DropBoxCache(BaseCache):
         index = day_of_year - (day_of_year % 10)
         index = 80 #HACK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        return f"{self._prefix}Training_V29/{heute.year}_D{index}"
+        return f"{self._prefix}Training_V101/{heute.year}_D{index}"
 
     def load_train_cache(self, name: str):
         res = self.dropbox_servie.load(self._get_train_cache_path(name))

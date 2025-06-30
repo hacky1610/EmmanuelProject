@@ -193,10 +193,11 @@ class Tiingo:
 
     def init_data(self, symbol: str, trade_type, days: int = 100, suffix:str = ""):
 
+
+        self._load_long_period(symbol=symbol, trade_type=trade_type,
+                               days=days, resolution="1day", use_cache=False, suffix=suffix, window=100)
         self._load_long_period(symbol=symbol, trade_type=trade_type,
                                days=days, resolution="1hour", use_cache=False, suffix=suffix)
-        self._load_long_period(symbol=symbol, trade_type=trade_type,
-                               days=days, resolution="5min", use_cache=False, suffix=suffix)
 
     def load_train_data(self, symbol: str, dp: DataProcessor, trade_type, days_start: int = 365 * 1.5, days_end= None):
 
@@ -219,7 +220,7 @@ class Tiingo:
                                          validate=False)
         return df, df_eval
 
-    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 900, use_cache=True):
+    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 1200, use_cache=True):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,
@@ -228,7 +229,7 @@ class Tiingo:
                                     data_processor=dp,
                                     use_cache=use_cache,
                                     trade_type=trade_type,
-                                    resolution="1hour",
+                                    resolution="1day",
                                     validate=False,
                                     suffix="mega")
         df_eval = self.load_data_by_date(ticker=symbol,
@@ -237,7 +238,7 @@ class Tiingo:
                                          data_processor=dp,
                                          use_cache=use_cache,
                                          trade_type=trade_type,
-                                         resolution="5min",
+                                         resolution="1hour",
                                          add_signals=False,
                                          validate=False,
                                          suffix="mega")

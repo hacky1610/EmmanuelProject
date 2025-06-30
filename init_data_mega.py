@@ -42,7 +42,7 @@ def init_data(ig: IG, ti: Tiingo):
         try:
             symbol = m["symbol"]
             print(f"Init {symbol}")
-            ti.init_data(symbol, trade_type, days=3 * 365, suffix="mega")
+            ti.init_data(symbol, trade_type, days=4 * 365, suffix="mega")
         except Exception as e:
             traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
             print(f"MainException: {e} File:{traceback_str}")

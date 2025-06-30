@@ -147,7 +147,7 @@ class Simulation:
             entry_price = df.close.iloc[i]
 
             # Filter future prices ab der nächsten 5-Minuten-Periode
-            future = df_eval[df_eval["date"] >= entry_time + timedelta(hours=1, minutes=5)]
+            future = df_eval[df_eval["date"] >= entry_time + timedelta(days=1, minutes=5)]
             if len(future) == 0:
                 continue
 
@@ -168,7 +168,7 @@ class Simulation:
 
                 # Berechne die Zeitdifferenz zur vorherigen Iteration
                 if j > 0:
-                    time_diff = timedelta(minutes=5)
+                    time_diff = timedelta(hours=1)
                     accumulated_time += time_diff
 
                 # Prüfe Stop-Loss und Take-Profit
@@ -197,13 +197,6 @@ class Simulation:
                 else:
                     raise ValueError(f"Unknown action: {action}")
 
-                # Prüfe, ob der maximale Zeitrahmen überschritten wurde
-                if accumulated_time >= max_timeframe:
-                    exit_time = current_time
-                    exit_price = current_price
-                    profit = -1
-                    break
-
             # Falls kein Exit-Bedingung getroffen wurde, setze Defaults
             if exit_time is None:
                 exit_time = future.iloc[-1].date
@@ -219,6 +212,7 @@ class Simulation:
                 "exit_price": exit_price,
                 "result": profit,
                 "chart_index": i,
+                "used_time":accumulated_time.total_seconds() / 60 / 60 / 24
             })
 
         return pd.DataFrame(simulation_result)
@@ -322,14 +316,6 @@ class Simulation:
                         exit_price = current_price
                         profit = take_profit
                         break
-
-
-                # Prüfe, ob der maximale Zeitrahmen überschritten wurde
-                if accumulated_time >= max_timeframe:
-                    exit_time = current_time
-                    exit_price = current_price
-                    profit = -1
-                    break
 
             # Falls kein Exit-Bedingung getroffen wurde, setze Defaults
             if exit_time is None:

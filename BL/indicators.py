@@ -192,17 +192,17 @@ class Indicators:
         self._df_cache = DataFrameCache(dp)
 
 
-        self._add_indicator(self.BB_SQUEEZE_BOTH_12H, self._bb_squeeze_both_12h)
+        #self._add_indicator(self.BB_SQUEEZE_BOTH_12H, self._bb_squeeze_both_12h)
 
         # RSI
 
-        self._add_indicator(self.RSI_CONVERGENCE_4H, self._rsi_convergence_predict3_4h)
+        #self._add_indicator(self.RSI_CONVERGENCE_4H, self._rsi_convergence_predict3_4h)
         self._add_indicator(self.RSI, self._rsi_predict)
         self._add_indicator(self.RSI_BORDER,self._rsi_border_predict)
         self._add_indicator(self.RSI_LIMIT, self._rsi_limit_predict)
-        self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
-        self._add_indicator(self.RSI_LIMIT_12H, self._rsi_limit_predict_12h)
-        self._add_indicator(self.RSI_LIMIT_1d, self._rsi_limit_predict_1d)
+        #self._add_indicator(self.RSI_LIMIT_4H, self._rsi_limit_predict_4h)
+        #self._add_indicator(self.RSI_LIMIT_12H, self._rsi_limit_predict_12h)
+        #self._add_indicator(self.RSI_LIMIT_1d, self._rsi_limit_predict_1d)
         self._add_indicator(self.RSI_BREAK, self._rsi_break_predict)
         self._add_indicator(self.RSI_BREAK3070, self._rsi_break_30_70_predict) #BAD
         self._add_indicator(self.RSI_CONVERGENCE, self._rsi_convergence_predict3)
@@ -214,31 +214,31 @@ class Indicators:
         self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
         self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict) #BAD
         self._add_indicator(self.RSI_SLOPE, self._rsi_smooth_slope_predict)
-        self._add_indicator(self.RSI_BREAK_4H, self._rsi_break_predict_4h)
+        #self._add_indicator(self.RSI_BREAK_4H, self._rsi_break_predict_4h)
 
         self._add_indicator(self.TII_50, self._tii_50) #BAD
         self._add_indicator(self.TII_20_80, self._tii_20_80) #BAD
 
         # Williams
         self._add_indicator(self.WILLIAMS_BREAK, self._williams_break_predict)
-        self._add_indicator(self.WILLIAMS_BREAK_4H, self._williams_break_predict_4h)
+        #self._add_indicator(self.WILLIAMS_BREAK_4H, self._williams_break_predict_4h)
         self._add_indicator(self.WILLIAMS_LIMIT, self._williams_limit_predict)
-        self._add_indicator(self.WILLIAMS_LIMIT_4H, self._williams_limit_predict_4h)
+        #self._add_indicator(self.WILLIAMS_LIMIT_4H, self._williams_limit_predict_4h)
 
         # MACD
         self._add_indicator(self.MACD, self._macd_predict)
         self._add_indicator(self.MACD_TURN, self._macd_turn)
         self._add_indicator(self.MACD_SLOPE, self._macd_slope_predict)
-        self._add_indicator(self.MACD_SLOPE_4H, self._macd_slope_predict_4h)
+        #self._add_indicator(self.MACD_SLOPE_4H, self._macd_slope_predict_4h)
         self._add_indicator(self.MACD_MAX, self._macd_max_predict)
         self._add_indicator(self.MACD_MAX_2, self._macd_max_predict2)
-        self._add_indicator(self.MACD_MAX_4H, self._macd_max_predict_4h)
-        self._add_indicator(self.MACD_MAX_12H, self._macd_max_predict_12h)
-        self._add_indicator(self.MACD_MAX_1d, self._macd_max_predict_1d)
+        #self._add_indicator(self.MACD_MAX_4H, self._macd_max_predict_4h)
+        #self._add_indicator(self.MACD_MAX_12H, self._macd_max_predict_12h)
+        #self._add_indicator(self.MACD_MAX_1d, self._macd_max_predict_1d)
         self._add_indicator(self.MACD_ZERO, self._macd_predict_zero_line)
         self._add_indicator(self.MACDCROSSING, self._macd_crossing_predict)
         self._add_indicator(self.MACD_CONVERGENCE, self._macd_convergence_predict)
-        self._add_indicator(self.MACD_CONVERGENCE_4H, self._macd_convergence_predict_4h)
+        #self._add_indicator(self.MACD_CONVERGENCE_4H, self._macd_convergence_predict_4h)
         self._add_indicator(self.MACD_CONVERGENCE_2, self._macd_convergence_predict_2)
         self._add_indicator(self.MACD_CONVERGENCE_5, self._macd_convergence_predict_5)
         self._add_indicator(self.MACD_CONVERGENCE_11, self._macd_convergence_predict_11)
@@ -256,8 +256,8 @@ class Indicators:
         self._add_indicator(self.EMA_ALLIGATOR_2, self._ema_alligator_predict_2)
         self._add_indicator(self.EMA_PB, self._ema_pullback_predict_default)
         self._add_indicator(self.EMA_PB_3, self._ema_pullback_predict_3atr)
-        self._add_indicator(self.EMA_MOMENTUM, self._ema_momentum_predict_default)
-        self._add_indicator(self.EMA_MOMENTUM_0_5, self._ema_momentum_predict_0_5)
+        #self._add_indicator(self.EMA_MOMENTUM, self._ema_momentum_predict_default)
+        #self._add_indicator(self.EMA_MOMENTUM_0_5, self._ema_momentum_predict_0_5)
         self._add_indicator(self.EMA_HIST, self._ema_hist_predict)
         self._add_indicator(self.EMA_ALLIGATOR_HIST, self._ema_alligator_hist_predict)
         self._add_indicator(self.EMA10_50, self._ema_10_50_diff)
@@ -272,10 +272,10 @@ class Indicators:
 
         #Pivoting
         self._add_indicator(self.PIVOT_BOUNCE, self._pivot_bounce)
-        self._add_indicator(self.PIVOT_BOUNCE_4H, self._pivot_bounce_4h)
+        #self._add_indicator(self.PIVOT_BOUNCE_4H, self._pivot_bounce_4h)
         self._add_indicator(self.PIVOT_BREAKOUT, self._pivot_breakout)
         self._add_indicator(self.PIVOT_SR_TRADING, self._pivot_sr_trading)
-        self._add_indicator(self.PIVOT_SR_TRADING_4H, self._pivot_sr_trading_4h)
+        #self._add_indicator(self.PIVOT_SR_TRADING_4H, self._pivot_sr_trading_4h)
         self._add_indicator(self.PIVOT_EMA_20_CROSS, self._pivot_ema_20_cross)
         #self._add_indicator(self.PIVOT_BREAKOUT_15, self.calculate_pivot_breaks)
 
@@ -285,13 +285,13 @@ class Indicators:
 
         # ADX
         self._add_indicator(self.ADX, self._adx_predict)
-        self._add_indicator(self.ADX_4H, self._adx_predict_4h)
+        #self._add_indicator(self.ADX_4H, self._adx_predict_4h)
         self._add_indicator(self.ADX_SLOPE, self._adx_slope_predict)
         self._add_indicator(self.ADX_SLOPE_21, self._adx_slope_predict_21) #BAD
         self._add_indicator(self.ADX_SLOPE_48, self._adx_slope_predict_48) #BAD
         self._add_indicator(self.ADX_MAX, self._adx_max_predict)
-        self._add_indicator(self.ADX_MAX_4H, self._adx_max_predict_4h)
-        self._add_indicator(self.ADX_MAX_12H, self._adx_max_predict_12h)
+        #self._add_indicator(self.ADX_MAX_4H, self._adx_max_predict_4h)
+        #self._add_indicator(self.ADX_MAX_12H, self._adx_max_predict_12h)
         self._add_indicator(self.ADX_MAX_21, self._adx_max_predict_21)
         self._add_indicator(self.ADX_MAX_48, self._adx_max_predict_48)
         self._add_indicator(self.ADX_MAX2, self._adx_max_predict2)
@@ -299,7 +299,7 @@ class Indicators:
 
         #CCI
         self._add_indicator(self.CCI, self._cci_predict)
-        self._add_indicator(self.CCI_4h, self._cci_predict_4h)
+        #self._add_indicator(self.CCI_4h, self._cci_predict_4h)
         self._add_indicator(self.CCI_CONV, self._cci_convergence)
         self._add_indicator(self.CCI_CROSS, self._cci_zero_cross)
         #self._add_indicator(self.CCI_CROSS_4H, self._cci_zero_cross_4h)
@@ -309,11 +309,11 @@ class Indicators:
 
         self._add_indicator(self.CANDLE, self._candle_predict)
         self._add_indicator(self.CANDLEPATTERN, self._candle_pattern_predict)
-        self._add_indicator(self.CANDLE_4H, self._candle_predict_4h)
+        #self._add_indicator(self.CANDLE_4H, self._candle_predict_4h)
         self._add_indicator(self.CANDLE_TYPE, self._candle_type_predict)
         self._add_indicator(self.CANDLE_TYPE_HAMMER, self._candle_hammer_predict)
         self._add_indicator(self.CANDLE_TYPE_SS_HM, self._candle_shootingstar_hanging_man_predict)
-        self._add_indicator(self.CANDLE_TYPE_4H, self._candle_type_predict_4h)
+        #self._add_indicator(self.CANDLE_TYPE_4H, self._candle_type_predict_4h)
         self._add_indicator(self.SUPER_TREND, self._super_trend)
         self._add_indicator(self.SQUEEZE_MOMENTUM, self._squeeze_momentum)
         self._add_indicator(self.TREND_BREAK, self.trend_break)
@@ -329,17 +329,17 @@ class Indicators:
 
         # Bollinger
         self._add_indicator(self.BB, self._bb_predict)
-        self._add_indicator(self.BB_4H, self._bb_predict_4h)
-        self._add_indicator(self.BB_12H, self._bb_predict_12h)
+        #self._add_indicator(self.BB_4H, self._bb_predict_4h)
+        #self._add_indicator(self.BB_12H, self._bb_predict_12h)
         self._add_indicator(self.BB_MIDDLE_CROSS, self._bb_middle_cross_predict)
-        self._add_indicator(self.BB_MIDDLE_CROSS_4H, self._bb_middle_cross_predict_4h)
+        #self._add_indicator(self.BB_MIDDLE_CROSS_4H, self._bb_middle_cross_predict_4h)
         self._add_indicator(self.BB_SQUEEZE, self._bb_squeeze)
         self._add_indicator(self.BB_SQUEEZE_BOTH, self._bb_squeeze_both)
-        self._add_indicator(self.BB_SQUEEZE_BOTH_4H, self._bb_squeeze_both_4h)
+        #self._add_indicator(self.BB_SQUEEZE_BOTH_4H, self._bb_squeeze_both_4h)
         self._add_indicator(self.BB_SQUEEZE_BREAKOUT, self._bb_squeeze_breakout)
-        self._add_indicator(self.BB_SQUEEZE_BREAKOUT_4H, self._bb_squeeze_breakout_4h)
+        #self._add_indicator(self.BB_SQUEEZE_BREAKOUT_4H, self._bb_squeeze_breakout_4h)
         self._add_indicator(self.BB_SQUEEZE_LENGTH_BREAKOUT, self._bb_squeeze_length_breakout)
-        self._add_indicator(self.BB_SQUEEZE_LENGTH_BREAKOUT_4H, self._bb_squeeze_length_breakout_4h)
+        #self._add_indicator(self.BB_SQUEEZE_LENGTH_BREAKOUT_4H, self._bb_squeeze_length_breakout_4h)
 
         self._add_indicator(self.BB_BORDER_CROSS, self._bb_border_cross_predict) #BAD
         self._add_indicator(self.BB_BORDER_LIMIT, self._bb_border_limit_predict)  # BAD
@@ -347,9 +347,9 @@ class Indicators:
         # ICHIMOKU
         self._add_indicator(self.ICHIMOKU, self._ichimoku_predict)
         self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM, self._ichimoku_kijun_close_predict)
-        self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_4H, self._ichimoku_kijun_close_predict_4h)
-        self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_12H, self._ichimoku_kijun_close_predict_12h)
-        self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_1d, self._ichimoku_kijun_close_predict_1d)
+        #self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_4H, self._ichimoku_kijun_close_predict_4h)
+        #self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_12H, self._ichimoku_kijun_close_predict_12h)
+        #self._add_indicator(self.ICHIMOKU_KIJUN_CONFIRM_1d, self._ichimoku_kijun_close_predict_1d)
         self._add_indicator(self.ICHIMOKU_KIJUN_CROSS_CONFIRM, self._ichimoku_kijun_close_cross_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_CONFIRM, self._ichimoku_cloud_thickness_predict)
         self._add_indicator(self.ICHIMOKU_CLOUD_THICKNESS, self._ichimoku_cloud_thickness_predict)

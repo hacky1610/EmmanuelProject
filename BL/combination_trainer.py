@@ -116,6 +116,11 @@ class CombinationTrainer:
     @staticmethod
     def _predict_sum(df, feature_cols, atr_factor_stop, atr_factor_limit):
         # Fälle, in denen alle Features 1 sind
+        if not all(col in df.columns for col in feature_cols):
+            #print(f"Error {feature_cols} not in df")
+            return 0,0,[],0
+
+
         trades = df[list(feature_cols)].sum(axis=1) == len(feature_cols)
 
         # Berechnung von TP und FP
@@ -196,13 +201,13 @@ class CombinationTrainer:
                                                                                                           features,atr_factor_stop,atr_factor_limit)
 
                         results.append({
-                            "Features": features,
-                            "Train Precision": train_precision,
-                            "Train Reward": train_reward,
-                            "Test Precision": test_precision,
-                            "Test Reward": test_reward,
-                            "Test Trade Count": trade_count_test,
-                            "Test Indexes": trade_indexes_test,
+                            "_features": features,
+                            "_train_precision": train_precision,
+                            "_train_reward": train_reward,
+                            "_test_precision": test_precision,
+                            "_test_reward": test_reward,
+                            "_test_trade_count": trade_count_test,
+                            "_unique_indexes": trade_indexes_test,
                         })
 
 
@@ -213,36 +218,21 @@ class CombinationTrainer:
 
         df = DataFrame(results)
         if len(df) > 0:
-            df = df[df["Test Trade Count"] != 0]
-            df = df[df["Train Reward"] > min_train_reward]
-            df = df[df["Test Precision"] > min_prec_test]
+            df = df[df["_test_trade_count"] != 0]
+            df = df[df["_train_reward"] > min_train_reward]
 
             if len(df) == 0:
                 print("No valid results")
                 return
 
-            unique_indexes = set(index for sublist in df["Test Indexes"] for index in sublist)
-            print(df[["Train Reward", "Train Precision", "Test Precision"]].head(10))
+            unique_indexes = set(index for sublist in df["_unique_indexes"] for index in sublist)
             print(f"Indexes {len(unique_indexes)}")
-            print(f"Train Reward Mean {df['Train Reward'].mean()}")
-            print(f"Test Reward Mean {df['Test Reward'].mean()}")
-            print(f"Test Reward Median {df['Test Reward'].median()}")
-            print(f"Test Reward Sum {df['Test Reward'].sum()}")
-            print(f"Test Precision {df['Test Precision'].mean()}")
-            print(f"Test Trade Count {df['Test Trade Count'].mean()}")
-
-            for i, r in df.iterrows():
-                self._save_predictor(symbol=symbol, atr_factor_stop=atr_factor_stop,
-                                     atr_factor_limit=atr_factor_limit,
-                                     features=list(r["Features"]), trade_mode=trade_mode,
-                                     trading_hours=trading_hours,
-                                     test_reward=r["Test Reward"],
-                                     test_precision=r["Test Precision"],
-                                     test_trade_count=r["Test Trade Count"],
-                                     unique_indexes=len(unique_indexes),
-                                     train_reward=r["Train Reward"],
-                                     train_precision=r["Train Precision"],
-                                     train_trade_count=r['Test Trade Count'])
+            print(f"Train Reward Mean {df['_train_reward'].mean()}")
+            print(f"Test Reward Mean {df['_test_reward'].mean()}")
+            print(f"Test Reward Median {df['_test_reward'].median()}")
+            print(f"Test Reward Sum {df['_test_reward'].sum()}")
+            print(f"Test Precision {df['_test_precision'].mean()}")
+            print(f"Test Trade Count {df['_test_trade_count'].mean()}")
 
         return df
 
@@ -365,7 +355,7 @@ class CombinationTrainer:
         # if len(best_features) == 0:
         #     df = self._prepare_df(df, symbol, trading_hours, atr_factor)
 
-        self._best_feature_pair_by_reward(df=df,
+        return self._best_feature_pair_by_reward(df=df,
                                           symbol=symbol,
                                           num_features=num_features,
                                           min_prec_train=min_prec_train, trade_mode=trading_mode,
@@ -379,7 +369,7 @@ class CombinationTrainer:
                     cache) -> (DataFrame, DataFrame, str):
         df_train, eval_df_train = self._get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
                                                        dropbox_cache=cache)
-        if len(df_train) < 5000:
+        if len(df_train) < 500:
             raise Exception("Invalid data")
 
         buy_results, sell_results = simulation.simulate(df_train, eval_df_train, symbol,
@@ -411,17 +401,17 @@ class CombinationTrainer:
     @staticmethod
     def _get_train_data(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor,
                         dropbox_cache: DropBoxCache) -> (DataFrame, DataFrame):
-        hour_df = f"{symbol}_train_1hour_5.csv"
-        minute_df = f"{symbol}_train_5minute_5.csv"
+        hour_df = f"{symbol}_train_1hour_6.csv"
+        day_df = f"{symbol}_train_1day_6.csv"
 
-        if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(minute_df):
+        if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(day_df):
             df_train = dropbox_cache.load_train_cache(hour_df)
-            eval_df_train = dropbox_cache.load_train_cache(minute_df)
+            eval_df_train = dropbox_cache.load_train_cache(day_df)
         else:
             df_train, eval_df_train = tiingo.load_test_data(symbol, data_processor, trade_type=trade_type,
                                                             use_cache=True)
             dropbox_cache.save_train_cache(df_train, hour_df)
-            dropbox_cache.save_train_cache(eval_df_train, minute_df)
+            dropbox_cache.save_train_cache(eval_df_train, day_df)
 
         df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
         eval_df_train = eval_df_train.astype(
