@@ -212,7 +212,7 @@ class Indicators:
         self._add_indicator(self.RSI_CONVERGENCE5_40, self._rsi_convergence_predict5_40)
         self._add_indicator(self.RSI_CONVERGENCE8_60, self._rsi_convergence_predict8_60)
         self._add_indicator(self.RSI_CONVERGENCE7, self._rsi_convergence_predict7)
-        self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict) #BAD
+        #self._add_indicator(self.RSI30_70, self._rsi_smooth_30_70_predict) #BAD
         self._add_indicator(self.RSI_SLOPE, self._rsi_smooth_slope_predict)
         #self._add_indicator(self.RSI_BREAK_4H, self._rsi_break_predict_4h)
 

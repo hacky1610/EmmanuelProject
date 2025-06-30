@@ -117,7 +117,8 @@ class CombinationTrainer:
     def _predict_sum(df, feature_cols, atr_factor_stop, atr_factor_limit):
         # Fälle, in denen alle Features 1 sind
         if not all(col in df.columns for col in feature_cols):
-            #print(f"Error {feature_cols} not in df")
+            print(f"Error {feature_cols} not in df {df.columns}")
+            raise Exception("Error")
             return 0,0,[],0
 
 
@@ -189,7 +190,7 @@ class CombinationTrainer:
             combos = existing_combos + combos
 
 
-        for features in tqdm(combos):
+        for features in combos:
             try:
                 train_precision, train_reward, trade_indexes_train, trade_count_train = self._predict_sum(train_df,
                                                                                                           features,atr_factor_stop,atr_factor_limit)
@@ -223,7 +224,7 @@ class CombinationTrainer:
 
             if len(df) == 0:
                 print("No valid results")
-                return
+                return df
 
             unique_indexes = set(index for sublist in df["_unique_indexes"] for index in sublist)
             print(f"Indexes {len(unique_indexes)}")

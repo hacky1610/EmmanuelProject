@@ -2,6 +2,8 @@
 import os
 import random
 import traceback
+from typing import List, Counter
+
 import dropbox
 import pymongo
 import pandas as pd
@@ -119,6 +121,37 @@ def remove_duplicates_with_unordered_list_column(df, subset, list_column):
     return df_cleaned
 
 
+def get_all_combos(filter_symbol, df) -> List[str]:
+    # Filtere alle Zeilen, bei denen _symbol ungleich filter_symbol ist
+    filtered_df = df[df["_symbol"] != filter_symbol]
+
+    # Extrahiere _features, aber nur wenn es sich um eine Liste handelt
+    combo_list = [
+        features for features in filtered_df["_features"]
+
+    ]
+
+    return combo_list
+
+
+def get_most_used_features(df: pd.DataFrame, top_factor: float = 0.5) -> List[str]:
+    features_list = []
+
+    # Durchlaufe alle Zeilen und sammle die Features
+    for features in df["_features"]:
+        features_list.extend(features)
+
+    # Zähle die Häufigkeit jedes Features
+    feature_counts = Counter(features_list)
+
+    # Anzahl der häufigsten Features, die zurückgegeben werden sollen
+    top_n = int(len(feature_counts) * top_factor)
+
+    # Liste der am häufigsten vorkommenden Features
+    top_features_list = [feature for feature, _ in feature_counts.most_common(top_n)]
+
+    return top_features_list
+
 def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
     # General configuration and data processing
@@ -136,23 +169,25 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         if fx not in low_spread_pairs:
             continue
 
-        #fx = "EURSGD"
+        #fx = "EURNZD"
         indicators.reset_caches()
 
         #if predictor_store.count_of_all_by_symbol(fx) > 40:
         #    print("Enough training data to train")
         #    continue
 
-        #online_combos = predictor_store.get_all_combos(fx)
-        #online_combos = online_combos + create_new_combos(online_combos, indicators.get_all_indicator_names())
+        df = pd.read_parquet("predictors.parquet")
+        online_combos = get_all_combos(fx,df)
+        online_combos = online_combos + create_new_combos(online_combos, indicators.get_all_indicator_names())
 
-        #best_features_online_0_5 = predictor_store.get_most_used_features(0.33)
-        #best_features_online_0_2 = predictor_store.get_most_used_features(0.15)
+        best_features_online_0_5 = get_most_used_features(df, 0.33)
+        best_features_online_0_2 = get_most_used_features(df,0.15)
 
         hours = 16
         data = random.choice([(2.0,2.1,0.8, 0.7,6),
                               (2.0,2.7,0.8, 0.7,6),
-                              (2.0, 2.7, 0.8, 0.7, 25)
+                              (2.0, 2.1, 0.9, 0.7, 6),
+                              (2.0, 2.7, 0.9, 0.7, 6)
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]
@@ -202,14 +237,16 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                  best_features=features, min_prec_test=minimum_precission_test,
                                  part=part,existing_combos=[],
                                  min_train_reward=min_train_reward)
-                        train_df["_symbol"] = fx
-                        train_df["_atr_factor_stop"] = atr_factor_stop
-                        train_df["_atr_factor_limit"] = atr_factor_limit
-                        all_df = DataFrame()
-                        all_df = pd.concat([all_df,train_df],  ignore_index=True)
-                        all_df = remove_duplicates_with_unordered_list_column(all_df,["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features"], "_features")
-                        all_df.to_parquet('predictor_2.parquet')
-                        print("")
+
+                        if len(df) > 0:
+                            train_df["_symbol"] = fx
+                            train_df["_atr_factor_stop"] = atr_factor_stop
+                            train_df["_atr_factor_limit"] = atr_factor_limit
+                            all_df = pd.read_parquet('predictor_2.parquet')
+                            all_df = pd.concat([all_df,train_df],  ignore_index=True)
+                            all_df = remove_duplicates_with_unordered_list_column(all_df,["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features"], "_features")
+                            all_df.to_parquet('predictor_2.parquet')
+                            print("")
 
 
 
