@@ -5,7 +5,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
-- combo
+- combo_d
 
 pool:
   vmImage: ubuntu-latest
