@@ -1,4 +1,4 @@
-FROM hacky1610/emmanuelbase:v1.5
+FROM hacky1610/emmanuelbase:v1.6
 COPY . /emmanuel/
 RUN pip install Cython
 RUN pip install -r /emmanuel/requirements.txt
