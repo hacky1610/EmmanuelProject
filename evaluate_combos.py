@@ -146,6 +146,31 @@ def get_most_used_features(df: pd.DataFrame, top_factor: float = 0.5) -> List[st
 
     return top_features_list
 
+def analyze_by_symbol(df):
+    required_columns = [
+        '_symbol', '_train_precision', '_train_reward', '_test_precision',
+        '_test_reward', '_test_trade_count', '_atr_factor_stop', '_atr_factor_limit'
+    ]
+    missing = [col for col in required_columns if col not in df.columns]
+    if missing:
+        raise ValueError(f"Missing columns in DataFrame: {missing}")
+
+    grouped = df.groupby('_symbol')
+
+    summary = grouped.agg({
+        '_train_precision': ['mean', 'median'],
+        '_train_reward': ['mean', 'median'],
+        '_test_precision': ['mean', 'median'],
+        '_test_reward': ['mean', 'median'],
+        '_test_trade_count': ['sum'],
+    })
+
+    # Spaltennamen flach machen
+    summary.columns = ['_'.join(col).strip() for col in summary.columns.values]
+    summary = summary.rename(columns={'_symbol_count': 'num_entries'})
+
+    return summary
+
 def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
     # General configuration and data processing
@@ -181,7 +206,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         data = random.choice([(2.0,2.1,0.8, 0.7,6),
                               (2.0,2.7,0.8, 0.7,6),
                               (2.0, 2.1, 0.9, 0.7, 6),
-                              (2.0, 2.7, 0.9, 0.7, 6)
+                              (2.0, 2.7, 0.9, 0.7, 6),
+                              (1.5, 2.0, 0.9, 0.7, 6),
+                              (1.2, 1.8, 0.9, 0.7, 6)
                      ])
         atr_factor_stop = data[0]
         atr_factor_limit = data[1]
@@ -189,7 +216,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         minimum_precission_test = data[3]
         min_train_reward=data[4]
 
-        combis = [(5, 0.1),
+        combis = [(4, 0.1),
+                  (5, 0.1),
                   (6, 0.1),
                   (8, 0.1),
                   (7, 0.2)]
