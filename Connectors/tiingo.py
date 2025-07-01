@@ -139,7 +139,7 @@ class Tiingo:
 
 
 
-    def load_trade_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 30):
+    def load_trade_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 150):
 
         start_time = self._get_start_time(days=days)
         return self.load_data_by_date(ticker=symbol,
@@ -148,7 +148,7 @@ class Tiingo:
                                       validate=False,
                                       data_processor=dp,
                                       trade_type=trade_type,
-                                      resolution="1hour",
+                                      resolution="1day",
                                       suffix="")
 
     def _load_long_period(self, symbol: str,

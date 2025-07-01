@@ -117,8 +117,8 @@ class CombinationTrainer:
     def _predict_sum(df, feature_cols, atr_factor_stop, atr_factor_limit):
         # Fälle, in denen alle Features 1 sind
         if not all(col in df.columns for col in feature_cols):
-            print(f"Error {feature_cols} not in df {df.columns}")
-            raise Exception("Error")
+            #print(f"Error {feature_cols} not in df {df.columns}")
+            #raise Exception("Error")
             return 0,0,[],0
 
 

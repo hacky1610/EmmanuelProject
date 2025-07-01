@@ -91,7 +91,7 @@ class Trader:
         self._cache = cache
         self._check_ig_performance = check_ig_performance
 
-        file_path = os.path.join(os.path.dirname(__file__),".." ,"predictors.parquet")
+        file_path = os.path.join(os.path.dirname(__file__),".." ,"predictor_2.parquet")
         self._predictors_df = pd.read_parquet(file_path)
 
     def _is_good_ticker(self, ticker: str, min_avg_profit: float, min_deal_count: int, days: int = 1) -> bool:
@@ -375,15 +375,11 @@ class Trader:
 
         signal = predictor.predict(buy_actions_df, sell_actions_df)
         market = self._market_store.get_market(config.symbol)
-        stop_factor_1 = 2.5
-        limit_factor_1 = 2.1
-        stop_factor_2 = 2.0
-        limit_factor_2 = 2.5
+        stop_factor_1 = predictor.get_atr_factor_stop()
+        limit_factor_1 = predictor.get_atr_factor_limit()
 
         stop_1 = trade_df.ATR.iloc[-1] * stop_factor_1 * config.scaling
         limit_1 = trade_df.ATR.iloc[-1] * limit_factor_1 * config.scaling
-        stop_2 = trade_df.ATR.iloc[-1] * stop_factor_2 * config.scaling
-        limit_2 = trade_df.ATR.iloc[-1] * limit_factor_2 * config.scaling
 
         if signal == TradeAction.NONE or signal == TradeAction.BOTH:
                 return TradeResult.NOACTION
@@ -442,47 +438,6 @@ class Trader:
                                          stop_factor=stop_1, limit_factor=limit_1, predictor_scan_id=predictor.get_id(),
                                          size=config.size))
 
-            if signal == TradeAction.BUY:
-                res, deal_response = self._execute_trade(config.symbol, config.epic, stop_2, limit_2, config.size,
-                                                         config.currency,
-                                                         self._ig.buy)
-
-            else:
-                res, deal_response = self._execute_trade(config.symbol, config.epic, stop_2, limit_2, config.size,
-                                                         config.currency,
-                                                         self._ig.sell)
-
-            if res == TradeResult.SUCCESS:
-                self._save_result(predictor, deal_response, config.symbol)
-                self._tracer.debug("Save Deal in db")
-                self._tracer.debug(f"Buy actions {buy_actions_df}")
-                self._tracer.debug(f"Sell actions {sell_actions_df}")
-                self._tracer.debug(f"Features {predictor._features}")
-                pd.set_option('display.max_columns', None)
-                self._tracer.debug(trade_df)
-                date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
-                date_string = date_string.group().replace(" ", "T")
-                manual_stop_level = None
-
-                if is_manual_stop:
-                    pip_diff = market.get_pip_value(stop_2, config.scaling)
-                    if signal == TradeAction.BUY:
-                        manual_stop_level_2 = deal_response["level"] - pip_diff
-                    elif signal == TradeAction.SELL:
-                        manual_stop_level_2 = deal_response["level"] + pip_diff
-                    self._tracer.debug(f"set manual stop to {manual_stop_level_2} - level {deal_response['level']}")
-
-                self._deal_storage.save(Deal(ticker=config.symbol,
-                                             is_manual_stop=is_manual_stop,
-                                             dealReference=deal_response["dealReference"],
-                                             dealId=deal_response["dealId"],
-                                             epic=config.epic, direction=signal, account_type="DEMO",
-                                             open_date_ig_str=date_string,
-                                             manual_stop_level=manual_stop_level_2,
-                                             open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
-                                             stop_factor=stop_2, limit_factor=limit_2,
-                                             predictor_scan_id=predictor.get_id(),
-                                             size=config.size))
         return res
 
 

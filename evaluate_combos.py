@@ -91,31 +91,25 @@ import pandas as pd
 def remove_duplicates_with_unordered_list_column(df, subset, list_column):
     """
     Entfernt doppelte Zeilen aus einem DataFrame basierend auf bestimmten Spalten,
-    wobei eine der Spalten eine Liste ist, deren Reihenfolge ignoriert werden soll.
-
-    Parameter:
-    - df: pd.DataFrame – der zu bereinigende DataFrame
-    - subset: list[str] – Liste von Spaltennamen, nach denen Duplikate gefiltert werden sollen
-    - list_column: str – Name der Spalte mit einer Liste von Strings (Reihenfolge wird ignoriert)
-
-    Rückgabe:
-    - pd.DataFrame – bereinigter DataFrame
+    wobei eine der Spalten eine Liste oder ein Array ist, deren Reihenfolge ignoriert wird.
     """
     if list_column not in subset:
         raise ValueError(f"Die Spalte '{list_column}' muss in der subset-Liste enthalten sein.")
 
-    # Hilfsspalte mit sortierter Liste
     sorted_column = f'__sorted_{list_column}'
     df = df.copy()
-    df[sorted_column] = df[list_column].apply(lambda x: tuple(sorted(x)) if isinstance(x, list) else x)
 
-    # Ersetze die list_column im subset durch die Hilfsspalte
+    def normalize_to_tuple(x):
+        try:
+            return tuple(sorted(list(x)))
+        except Exception:
+            return x  # Wenn z.B. x ein einfacher String oder None ist
+
+    df[sorted_column] = df[list_column].apply(normalize_to_tuple)
+
     subset_modified = [sorted_column if col == list_column else col for col in subset]
 
-    # Duplikate entfernen
     df_cleaned = df.drop_duplicates(subset=subset_modified)
-
-    # Hilfsspalte wieder entfernen
     df_cleaned = df_cleaned.drop(columns=[sorted_column])
 
     return df_cleaned
@@ -238,7 +232,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                  part=part,existing_combos=[],
                                  min_train_reward=min_train_reward)
 
-                        if len(df) > 0:
+                        if len(train_df) > 0:
                             train_df["_symbol"] = fx
                             train_df["_atr_factor_stop"] = atr_factor_stop
                             train_df["_atr_factor_limit"] = atr_factor_limit

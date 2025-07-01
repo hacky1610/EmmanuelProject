@@ -39,7 +39,7 @@ class Simulation:
         return buy, sell
 
     def get_signals(self, symbol: str, df: DataFrame, indicators: Indicators, predictor_class, force=False):
-        for indicator in tqdm(indicators.get_all_indicator_names()):
+        for indicator in indicators.get_all_indicator_names():
             path = f"signal_{symbol}_{indicator}.csv"
             if not self._cache.signal_exist(path):
                 predictor = predictor_class(symbol=symbol, indicators=indicators)
