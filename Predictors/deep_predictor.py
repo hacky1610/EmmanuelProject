@@ -184,9 +184,8 @@ class DeepPredictor(BasePredictor):
 
         trades = actions_df[self._features].sum(axis=1) == len(self._features)
         if (actions_df[self._features].sum(axis=1).iloc[0] + 2) >= len(self._features):
-            self._tracer.debug(f"Close to trade {actions_df[self._features].sum(axis=1).iloc[0]} from {len(self._features)}")
-            self._tracer.debug(
-                f"Features {actions_df[self._features]}")
+            self._tracer.debug(f"Close to trade {actions_df[self._features].sum(axis=1).iloc[0]} from {len(self._features)} "
+                               f"Features {actions_df[self._features]}")
         if trades.iloc[0]:
             return self._trade_mode
         return TradeAction.NONE
