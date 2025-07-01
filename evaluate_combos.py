@@ -146,30 +146,7 @@ def get_most_used_features(df: pd.DataFrame, top_factor: float = 0.5) -> List[st
 
     return top_features_list
 
-def analyze_by_symbol(df):
-    required_columns = [
-        '_symbol', '_train_precision', '_train_reward', '_test_precision',
-        '_test_reward', '_test_trade_count', '_atr_factor_stop', '_atr_factor_limit'
-    ]
-    missing = [col for col in required_columns if col not in df.columns]
-    if missing:
-        raise ValueError(f"Missing columns in DataFrame: {missing}")
 
-    grouped = df.groupby('_symbol')
-
-    summary = grouped.agg({
-        '_train_precision': ['mean', 'median'],
-        '_train_reward': ['mean', 'median'],
-        '_test_precision': ['mean', 'median'],
-        '_test_reward': ['mean', 'median'],
-        '_test_trade_count': ['sum'],
-    })
-
-    # Spaltennamen flach machen
-    summary.columns = ['_'.join(col).strip() for col in summary.columns.values]
-    summary = summary.rename(columns={'_symbol_count': 'num_entries'})
-
-    return summary
 
 def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
@@ -195,7 +172,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         #    print("Enough training data to train")
         #    continue
 
-        df = pd.read_parquet("predictors.parquet")
+        df = pd.read_parquet("predictor_2.parquet")
         online_combos = get_all_combos(fx,df)
         online_combos = online_combos + create_new_combos(online_combos, indicators.get_all_indicator_names())
 
@@ -203,8 +180,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         best_features_online_0_2 = get_most_used_features(df,0.15)
 
         hours = 16
-        data = random.choice([(2.0,2.1,0.8, 0.7,6),
-                              (2.0,2.7,0.8, 0.7,6),
+        data = random.choice([
                               (2.0, 2.1, 0.9, 0.7, 6),
                               (2.0, 2.7, 0.9, 0.7, 6),
                               (1.5, 2.0, 0.9, 0.7, 6),
@@ -227,7 +203,8 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             f = 0
             combination_size = combination_size_tuple[0]
             part = combination_size_tuple[1]
-            for features in [
+            for features in [best_features_online_0_5,
+                             best_features_online_0_2,
                              random.choices( indicators.get_all_indicator_names(), k=25)]:
                 f += 1
 
