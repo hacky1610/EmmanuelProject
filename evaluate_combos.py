@@ -5,6 +5,7 @@ import traceback
 from typing import List, Counter
 
 import dropbox
+import numpy as np
 import pymongo
 import pandas as pd
 from pandas import DataFrame
@@ -115,17 +116,15 @@ def remove_duplicates_with_unordered_list_column(df, subset, list_column):
     return df_cleaned
 
 
-def get_all_combos(filter_symbol, df) -> List[str]:
-    # Filtere alle Zeilen, bei denen _symbol ungleich filter_symbol ist
+def get_all_combos(filter_symbol, df) -> List[List[str]]:
     filtered_df = df[df["_symbol"] != filter_symbol]
 
-    # Extrahiere _features, aber nur wenn es sich um eine Liste handelt
-    combo_list = [
-        features for features in filtered_df["_features"]
+    # Sortierte Tupel für vergleichsunabhängige Einzigartigkeit
+    all_combos = (tuple(sorted(f)) for f in filtered_df["_features"] if isinstance(f, (list, np.ndarray)))
 
-    ]
+    unique_combos = [list(t) for t in set(all_combos)]
 
-    return combo_list
+    return unique_combos
 
 
 def get_most_used_features(df: pd.DataFrame, top_factor: float = 0.5) -> List[str]:
@@ -148,123 +147,152 @@ def get_most_used_features(df: pd.DataFrame, top_factor: float = 0.5) -> List[st
 
 
 
+import multiprocessing as mp
+import pandas as pd
+import random
+import traceback
+import os
+import time
+from contextlib import contextmanager
+
+LOCKFILE_PATH = "predictor_2.parquet.lock"
+
+@contextmanager
+def file_lock(lockfile_path, check_interval=0.5, timeout=60):
+    start_time = time.time()
+    while True:
+        try:
+            fd = os.open(lockfile_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            break
+        except FileExistsError:
+            if time.time() - start_time > timeout:
+                raise TimeoutError(f"Timeout while waiting for lock {lockfile_path}")
+            time.sleep(check_interval)
+
+    try:
+        yield
+    finally:
+        if os.path.exists(lockfile_path):
+            os.remove(lockfile_path)
+
 def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators, trade_type=TradeType.FX,
                   tracer=ConsoleTracer()):
-    # General configuration and data processing
     markets = IG.get_markets_offline()
     random.shuffle(markets)
     for market in markets:
 
         fx = market["symbol"]
 
-
-        #ct._save_predictor(fx,"",6, ["rsi_border","bb_border_limit", "adx", "macd_turn"],1,1,10,1.2,0.8,1,1,10,100)
-        #continue
-
-
         if fx not in low_spread_pairs:
             continue
 
-        #fx = "EURNZD"
         indicators.reset_caches()
 
-        #if predictor_store.count_of_all_by_symbol(fx) > 40:
-        #    print("Enough training data to train")
-        #    continue
+        with file_lock(LOCKFILE_PATH):
+            df = pd.read_parquet("predictor_2.parquet")
 
-        df = pd.read_parquet("predictor_2.parquet")
-        online_combos = get_all_combos(fx,df)
-        online_combos = online_combos + create_new_combos(online_combos, indicators.get_all_indicator_names())
+        online_combos = get_all_combos(fx, df)
+        online_combos += create_new_combos(online_combos, indicators.get_all_indicator_names())
 
         best_features_online_0_5 = get_most_used_features(df, 0.33)
-        best_features_online_0_2 = get_most_used_features(df,0.15)
+        best_features_online_0_2 = get_most_used_features(df, 0.15)
 
         hours = 16
         data = random.choice([
-                              (2.0, 2.1, 0.9, 0.7, 6),
-                              (2.0, 2.7, 0.9, 0.7, 6),
-                              (1.5, 2.0, 0.9, 0.7, 6),
-                              (1.2, 1.8, 0.9, 0.7, 6)
-                     ])
-        atr_factor_stop = data[0]
-        atr_factor_limit = data[1]
-        minimum_precission_train = data[2]
-        minimum_precission_test = data[3]
-        min_train_reward=data[4]
+            (2.0, 2.1, 0.9, 0.7, 6),
+            (2.0, 2.7, 0.9, 0.7, 6),
+            (1.5, 2.0, 0.9, 0.7, 6),
+            (1.2, 1.8, 0.9, 0.7, 6)
+        ])
+        atr_factor_stop, atr_factor_limit, min_prec_train, min_prec_test, min_train_reward = data
 
-        combis = [(4, 0.1),
-                  (5, 0.1),
-                  (6, 0.1),
-                  (8, 0.1),
-                  (7, 0.2)]
+        combis = [(4, 0.1), (5, 0.1), (6, 0.1), (8, 0.1), (7, 0.2)]
 
-        for combination_size_tuple in random.choices(combis,k=3):
+        for combination_size, part in random.choices(combis, k=3):
 
-            f = 0
-            combination_size = combination_size_tuple[0]
-            part = combination_size_tuple[1]
-            for features in [best_features_online_0_5,
-                             best_features_online_0_2,
-                             random.choices( indicators.get_all_indicator_names(), k=25)]:
-                f += 1
-
-                ct = CombinationTrainer(cache=cache,
-                                        indicators=indicators,
-                                        predictor_store=predictor_store,
-                                        test_mode=True)
+            for f, features in enumerate([
+                best_features_online_0_5,
+                best_features_online_0_2,
+                random.choices(indicators.get_all_indicator_names(), k=25)
+            ], start=1):
+                if f > 1:
+                    online_combos = []
+                ct = CombinationTrainer(
+                    cache=cache,
+                    indicators=indicators,
+                    predictor_store=predictor_store,
+                    test_mode=True
+                )
                 try:
-
-                    for trade_action in [TradeAction.SELL,TradeAction.BUY]:
+                    for trade_action in [TradeAction.SELL, TradeAction.BUY]:
                         print(
                             f"Evaluate {fx} {trade_action} for {hours} hours and stop factor "
-                            f"{atr_factor_stop} limit {atr_factor_limit} and min prec {minimum_precission_train} combination {combination_size} Feature Set {f}")
-                        df_train_global = ct.create_data(tiingo=tiingo, symbol=fx,
-                                                         trade_type=trade_type, data_processor=data_processor,
-                                                         simulation=simulation, hours=hours,
-                                                         factor_stop=atr_factor_stop, factor_limit=atr_factor_limit,
-                                                         indicators=indicators,
-                                                         trade_mode=trade_action, cache=cache)
+                            f"{atr_factor_stop} limit {atr_factor_limit} and min prec {min_prec_train} combination {combination_size} Feature Set {f}")
 
-                        train_df = ct.train(df=df_train_global,
-                                 trading_hours=hours,
-                                 min_prec_train=minimum_precission_train,
-                                 num_features=combination_size,
-                                 trading_mode=trade_action,
-                                 symbol=fx,
-                                 atr_factor_stop=atr_factor_stop,
-                                 atr_factor_limit=atr_factor_limit,
-                                 best_features=features, min_prec_test=minimum_precission_test,
-                                 part=part,existing_combos=[],
-                                 min_train_reward=min_train_reward)
+                        df_train_global = ct.create_data(
+                            tiingo=tiingo,
+                            symbol=fx,
+                            trade_type=trade_type,
+                            data_processor=data_processor,
+                            simulation=simulation,
+                            hours=hours,
+                            factor_stop=atr_factor_stop,
+                            factor_limit=atr_factor_limit,
+                            indicators=indicators,
+                            trade_mode=trade_action,
+                            cache=cache
+                        )
+
+                        train_df = ct.train(
+                            df=df_train_global,
+                            trading_hours=hours,
+                            min_prec_train=min_prec_train,
+                            num_features=combination_size,
+                            trading_mode=trade_action,
+                            symbol=fx,
+                            atr_factor_stop=atr_factor_stop,
+                            atr_factor_limit=atr_factor_limit,
+                            best_features=features,
+                            min_prec_test=min_prec_test,
+                            part=part,
+                            existing_combos=online_combos,
+                            min_train_reward=min_train_reward
+                        )
 
                         if len(train_df) > 0:
                             train_df["_symbol"] = fx
                             train_df["_atr_factor_stop"] = atr_factor_stop
                             train_df["_atr_factor_limit"] = atr_factor_limit
-                            all_df = pd.read_parquet('predictor_2.parquet')
-                            all_df = pd.concat([all_df,train_df],  ignore_index=True)
-                            all_df = remove_duplicates_with_unordered_list_column(all_df,["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features"], "_features")
-                            all_df.to_parquet('predictor_2.parquet')
-                            print("")
 
-
-
+                            with file_lock(LOCKFILE_PATH):
+                                all_df = pd.read_parquet("predictor_3.parquet")
+                                #all_df = DataFrame()
+                                all_df = pd.concat([all_df, train_df], ignore_index=True)
+                                all_df = remove_duplicates_with_unordered_list_column(
+                                    all_df,
+                                    ["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features", "_trade_mode"],
+                                    "_features"
+                                )
+                                all_df.to_parquet("predictor_3.parquet")
 
                 except Exception as ex:
                     traceback_str = traceback.format_exc()
                     print(f"MainException: {ex} File:{traceback_str}")
 
-
-while True:
-    try:
-        train_symbols(markets=IG.get_markets_offline(),
-                      tiingo=_tiingo,
-                      data_processor=_dp,
-                      indicators=_indicators,
-                      tracer=_tracer,
-                      cache=_cache,
-                      simulation=_simulation)
-        print("")
-    except Exception as ex:
-        traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
-        print(f"MainException: {ex} File:{traceback_str}")
+if __name__ == '__main__':
+    while True:
+        try:
+            train_symbols(
+                markets=IG.get_markets_offline(),
+                tiingo=_tiingo,
+                data_processor=_dp,
+                indicators=_indicators,
+                tracer=_tracer,
+                cache=_cache,
+                simulation=_simulation
+            )
+            print("")
+        except Exception as ex:
+            traceback_str = traceback.format_exc()
+            print(f"MainException: {ex} File:{traceback_str}")

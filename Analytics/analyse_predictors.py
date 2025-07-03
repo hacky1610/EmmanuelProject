@@ -25,7 +25,7 @@ def analyze_by_symbol(df):
 
     return summary
 pd.set_option('display.max_columns', None)
-df = pd.read_parquet("../predictors.parquet" )
+df = pd.read_parquet("../predictor_3.parquet" )
 print(analyze_by_symbol(df))
 
 

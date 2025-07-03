@@ -189,6 +189,11 @@ class CombinationTrainer:
         if existing_combos is not None:
             combos = existing_combos + combos
 
+        random.shuffle(combos)
+        # Kürze die Liste auf 5 % der ursprünglichen Länge
+        reduced_size = min(350000, int(len(combos)))  # Mindestens 1 Element behalten
+        combos = combos[:reduced_size]
+
 
         for features in combos:
             try:
@@ -207,6 +212,7 @@ class CombinationTrainer:
                             "_train_reward": train_reward,
                             "_test_precision": test_precision,
                             "_test_reward": test_reward,
+                            "_trade_mode": trade_mode,
                             "_test_trade_count": trade_count_test,
                             "_unique_indexes": trade_indexes_test,
                         })
