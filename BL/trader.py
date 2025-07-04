@@ -216,6 +216,7 @@ class Trader:
         predictors = []
 
         filtered:DataFrame = self._predictors_df[self._predictors_df._symbol == symbol]
+        filtered = filtered[filtered._test_precision > 0.6]
         for predictor_data in filtered.to_dict(orient='records'):
             predictor = DeepPredictor(symbol=symbol, tracer=self._tracer, indicators=indicators, cache=self._cache)
             predictor.setup(predictor_data)
@@ -273,7 +274,7 @@ class Trader:
 
     def _has_open_positions(self, symbol: str) -> bool:
         open_deals = self._deal_storage.get_open_deals_by_ticker(symbol)
-        return len(open_deals) >= 1
+        return len(open_deals) >= 3
 
     @staticmethod
     def _get_actions_df(predictors: List[DeepPredictor], trade_df: DataFrame, indicators: Any) -> DataFrame:
@@ -418,7 +419,6 @@ class Trader:
             date_string = re.match("\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", deal_response['date'])
             date_string = date_string.group().replace(" ", "T")
             manual_stop_level_1 = None
-            manual_stop_level_2 = None
 
             if is_manual_stop:
                 pip_diff = market.get_pip_value(stop_1, config.scaling)
@@ -437,6 +437,7 @@ class Trader:
                                          manual_stop_level=manual_stop_level_1,
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
                                          stop_factor=stop_1, limit_factor=limit_1, predictor_scan_id=predictor.get_id(),
+                                         predictor_object=predictor.get_save_data(),
                                          size=config.size))
 
         return res

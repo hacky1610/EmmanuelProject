@@ -35,7 +35,9 @@ class Deal:
                  reached_level:bool = False,
                  closed_by_error:bool = False,
                  current_profit_percentage: float = 0.0,
-                 next_dragen_deal_id: ObjectId = None):
+                 next_dragen_deal_id: ObjectId = None,
+                 predictor_object = None,
+                 ):
         self.ticker = ticker
         self.status = status
         self.dealId = dealId
@@ -64,6 +66,7 @@ class Deal:
         self.closed_by_error = closed_by_error
         self.current_profit_percentage = current_profit_percentage
         self.next_dragen_deal_id = next_dragen_deal_id
+        self.predictor_object = predictor_object
 
     @staticmethod
     def Create(data: dict):
@@ -95,7 +98,8 @@ class Deal:
             reached_level=data.get("reached_level", False),
             closed_by_error=data.get("closed_by_error", False),
             current_profit_percentage=data.get("current_profit_percentage", 0.0),
-            next_dragen_deal_id=data.get("next_dragen_deal_id",None)
+            next_dragen_deal_id=data.get("next_dragen_deal_id",None),
+            predictor_object=data.get("predictor_object", None)
         )
 
     def __str__(self):
@@ -160,7 +164,8 @@ class Deal:
             "reached_level": self.reached_level,
             "closed_by_error": self.closed_by_error,
             "current_profit_percentage": self.current_profit_percentage,
-            "next_dragen_deal_id": self.next_dragen_deal_id
+            "next_dragen_deal_id": self.next_dragen_deal_id,
+            "predictor_object": self.predictor_object
 
         }
 
