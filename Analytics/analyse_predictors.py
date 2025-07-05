@@ -29,7 +29,11 @@ df = pd.read_parquet("../predictor_3.parquet" )
 print(df["_test_precision"].mean())
 print(df["_test_reward"].mean())
 print(df[df["_trade_mode"] == "sell"]["_test_precision"].mean())
-print(analyze_by_symbol(df))
+
+for f in [2.0,1.5,1.2,1.0,0.8]:
+
+    print(f"Factor {f} - {df[df['_atr_factor_stop'] == f]['_test_precision'].mean()}")
+#print(analyze_by_symbol(df))
 
 
 
