@@ -205,7 +205,6 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             (1.5, 2.0, 0.9, 0.7, 6),
             (1.2, 1.8, 0.9, 0.7, 6),
             (1.0, 1.6, 0.9, 0.7, 6),
-            (0.8, 1.2, 0.9, 0.7, 6),
         ])
         atr_factor_stop, atr_factor_limit, min_prec_train, min_prec_test, min_train_reward = data
 
