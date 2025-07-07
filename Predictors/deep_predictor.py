@@ -1,6 +1,8 @@
 import datetime
 import pickle
 from typing import List
+
+import numpy as np
 import pandas as pd
 from BL import measure_time
 from Predictors.base_predictor import BasePredictor
@@ -77,11 +79,27 @@ class DeepPredictor(BasePredictor):
 
         super().setup(config)
 
+    def clean_for_mongo(self, obj):
+        if isinstance(obj, dict):
+            return {k: self.clean_for_mongo(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self.clean_for_mongo(v) for v in obj]
+        elif isinstance(obj, np.ndarray):
+            return [self.clean_for_mongo(v) for v in obj.tolist()]
+        elif isinstance(obj, (np.integer,)):  # z. B. np.int64
+            return int(obj)
+        elif isinstance(obj, (np.floating,)):  # z. B. np.float64
+            return float(obj)
+        elif isinstance(obj, datetime.datetime):
+            return obj  # oder .isoformat(), je nach Bedarf
+        else:
+            return obj
+
     def get_config(self) -> Series:
         parent_c = super().get_config()
         my_conf = Series([
             self._model_id,
-            self._features,
+            self.clean_for_mongo(self._features),
             self._trading_hours,
             self._threshold,
             self._trade_mode,
@@ -93,7 +111,7 @@ class DeepPredictor(BasePredictor):
             self._test_reward,
             self._test_precision,
             self._test_trade_count,
-            self._unique_indexes,
+            self.clean_for_mongo(self._unique_indexes),
             self._train_reward,
             self._train_precision,
             self._train_trade_count,
