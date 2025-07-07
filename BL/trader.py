@@ -179,7 +179,7 @@ class Trader:
             "EURNZD", "AUDCAD", "NOKSEK", "USDNOK"
         ]
 
-        max_workers = min(os.cpu_count(), 4)  # Falls os.cpu_count() None zurückgibt, setze Standardwert 4
+        max_workers = min(os.cpu_count(), 2)  # Falls os.cpu_count() None zurückgibt, setze Standardwert 4
         self._tracer.debug(f"Using max {max_workers} concurrent threads")
 
         async def trade_single_market(market):
