@@ -179,22 +179,26 @@ class Trader:
             "EURNZD", "AUDCAD", "NOKSEK", "USDNOK"
         ]
 
-        max_workers = min(os.cpu_count(), 2)  # Falls os.cpu_count() None zurückgibt, setze Standardwert 4
+        max_workers = min(os.cpu_count() or 4, 2)
         self._tracer.debug(f"Using max {max_workers} concurrent threads")
 
-        async def trade_single_market(market):
-            try:
-                if self.market_tradable(market["symbol"]) and market["symbol"] in low_spread_pairs:
-                    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                        loop = asyncio.get_running_loop()
-                        self._tracer.debug(f"Trade {market['symbol']}")
-                        await loop.run_in_executor(executor, self.trade_market, Indicators(), market)
-            except Exception as EX:
-                self._tracer.error(f"Error while trading {market['symbol']} {EX}")
-                traceback_str = traceback.format_exc()
-                self._tracer.error(f"Error: {EX} File:{traceback_str}")
+        loop = asyncio.get_running_loop()
+        tasks = []
 
-        await asyncio.gather(*(trade_single_market(market) for market in currency_markets))
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for market in currency_markets:
+                if self.market_tradable(market["symbol"]) and market["symbol"] in low_spread_pairs:
+                    self._tracer.debug(f"Scheduling trade for {market['symbol']}")
+                    task = loop.run_in_executor(executor, self.trade_market, Indicators(), market)
+                    tasks.append(task)
+
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result, market in zip(results, [m for m in currency_markets if
+                                            self.market_tradable(m["symbol"]) and m["symbol"] in low_spread_pairs]):
+            if isinstance(result, Exception):
+                self._tracer.error(f"Error while trading {market['symbol']} {result}")
+                self._tracer.error(traceback.format_exc())
 
         self._tracer.debug("End")
 
