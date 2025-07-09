@@ -115,33 +115,60 @@ class CombinationTrainer:
 
     @staticmethod
     def _predict_sum(df, feature_cols, atr_factor_stop, atr_factor_limit):
-        # Fälle, in denen alle Features 1 sind
-        if not all(col in df.columns for col in feature_cols):
-            #print(f"Error {feature_cols} not in df {df.columns}")
-            #raise Exception("Error")
-            return 0,0,[],0
+        """
+        Bewertet eine Feature-Kombination in einem Trading-DataFrame anhand von Precision und Reward.
 
+        Args:
+            df (pd.DataFrame): DataFrame mit Feature-Spalten (binär: 0/1) und einer 'result'-Spalte (0 = Verlust, 1 = Gewinn)
+            feature_cols (List[str]): Liste von Spaltennamen, die alle 1 sein müssen, um einen Trade zu erzeugen
+            atr_factor_stop (float): ATR-Faktor für Stop-Loss
+            atr_factor_limit (float): ATR-Faktor für Take-Profit
 
-        trades = df[list(feature_cols)].sum(axis=1) == len(feature_cols)
+        Returns:
+            Tuple[float, float, List[int], int]:
+                - Precision (gewichtete TP / (gewichtete TP + FP))
+                - Reward (gewichtete TP - FP)
+                - Liste der Indexe, an denen ein Trade stattfindet
+                - Anzahl der Trades
+        """
+        import pandas as pd
 
-        # Berechnung von TP und FP
+        # Duplikate in Spalten prüfen
+        duplicated_columns = df.columns[df.columns.duplicated()].tolist()
+        #if duplicated_columns:
+        #    raise ValueError(f"Fehler: Doppelte Spalten im DataFrame gefunden: {duplicated_columns}")
+
+        # Duplikate in feature_cols entfernen, Reihenfolge beibehalten
+        feature_cols = list(dict.fromkeys(feature_cols))
+
+        # Doppelte Spalten im DataFrame entfernen
+        df = df.loc[:, ~df.columns.duplicated()]
+
+        # Prüfen, ob alle Feature-Spalten im DataFrame vorhanden sind
+        if not all(col in df.columns for col in feature_cols + ['result']):
+            missing = [col for col in feature_cols + ['result'] if col not in df.columns]
+            print(f"Warnung: Fehlende Spalten: {missing}")
+            return 0, 0, [], 0
+
+        # Nur Zeilen, bei denen alle Features 1 sind
+        trades = df[feature_cols].sum(axis=1) == len(feature_cols)
+
+        # Berechne True Positives (TP) und False Positives (FP)
         TP = ((trades) & (df['result'] == 1)).sum()
         FP = ((trades) & (df['result'] == 0)).sum()
 
-        # Berechnung des ATR-Verhältnisses
+        # Verhältnis Take-Profit zu Stop-Loss
         atr_ratio = atr_factor_limit / atr_factor_stop
 
-        # Nur die True Positives skalieren
-        TP_scaled = TP * atr_ratio  # Skaliere die True Positives
+        # Gewichtete True Positives
+        TP_scaled = TP * atr_ratio
 
-        # Precision ist weiterhin die Standard-Precision (True Positives / (True Positives + False Positives))
+        # Precision und Reward berechnen
         total = TP_scaled + FP
         precision = TP_scaled / total if total > 0 else 0
-
-        # Reward ist die Differenz von TP und FP, aber skaliere nur TP
         reward = TP_scaled - FP
 
-        # Liste der Indizes, an denen ein Trade gemacht wurde
+        # Indexe der getätigten Trades
         trade_indexes = df.index[trades].tolist()
 
         return precision, reward, trade_indexes, trades.sum()

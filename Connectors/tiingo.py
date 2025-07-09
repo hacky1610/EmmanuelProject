@@ -109,14 +109,14 @@ class Tiingo:
             return res
 
         if end is None:
-            self._cache.save_cache(res, name)
+            if use_cache:
+                self._cache.save_cache(res, name)
         else:
             end_str = TimeUtils.get_time_string(datetime.strptime(end, "%Y-%m-%d"))
             res = res[res.date < end_str]
 
         start_str = TimeUtils.get_time_string(datetime.strptime(start, "%Y-%m-%d"))
-        res = res[start_str < res.date]
-        res = res.reset_index()
+
 
         if add_signals:
             data_processor.addSignals(res)
@@ -124,6 +124,8 @@ class Tiingo:
             data_processor.clean_data(res)
         if validate:
             self._validate(res)
+        res = res[start_str < res.date]
+        res = res.reset_index(drop=True)
         return res
 
     @staticmethod

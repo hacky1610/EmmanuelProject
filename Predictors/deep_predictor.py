@@ -200,6 +200,11 @@ class DeepPredictor(BasePredictor):
         else:
             actions_df = sell_actions_df
 
+            # Duplikate in Spalten prüfen
+        duplicated_columns = actions_df.columns[actions_df.columns.duplicated()].tolist()
+        if duplicated_columns:
+            raise ValueError(f"Fehler: Doppelte Spalten im DataFrame gefunden: {duplicated_columns}")
+
         trades = actions_df[self._features].sum(axis=1) == len(self._features)
         if trades.iloc[0]:
             return self._trade_mode
