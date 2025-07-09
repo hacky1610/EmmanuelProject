@@ -113,35 +113,38 @@ class Trader:
         hist = self._ig.get_transaction_history(3)
 
         for _, ig_deal in hist.iterrows():
-            ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/", "")
-            deal:Deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
-            if deal is not None:
-                deal.profit = float(ig_deal.profitAndLoss[1:])
-                deal.open_level = float(ig_deal["openLevel"])
-                deal.close_level = float(ig_deal["closeLevel"])
-                deal.close_date_ig_datetime = datetime.strptime(ig_deal.dateUtc, '%Y-%m-%dT%H:%M:%S')
+            try:
+                ticker = re.match("\w{3}\/\w{3}", ig_deal.instrumentName).group().replace("/", "")
+                deal:Deal = self._deal_storage.get_deal_by_ig_id(ig_deal.openDateUtc, ticker)
+                if deal is not None:
+                    deal.profit = float(ig_deal.profitAndLoss[1:])
+                    deal.open_level = float(ig_deal["openLevel"])
+                    deal.close_level = float(ig_deal["closeLevel"])
+                    deal.close_date_ig_datetime = datetime.strptime(ig_deal.dateUtc, '%Y-%m-%dT%H:%M:%S')
 
-                if deal.profit == 0:
-                    ig_m = self._ig.get_market_details(deal.epic)
-                    scaling = int(ig_m["instrument"]["contractSize"])
-                    m = self._market_store.get_market(deal.ticker)
+                    if deal.profit == 0:
+                        ig_m = self._ig.get_market_details(deal.epic)
+                        scaling = int(ig_m["instrument"]["contractSize"])
+                        m = self._market_store.get_market(deal.ticker)
 
-                    deal.profit = self._calc_profit(ig_deal, m, scaling)
+                        deal.profit = self._calc_profit(ig_deal, m, scaling)
 
-                    self._tracer.warning(
-                        f"Problem with IG Calcululation. Profit is 0 Euro. Real profit is {deal.profit} . "
-                        f"Deal {deal.dealId}")
+                        self._tracer.warning(
+                            f"Problem with IG Calcululation. Profit is 0 Euro. Real profit is {deal.profit} . "
+                            f"Deal {deal.dealId}")
 
-                if deal.profit > 0:
-                    deal.result = 1
+                    if deal.profit > 0:
+                        deal.result = 1
+                    else:
+                        deal.result = -1
+
+                    deal.close()
+                    self._tracer.debug(f"Update deal for {deal.dealId} and {ticker}")
+                    self._deal_storage.save(deal)
                 else:
-                    deal.result = -1
-
-                deal.close()
-                self._tracer.debug(f"Update deal for {deal.dealId} and {ticker}")
-                self._deal_storage.save(deal)
-            else:
-                self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
+                    self._tracer.debug(f"No deal for {ig_deal.openDateUtc} and {ticker}")
+            except Exception as e:
+                self._tracer.warning(f"Error with {ig_deal}: {e}")
 
     def _fix_deals(self):
         opened = self._ig.get_opened_positions()
