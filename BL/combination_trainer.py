@@ -134,7 +134,7 @@ class CombinationTrainer:
         import pandas as pd
 
         # Duplikate in Spalten prüfen
-        duplicated_columns = df.columns[df.columns.duplicated()].tolist()
+        #duplicated_columns = df.columns[df.columns.duplicated()].tolist()
         #if duplicated_columns:
         #    raise ValueError(f"Fehler: Doppelte Spalten im DataFrame gefunden: {duplicated_columns}")
 

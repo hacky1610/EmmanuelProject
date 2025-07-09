@@ -77,6 +77,9 @@ class DeepPredictor(BasePredictor):
             self._atr_factor_limit = config["_atr_factor"]
             self._atr_factor_stop = config["_atr_factor"]
 
+        #fix features
+        self._features = list(set(self._features))
+
         super().setup(config)
 
     def clean_for_mongo(self, obj):
