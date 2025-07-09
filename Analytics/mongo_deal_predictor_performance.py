@@ -75,9 +75,15 @@ for deal in reversed(list(ds.get_closed_deals())):
     if deal["open_date_ig_datetime"] > datetime.now() - timedelta(hours=24):
         continue
 
-    id = deal["predictor_scan_id"]
-    predictor = ps.load_by_id(id)
-    predictor_object = DeepPredictor(deal["ticker"], cache, Indicators(), config=predictor)
+    if "predictor_object" not in deal:
+        continue
+
+
+    predictor_object = DeepPredictor(deal["ticker"], cache, Indicators(), config=deal["predictor_object"])
+
+    print(f'{deal["profit"]} - {predictor_object._train_reward} - {predictor_object._test_reward}')
+    continue
+
     df, df_eval = tiingo.load_test_data(deal["ticker"], DataProcessor(), trade_type=TradeType.FX,
                                                             use_cache=True, days=30)
 
