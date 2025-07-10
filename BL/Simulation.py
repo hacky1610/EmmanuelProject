@@ -49,7 +49,7 @@ class Simulation:
 
     def get_signals_by_indicatornames(self, symbol: str, df: DataFrame, features: [], indicators,predictor_class, force=False):
         for indicator in features:
-            path = f"signal_{symbol}_{indicator}.csv"
+            path = f"signal_{symbol}_{indicator}test.csv"
             predictor = predictor_class(symbol=symbol, indicators=indicators)
             predictor.setup({"_indicator_names": [indicator], "_stop": 50, "_limit": 50})
             trades = predictor.get_signals(df, self._analytics)
@@ -81,14 +81,14 @@ class Simulation:
 
         return merged_df
 
-    def create_combined_indicator_data_by_features (self, features, symbol: str) -> DataFrame:
+    def create_combined_indicator_data_by_features (self, features, symbol: str, suffix="") -> DataFrame:
         # Liste für DataFrames mit einem gemeinsamen Index 'chart_index'
         df_list = []
 
         # Durchlaufe alle Indikatornamen und lade die entsprechenden DataFrames
         for indicator in features:
             try:
-                df = self._cache.load_signal(f"signal_{symbol}_{indicator}.csv")
+                df = self._cache.load_signal(f"signal_{symbol}_{indicator}{suffix}.csv")
 
                 # Füge eine Spalte für den Indikatornamen hinzu
                 df = df.rename(columns={"action": indicator})

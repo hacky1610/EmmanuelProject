@@ -266,6 +266,9 @@ class Trader:
             self._tracer.debug(f"BAD ticker {symbol}")
             return TradeResult.ERROR
 
+        self._tracer.debug(f"{symbol} Last day: {trade_df.iloc[-1]['close']}")
+        self._tracer.debug(f"{symbol} Last hour: {self._tiingo.get_last_hour_of_yesterday(symbol=symbol, dp=self._dataprocessor, trade_type=TradeType.FX)}")
+
 
         indicators.init_caches(trade_df)
         predictors = self._get_predictors(symbol, indicators)

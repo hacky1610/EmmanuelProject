@@ -245,3 +245,33 @@ class Tiingo:
                                          validate=False,
                                          suffix="mega")
         return df, df_eval
+
+    def load_hour_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 1200, use_cache=True):
+
+        start_time = self._get_start_time(days=days)
+        df = self.load_data_by_date(ticker=symbol,
+                                    start=start_time,
+                                    end=None,
+                                    data_processor=dp,
+                                    use_cache=use_cache,
+                                    trade_type=trade_type,
+                                    resolution="1hour",
+                                    validate=False,
+                                    suffix="mega")
+
+        return df
+
+    def get_last_hour_of_yesterday(self, symbol: str, dp: DataProcessor, trade_type):
+        from datetime import datetime, timedelta
+
+        # Aktuelles UTC-Datum (z. B. heute = 2025-07-09)
+        heute = datetime.utcnow().date()
+
+        # Tag davor
+        gestern = heute - timedelta(days=1)
+
+        # 23 Uhr als ISO-String im Tiingo-Format
+        schlusszeit = f"{gestern.isoformat()}T23:00:00.000Z"
+
+        df_hour = self.load_hour_data(symbol,dp,trade_type,days=14,use_cache=False)
+        return df_hour[df_hour.date == schlusszeit].iloc[0]["close"]

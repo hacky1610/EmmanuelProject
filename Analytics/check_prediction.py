@@ -68,9 +68,7 @@ def search_index(df, date):
     return nearest_index
 
 pd.set_option('future.no_silent_downcasting', True)
-for deal in reversed(list(ds.get_closed_deals())):
-    if deal['ticker'] != "CADJPY":
-          continue
+for deal in reversed(list(ds.get_open_deals_raw())):
     if deal["open_date_ig_datetime"] > datetime.now() - timedelta(hours=24):
         continue
 
@@ -80,14 +78,17 @@ for deal in reversed(list(ds.get_closed_deals())):
     if deal["predictor_object"] is None:
         continue
 
+    if deal["dealId"] != "DIAAAAUBMT9C2BC":
+        continue
+
 
     predictor_object = DeepPredictor(deal["ticker"], cache, Indicators(), config=deal["predictor_object"])
     print(f'+++{deal["ticker"]}')
-    print(f'{deal["profit"]} - {predictor_object._train_reward} - {predictor_object._test_reward}')
     #continue
 
     df, df_eval = tiingo.load_test_data(deal["ticker"], DataProcessor(), trade_type=TradeType.FX,
                                                             use_cache=False, days=300)
+    yesterday = tiingo.get_last_hour_of_yesterday(deal["ticker"], DataProcessor(), trade_type=TradeType.FX)
 
     if "index" in df.columns:
         df = df.drop(columns="index")
@@ -122,20 +123,10 @@ for deal in reversed(list(ds.get_closed_deals())):
 
     if not  signal_result_df[signal_result_df.chart_index == chart_index][predictor_object._features].sum(axis=1).item() == len(predictor_object._features):
         print("ERROR!!!")
-
-    if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 0 and deal["profit"] < 0:
+    else:
         print("OK")
-    if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 1 and deal["profit"] > 0:
-        print("OK")
-    if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 0 and deal["profit"] > 0:
-        print("ERROR")
-    if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 1 and deal["profit"] < 0:
-        print("ERROR")
 
 
-    precission, reward, trade_indexes, trade_count  = ct._predict_sum(signal_result_df.drop(columns=["chart_index", "entry_time"]),
-                                                                      predictor_object._features,predictor_object.get_atr_factor_stop(),predictor_object.get_atr_factor_limit())
 
-    print(f'Real    : Profit: {deal["profit"]} Reward: {predictor_object._test_reward} Time {deal["open_date_ig_str"]}')
-    print(f"Evaluate: Precission: {precission} Reward {reward}")
+
 

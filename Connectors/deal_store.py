@@ -252,6 +252,10 @@ class DealStore:
         return self._collection.find(
             {"status": "Closed"})
 
+    def get_open_deals_raw(self):
+        return self._collection.find(
+            {"status": "open"})
+
     def get_custom(self, query:dict):
         return self._collection.find(query)
 
