@@ -78,7 +78,7 @@ class Tiingo:
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
                           clean_data: bool = True, trade_type: TradeType = TradeType.FX,
-                          use_cache: bool = True, validate: bool = True, suffix:str="mega") -> DataFrame:
+                          use_cache: bool = True, validate: bool = True, suffix:str="mega", fix_close_price = False) -> DataFrame:
         name = f"{ticker}_{resolution}{suffix}.csv"
         cached = self._cache.load_cache(name)
 
@@ -117,6 +117,11 @@ class Tiingo:
 
         start_str = TimeUtils.get_time_string(datetime.strptime(start, "%Y-%m-%d"))
 
+        if fix_close_price:
+            close = self.get_last_hour_of_yesterday(ticker,data_processor,TradeType.FX)
+            old_close = res.loc[res.index[-1], "close"]
+            self._tracer.debug(f"{ticker} replace {old_close} with {close}")
+            res.loc[res.index[-1], "close"] = close
 
         if add_signals:
             data_processor.addSignals(res)
@@ -151,7 +156,7 @@ class Tiingo:
                                       data_processor=dp,
                                       trade_type=trade_type,
                                       resolution="1day",
-                                      suffix="")
+                                      suffix="", fix_close_price=True)
 
     def _load_long_period(self, symbol: str,
                           trade_type, days: int = 100,
@@ -263,15 +268,24 @@ class Tiingo:
 
     def get_last_hour_of_yesterday(self, symbol: str, dp: DataProcessor, trade_type):
         from datetime import datetime, timedelta
+        import pandas as pd
 
-        # Aktuelles UTC-Datum (z. B. heute = 2025-07-09)
-        heute = datetime.utcnow().date()
+        # Hole die letzten 7–14 Tage Stunden-Daten
+        df_hour = self.load_hour_data(symbol, dp, trade_type, days=14, use_cache=False)
+        df_hour['date'] = pd.to_datetime(df_hour['date'], utc=True)
 
-        # Tag davor
-        gestern = heute - timedelta(days=1)
+        # Extrahiere Datum und Uhrzeit
+        df_hour['day'] = df_hour['date'].dt.date
+        df_hour['hour'] = df_hour['date'].dt.hour
 
-        # 23 Uhr als ISO-String im Tiingo-Format
-        schlusszeit = f"{gestern.isoformat()}T23:00:00.000Z"
+        # Filter auf Stunden == 23:00 UTC
+        df_23 = df_hour[df_hour['hour'] == 23].copy()
 
-        df_hour = self.load_hour_data(symbol,dp,trade_type,days=14,use_cache=False)
-        return df_hour[df_hour.date == schlusszeit].iloc[0]["close"]
+        if df_23.empty:
+            raise ValueError(f"Keine 23:00 UTC Daten vorhanden für {symbol}")
+
+        # Sortiere nach Datum absteigend und nimm den letzten vollständigen Tag
+        letzter_tag = df_23['day'].max()
+        letzter_eintrag = df_23[df_23['day'] == letzter_tag].iloc[0]
+
+        return letzter_eintrag['close']

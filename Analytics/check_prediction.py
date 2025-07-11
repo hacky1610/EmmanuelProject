@@ -69,9 +69,6 @@ def search_index(df, date):
 
 pd.set_option('future.no_silent_downcasting', True)
 for deal in reversed(list(ds.get_open_deals_raw())):
-    if deal["open_date_ig_datetime"] > datetime.now() - timedelta(hours=24):
-        continue
-
     if "predictor_object" not in deal:
         continue
 
