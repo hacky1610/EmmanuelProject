@@ -56,7 +56,7 @@ def analyze_by_symbol(df):
         '_train_reward': ['mean', 'median'],
         '_test_precision': ['mean', 'median'],
         '_test_reward': ['mean', 'median'],
-        '_test_trade_count': ['sum'],
+        '_teFst_trade_count': ['sum'],
     })
 
     # Spaltennamen flach machen

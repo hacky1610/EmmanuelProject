@@ -141,13 +141,10 @@ class CombinationTrainer:
         # Duplikate in feature_cols entfernen, Reihenfolge beibehalten
         feature_cols = list(dict.fromkeys(feature_cols))
 
-        # Doppelte Spalten im DataFrame entfernen
-        df = df.loc[:, ~df.columns.duplicated()]
-
         # Prüfen, ob alle Feature-Spalten im DataFrame vorhanden sind
         if not all(col in df.columns for col in feature_cols + ['result']):
             missing = [col for col in feature_cols + ['result'] if col not in df.columns]
-            print(f"Warnung: Fehlende Spalten: {missing}")
+            #print(f"Warnung: Fehlende Spalten: {missing}")
             return 0, 0, [], 0
 
         # Nur Zeilen, bei denen alle Features 1 sind
@@ -207,7 +204,9 @@ class CombinationTrainer:
                                      existing_combos: List = None,
                                      ) -> DataFrame:
 
+        df = df.loc[:, ~df.columns.duplicated()]
         train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+        # Doppelte Spalten im DataFrame entfernen
 
         results = []
         # Kombis aus besten Features generieren
