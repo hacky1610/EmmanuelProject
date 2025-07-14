@@ -65,7 +65,7 @@ def analyze_by_symbol(df):
 
     return summary
 pd.set_option('display.max_columns', None)
-df = pd.read_parquet("../predictor_3.parquet" )
+df = pd.read_parquet("../predictor_4.parquet" )
 print(df["_test_precision"].mean())
 print(df["_test_reward"].mean())
 print(df[df["_trade_mode"] == "sell"]["_test_precision"].mean())
