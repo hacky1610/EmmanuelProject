@@ -75,8 +75,8 @@ for deal in reversed(list(ds.get_open_deals_raw())):
     if deal["predictor_object"] is None:
         continue
 
-    if deal["dealId"] != "DIAAAAUBMT9C2BC":
-        continue
+    #if deal["dealId"] != "DIAAAAUBMT9C2BC":
+    #    continue
 
 
     predictor_object = DeepPredictor(deal["ticker"], cache, Indicators(), config=deal["predictor_object"])

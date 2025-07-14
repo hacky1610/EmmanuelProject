@@ -91,7 +91,7 @@ class Trader:
         self._cache = cache
         self._check_ig_performance = check_ig_performance
 
-        file_path = os.path.join(os.path.dirname(__file__),".." ,"predictor_3.parquet")
+        file_path = os.path.join(os.path.dirname(__file__),".." ,"predictor_4.parquet")
         self._predictors_df = pd.read_parquet(file_path)
 
     def _is_good_ticker(self, ticker: str, min_avg_profit: float, min_deal_count: int, days: int = 1) -> bool:

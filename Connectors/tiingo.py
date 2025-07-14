@@ -78,7 +78,8 @@ class Tiingo:
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
                           resolution: str = "1hour", add_signals: bool = True,
                           clean_data: bool = True, trade_type: TradeType = TradeType.FX,
-                          use_cache: bool = True, validate: bool = True, suffix:str="mega", fix_close_price = False) -> DataFrame:
+                          use_cache: bool = True, validate: bool = True, suffix:str="mega",
+                          fix_close_price = False, remove_sundays = False) -> DataFrame:
         name = f"{ticker}_{resolution}{suffix}.csv"
         cached = self._cache.load_cache(name)
 
@@ -117,8 +118,20 @@ class Tiingo:
 
         start_str = TimeUtils.get_time_string(datetime.strptime(start, "%Y-%m-%d"))
 
+
+
+        if remove_sundays:
+            res['date_pd'] = pd.to_datetime(res['date'], utc=True)
+
+            # Wochentag extrahieren
+            res['weekday'] = res['date_pd'].dt.weekday  # 6 = Sonntag
+
+            # Nur Montag bis Samstag (0–5)
+            res = res[res['weekday'] != 6].copy()
+            res = res.reset_index(drop=True)
+
         if fix_close_price:
-            close = self.get_last_hour_of_yesterday(ticker,data_processor,TradeType.FX)
+            close = self.get_last_hour_of_yesterday(ticker, data_processor, TradeType.FX)
             old_close = res.loc[res.index[-1], "close"]
             self._tracer.debug(f"{ticker} replace {old_close} with {close}")
             res.loc[res.index[-1], "close"] = close
@@ -156,7 +169,7 @@ class Tiingo:
                                       data_processor=dp,
                                       trade_type=trade_type,
                                       resolution="1day",
-                                      suffix="", fix_close_price=True)
+                                      suffix="", fix_close_price=True, remove_sundays=True)
 
     def _load_long_period(self, symbol: str,
                           trade_type, days: int = 100,
@@ -238,7 +251,7 @@ class Tiingo:
                                     trade_type=trade_type,
                                     resolution="1day",
                                     validate=False,
-                                    suffix="mega")
+                                    suffix="mega", remove_sundays=True)
         df_eval = self.load_data_by_date(ticker=symbol,
                                          start=start_time,
                                          end=None,
