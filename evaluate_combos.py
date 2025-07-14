@@ -180,6 +180,11 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                   tracer=ConsoleTracer()):
     markets = IG.get_markets_offline()
     random.shuffle(markets)
+    parquet_name = "predictor_4.parquet"
+    if os.name == "nt":
+        parquet_name = "predictor_win.parquet"
+
+
     for market in markets:
 
         fx = market["symbol"]
@@ -267,7 +272,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                             train_df["_atr_factor_limit"] = atr_factor_limit
 
                             with file_lock(LOCKFILE_PATH):
-                                all_df = pd.read_parquet("predictor_4.parquet")
+                                all_df = pd.read_parquet(parquet_name)
                                 #all_df = DataFrame()
                                 all_df = pd.concat([all_df, train_df], ignore_index=True)
                                 all_df = remove_duplicates_with_unordered_list_column(
@@ -275,7 +280,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                                     ["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features", "_trade_mode"],
                                     "_features"
                                 )
-                                all_df.to_parquet("predictor_4.parquet")
+                                all_df.to_parquet(parquet_name)
 
                 except Exception as ex:
                     traceback_str = traceback.format_exc()
