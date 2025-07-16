@@ -273,7 +273,7 @@ class CombinationTrainer:
         combos = combos[:reduced_size]
         return combos
 
-    def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, hours, factor_stop, factor_limit, indicators,
+    def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, factor_stop, factor_limit, indicators,
                     trade_mode: str,
                     cache) -> (DataFrame, DataFrame, str):
         df_train, eval_df_train = self._get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
@@ -282,7 +282,7 @@ class CombinationTrainer:
             raise Exception("Invalid data")
 
         buy_results, sell_results = simulation.simulate(df_train, eval_df_train, symbol,
-                                                        time_frame=hours, factor_stop=factor_stop,
+                                                       factor_stop=factor_stop,
                                                         factor_limit=factor_limit)
         simulation.get_signals(symbol, df_train, indicators, GenericPredictor)
         train_signals_df = simulation.create_combined_indicator_data(indicators, symbol)

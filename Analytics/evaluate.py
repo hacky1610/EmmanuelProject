@@ -80,7 +80,6 @@ for market in IG.get_markets_offline():
         # a, b = ct._predict(signal_result_df, predictor_object._features, predictor_object._model, predictor_object._threshold)
 
 
-        df = sim.evaluate_fixed_timeframe(predictor_object,df,df_eval,2,2,16)
         print("FOO")
         print(df[df.action != "none"])
 

@@ -193,7 +193,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         for combination_size in random.choices([4,5,6,7,8], k=3):
             combos.append(ct.create_combos(best_features_online_0_5, combination_size))
             combos.append(ct.create_combos(best_features_online_0_2, combination_size))
-            combos.append(ct.create_combos(random.sample(indicators.get_all_indicator_names(), 25)))
+            combos.append(ct.create_combos(random.sample(indicators.get_all_indicator_names(), 25), combination_size))
 
         for combo in combos:
             for trade_action in [TradeAction.SELL, TradeAction.BUY]:
@@ -208,7 +208,6 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                     trade_type=trade_type,
                     data_processor=data_processor,
                     simulation=simulation,
-                    hours=hours,
                     factor_stop=atr_factor_stop,
                     factor_limit=atr_factor_limit,
                     indicators=indicators,

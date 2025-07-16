@@ -1149,7 +1149,7 @@ class Indicators:
         else:
             return TradeAction.SELL
 
-    def _macd_turn(elf, df):
+    def _macd_turn(self, df):
         if len(df) < 3:
             return TradeAction.NONE
 
