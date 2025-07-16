@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pandas as pd
 import requests
 from datetime import datetime, timedelta
@@ -254,7 +256,8 @@ class StockOverview:
         df = pd.DataFrame(self.data)
         print(df.to_string(index=False))
 
-import yfinance as yf
+#import yfinance as yf
+yf = MagicMock()
 
 class StockOverviewYahoo:
     def __init__(self, tickers):
