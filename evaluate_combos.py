@@ -250,19 +250,14 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                             cache=cache
                         )
 
+                        combos = ct.create_combos(features,online_combos, combination_size)
                         train_df = ct.train(
                             df=df_train_global,
-                            trading_hours=hours,
                             min_prec_train=min_prec_train,
-                            num_features=combination_size,
-                            trading_mode=trade_action,
-                            symbol=fx,
                             atr_factor_stop=atr_factor_stop,
+                            trading_mode=trade_action,
                             atr_factor_limit=atr_factor_limit,
-                            best_features=features,
-                            min_prec_test=min_prec_test,
-                            part=part,
-                            existing_combos=online_combos,
+                            combos=combos,
                             min_train_reward=min_train_reward
                         )
 

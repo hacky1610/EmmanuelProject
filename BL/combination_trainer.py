@@ -98,21 +98,6 @@ class CombinationTrainer:
 
         return df_filtered
 
-    def _predict(self, df: DataFrame, features: List[str], model: object, threshold: float) -> (float, int):
-
-        x_test = df[list(features)]
-        y_test = df[self._target]
-
-        y_prob_test = model.predict_proba(x_test)[:, 1]
-        y_pred_test = (y_prob_test >= threshold).astype(int)
-
-        test_precision = precision_score(y_test, y_pred_test, zero_division=0)
-        test_true_positives = ((y_pred_test == 1) & (y_test == 1)).sum()
-        test_false_positives = ((y_pred_test == 1) & (y_test == 0)).sum()
-        test_reward = test_true_positives - test_false_positives
-
-        return test_precision, test_reward
-
     @staticmethod
     def _predict_sum(df, feature_cols, atr_factor_stop, atr_factor_limit):
         """
@@ -170,149 +155,13 @@ class CombinationTrainer:
 
         return precision, reward, trade_indexes, trades.sum()
 
-    def _save_predictor(self, symbol: str, trade_mode: str,
-                        trading_hours: int, features: List,
-                        test_reward: int,
-                        train_reward: int,
-                        train_trade_count: int,
-                        atr_factor_stop: float, atr_factor_limit: float,
-                        test_precision: float,
-                        train_precision: float,
-                        test_trade_count: int, unique_indexes: int):
-        dp = DeepPredictor(symbol=symbol, cache=self._cache,
-                           indicators=self._indicators, config={})
-        dp.set_model_params(trade_mode=trade_mode,
-                            trading_hours=trading_hours,
-                            features=list(features),
-                            atr_factor_limit=atr_factor_limit,
-                            atr_factor_stop=atr_factor_stop,
-                            test_reward=test_reward, test_precision=test_precision,
-                            test_trade_count=test_trade_count, unique_indexes=unique_indexes,
-                            train_reward=train_reward,
-                            train_precision=train_precision,
-                            train_trade_count=train_trade_count
-                            )
-        self._predictor_store.save(dp)
-
-    def _best_feature_pair_by_reward(self, df: DataFrame, symbol: str,
-                                     trading_hours: int, trade_mode: str,
-                                     num_features: int, atr_factor_stop: float,
-                                     atr_factor_limit: float,
-                                     min_prec_train: float, min_prec_test: float, best_features: list,
-                                     part:float,
-                                     min_train_reward:int,
-                                     existing_combos: List = None,
-                                     ) -> DataFrame:
-
-        df = df.loc[:, ~df.columns.duplicated()]
-        train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
-        # Doppelte Spalten im DataFrame entfernen
-
-        results = []
-        # Kombis aus besten Features generieren
-        combos = self._get_combos_by_best_features(num_features, best_features, part)
-
-        if existing_combos is not None:
-            combos = existing_combos + combos
-
-        random.shuffle(combos)
-        # Kürze die Liste auf 5 % der ursprünglichen Länge
-        reduced_size = min(350000, int(len(combos)))  # Mindestens 1 Element behalten
-        combos = combos[:reduced_size]
-
-
-        for features in combos:
-            try:
-                train_precision, train_reward, trade_indexes_train, trade_count_train = self._predict_sum(train_df,
-                                                                                                          features,atr_factor_stop,atr_factor_limit)
-
-                # Mindestbedingungen prüfen
-                if train_precision >= min_prec_train:
-                    if train_reward >= min_train_reward:
-                        test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
-                                                                                                          features,atr_factor_stop,atr_factor_limit)
-
-                        results.append({
-                            "_features": features,
-                            "_train_precision": train_precision,
-                            "_train_reward": train_reward,
-                            "_test_precision": test_precision,
-                            "_test_reward": test_reward,
-                            "_trade_mode": trade_mode,
-                            "_test_trade_count": trade_count_test,
-                            "_unique_indexes": trade_indexes_test,
-                        })
 
 
 
-            except Exception as e:
-                traceback_str = traceback.format_exc()
-                print(f"Error: {e} with {features} {traceback_str}")
 
-        df = DataFrame(results)
-        if len(df) > 0:
-            df = df[df["_test_trade_count"] != 0]
-            df = df[df["_train_reward"] > min_train_reward]
-
-            if len(df) == 0:
-                print("No valid results")
-                return df
-
-            unique_indexes = set(index for sublist in df["_unique_indexes"] for index in sublist)
-            print(f"Indexes {len(unique_indexes)}")
-            print(f"Train Reward Mean {df['_train_reward'].mean()}")
-            print(f"Test Reward Mean {df['_test_reward'].mean()}")
-            print(f"Test Reward Median {df['_test_reward'].median()}")
-            print(f"Test Reward Sum {df['_test_reward'].sum()}")
-            print(f"Test Precision {df['_test_precision'].mean()}")
-            print(f"Test Trade Count {df['_test_trade_count'].mean()}")
-
-        return df
-
-    def _get_random_forest_params(self) -> dict:
-        return {
-            'n_estimators': [50, 100, 200, 500],  # Anzahl der Bäume
-            'max_depth': [3, 5, 7, 10, None],  # Maximale Tiefe der Bäume
-            'min_samples_split': [2, 5, 10, 20],  # Mindestanzahl von Samples für Split
-            'min_samples_leaf': [1, 2, 4, 10],  # Mindestanzahl von Samples in einem Blatt
-            'max_features': ['sqrt', 'log2', None],  # Anzahl der betrachteten Features pro Split
-            'criterion': ['gini', 'entropy'],  # Kriterium zur Bestimmung der Qualität eines Splits
-            'class_weight': ['balanced', 'balanced_subsample', None]  # Gewichtung für unbalancierte Klassen
-        }
-
-    def _train_combo(self, df, features, n_iter):
-        import warnings
-        warnings.filterwarnings("ignore", category=UserWarning)
-        warnings.filterwarnings("ignore", category=RuntimeWarning)
-        warnings.filterwarnings("ignore", category=UndefinedMetricWarning, module="sklearn.metrics._classification")
-
-        model_rf = RandomForestClassifier(random_state=42)
-        search_rf = RandomizedSearchCV(model_rf,
-                                       param_distributions=self._get_random_forest_params(),
-                                       n_iter=n_iter,
-                                       scoring='precision', cv=3, n_jobs=5)
-        X_train = df[list(features)]
-        y_train = df[self._target]
-        logging.getLogger("sklearn").setLevel(logging.ERROR)
-        # Warnungen global unterdrücken
-        warnings.simplefilter("ignore", UndefinedMetricWarning)
-        # Environment-Variable setzen, damit subprocesses sie erben
-        os.environ["PYTHONWARNINGS"] = "ignore"
-        search_rf.fit(X_train, y_train)
-        best_model_candidate = search_rf.best_estimator_
-        return best_model_candidate
-
-    def _get_combos(self, num_features, train_df):
-        feature_cols = [col for col in train_df.columns if col != self._target]
-        combos = list(combinations(feature_cols, num_features))
-        random.shuffle(combos)
-
-        # Kürze die Liste auf 20 % der ursprünglichen Länge
-        reduced_size = max(1, int(len(combos) * 0.2))  # Mindestens 1 Element behalten
-        return combos[:reduced_size]
 
     @staticmethod
-    def _get_combos_by_best_features(num_features, best_features: List, size=0.6):
+    def _get_combos_by_best_features(num_features, best_features: List):
         combos = list(combinations(best_features, num_features))
         random.shuffle(combos)
 
@@ -349,53 +198,82 @@ class CombinationTrainer:
 
         return importance_df
 
-    def _prepare_df(self, df: DataFrame, symbol: str, trading_hours: int, atr_factor: float) -> DataFrame:
-        path = f"{symbol}_{atr_factor}_{trading_hours}"
-        y = df[self._target]
+    def train(self, df,
+              min_prec_train: float,
+              atr_factor_stop: float,
+              trading_mode,
+              atr_factor_limit: float,
+              min_train_reward:int,
+               combos: List = None):
 
-        if not self._cache.best_features_exist(path):
-            # Initialisiere das Modell
-            model = RandomForestClassifier()
+        df = df.loc[:, ~df.columns.duplicated()]
+        train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+        # Doppelte Spalten im DataFrame entfernen
 
-            # Features und Zielvariable extrahieren
-            x = df.drop(columns=[self._target])
+        results = []
 
-            # Features bereinigen
-            cleaned_df = self._filter_features_by_vif_and_precision(x, y, model)
-            df = df[cleaned_df.columns]
-            df[self._target] = y
+        for features in combos:
+            try:
+                train_precision, train_reward, trade_indexes_train, trade_count_train = self._predict_sum(train_df,
+                                                                                                          features,
+                                                                                                          atr_factor_stop,
+                                                                                                          atr_factor_limit)
 
-            # Auswahl der besten Features pro Kategorie # Berechnung der Feature Importance mit RandomForest
-            importance_df = self.feature_importance_xgboost(df, self._target)
-            best_features = importance_df.nlargest(30, columns=["Importance"])["Feature"].to_list()
-            self._cache.save_best_features(best_features, path)
-        else:
-            best_features = self._cache.load_best_features(path)
-        df = df[best_features]
+                # Mindestbedingungen prüfen
+                if train_precision >= min_prec_train:
+                    if train_reward >= min_train_reward:
+                        test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
+                                                                                                              features,
+                                                                                                              atr_factor_stop,
+                                                                                                              atr_factor_limit)
 
-        df[self._target] = y
+                        results.append({
+                            "_features": features,
+                            "_train_precision": train_precision,
+                            "_train_reward": train_reward,
+                            "_test_precision": test_precision,
+                            "_test_reward": test_reward,
+                            "_trade_mode": trading_mode,
+                            "_test_trade_count": trade_count_test,
+                            "_unique_indexes": trade_indexes_test,
+                        })
+
+
+
+            except Exception as e:
+                traceback_str = traceback.format_exc()
+                print(f"Error: {e} with {features} {traceback_str}")
+
+        df = DataFrame(results)
+        if len(df) > 0:
+            df = df[df["_test_trade_count"] != 0]
+            df = df[df["_train_reward"] > min_train_reward]
+
+            if len(df) == 0:
+                print("No valid results")
+                return df
+
+            unique_indexes = set(index for sublist in df["_unique_indexes"] for index in sublist)
+            print(f"Indexes {len(unique_indexes)}")
+            print(f"Train Reward Mean {df['_train_reward'].mean()}")
+            print(f"Test Reward Mean {df['_test_reward'].mean()}")
+            print(f"Test Reward Median {df['_test_reward'].median()}")
+            print(f"Test Reward Sum {df['_test_reward'].sum()}")
+            print(f"Test Precision {df['_test_precision'].mean()}")
+            print(f"Test Trade Count {df['_test_trade_count'].mean()}")
+
         return df
 
-    def train(self, df, trading_hours: int,
-              num_features: int,
-              trading_mode: str, symbol: str,
-              min_prec_train: float, min_prec_test: float, atr_factor_stop: float,
-              atr_factor_limit: float,
-              best_features: List[str],
-              min_train_reward:int,
-              part:float, existing_combos: List = None):
-
-        # if len(best_features) == 0:
-        #     df = self._prepare_df(df, symbol, trading_hours, atr_factor)
-
-        return self._best_feature_pair_by_reward(df=df,
-                                          symbol=symbol,
-                                          num_features=num_features,
-                                          min_prec_train=min_prec_train, trade_mode=trading_mode,
-                                          trading_hours=trading_hours, atr_factor_stop=atr_factor_stop,
-                                          atr_factor_limit=atr_factor_limit,
-                                          best_features=best_features, min_prec_test=min_prec_test,
-                                          part=part, existing_combos=existing_combos, min_train_reward=min_train_reward)
+    def create_combos(self, best_features, existing_combos, num_features):
+        # Kombis aus besten Features generieren
+        combos = self._get_combos_by_best_features(num_features, best_features)
+        if existing_combos is not None:
+            combos = existing_combos + combos
+        random.shuffle(combos)
+        # Kürze die Liste auf 5 % der ursprünglichen Länge
+        reduced_size = min(350000, int(len(combos)))  # Mindestens 1 Element behalten
+        combos = combos[:reduced_size]
+        return combos
 
     def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, hours, factor_stop, factor_limit, indicators,
                     trade_mode: str,
