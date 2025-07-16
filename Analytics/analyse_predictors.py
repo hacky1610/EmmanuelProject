@@ -73,14 +73,26 @@ print(df[df["_trade_mode"] == "sell"]["_test_precision"].mean())
 most_common_combo(df)
 most_common_features(df)
 
-for f in [2.0,1.5,1.2,1.0,0.8]:
+for i,row in df[["_atr_factor_stop", "_atr_factor_limit"]].drop_duplicates().iterrows():
+    stop = row["_atr_factor_stop"]
+    limit = row["_atr_factor_limit"]
 
-    print(f"Factor {f} - {df[df['_atr_factor_stop'] == f]['_test_precision'].mean()}")
+    # 3. Filter anwenden
+    gefiltert = df[(df["_atr_factor_stop"] == stop) & (df["_atr_factor_limit"] == limit)]
+
+    print(f"Factor {stop} {limit} - {gefiltert['_test_precision'].mean()} {gefiltert['_test_reward'].mean()}")
 
 sum_prec = 0
 for symbol in set(df["_symbol"]):
     sum_prec += df[df._symbol == symbol]["_test_precision"].mean()
     print(f'{symbol} {df[df._symbol == symbol]["_test_precision"].mean()} {df[df._symbol == symbol]["_test_reward"].mean()} {len(df[df._symbol == symbol])}')
+
+df['features_len'] = df['_features'].apply(len)
+for f_len in set(df["features_len"]):
+    print(f'{f_len} {df[df.features_len == f_len]["_test_precision"].mean()} {df[df.features_len == f_len]["_test_reward"].mean()} {len(df[df.features_len == f_len])}')
+
+
+
 
 print(f"Prec {sum_prec / len( set(df['_symbol']))}")
 print(f"Total count {len(df)}")

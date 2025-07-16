@@ -163,7 +163,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         indicators.reset_caches()
 
         with file_lock(LOCKFILE_PATH):
-            df = pd.read_parquet("predictor_3.parquet")
+            df = pd.read_parquet("predictor_4.parquet")
 
         online_combos = get_all_combos(fx, df)
         online_combos += create_new_combos(online_combos, indicators.get_all_indicator_names())
