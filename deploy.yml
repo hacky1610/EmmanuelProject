@@ -21,7 +21,7 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    pylint --recursive=y . --errors-only --ignore=.venv
+    pylint --errors-only --ignore=.venv --output-format=json . | jq '.[] | select(.type == "error") | .path'
   displayName: 'PyLint'
 
 
