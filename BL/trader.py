@@ -2,7 +2,6 @@ import asyncio
 import concurrent.futures
 import os
 import traceback
-from enum import Enum
 from typing import List, NamedTuple, Any
 import re
 from datetime import datetime
@@ -11,6 +10,7 @@ from BL import DataProcessor, measure_time
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
 from BL.indicators import Indicators
+from BL.trade_types import TradeResult
 from Connectors import IG
 from Connectors.deal_store import Deal, DealStore
 from Connectors.dropbox_cache import DropBoxCache
@@ -43,13 +43,6 @@ class TradeConfig(NamedTuple):
     trade_type: TradeType = TradeType.FX
     size: float = 1.0
     currency: str = "USD"
-
-
-class TradeResult(Enum):
-    """Ergebnis des Handels."""
-    SUCCESS = 1
-    NOACTION = 2
-    ERROR = 3
 
 
 class Trader:
@@ -95,6 +88,9 @@ class Trader:
         self._predictors_df = pd.read_parquet(file_path)
 
     def _is_good_ticker(self, ticker: str, min_avg_profit: float, min_deal_count: int, days: int = 1) -> bool:
+        if not self._check_ig_performance:
+            return True
+
         deals = self._deal_storage.get_closed_deals_by_ticker_not_older_than_df(ticker, days)
         if len(deals) >= min_deal_count:
             min_profit = min_avg_profit * len(deals)
@@ -106,8 +102,8 @@ class Trader:
                 return False
         else:
             self._tracer.debug("To less deals")
+            return False
 
-        return True
 
     def update_deals(self):
         hist = self._ig.get_transaction_history(3)

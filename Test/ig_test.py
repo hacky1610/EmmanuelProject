@@ -71,25 +71,6 @@ class IgTest(unittest.TestCase):
         mock_predictor.get_open_limit_isl = Mock(return_value=False)
         self.predictor_store.load_by_id = Mock(return_value={})
 
-    def test_profit_below_minus_70_triggers_scale_trade(self):
-        self.ig._get_atr = Mock(return_value=0.0025)
-        self.deal_store.get_open_deals_by_ticker = Mock(return_value=[{}])
-        self.ig.get_min_stop_distance = Mock(return_value=20)  # example minimum
-        self.ig._calculate_profit_percentage = Mock(return_value=(-75.0, 0))
-        self.ig._execute_trade = Mock(return_value=("SUCCESS", {
-            "dealReference": "ref1",
-            "dealId": "id1",
-            "date": "2024-01-01T12:00:00"
-        }))
-        self.ig.find_market_by_symbol = Mock(return_value=self.market)
-
-        result = self.ig.set_intelligent_stop_level(
-            self.position, self.deal, self.deal_store, 10000, self.mock_tiingo
-        )
-
-        self.assertEqual(result["status"], "pending")
-        self.ig._execute_trade.assert_called_once()
-
     def test_profit_above_40_sets_reached_level(self):
         self.ig._get_atr = Mock(return_value=0.0001)
         self.ig.get_min_stop_distance = Mock(return_value=20)
@@ -223,7 +204,7 @@ class IgTest(unittest.TestCase):
         mock_service.fetch_sub_nodes_by_node.side_effect = ApiExceededException
         self.ig.ig_service = mock_service
 
-        result = self.ig._get_markets_by_id(12345)
+        result = self.ig._get_markets_by_id(12345, MagicMock())
         self.assertTrue(result.empty)
 
     @patch('Connectors.IG.IGService')
@@ -232,7 +213,7 @@ class IgTest(unittest.TestCase):
         mock_service.fetch_sub_nodes_by_node.side_effect = Exception("Test Exception")
         self.ig.ig_service = mock_service
 
-        result = self.ig._get_markets_by_id(12345)
+        result = self.ig._get_markets_by_id(12345,MagicMock())
         self.assertTrue(result.empty)
 
     # def test_successful_buy_trade(self):

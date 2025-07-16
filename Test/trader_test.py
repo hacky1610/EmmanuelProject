@@ -1,8 +1,9 @@
 import unittest
 from datetime import datetime
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 import pandas as pd
-from BL.trader import Trader, TradeConfig, TradeResult
+from BL.trader import Trader, TradeConfig
+from BL.trade_types import TradeResult
 from BL.analytics import Analytics
 from Tracing.ConsoleTracer import ConsoleTracer
 from pandas import DataFrame, Series
@@ -182,11 +183,12 @@ class TraderTest(unittest.TestCase):
     def test_less_than_8_deals(self):
         deals = MagicMock()
         deals.__len__.return_value = 7
+        deals.profit.sum.return_value = 80 # pylint: disable=no-member
         self._trader._tracer.debug = MagicMock()
         self._trader._check_ig_performance = True
         self._trader._deal_storage.get_closed_deals_by_ticker_not_older_than_df.return_value = deals
 
-        result = self._trader._is_good_ticker("AAPL",min_avg_profit=10, min_deal_count=7)
+        result = self._trader._is_good_ticker("AAPL",min_avg_profit=10, min_deal_count=8)
         self.assertFalse(result, "Result should be False when less than 8 deals are returned.")
         self._trader._tracer.debug.assert_called_with("To less deals")
 
