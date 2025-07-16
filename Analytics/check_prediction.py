@@ -68,7 +68,7 @@ def search_index(df, date):
     return nearest_index
 
 pd.set_option('future.no_silent_downcasting', True)
-for deal in reversed(list(ds.get_open_deals_raw())):
+for deal in reversed(list(ds.get_open_deals_raw(1))):
     if "predictor_object" not in deal:
         continue
 

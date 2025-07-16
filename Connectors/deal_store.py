@@ -252,9 +252,13 @@ class DealStore:
         return self._collection.find(
             {"status": "Closed"})
 
-    def get_open_deals_raw(self):
-        return self._collection.find(
-            {"status": "open"})
+    def get_open_deals_raw(self, not_older_than = 0):
+        q =  {"status": "open"}
+
+        if not_older_than > 0:
+            q["open_date_ig_datetime"] = {"$gte": datetime.datetime.now() - datetime.timedelta(days=not_older_than)}
+
+        return self._collection.find(q)
 
     def get_custom(self, query:dict):
         return self._collection.find(query)
