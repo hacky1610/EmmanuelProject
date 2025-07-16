@@ -2,6 +2,7 @@ from BL import DataProcessor
 from BL.analytics import Analytics
 from BL.indicators import Indicators
 from Connectors.IG import IG
+from BL.reporting import IgReport
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.tiingo import Tiingo
 from BL.utils import ConfigReader
@@ -18,11 +19,12 @@ ds = DropBoxService(dbx,"DEMO")
 cache = DropBoxCache(ds)
 tiingo = Tiingo(conf_reader=conf_reader, cache=cache)
 ig = IG(conf_reader=conf_reader)
+ig_rep = IgReport(ig_service=ig, deal_store=ds)
 predictor = GenericPredictor(indicators=Indicators(),symbol="")
 viewer = PlotlyViewer(cache)
 #viewer = BaseViewer()
 
-ig.create_report(ti=tiingo,
+ig_rep.create_report(ti=tiingo,
                  dp_service=ds,
                  predictor=predictor,
                  cache=cache,
