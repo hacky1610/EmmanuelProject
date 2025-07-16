@@ -5,7 +5,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from BL.datatypes import TradeAction
-from BL.indicators import Indicators  # Stellen Sie sicher, dass Sie den richtigen Modulnamen verwenden
+from BL.indicators import Indicators, Indicator  # Stellen Sie sicher, dass Sie den richtigen Modulnamen verwenden
 
 
 class TestIndicators(unittest.TestCase):
@@ -749,6 +749,70 @@ class TestIndicators(unittest.TestCase):
         df = self.sample_dataframe_hidden_stength_sell()
         result = self.indicators._hidden_stength_breakdown(df, "indicator", pv=MagicMock())
         assert result == TradeAction.SELL, f"Erwartet: SELL, erhalten: {result}"
+
+    def test_predict_returns_none_when_max_none_exceeded(self):
+        result = self.indicators._predict(
+            predict_values=[TradeAction.NONE, TradeAction.NONE, TradeAction.BUY],
+            max_none=1
+        )
+        self.assertEqual(result, TradeAction.NONE)
+
+    def test_predict_returns_both_when_all_values_are_both(self):
+        result = self.indicators._predict(
+            predict_values=[TradeAction.BOTH, TradeAction.BOTH, TradeAction.BOTH],
+            max_none=0
+        )
+        self.assertEqual(result, TradeAction.BOTH)
+
+    def test_predict_returns_buy_when_majority_is_buy_or_both(self):
+        result = self.indicators._predict(
+            predict_values=[TradeAction.BUY, TradeAction.BOTH, TradeAction.NONE],
+            max_none=1
+        )
+        self.assertEqual(result, TradeAction.BUY)
+
+    def test_predict_returns_sell_when_majority_is_sell_or_both(self):
+        result = self.indicators._predict(
+            predict_values=[TradeAction.SELL, TradeAction.BOTH, TradeAction.NONE],
+            max_none=1
+        )
+        self.assertEqual(result, TradeAction.SELL)
+
+    def test_predict_returns_none_when_no_majority(self):
+        result = self.indicators._predict(
+            predict_values=[TradeAction.BUY, TradeAction.SELL, TradeAction.NONE],
+            max_none=1
+        )
+        self.assertEqual(result, TradeAction.NONE)
+
+    def test_predict_some_returns_correct_action_for_multiple_indicators(self):
+        indicators = Indicators()
+        indicators._get_indicators_by_names = MagicMock(return_value=[
+            Indicator("mock1", lambda df: TradeAction.BUY),
+            Indicator("mock2", lambda df: TradeAction.SELL),
+            Indicator("mock3", lambda df: TradeAction.NONE)
+        ])
+        result = indicators.predict_some(None, ["mock1", "mock2", "mock3"], max_none=1)
+        self.assertEqual(result, TradeAction.NONE)
+
+    def test_predict_some_returns_none_when_max_none_exceeded(self):
+        indicators = Indicators()
+        indicators._get_indicators_by_names = MagicMock(return_value=[
+            Indicator("mock1", lambda df: TradeAction.NONE),
+            Indicator("mock2", lambda df: TradeAction.NONE),
+            Indicator("mock3", lambda df: TradeAction.BUY)
+        ])
+        result = indicators.predict_some(None, ["mock1", "mock2", "mock3"], max_none=1)
+        self.assertEqual(result, TradeAction.NONE)
+
+    def test_predict_single_returns_correct_action_for_single_indicator(self):
+        indicators = Indicators()
+        indicators._get_indicator_by_name = MagicMock(return_value=Indicator("mock", lambda df: TradeAction.BUY))
+        result = indicators.predict_single(None, "mock")
+        self.assertEqual(result, TradeAction.BUY)
+
+
+
 
 
 

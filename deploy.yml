@@ -25,10 +25,10 @@ steps:
 #  displayName: 'PyLint'
 
 
-#- script: |
-#    pip install pytest pytest-azurepipelines coverage
-#    coverage run -m pytest ./Test
-#  displayName: 'Test'
+- script: |
+    pip install pytest pytest-azurepipelines coverage
+    coverage run -m pytest ./Test
+  displayName: 'Test'
 
 - task: Docker@2
   inputs:

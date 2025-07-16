@@ -1,16 +1,17 @@
 # region import
 import os
 import random
+import time
 import traceback
 from typing import List, Counter
+from contextlib import contextmanager
+import pandas as pd
+import numpy as np
+import multiprocessing as mp
 
 import dropbox
-import numpy as np
 import pymongo
-import pandas as pd
-from pandas import DataFrame
 
-import Data.combos
 from BL.Simulation import Simulation
 from BL.analytics import Analytics
 from BL.combination_trainer import CombinationTrainer
@@ -75,21 +76,22 @@ low_spread_pairs = [
     "EURNZD", "AUDCAD", "NOKSEK", "USDNOK"
 ]
 
-def create_new_combos(original_list, replacement_values):
+def create_new_combos(original_list: List[List[str]], replacement_values: List[str], k: int = 25) -> List[List[str]]:
+    """
+    Erstellt neue Kombos, indem für jede originale Kombo ein zufälliges Element durch ein zufälliges Replacement ersetzt wird.
+    """
     new_list = []
-
     for item in original_list:
-        position = random.randint(0, len(item) - 1)  # Zufällige Position wählen
-        for replacement in random.choices(replacement_values, k=25):
-            new_item = item.copy()  # Kopie machen, damit Original nicht verändert wird
+        if not item:
+            continue
+        position = random.randint(0, len(item) - 1)
+        for replacement in random.sample(replacement_values, min(k, len(replacement_values))):
+            new_item = item.copy()
             new_item[position] = replacement
             new_list.append(new_item)
-
     return new_list
 
-import pandas as pd
-
-def remove_duplicates_with_unordered_list_column(df, subset, list_column):
+def remove_duplicates_with_unordered_list_column(df: pd.DataFrame, subset: List[str], list_column: str) -> pd.DataFrame:
     """
     Entfernt doppelte Zeilen aus einem DataFrame basierend auf bestimmten Spalten,
     wobei eine der Spalten eine Liste oder ein Array ist, deren Reihenfolge ignoriert wird.
@@ -101,59 +103,30 @@ def remove_duplicates_with_unordered_list_column(df, subset, list_column):
     df = df.copy()
 
     def normalize_to_tuple(x):
-        try:
-            return tuple(sorted(list(x)))
-        except Exception:
-            return x  # Wenn z.B. x ein einfacher String oder None ist
+        if isinstance(x, (list, np.ndarray)):
+            return tuple(sorted(x))
+        return x
 
     df[sorted_column] = df[list_column].apply(normalize_to_tuple)
-
     subset_modified = [sorted_column if col == list_column else col for col in subset]
-
     df_cleaned = df.drop_duplicates(subset=subset_modified)
     df_cleaned = df_cleaned.drop(columns=[sorted_column])
-
     return df_cleaned
 
-
-def get_all_combos(filter_symbol, df) -> List[List[str]]:
+def get_all_combos(filter_symbol: str, df: pd.DataFrame) -> List[List[str]]:
     filtered_df = df[df["_symbol"] != filter_symbol]
-
-    # Sortierte Tupel für vergleichsunabhängige Einzigartigkeit
     all_combos = (tuple(sorted(f)) for f in filtered_df["_features"] if isinstance(f, (list, np.ndarray)))
-
     unique_combos = [list(t) for t in set(all_combos)]
-
     return unique_combos
-
 
 def get_most_used_features(df: pd.DataFrame, top_factor: float = 0.5) -> List[str]:
     features_list = []
-
-    # Durchlaufe alle Zeilen und sammle die Features
     for features in df["_features"]:
         features_list.extend(features)
-
-    # Zähle die Häufigkeit jedes Features
     feature_counts = Counter(features_list)
-
-    # Anzahl der häufigsten Features, die zurückgegeben werden sollen
-    top_n = int(len(feature_counts) * top_factor)
-
-    # Liste der am häufigsten vorkommenden Features
+    top_n = max(1, int(len(feature_counts) * top_factor))
     top_features_list = [feature for feature, _ in feature_counts.most_common(top_n)]
-
     return top_features_list
-
-
-
-import multiprocessing as mp
-import pandas as pd
-import random
-import traceback
-import os
-import time
-from contextlib import contextmanager
 
 LOCKFILE_PATH = "predictor_2.parquet.lock"
 
@@ -169,7 +142,6 @@ def file_lock(lockfile_path, check_interval=0.5, timeout=60):
             if time.time() - start_time > timeout:
                 raise TimeoutError(f"Timeout while waiting for lock {lockfile_path}")
             time.sleep(check_interval)
-
     try:
         yield
     finally:
@@ -184,14 +156,10 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
     if os.name == "nt":
         parquet_name = "predictor_win.parquet"
 
-
     for market in markets:
-
         fx = market["symbol"]
-
         if fx not in low_spread_pairs:
             continue
-
         indicators.reset_caches()
 
         with file_lock(LOCKFILE_PATH):
@@ -199,11 +167,13 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         online_combos = get_all_combos(fx, df)
         online_combos += create_new_combos(online_combos, indicators.get_all_indicator_names())
+        random.shuffle(online_combos)
+        reduced_size = min(350000, len(online_combos))
+        online_combos = online_combos[:reduced_size]
 
         best_features_online_0_5 = get_most_used_features(df, 0.33)
         best_features_online_0_2 = get_most_used_features(df, 0.15)
 
-        hours = 16
         data = random.choice([
             (2.0, 2.1, 0.90, 0.7, 20),
             (2.0, 2.7, 0.90, 0.7, 20),
@@ -212,79 +182,64 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             (1.0, 1.6, 0.90, 0.7, 20),
         ])
         atr_factor_stop, atr_factor_limit, min_prec_train, min_prec_test, min_train_reward = data
+        ct = CombinationTrainer(
+            cache=cache,
+            indicators=indicators,
+            predictor_store=predictor_store,
+            test_mode=True
+        )
 
-        combis = [(4, 0.1), (5, 0.1), (6, 0.1), (8, 0.1), (7, 0.2)]
+        combos = [online_combos]
+        for combination_size in random.choices([4,5,6,7,8], k=3):
+            combos.append(ct.create_combos(best_features_online_0_5, combination_size))
+            combos.append(ct.create_combos(best_features_online_0_2, combination_size))
+            combos.append(ct.create_combos(random.sample(indicators.get_all_indicator_names(), 25), combination_size))
 
-        for combination_size, part in random.choices(combis, k=3):
-
-            for f, features in enumerate([
-                best_features_online_0_5,
-                best_features_online_0_2,
-                random.choices(indicators.get_all_indicator_names(), k=25)
-            ], start=1):
-                if f > 1:
-                    online_combos = []
-                ct = CombinationTrainer(
-                    cache=cache,
-                    indicators=indicators,
-                    predictor_store=predictor_store,
-                    test_mode=True
+        for combo in combos:
+            for trade_action in [TradeAction.SELL, TradeAction.BUY]:
+                print(
+                    f"Evaluate {fx} {trade_action} and stop factor "
+                    f"{atr_factor_stop} limit {atr_factor_limit} and min prec {min_prec_train} combination {len(combo)} Feature Set"
                 )
-                try:
-                    for trade_action in [TradeAction.SELL, TradeAction.BUY]:
-                        print(
-                            f"Evaluate {fx} {trade_action} for {hours} hours and stop factor "
-                            f"{atr_factor_stop} limit {atr_factor_limit} and min prec {min_prec_train} combination {combination_size} Feature Set {f}")
 
-                        df_train_global = ct.create_data(
-                            tiingo=tiingo,
-                            symbol=fx,
-                            trade_type=trade_type,
-                            data_processor=data_processor,
-                            simulation=simulation,
-                            hours=hours,
-                            factor_stop=atr_factor_stop,
-                            factor_limit=atr_factor_limit,
-                            indicators=indicators,
-                            trade_mode=trade_action,
-                            cache=cache
+                df_train_global = ct.create_data(
+                    tiingo=tiingo,
+                    symbol=fx,
+                    trade_type=trade_type,
+                    data_processor=data_processor,
+                    simulation=simulation,
+                    factor_stop=atr_factor_stop,
+                    factor_limit=atr_factor_limit,
+                    indicators=indicators,
+                    trade_mode=trade_action,
+                    cache=cache
+                )
+
+                train_df = ct.train(
+                    df=df_train_global,
+                    min_prec_train=min_prec_train,
+                    atr_factor_stop=atr_factor_stop,
+                    trading_mode=trade_action,
+                    atr_factor_limit=atr_factor_limit,
+                    combos=combo,
+                    min_train_reward=min_train_reward
+                )
+
+                if len(train_df) > 0:
+                    train_df["_symbol"] = fx
+                    train_df["_atr_factor_stop"] = atr_factor_stop
+                    train_df["_atr_factor_limit"] = atr_factor_limit
+
+                    with file_lock(LOCKFILE_PATH):
+                        all_df = pd.read_parquet(parquet_name)
+                        all_df = pd.concat([all_df, train_df], ignore_index=True)
+                        all_df = remove_duplicates_with_unordered_list_column(
+                            all_df,
+                            ["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features", "_trade_mode"],
+                            "_features"
                         )
+                        all_df.to_parquet(parquet_name)
 
-                        train_df = ct.train(
-                            df=df_train_global,
-                            trading_hours=hours,
-                            min_prec_train=min_prec_train,
-                            num_features=combination_size,
-                            trading_mode=trade_action,
-                            symbol=fx,
-                            atr_factor_stop=atr_factor_stop,
-                            atr_factor_limit=atr_factor_limit,
-                            best_features=features,
-                            min_prec_test=min_prec_test,
-                            part=part,
-                            existing_combos=online_combos,
-                            min_train_reward=min_train_reward
-                        )
-
-                        if len(train_df) > 0:
-                            train_df["_symbol"] = fx
-                            train_df["_atr_factor_stop"] = atr_factor_stop
-                            train_df["_atr_factor_limit"] = atr_factor_limit
-
-                            with file_lock(LOCKFILE_PATH):
-                                all_df = pd.read_parquet(parquet_name)
-                                #all_df = DataFrame()
-                                all_df = pd.concat([all_df, train_df], ignore_index=True)
-                                all_df = remove_duplicates_with_unordered_list_column(
-                                    all_df,
-                                    ["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features", "_trade_mode"],
-                                    "_features"
-                                )
-                                all_df.to_parquet(parquet_name)
-
-                except Exception as ex:
-                    traceback_str = traceback.format_exc()
-                    print(f"MainException: {ex} File:{traceback_str}")
 
 if __name__ == '__main__':
     while True:

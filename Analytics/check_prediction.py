@@ -94,7 +94,7 @@ for deal in reversed(list(ds.get_open_deals_raw(1))):
 
 
     buy_results, sell_results = sim.simulate(df, df_eval, deal["ticker"],
-                                                    time_frame=16,factor_limit=predictor_object.get_atr_factor_limit(), factor_stop=predictor_object.get_atr_factor_stop(), force=True)
+                                                    factor_limit=predictor_object.get_atr_factor_limit(), factor_stop=predictor_object.get_atr_factor_stop(), force=True)
     sim.get_signals_by_indicatornames(deal["ticker"], df, predictor_object._features, Indicators(), GenericPredictor)
     train_signals_df = sim.create_combined_indicator_data_by_features(predictor_object._features, deal["ticker"], "test")
     trade_results = []

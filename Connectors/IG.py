@@ -9,9 +9,8 @@ from BL import DataProcessor, BaseReader
 from BL.analytics import Analytics
 from BL.datatypes import TradeAction
 from BL.indicators import Indicators
-from BL.trader import TradeResult
+from BL.trade_types import TradeResult
 from Connectors.deal_store import DealStore, Deal
-from Connectors.market_store import MarketStore
 from Connectors.predictore_store import PredictorStore
 from Predictors.deep_predictor import DeepPredictor
 from Predictors.generic_predictor import GenericPredictor
@@ -99,7 +98,7 @@ class IG:
                 }
         }
 
-    def _get_markets_by_id(self, id):
+    def _get_markets_by_id(self, id, sleep_function = time.sleep):
 
         counter = 0
         res = None
@@ -109,12 +108,12 @@ class IG:
                 break
             except ApiExceededException:
                 self._tracer.debug("ApiExceededException")
-                time.sleep(60)
+                sleep_function(60)
                 counter += 1
             except Exception as e:
                 traceback_str = traceback.format_exc()  # Das gibt die Traceback-Information als String zurück
                 self._tracer.debug(f"MainException: {e} File:{traceback_str}")
-                time.sleep(60)
+                sleep_function(60)
                 return DataFrame()
 
         if res is None:
