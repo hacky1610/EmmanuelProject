@@ -21,8 +21,14 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    pylint --errors-only --ignore=.venv --output-format=json . | jq '.[] | select(.type == "error") | .path'
-  displayName: 'PyLint'
+    echo "Current working directory: $(pwd)"
+    echo "Listing top-level directories:"
+    find . -maxdepth 1 -type d
+  displayName: 'Show Working Directory Contents'
+
+#- script: |
+#    pylint --errors-only --ignore=.venv --output-format=json . | jq '.[] | select(.type == "error") | .path'
+#  displayName: 'PyLint'
 
 
 - script: |
