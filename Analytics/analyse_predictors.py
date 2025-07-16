@@ -77,10 +77,12 @@ for f in [2.0,1.5,1.2,1.0,0.8]:
 
     print(f"Factor {f} - {df[df['_atr_factor_stop'] == f]['_test_precision'].mean()}")
 
+sum_prec = 0
 for symbol in set(df["_symbol"]):
-
+    sum_prec += df[df._symbol == symbol]["_test_precision"].mean()
     print(f'{symbol} {df[df._symbol == symbol]["_test_precision"].mean()} {df[df._symbol == symbol]["_test_reward"].mean()} {len(df[df._symbol == symbol])}')
 
+print(f"Prec {sum_prec / len( set(df['_symbol']))}")
 print(f"Total count {len(df)}")
 
 
