@@ -264,11 +264,9 @@ class CombinationTrainer:
 
         return df
 
-    def create_combos(self, best_features, existing_combos, num_features):
+    def create_combos(self, best_features, num_features):
         # Kombis aus besten Features generieren
         combos = self._get_combos_by_best_features(num_features, best_features)
-        if existing_combos is not None:
-            combos = existing_combos + combos
         random.shuffle(combos)
         # Kürze die Liste auf 5 % der ursprünglichen Länge
         reduced_size = min(350000, int(len(combos)))  # Mindestens 1 Element behalten

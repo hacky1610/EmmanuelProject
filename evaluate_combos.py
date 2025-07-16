@@ -199,6 +199,10 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         online_combos = get_all_combos(fx, df)
         online_combos += create_new_combos(online_combos, indicators.get_all_indicator_names())
+        random.shuffle(online_combos)
+        # Kürze die Liste auf 5 % der ursprünglichen Länge
+        reduced_size = min(350000, int(len(online_combos)))  # Mindestens 1 Element behalten
+        online_combos = online_combos[:reduced_size]
 
         best_features_online_0_5 = get_most_used_features(df, 0.33)
         best_features_online_0_2 = get_most_used_features(df, 0.15)
@@ -212,74 +216,69 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             (1.0, 1.6, 0.90, 0.7, 20),
         ])
         atr_factor_stop, atr_factor_limit, min_prec_train, min_prec_test, min_train_reward = data
+        ct = CombinationTrainer(
+            cache=cache,
+            indicators=indicators,
+            predictor_store=predictor_store,
+            test_mode=True
+        )
 
-        combis = [(4, 0.1), (5, 0.1), (6, 0.1), (8, 0.1), (7, 0.2)]
+        combos = [online_combos]
+        for combination_size in random.choices([4,5,6,7,8], k=3):
+            combos.append(ct.create_combos(best_features_online_0_5, combination_size))
+            combos.append(ct.create_combos(best_features_online_0_2, combination_size))
+            combos.append(random.choices(indicators.get_all_indicator_names(), k=25))
 
-        for combination_size, part in random.choices(combis, k=3):
+        for combo in combos:
+            try:
+                for trade_action in [TradeAction.SELL, TradeAction.BUY]:
+                    print(
+                        f"Evaluate {fx} {trade_action} for {hours} hours and stop factor "
+                        f"{atr_factor_stop} limit {atr_factor_limit} and min prec {min_prec_train} combination {combination_size} Feature Set {f}")
 
-            for f, features in enumerate([
-                best_features_online_0_5,
-                best_features_online_0_2,
-                random.choices(indicators.get_all_indicator_names(), k=25)
-            ], start=1):
-                if f > 1:
-                    online_combos = []
-                ct = CombinationTrainer(
-                    cache=cache,
-                    indicators=indicators,
-                    predictor_store=predictor_store,
-                    test_mode=True
-                )
-                try:
-                    for trade_action in [TradeAction.SELL, TradeAction.BUY]:
-                        print(
-                            f"Evaluate {fx} {trade_action} for {hours} hours and stop factor "
-                            f"{atr_factor_stop} limit {atr_factor_limit} and min prec {min_prec_train} combination {combination_size} Feature Set {f}")
+                    df_train_global = ct.create_data(
+                        tiingo=tiingo,
+                        symbol=fx,
+                        trade_type=trade_type,
+                        data_processor=data_processor,
+                        simulation=simulation,
+                        hours=hours,
+                        factor_stop=atr_factor_stop,
+                        factor_limit=atr_factor_limit,
+                        indicators=indicators,
+                        trade_mode=trade_action,
+                        cache=cache
+                    )
 
-                        df_train_global = ct.create_data(
-                            tiingo=tiingo,
-                            symbol=fx,
-                            trade_type=trade_type,
-                            data_processor=data_processor,
-                            simulation=simulation,
-                            hours=hours,
-                            factor_stop=atr_factor_stop,
-                            factor_limit=atr_factor_limit,
-                            indicators=indicators,
-                            trade_mode=trade_action,
-                            cache=cache
-                        )
+                    train_df = ct.train(
+                        df=df_train_global,
+                        min_prec_train=min_prec_train,
+                        atr_factor_stop=atr_factor_stop,
+                        trading_mode=trade_action,
+                        atr_factor_limit=atr_factor_limit,
+                        combos=combo,
+                        min_train_reward=min_train_reward
+                    )
 
-                        combos = ct.create_combos(features,online_combos, combination_size)
-                        train_df = ct.train(
-                            df=df_train_global,
-                            min_prec_train=min_prec_train,
-                            atr_factor_stop=atr_factor_stop,
-                            trading_mode=trade_action,
-                            atr_factor_limit=atr_factor_limit,
-                            combos=combos,
-                            min_train_reward=min_train_reward
-                        )
+                    if len(train_df) > 0:
+                        train_df["_symbol"] = fx
+                        train_df["_atr_factor_stop"] = atr_factor_stop
+                        train_df["_atr_factor_limit"] = atr_factor_limit
 
-                        if len(train_df) > 0:
-                            train_df["_symbol"] = fx
-                            train_df["_atr_factor_stop"] = atr_factor_stop
-                            train_df["_atr_factor_limit"] = atr_factor_limit
+                        with file_lock(LOCKFILE_PATH):
+                            all_df = pd.read_parquet(parquet_name)
+                            #all_df = DataFrame()
+                            all_df = pd.concat([all_df, train_df], ignore_index=True)
+                            all_df = remove_duplicates_with_unordered_list_column(
+                                all_df,
+                                ["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features", "_trade_mode"],
+                                "_features"
+                            )
+                            all_df.to_parquet(parquet_name)
 
-                            with file_lock(LOCKFILE_PATH):
-                                all_df = pd.read_parquet(parquet_name)
-                                #all_df = DataFrame()
-                                all_df = pd.concat([all_df, train_df], ignore_index=True)
-                                all_df = remove_duplicates_with_unordered_list_column(
-                                    all_df,
-                                    ["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features", "_trade_mode"],
-                                    "_features"
-                                )
-                                all_df.to_parquet(parquet_name)
-
-                except Exception as ex:
-                    traceback_str = traceback.format_exc()
-                    print(f"MainException: {ex} File:{traceback_str}")
+            except Exception as ex:
+                traceback_str = traceback.format_exc()
+                print(f"MainException: {ex} File:{traceback_str}")
 
 if __name__ == '__main__':
     while True:
