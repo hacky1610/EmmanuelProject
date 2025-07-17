@@ -154,7 +154,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
     random.shuffle(markets)
     parquet_name = "predictor_5.parquet"
     if os.name == "nt":
-        parquet_name = "predictor_win.parquet"
+        parquet_name = "predictor_win_5.parquet"
 
     for market in markets:
         fx = market["symbol"]
