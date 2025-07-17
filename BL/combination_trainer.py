@@ -99,6 +99,13 @@ class CombinationTrainer:
         return df_filtered
 
     @staticmethod
+    def trade_distance_variance(trade_indexes):
+        if len(trade_indexes) < 2:
+            return 0
+        distances = np.diff(sorted(trade_indexes))
+        return np.var(distances)
+
+    @staticmethod
     def _predict_sum(df, feature_cols, atr_factor_stop, atr_factor_limit):
         """
         Bewertet eine Feature-Kombination in einem Trading-DataFrame anhand von Precision und Reward.
@@ -152,8 +159,9 @@ class CombinationTrainer:
 
         # Indexe der getätigten Trades
         trade_indexes = df.index[trades].tolist()
+        variance = CombinationTrainer.trade_distance_variance(trade_indexes)
 
-        return precision, reward, trade_indexes, trades.sum()
+        return precision, reward, trade_indexes, trades.sum(), variance, trade_indexes
 
 
 
@@ -216,7 +224,7 @@ class CombinationTrainer:
 
         for features in combos:
             try:
-                train_precision, train_reward, trade_indexes_train, trade_count_train = self._predict_sum(train_df,
+                train_precision, train_reward, trade_indexes_train, trade_count_train, train_variance , train_indexes = self._predict_sum(train_df,
                                                                                                           features,
                                                                                                           atr_factor_stop,
                                                                                                           atr_factor_limit)
@@ -224,7 +232,7 @@ class CombinationTrainer:
                 # Mindestbedingungen prüfen
                 if train_precision >= min_prec_train:
                     if train_reward >= min_train_reward:
-                        test_precision, test_reward, trade_indexes_test, trade_count_test = self._predict_sum(test_df,
+                        test_precision, test_reward, trade_indexes_test, trade_count_test, test_variance , test_indexes = self._predict_sum(test_df,
                                                                                                               features,
                                                                                                               atr_factor_stop,
                                                                                                               atr_factor_limit)
@@ -236,7 +244,12 @@ class CombinationTrainer:
                             "_test_precision": test_precision,
                             "_test_reward": test_reward,
                             "_trade_mode": trading_mode,
+                            "_train_trade_count": trade_count_train,
                             "_test_trade_count": trade_count_test,
+                            "_train_variance": train_variance,
+                            "_test_variance": test_variance,
+                            "_test_indexes": test_indexes,
+                            "_train_indexes": train_indexes,
                             "_unique_indexes": trade_indexes_test,
                         })
 

@@ -98,40 +98,36 @@ def analyze_df(df):
 pd.set_option('display.max_columns', None)
 df = pd.read_parquet("../predictor_5.parquet" )
 
-
+print("Default")
 analyze_df(df)
 
 
+def filter_by_best_feature(top_count:int = 10, feature_count:int = 1):
+    global top10_features, df_filtered
+    df_exploded = df.explode('_features')
+    # Gruppieren nach Feature
+    summary = df_exploded.groupby('_features').agg(
+        count=('_test_reward', 'count'),
+        positive_count=('_test_reward', lambda x: (x > 0).sum()),
+        avg_reward=('_test_reward', 'mean')
+    )
+    # Optional: Anteil positiver Rewards
+    summary['positive_ratio'] = summary['positive_count'] / summary['count']
+    # Sortieren nach z. B. durchschnittlichem Reward oder positivem Anteil
+    summary = summary.sort_values(by='avg_reward', ascending=False)
+    summary = summary[summary.positive_ratio > 0.66]
+    summary['score'] = summary['avg_reward'] * summary['positive_ratio']
+    top_features_by_score = summary.sort_values(by='score', ascending=False)
+    top_features = summary.sort_values(by='avg_reward', ascending=False).head(top_count).index.tolist()
+    # Annahme: df['_features'] ist eine Liste von Strings pro Zeile
+    return df[df['_features'].apply(lambda feat_list: sum(f in top_features for f in feat_list) >= feature_count)]
 
 
 
-
-df_exploded = df.explode('_features')
-
-# Gruppieren nach Feature
-summary = df_exploded.groupby('_features').agg(
-    count=('_test_reward', 'count'),
-    positive_count=('_test_reward', lambda x: (x > 0).sum()),
-    avg_reward=('_test_reward', 'mean')
-)
-
-# Optional: Anteil positiver Rewards
-summary['positive_ratio'] = summary['positive_count'] / summary['count']
-
-# Sortieren nach z. B. durchschnittlichem Reward oder positivem Anteil
-summary = summary.sort_values(by='avg_reward', ascending=False)
-
-summary = summary[summary.positive_ratio > 0.66]
-summary['score'] = summary['avg_reward'] * summary['positive_ratio']
-top_features_by_score = summary.sort_values(by='score', ascending=False)
-top10_features = summary.sort_values(by='avg_reward', ascending=False).head(10).index.tolist()
+print("Best 4")
+analyze_df(filter_by_best_feature(4,3))
 
 
-# Annahme: df['_features'] ist eine Liste von Strings pro Zeile
-df_filtered = df[df['_features'].apply(lambda feat_list: sum(f in top10_features for f in feat_list) >= 3)]
-
-
-analyze_df(df_filtered)
 
 
 
