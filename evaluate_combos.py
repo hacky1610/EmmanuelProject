@@ -152,7 +152,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                   tracer=ConsoleTracer()):
     markets = IG.get_markets_offline()
     random.shuffle(markets)
-    parquet_name = "predictor_4.parquet"
+    parquet_name = "predictor_5.parquet"
     if os.name == "nt":
         parquet_name = "predictor_win.parquet"
 

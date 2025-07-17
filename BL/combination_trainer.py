@@ -207,7 +207,9 @@ class CombinationTrainer:
                combos: List = None):
 
         df = df.loc[:, ~df.columns.duplicated()]
-        train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+        #train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
+        train_df = df[:int(len(df) * 0.8)]
+        test_df = df[int(len(df) * 0.8):]
         # Doppelte Spalten im DataFrame entfernen
 
         results = []
