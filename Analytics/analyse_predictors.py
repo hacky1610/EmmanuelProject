@@ -64,38 +64,74 @@ def analyze_by_symbol(df):
     summary = summary.rename(columns={'_symbol_count': 'num_entries'})
 
     return summary
+
+def analyze_df(df):
+    print((df["_test_precision"] * 100).mean())
+    print(df["_test_reward"].mean())
+    print(df[df["_trade_mode"] == "sell"]["_test_precision"].mean())
+
+    most_common_features(df)
+
+    for i, row in df[["_atr_factor_stop", "_atr_factor_limit"]].drop_duplicates().iterrows():
+        stop = row["_atr_factor_stop"]
+        limit = row["_atr_factor_limit"]
+
+        # 3. Filter anwenden
+        gefiltert = df[(df["_atr_factor_stop"] == stop) & (df["_atr_factor_limit"] == limit)]
+
+        print(f"Factor {stop} {limit} - {gefiltert['_test_precision'].mean()} {gefiltert['_test_reward'].mean()}")
+
+    sum_prec = 0
+    for symbol in set(df["_symbol"]):
+        sum_prec += df[df._symbol == symbol]["_test_precision"].mean()
+        print(
+            f'{symbol} {df[df._symbol == symbol]["_test_precision"].mean()} {df[df._symbol == symbol]["_test_reward"].mean()} {len(df[df._symbol == symbol])}')
+
+    df['features_len'] = df['_features'].apply(len)
+    for f_len in set(df["features_len"]):
+        print(
+            f'{f_len} {df[df.features_len == f_len]["_test_precision"].mean()} {df[df.features_len == f_len]["_test_reward"].mean()} {len(df[df.features_len == f_len])}')
+
+    print(f"Prec {sum_prec / len(set(df['_symbol']))}")
+    print(f"Total count {len(df)}")
+
 pd.set_option('display.max_columns', None)
 df = pd.read_parquet("../predictor_5.parquet" )
-print((df["_test_precision"] * 100).median())
-print(df["_test_reward"].mean())
-print(df[df["_trade_mode"] == "sell"]["_test_precision"].mean())
 
-most_common_combo(df)
-most_common_features(df)
 
-for i,row in df[["_atr_factor_stop", "_atr_factor_limit"]].drop_duplicates().iterrows():
-    stop = row["_atr_factor_stop"]
-    limit = row["_atr_factor_limit"]
-
-    # 3. Filter anwenden
-    gefiltert = df[(df["_atr_factor_stop"] == stop) & (df["_atr_factor_limit"] == limit)]
-
-    print(f"Factor {stop} {limit} - {gefiltert['_test_precision'].mean()} {gefiltert['_test_reward'].mean()}")
-
-sum_prec = 0
-for symbol in set(df["_symbol"]):
-    sum_prec += df[df._symbol == symbol]["_test_precision"].mean()
-    print(f'{symbol} {df[df._symbol == symbol]["_test_precision"].mean()} {df[df._symbol == symbol]["_test_reward"].mean()} {len(df[df._symbol == symbol])}')
-
-df['features_len'] = df['_features'].apply(len)
-for f_len in set(df["features_len"]):
-    print(f'{f_len} {df[df.features_len == f_len]["_test_precision"].mean()} {df[df.features_len == f_len]["_test_reward"].mean()} {len(df[df.features_len == f_len])}')
+analyze_df(df)
 
 
 
 
-print(f"Prec {sum_prec / len( set(df['_symbol']))}")
-print(f"Total count {len(df)}")
+
+
+df_exploded = df.explode('_features')
+
+# Gruppieren nach Feature
+summary = df_exploded.groupby('_features').agg(
+    count=('_test_reward', 'count'),
+    positive_count=('_test_reward', lambda x: (x > 0).sum()),
+    avg_reward=('_test_reward', 'mean')
+)
+
+# Optional: Anteil positiver Rewards
+summary['positive_ratio'] = summary['positive_count'] / summary['count']
+
+# Sortieren nach z. B. durchschnittlichem Reward oder positivem Anteil
+summary = summary.sort_values(by='avg_reward', ascending=False)
+
+summary = summary[summary.positive_ratio > 0.66]
+summary['score'] = summary['avg_reward'] * summary['positive_ratio']
+top_features_by_score = summary.sort_values(by='score', ascending=False)
+top10_features = summary.sort_values(by='avg_reward', ascending=False).head(10).index.tolist()
+
+
+# Annahme: df['_features'] ist eine Liste von Strings pro Zeile
+df_filtered = df[df['_features'].apply(lambda feat_list: sum(f in top10_features for f in feat_list) >= 3)]
+
+
+analyze_df(df_filtered)
 
 
 
