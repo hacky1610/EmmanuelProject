@@ -123,9 +123,14 @@ def filter_by_best_feature(top_count:int = 10, feature_count:int = 1):
     return df[df['_features'].apply(lambda feat_list: sum(f in top_features for f in feat_list) >= feature_count)]
 
 
+train_filtered = df[
+    (df['_train_precision'] > 0.6) &
+    (df['_train_reward'] > 10) &
+    (df['_train_trade_count'] >= 20) &
+    (df['_train_variance'] < 300)
+]
 
-print("Best 4")
-analyze_df(filter_by_best_feature(4,3))
+analyze_df(train_filtered)
 
 
 

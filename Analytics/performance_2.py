@@ -66,7 +66,7 @@ class FundamentalDataFetcher:
 # Beispielverwendung:
 if __name__ == "__main__":
     api_key = api
-    symbol = "JPM"  # z. B. Apple
+    symbol = "NVDA"  # z. B. Apple
 
     fetcher = FundamentalDataFetcher(api_key)
     daten = fetcher.get_fundamentals(symbol)
