@@ -2,7 +2,8 @@ import pandas as pd
 import statistics
 import pandas as pd
 from collections import Counter
-
+import pandas as pd
+import matplotlib.pyplot as plt
 from collections import Counter
 import itertools
 
@@ -119,48 +120,95 @@ def analyze_by_symbol(df):
 
     return summary
 
-def is_clustered(row, min_variance=80, min_span=200):
+def is_clustered(row, min_variance=80, min_span=200, max_density=0.2):
     indexes = row['_train_indexes']
     if indexes is None or len(indexes) < 2:
         return True
+
     span = max(indexes) - min(indexes)
-    return row['_train_variance'] < min_variance and span < min_span
+    density = row['_train_trade_count'] / span if span > 0 else float('inf')
 
-def analyze_df(df):
-    print((df["_test_precision"] * 100).mean())
-    print(df["_test_reward"].mean())
-    print(df[df["_trade_mode"] == "sell"]["_test_precision"].mean())
+    return row['_train_variance'] < min_variance or span < min_span or density > max_density
 
-    most_common_features(df)
 
-    for i, row in df[["_atr_factor_stop", "_atr_factor_limit"]].drop_duplicates().iterrows():
+def analyze_df(df, show_plots=True, top_n=5):
+    print("=== Gesamtmetriken ===")
+    print(f"Ø Test Precision:     {(df['_test_precision'] * 100).mean():.2f} %")
+    print(f"Ø Test Reward:        {df['_test_reward'].mean():.2f}")
+    print(f"Ø Test Precision (sell): {df[df['_trade_mode'] == 'sell']['_test_precision'].mean():.2f}")
+    print(f"Anzahl Strategien:    {len(df)}\n")
+
+    print("=== Meistverwendete Features ===")
+    most_common_features(df)  # bleibt wie gehabt
+    print()
+
+    print("=== Testmetriken pro ATR-Faktor-Kombi ===")
+    for _, row in df[["_atr_factor_stop", "_atr_factor_limit"]].drop_duplicates().iterrows():
         stop = row["_atr_factor_stop"]
         limit = row["_atr_factor_limit"]
+        subset = df[(df["_atr_factor_stop"] == stop) & (df["_atr_factor_limit"] == limit)]
+        print(f"ATR {stop}/{limit} → Precision: {subset['_test_precision'].mean():.2f}, Reward: {subset['_test_reward'].mean():.2f}")
+    print()
 
-        # 3. Filter anwenden
-        gefiltert = df[(df["_atr_factor_stop"] == stop) & (df["_atr_factor_limit"] == limit)]
-
-        print(f"Factor {stop} {limit} - {gefiltert['_test_precision'].mean()} {gefiltert['_test_reward'].mean()}")
-
+    print("=== Metriken pro Symbol ===")
+    symbols = df["_symbol"].unique()
     sum_prec = 0
-    for symbol in set(df["_symbol"]):
-        sum_prec += df[df._symbol == symbol]["_test_precision"].mean()
-        print(
-            f'{symbol} {df[df._symbol == symbol]["_test_precision"].mean()} {df[df._symbol == symbol]["_test_reward"].mean()} {len(df[df._symbol == symbol])}')
+    for symbol in symbols:
+        symbol_df = df[df["_symbol"] == symbol]
+        prec = symbol_df["_test_precision"].mean()
+        reward = symbol_df["_test_reward"].mean()
+        sum_prec += prec
+        print(f"{symbol}: Precision={prec:.2f}, Reward={reward:.2f}, Count={len(symbol_df)}")
+    print(f"\nGesamtdurchschnitt Precision über Symbole: {sum_prec / len(symbols):.2f}\n")
 
+    print("=== Metriken nach Anzahl Features ===")
     df['features_len'] = df['_features'].apply(len)
-    for f_len in set(df["features_len"]):
-        print(
-            f'{f_len} {df[df.features_len == f_len]["_test_precision"].mean()} {df[df.features_len == f_len]["_test_reward"].mean()} {len(df[df.features_len == f_len])}')
+    for f_len in sorted(df["features_len"].unique()):
+        sub = df[df['features_len'] == f_len]
+        print(f"{f_len} Features → Precision={sub['_test_precision'].mean():.2f}, Reward={sub['_test_reward'].mean():.2f}, Count={len(sub)}")
+    print()
 
-    print(f"Prec {sum_prec / len(set(df['_symbol']))}")
-    print(f"Total count {len(df)}")
+    # Top / Flop Strategien
+    print("=== Top/Flop Strategien ===")
+    top = df.sort_values(by="_test_precision", ascending=False).head(top_n)
+    flop = df.sort_values(by="_test_precision", ascending=True).head(top_n)
+
+    print("\nTop Strategien:")
+    for i, row in top.iterrows():
+        print(f"Prec={row['_test_precision']:.2f}  Reward={row['_test_reward']:.2f}  Features={row['features_len']}  Trades={row['_test_trade_count']}")
+
+    print("\nFlop Strategien:")
+    for i, row in flop.iterrows():
+        print(f"Prec={row['_test_precision']:.2f}  Reward={row['_test_reward']:.2f}  Features={row['features_len']}  Trades={row['_test_trade_count']}")
+    print()
+
+    # Optionale Plots
+    if show_plots:
+        print("=== Verteilungen ===")
+        fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+        df['_test_precision'].hist(ax=axes[0], bins=20)
+        axes[0].set_title("Test Precision")
+
+        df['_test_reward'].hist(ax=axes[1], bins=20)
+        axes[1].set_title("Test Reward")
+
+        df['_train_variance'].hist(ax=axes[2], bins=20)
+        axes[2].set_title("Train Variance")
+
+        plt.tight_layout()
+        plt.show()
 
 pd.set_option('display.max_columns', None)
 df = pd.read_parquet("../predictor_5.parquet" )
 
-print("Default")
-analyze_df(df)
+df = df[
+    ~(
+        (df["_atr_factor_stop"] == 1.0) &
+        (df["_atr_factor_limit"] == 1.6)
+    )
+]
+df.to_parquet("../predictor_5.parquet" )
+
 
 
 def filter_by_best_feature(top_count:int = 10, feature_count:int = 1):
