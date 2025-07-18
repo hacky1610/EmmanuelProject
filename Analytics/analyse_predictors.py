@@ -6,6 +6,60 @@ from collections import Counter
 from collections import Counter
 import itertools
 
+import pandas as pd
+import numpy as np
+from itertools import product
+
+
+def find_best_train_filters(df):
+    """
+    Findet die besten Trainings-Filterkombinationen, um eine möglichst hohe mittlere _test_precision zu erzielen.
+
+    Args:
+        df (pd.DataFrame): DataFrame mit Spalten wie _train_precision, _train_reward, _train_trade_count, _train_variance,
+                           _test_precision etc.
+
+    Returns:
+        Tuple[dict, pd.DataFrame, float]:
+            - Beste Filterkombination als dict
+            - Gefilterter DataFrame mit diesen Kriterien
+            - Durchschnittlicher _test_precision-Wert
+    """
+    # Mögliche Filterwerte (kannst du gerne anpassen!)
+    precision_thresholds = [0.5, 0.6, 0.7]
+    reward_thresholds = [5, 10, 20]
+    trade_count_thresholds = [10, 20, 30]
+    variance_max = [1000, 500, 300]
+
+    best_mean = -1
+    best_filters = {}
+    best_df = None
+
+    # Alle Kombinationen durchprobieren
+    for p, r, t, v in product(precision_thresholds, reward_thresholds, trade_count_thresholds, variance_max):
+        filtered = df[
+            (df['_train_precision'] >= p) &
+            (df['_train_reward'] >= r) &
+            (df['_train_trade_count'] >= t) &
+            (df['_train_variance'] <= v)
+            ]
+        if len(filtered) == 0:
+            continue
+
+        test_precision_mean = filtered['_test_precision'].mean()
+        if test_precision_mean > best_mean:
+            best_mean = test_precision_mean
+            best_filters = {
+                'train_precision >= ': p,
+                'train_reward >= ': r,
+                'train_trade_count >= ': t,
+                'train_variance <= ': v
+            }
+            best_df = filtered
+
+    return best_filters, best_df, best_mean
+
+
 def most_common_features(df):
     # Alle Listen in eine einzige lange Liste zusammenführen
     all_features = list(itertools.chain.from_iterable(df['_features']))
@@ -64,6 +118,13 @@ def analyze_by_symbol(df):
     summary = summary.rename(columns={'_symbol_count': 'num_entries'})
 
     return summary
+
+def is_clustered(row, min_variance=80, min_span=200):
+    indexes = row['_train_indexes']
+    if indexes is None or len(indexes) < 2:
+        return True
+    span = max(indexes) - min(indexes)
+    return row['_train_variance'] < min_variance and span < min_span
 
 def analyze_df(df):
     print((df["_test_precision"] * 100).mean())
@@ -126,11 +187,17 @@ def filter_by_best_feature(top_count:int = 10, feature_count:int = 1):
 train_filtered = df[
     (df['_train_precision'] > 0.6) &
     (df['_train_reward'] > 10) &
+    (df['_train_variance'] >= 50) &
     (df['_train_trade_count'] >= 20) &
     (df['_train_variance'] < 300)
 ]
 
+
+train_filtered = train_filtered[~train_filtered.apply(is_clustered, axis=1)]
 analyze_df(train_filtered)
+
+
+
 
 
 

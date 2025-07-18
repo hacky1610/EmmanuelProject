@@ -176,10 +176,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
         data = random.choice([
             (2.0, 2.1, 0.66, 0.7, 11),
-            (2.0, 2.7, 0.66, 0.7, 11),
             (1.5, 2.0, 0.66, 0.7, 11),
-            (1.2, 1.8, 0.66, 0.7, 11),
-            (1.0, 1.6, 0.66, 0.7, 11),
         ])
         atr_factor_stop, atr_factor_limit, min_prec_train, min_prec_test, min_train_reward = data
         ct = CombinationTrainer(
