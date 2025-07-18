@@ -11,6 +11,101 @@ import pandas as pd
 import numpy as np
 from itertools import product
 
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.stats import norm
+
+def trade_distance_variance(indexes):
+    if isinstance(indexes, list) and len(indexes) >= 2:
+        diffs = [j - i for i, j in zip(indexes[:-1], indexes[1:])]
+        return pd.Series(diffs).var()
+    return 0
+
+def wilson_score(p, n, z=1.96):
+    if n == 0:
+        return 0
+    denominator = 1 + z**2 / n
+    centre_adj = p + z*z / (2*n)
+    adj_stddev = np.sqrt((p*(1 - p) + z*z / (4*n)) / n)
+    return (centre_adj - z*adj_stddev) / denominator
+
+def analyze_issues(df):
+    print("=== Erweiterte Analyse potenzieller Schwächen ===")
+
+    df = df.copy()
+
+    # Gaps
+    df['precision_gap'] = df['_train_precision'] - df['_test_precision']
+    df['reward_gap'] = df['_train_reward'] - df['_test_reward']
+
+    print(f"\n--- Overfitting-Indikatoren ---")
+    print(f"Ø Precision-Gap: {df['precision_gap'].mean():.2f}")
+    print(f"Strategien mit GAP > 0.5: {(df['precision_gap'] > 0.5).sum()}")
+
+    few_trades = df[df['_test_trade_count'] < 4]
+    print(f"\n--- Wenig Test-Trades ---")
+    print(f"Strategien mit < 4 Test-Trades: {len(few_trades)}")
+    print(f"Ø Test-Precision dieser Strategien: {few_trades['_test_precision'].mean():.2f}")
+
+    df['_test_variance_calc'] = df['_test_indexes'].apply(trade_distance_variance)
+    clustered = df[(df['_test_trade_count'] > 5) & (df['_test_variance_calc'] < 50)]
+    print(f"\n--- Cluster-Trades ---")
+    print(f"Strategien mit Trade-Cluster: {len(clustered)}")
+    print(f"Ø Test-Precision (Cluster): {clustered['_test_precision'].mean():.2f}")
+
+    df['features_len'] = df['_features'].apply(len)
+    complexity = df.groupby('features_len')['_test_precision'].agg(['mean', 'count'])
+    print(f"\n--- Feature-Komplexität ---\n{complexity}")
+
+    df['test_confidence'] = df.apply(
+        lambda row: wilson_score(row['_test_precision'], row['_test_trade_count']), axis=1
+    )
+    low_conf = df[df['test_confidence'] < 0.4]
+    print(f"\n--- Niedrige Konfidenz (Wilson < 0.4) ---")
+    print(f"Strategien mit niedriger Konfidenz: {len(low_conf)}")
+    print(f"Ø Test-Precision dieser Strategien: {low_conf['_test_precision'].mean():.2f}")
+
+    print(f"\n--- Symbol-Qualität ---")
+    symbol_stats = df.groupby('_symbol')['_test_precision'].agg(['mean', 'count']).sort_values('mean')
+    print(symbol_stats.head(5))
+
+    bad_profit = df[(df['_test_precision'] > 0.6) & (df['_test_reward'] < 0)]
+    print(f"\n--- Gute Precision, aber Verlust ---")
+    print(bad_profit[['features_len', '_test_precision', '_test_reward', '_test_trade_count']].head())
+
+    # Visualisierung
+    df['reward_per_trade'] = df['_test_reward'] / df['_test_trade_count'].replace(0, 1)
+    df.plot.scatter(x='_test_precision', y='reward_per_trade', alpha=0.3, title='Reward/Trade vs. Test Precision')
+    plt.tight_layout()
+    plt.show()
+
+    df['_test_reward'].hist(bins=50, grid=False, alpha=0.7)
+    plt.title("Verteilung der Test-Rewards")
+    plt.xlabel("Reward")
+    plt.ylabel("Anzahl Strategien")
+    plt.show()
+
+    # === Erweiterung: Top-Strategien mit hoher Konfidenz und hohem Reward ===
+    top_strategies = df[
+        (df['test_confidence'] > 0.6) &
+        (df['_test_reward'] > 5) &
+        (df['_test_trade_count'] >= 5)
+    ].sort_values('test_confidence', ascending=False).head(10)
+
+    print("\n--- Top Strategien (hoch konfid., guter Reward) ---")
+    for i, row in top_strategies.iterrows():
+        print(f"Prec={row._test_precision:.2f} Reward={row._test_reward:.2f} Trades={row._test_trade_count} Conf={row.test_confidence:.2f} Features={len(row._features)}")
+
+    # === Erweiterung: Ausreißer mit hoher Precision aber schlechtem Reward ===
+    reward_outliers = df[(df['_test_precision'] > 0.7) & (df['_test_reward'] < -5)]
+    print(f"\n--- Ausreißer: Hohe Precision, aber klarer Verlust --- ({len(reward_outliers)})")
+    if not reward_outliers.empty:
+        print(reward_outliers[['features_len', '_test_precision', '_test_reward', '_symbol']].head())
+
+    print(f"\n=== Analyse abgeschlossen ({len(df)} Strategien) ===")
+
+
 
 def find_best_train_filters(df):
     """
@@ -243,6 +338,7 @@ train_filtered = df[
 
 train_filtered = train_filtered[~train_filtered.apply(is_clustered, axis=1)]
 analyze_df(train_filtered)
+#train_filtered.to_parquet("../predictor_5.parquet" )
 
 
 
