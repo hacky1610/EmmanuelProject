@@ -32,8 +32,8 @@ def remove_duplicates_with_unordered_list_column(df, subset, list_column):
 
     return df_cleaned
 
-lin =  pd.read_parquet("../predictor_5.parquet")
-win =  pd.read_parquet("../predictor_win_5.parquet")
+lin =  pd.read_parquet("/home/daniel/Documents/Projects/predictor_5.parquet")
+win =  pd.read_parquet("/home/daniel/Documents/Projects/predictor_win_5.parquet")
 
                                 #all_df = DataFrame()
 all_df = pd.concat([lin, win], ignore_index=True)
@@ -42,4 +42,4 @@ all_df = remove_duplicates_with_unordered_list_column(
     ["_symbol", "_atr_factor_stop", "_atr_factor_limit", "_features", "_trade_mode"],
     "_features"
 )
-all_df.to_parquet("../predictor_5.parquet")
+all_df.to_parquet("/home/daniel/Documents/Projects/predictor_5.parquet")

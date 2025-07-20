@@ -152,7 +152,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                   tracer=ConsoleTracer()):
     markets = IG.get_markets_offline()
     random.shuffle(markets)
-    parquet_name = "predictor_5.parquet"
+    parquet_name = "/home/daniel/Documents/Projects/predictor_5.parquet"
     if os.name == "nt":
         parquet_name = "predictor_win_5.parquet"
 
@@ -163,7 +163,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         indicators.reset_caches()
 
         with file_lock(LOCKFILE_PATH):
-            df = pd.read_parquet("predictor_5.parquet")
+            df = pd.read_parquet("/home/daniel/Documents/Projects/predictor_5.parquet")
 
         online_combos = get_all_combos(fx, df)
         online_combos += create_new_combos(online_combos, indicators.get_all_indicator_names())

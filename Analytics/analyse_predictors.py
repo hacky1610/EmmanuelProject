@@ -215,7 +215,7 @@ def analyze_by_symbol(df):
 
     return summary
 
-def is_clustered(row, min_variance=80, min_span=200, max_density=0.2):
+def is_clustered(row, min_variance=80, min_span=200, max_density=0.1):
     indexes = row['_train_indexes']
     if indexes is None or len(indexes) < 2:
         return True
@@ -294,17 +294,224 @@ def analyze_df(df, show_plots=True, top_n=5):
         plt.show()
 
 pd.set_option('display.max_columns', None)
-df = pd.read_parquet("../predictor_5.parquet" )
+df = pd.read_parquet("/home/daniel/Documents/Projects/predictor_5.parquet" )
 
 df = df[
     ~(
-        (df["_atr_factor_stop"] == 1.0) &
-        (df["_atr_factor_limit"] == 1.6)
+        (df["_atr_factor_stop"] == 1.2) &
+        (df["_atr_factor_limit"] == 1.8)
     )
 ]
 df.to_parquet("../predictor_5.parquet" )
 
+def wilson_score(p, n, z=1.96):  # z=1.96 für 95% Konfidenz
+    if n == 0:
+        return 0
+    denominator = 1 + z**2 / n
+    centre = p + z**2 / (2 * n)
+    margin = z * np.sqrt((p * (1 - p) + z**2 / (4 * n)) / n)
+    return (centre - margin) / denominator
 
+def analyze_wilson(df):
+    print("\n=== Wilson-Score Analyse ===")
+
+    # Überblick
+    print(f"Ø Wilson-Score: {df['wilson_score'].mean():.2f}")
+    print(f"Max. Wilson-Score: {df['wilson_score'].max():.2f}")
+    print(f"Min. Wilson-Score: {df['wilson_score'].min():.2f}")
+
+    # Gruppenweise Verteilung
+    thresholds = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3]
+    for t in thresholds:
+        count = len(df[df['wilson_score'] >= t])
+        prec = df[df['wilson_score'] >= t]['_test_precision'].mean()
+        reward = df[df['wilson_score'] >= t]['_test_reward'].mean()
+        print(f"WS ≥ {t:.1f}: {count} Strategien, Ø Precision={prec:.2f}, Ø Reward={reward:.2f}")
+
+    # Wilson vs. Test Precision visualisieren
+    try:
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+        sns.set(style="whitegrid")
+        plt.figure(figsize=(8, 5))
+        sns.scatterplot(data=df, x='wilson_score', y='_test_precision', hue='_test_trade_count', palette='coolwarm', alpha=0.6)
+        plt.title("Wilson-Score vs Test Precision")
+        plt.xlabel("Wilson Score")
+        plt.ylabel("Test Precision")
+        plt.legend(title='Trade Count', loc='lower right')
+        plt.tight_layout()
+        plt.show()
+    except Exception as e:
+        print(f"Plot konnte nicht erstellt werden: {e}")
+
+
+def analyse_trade_index_distribution(indexes, max_cluster_gap=2, outlier_thresh=100):
+    if not isinstance(indexes, np.ndarray) or len(indexes) < 2:
+        return pd.Series({
+            'cluster_count': np.nan,
+            'max_cluster_size': np.nan,
+            'outlier_count': np.nan
+        })
+
+    indexes = np.sort(indexes)
+    diffs = np.diff(indexes)
+
+    cluster_sizes = []
+    current_cluster = 1
+
+    for diff in diffs:
+        if diff <= max_cluster_gap:
+            current_cluster += 1
+        else:
+            # Cluster mit mindestens 2 Elementen speichern
+            if current_cluster >= 2:
+                cluster_sizes.append(current_cluster)
+            current_cluster = 1  # Neuer möglicher Cluster
+
+    # Letzter Cluster ggf. hinzufügen
+    if current_cluster >= 2:
+        cluster_sizes.append(current_cluster)
+
+    outlier_count = np.sum(diffs > outlier_thresh)
+
+    return pd.Series({
+        'cluster_count': len(cluster_sizes),
+        'max_cluster_size': max(cluster_sizes) if cluster_sizes else 0,
+        'outlier_count': int(outlier_count)
+    })
+
+
+
+def analyze_span_density(df):
+    print("\n=== Analyse: Train Span & Train Density ===")
+
+    print(f"Anzahl Strategien: {len(df)}")
+    print(f"Ø Train Span (h): {df['train_span'].mean():.2f}")
+    print(f"Ø Train Density (trades/span): {df['train_density'].mean():.4f}")
+    print(f"Min Span: {df['train_span'].min()}, Max Span: {df['train_span'].max()}")
+    print(f"Min Density: {df['train_density'].min():.4f}, Max Density: {df['train_density'].max():.4f}")
+
+    # Gruppieren nach Dichte
+    bins = [0, 0.05, 0.1, 0.2, 0.5, 1.0]
+    labels = ["≤0.05", "0.05–0.1", "0.1–0.2", "0.2–0.5", ">0.5"]
+    df['density_group'] = pd.cut(df['train_density'], bins=bins, labels=labels, include_lowest=True)
+
+    print("\n--- Ø Test-Precision nach Density-Gruppe ---")
+    precision_by_group = df.groupby('density_group')['_test_precision'].agg(['mean', 'count']).reset_index()
+    print(precision_by_group)
+
+    print("\n--- Ø Train-Span nach Density-Gruppe ---")
+    span_by_group = df.groupby('density_group')['train_span'].agg(['mean', 'count']).reset_index()
+    print(span_by_group)
+
+    # Optional visualisieren (wenn gewünscht):
+    # import seaborn as sns
+    # import matplotlib.pyplot as plt
+    # sns.boxplot(data=df, x='density_group', y='_test_precision')
+    # plt.show()
+
+
+def analyze_worst_strategies(df, n=10):
+    print(f"\n=== Analyse der {n} Strategien mit dem schlechtesten Test-Reward ===")
+
+    # Schlechteste Strategien nach Test-Reward
+    worst_strategies = df.sort_values('_test_reward').head(n)
+
+    for idx, row in worst_strategies.iterrows():
+        print(f"\n--- Strategie #{idx} ---")
+        print(f"Test-Precision: {row['_test_precision']:.2f}")
+        print(f"Test-Reward:    {row['_test_reward']:.2f}")
+        print(f"Test-Trades:    {row['_test_trade_count']}")
+        print(f"Wilson-Score:   {row['wilson_score']:.2f}")
+        print(f"Train-Precision: {row['_train_precision']:.2f}")
+        print(f"Train-Reward:    {row['_train_reward']:.2f}")
+        print(f"Symbol:         {row['_symbol']}")
+        print(f"Trade Mode:     {row.get('_trade_mode', 'N/A')}")
+        print(f"Features ({len(row['_features'])}): {row['_features']}")
+
+        # Indexliste der Test-Trades
+        # Indexliste der Test-Trades
+        print(f"Train-Trade-Indexes: {row['_train_indexes']}")
+
+        # Optional: Dichte & Verteilung der Testtrades
+        if row['_train_trade_count'] > 1:
+            diffs = [j - i for i, j in zip(row['_train_indexes'][:-1], row['_train_indexes'][1:])]
+            print(f"  Abstand zw. Trades (Stunden): {diffs}")
+            print(f"  Ø Abstand: {np.mean(diffs):.2f}, Varianz: {np.var(diffs):.2f}")
+        else:
+            print("  Nur 1 Train-Trade vorhanden.")
+
+import numpy as np
+
+def calculate_index_distances(indexes):
+    if isinstance(indexes, list) and len(indexes) >= 2:
+        diffs = np.diff(sorted(indexes))
+        return pd.Series({
+            'train_index_median_distance': np.median(diffs),
+            'train_index_mean_distance': np.mean(diffs),
+            'train_index_variance_distance': np.var(diffs)
+        })
+    return pd.Series({
+        'train_index_median_distance': np.nan,
+        'train_index_mean_distance': np.nan,
+        'train_index_variance_distance': np.nan
+    })
+
+def identify_strategies_with_cluster_problems(df, cluster_thresh=5, outlier_thresh=2):
+    cluster_issues = df[(df['max_cluster_size'] > cluster_thresh) | (df['outlier_count'] > outlier_thresh)]
+    print(f"\n=== Strategien mit Cluster- oder Outlier-Problemen: {len(cluster_issues)} ===")
+    if not cluster_issues.empty:
+        print(cluster_issues[['_symbol', 'cluster_count', 'max_cluster_size', 'outlier_count']].head(20))
+    return cluster_issues
+
+def identify_problematic_strategies(df, median_thresh=5, var_thresh=100, reward_thresh=0):
+    print("\n=== Analyse: Problematische Strategien ===")
+
+    clustered = df[df['train_index_median_distance'] < median_thresh]
+    print(f"⚠️ Strategien mit Median-Abstand < {median_thresh}: {len(clustered)}")
+
+    high_precision_low_reward = df[(df['_test_precision'] > 0.7) & (df['_test_reward'] < reward_thresh)]
+    print(f"⚠️ Strategien mit hoher Precision, aber Reward ≤ {reward_thresh}: {len(high_precision_low_reward)}")
+
+    high_variance = df[df['train_index_variance_distance'] > var_thresh]
+    print(f"⚠️ Strategien mit Varianz der Abstände > {var_thresh}: {len(high_variance)}")
+
+    # Details (optional):
+    if not clustered.empty:
+        print("\n--- Cluster-Gefahr (geringer Median-Abstand) ---")
+        print(clustered[['_symbol', '_test_precision', '_test_reward', 'train_index_median_distance']].head())
+
+    if not high_precision_low_reward.empty:
+        print("\n--- Hohe Präzision, schlechter Reward ---")
+        print(high_precision_low_reward[
+                  ['_symbol', '_test_precision', '_test_reward', 'train_index_median_distance']].head())
+
+    if not high_variance.empty:
+        print("\n--- Hohe Varianz der Abstände ---")
+        print(high_variance[['_symbol', '_test_precision', '_test_reward', 'train_index_variance_distance']].head())
+
+def analyse_precision_by_bins(df, precision_col='_test_precision'):
+    result = {}
+
+    # Definition der Bins für jede Spalte
+    binning_config = {
+        'cluster_count': [0, 5, 10, 20, 999],
+        'max_cluster_size': [0, 3, 7, 14, 999],
+        'outlier_count': [0, 1, 3, 5, 999],
+    }
+
+    for feature, bins in binning_config.items():
+        labels = [f"{bins[i]}–{bins[i+1]-1}" if bins[i+1] != 999 else f"{bins[i]}+" for i in range(len(bins)-1)]
+        binned = pd.cut(df[feature], bins=bins, labels=labels, include_lowest=True)
+        grouped = df.groupby(binned)[precision_col].mean().round(3)
+        result[feature] = grouped
+
+    # Übersicht anzeigen
+    for feature, grouped in result.items():
+        print(f"\n=== ⏹️ {feature} → Ø _test_precision pro Bin ===")
+        print(grouped)
+
+    return result
 
 def filter_by_best_feature(top_count:int = 10, feature_count:int = 1):
     global top10_features, df_filtered
@@ -327,20 +534,54 @@ def filter_by_best_feature(top_count:int = 10, feature_count:int = 1):
     return df[df['_features'].apply(lambda feat_list: sum(f in top_features for f in feat_list) >= feature_count)]
 
 
-train_filtered = df[
-    (df['_train_precision'] > 0.6) &
-    (df['_train_reward'] > 10) &
-    (df['_train_variance'] >= 50) &
-    (df['_train_trade_count'] >= 20) &
-    (df['_train_variance'] < 300)
+filtered_df = df[
+    (df['_train_precision'] > 0.66)
 ]
 
 
-train_filtered = train_filtered[~train_filtered.apply(is_clustered, axis=1)]
-analyze_df(train_filtered)
-#train_filtered.to_parquet("../predictor_5.parquet" )
+def add_measure_parameters(df):
+    new_df = df.copy()
+    new_df['train_span'] = new_df['_train_indexes'].apply(lambda x: max(x) - min(x))
+    new_df['train_density'] = new_df['_train_trade_count'] / new_df['train_span']
+    new_df[['cluster_count', 'max_cluster_size', 'outlier_count']] = new_df['_train_indexes'].apply(
+        lambda x: analyse_trade_index_distribution(x)
+    )
+    new_df['test_confidence'] = new_df.apply(
+        lambda row: wilson_score(row['_test_precision'], row['_test_trade_count']),
+        axis=1
+    )
+    new_df[[
+        'train_index_median_distance',
+        'train_index_mean_distance',
+        'train_index_variance_distance'
+    ]] = new_df['_train_indexes'].apply(calculate_index_distances)
+    new_df['wilson_score'] = new_df.apply(
+        lambda row: wilson_score(row['_test_precision'], row['_test_trade_count']), axis=1)
+
+    return new_df
 
 
+filtered_df = add_measure_parameters(filtered_df)
+
+schlechte_symbole = ['NZDCAD', 'EURNZD', 'USDCAD', 'USDSGD', "USDJPY", "EURAUD", "GBPNZD",
+                     'AUDUSD', 'NZDUSD', 'EURUSD', 'EURCAD', 'USDHKD']
+filtered_df = filtered_df[~filtered_df['_symbol'].isin(schlechte_symbole)]
+df_filtered = filtered_df[
+    (filtered_df['cluster_count'].between(5, 19)) &
+    (filtered_df['max_cluster_size'] <= 6)
+]
+df_filtered = df_filtered[df_filtered['features_len'].between(5, 8)]
+df_filtered = df_filtered[df_filtered.wilson_score >= 0.4]
+
+
+filtered_df = filtered_df[~filtered_df.apply(is_clustered, axis=1)]
+analyze_df(filtered_df)
+analyze_issues(filtered_df)
+analyze_span_density(filtered_df)
+analyze_worst_strategies(filtered_df)
+identify_problematic_strategies(filtered_df)
+identify_strategies_with_cluster_problems(filtered_df)
+analyse_precision_by_bins(filtered_df)
 
 
 

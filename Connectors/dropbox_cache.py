@@ -190,3 +190,9 @@ class DropBoxCache(BaseCache):
     def model_cache_exist(self, name: str):
         return self.dropbox_servie.exists(self._get_model_cache_path(name))
 
+    def load_parquet_model(self, name: str) -> DataFrame:
+        res = self.dropbox_servie.load_bytes(self._get_model_cache_path(name))
+        if res is not None:
+            return pd.read_parquet(io.BytesIO(res.content))
+        return pd.DataFrame()
+
