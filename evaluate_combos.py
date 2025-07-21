@@ -12,6 +12,7 @@ import multiprocessing as mp
 import dropbox
 import pymongo
 
+from Analytics.analyze_bl import AnalyzeParamCreator
 from BL.Simulation import Simulation
 from BL.analytics import Analytics
 from BL.combination_trainer import CombinationTrainer
@@ -226,6 +227,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                     train_df["_symbol"] = fx
                     train_df["_atr_factor_stop"] = atr_factor_stop
                     train_df["_atr_factor_limit"] = atr_factor_limit
+
+                    apc = AnalyzeParamCreator()
+                    train_df = apc.add_measure_parameters(train_df)
 
                     with file_lock(LOCKFILE_PATH):
                         all_df = pd.read_parquet(parquet_name)
