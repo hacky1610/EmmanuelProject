@@ -184,6 +184,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         data = random.choice([
             (2.0, 2.1, 0.66, 0.7, 11),
             (1.5, 2.0, 0.66, 0.7, 11),
+            (1.5, 1.5, 0.66, 0.7, 11)
         ])
         atr_factor_stop, atr_factor_limit, min_prec_train, min_prec_test, min_train_reward = data
         ct = CombinationTrainer(
@@ -194,7 +195,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         )
 
         combos = [online_combos]
-        for combination_size in random.choices([6,7,8,9], k=3):
+        for combination_size in random.choices([5,6,7,8], k=3):
             combos.append(ct.create_combos(best_features_online_0_5, combination_size))
             combos.append(ct.create_combos(best_features_online_0_2, combination_size))
             combos.append(ct.create_combos(random.sample(indicators.get_all_indicator_names(), 25), combination_size))
