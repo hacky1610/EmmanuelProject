@@ -115,12 +115,18 @@ def remove_duplicates_with_unordered_list_column(df: pd.DataFrame, subset: List[
     return df_cleaned
 
 def get_all_combos(filter_symbol: str, df: pd.DataFrame) -> List[List[str]]:
+    if "_symbol" not in df.columns or "_features" not in df.columns:
+        return [[]]
+
     filtered_df = df[df["_symbol"] != filter_symbol]
     all_combos = (tuple(sorted(f)) for f in filtered_df["_features"] if isinstance(f, (list, np.ndarray)))
     unique_combos = [list(t) for t in set(all_combos)]
     return unique_combos
 
 def get_most_used_features(df: pd.DataFrame, top_factor: float = 0.5) -> List[str]:
+    if "_features" not in df.columns:
+        return []
+
     features_list = []
     for features in df["_features"]:
         features_list.extend(features)
@@ -155,7 +161,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
     random.shuffle(markets)
     parquet_name = "/home/daniel/Documents/Projects/predictor_5.parquet"
     if os.name == "nt":
-        parquet_name = "predictor_win_5.parquet"
+        parquet_name = "C:\\Users\\adhada7\\Projects\predictor_win_5.parquet"
 
     for market in markets:
         fx = market["symbol"]
