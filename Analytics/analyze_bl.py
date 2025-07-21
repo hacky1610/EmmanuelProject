@@ -110,7 +110,7 @@ class Analyzer():
         self._analyse_precision_by_bins(df)
 
 
-    def find_best_filter_combination(self, df, min_precision=0.65, min_strategies=5):
+    def find_best_filter_combination(self, df, min_precision=0.65, min_strategies=3):
         # Parameterbereiche, die wir permutieren
         cluster_size_medians = [1, 2]
         max_cluster_sizes = [2, 3, 4, 5, 6]
@@ -119,7 +119,7 @@ class Analyzer():
         max_feature_lens = [5, 6, 7]
 
         best_result = {
-            'mean_precision': 0,
+            'mean_wilson': 0,
             'count': 0,
             'params': None,
             'filtered_df': None
@@ -139,10 +139,10 @@ class Analyzer():
                 ]
 
             if len(filtered_df) >= min_strategies:
-                mean_precision = filtered_df['_test_precision'].mean()
-                if mean_precision >= min_precision and len(filtered_df) > best_result['count']:
+                mean_wilson = filtered_df['wilson_score'].mean()
+                if mean_wilson > best_result['mean_wilson']:
                     best_result = {
-                        'mean_precision': mean_precision,
+                        'mean_wilson': mean_wilson,
                         'count': len(filtered_df),
                         'params': {
                             'cluster_size_median': cluster_median,
@@ -155,6 +155,14 @@ class Analyzer():
                     }
 
         return best_result
+
+    def pre_filter(self, df):
+        return  df[
+            (df['cluster_size_median'] <= 4) &
+            (df['max_cluster_size'] <= 6) &
+            (df['outlier_count'] <= 3) &
+            (df['_test_trade_count'] >= 2)
+            ]
 
     def _analyze_span_density(self,df):
         print("\n=== Analyse: Train Span & Train Density ===")

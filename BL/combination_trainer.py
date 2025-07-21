@@ -137,7 +137,7 @@ class CombinationTrainer:
         if not all(col in df.columns for col in feature_cols + ['result']):
             missing = [col for col in feature_cols + ['result'] if col not in df.columns]
             #print(f"Warnung: Fehlende Spalten: {missing}")
-            return 0, 0, [], 0
+            return 0, 0, [], 0 ,0 ,0
 
         # Nur Zeilen, bei denen alle Features 1 sind
         trades = df[feature_cols].sum(axis=1) == len(feature_cols)

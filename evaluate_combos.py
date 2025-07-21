@@ -12,7 +12,7 @@ import multiprocessing as mp
 import dropbox
 import pymongo
 
-from Analytics.analyze_bl import AnalyzeParamCreator
+from Analytics.analyze_bl import AnalyzeParamCreator, Analyzer
 from BL.Simulation import Simulation
 from BL.analytics import Analytics
 from BL.combination_trainer import CombinationTrainer
@@ -164,7 +164,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         indicators.reset_caches()
 
         with file_lock(LOCKFILE_PATH):
-            df = pd.read_parquet("/home/daniel/Documents/Projects/predictor_5.parquet")
+            df = pd.read_parquet(parquet_name)
 
         online_combos = get_all_combos(fx, df)
         online_combos += create_new_combos(online_combos, indicators.get_all_indicator_names())
@@ -229,7 +229,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                     train_df["_atr_factor_limit"] = atr_factor_limit
 
                     apc = AnalyzeParamCreator()
+                    analyser = Analyzer()
                     train_df = apc.add_measure_parameters(train_df)
+                    train_df = analyser.pre_filter(train_df)
 
                     with file_lock(LOCKFILE_PATH):
                         all_df = pd.read_parquet(parquet_name)
