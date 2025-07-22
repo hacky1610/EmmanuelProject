@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from Analytics.analyze_bl import AnalyzeParamCreator, Analyzer
 
@@ -13,7 +15,11 @@ def is_clustered(row, min_variance=80, min_span=200, max_density=0.1):
     return row['_train_variance'] < min_variance or span < min_span or density > max_density
 
 pd.set_option('display.max_columns', None)
-df = pd.read_parquet("/home/daniel/Documents/Projects/predictor_5.parquet" )
+
+if os.name == "nt":
+    df = pd.read_parquet("C:\\Users\\adhada7\\Projects\predictor_win_5.parquet")
+else:
+    df = pd.read_parquet("/home/daniel/Documents/Projects/predictor_5.parquet")
 
 creator = AnalyzeParamCreator()
 analyzer = Analyzer()

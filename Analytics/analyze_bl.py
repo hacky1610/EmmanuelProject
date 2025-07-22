@@ -10,6 +10,7 @@ class AnalyzeParamCreator():
 
     def add_measure_parameters(self,df):
         new_df = df.copy()
+        new_df['features_len'] = new_df['_features'].apply(len)
         new_df['train_span'] = new_df['_train_indexes'].apply(lambda x: max(x) - min(x))
         new_df['train_density'] = new_df['_train_trade_count'] / new_df['train_span']
         new_df[['cluster_count', 'max_cluster_size', 'cluster_size_median', 'outlier_count']] = new_df['_train_indexes'].apply(
