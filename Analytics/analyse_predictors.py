@@ -13,6 +13,7 @@ else:
 
 creator = AnalyzeParamCreator()
 analyzer = Analyzer()
+#df = creator.add_measure_parameters(df)
 
 
 results_per_symbol = {}
@@ -27,7 +28,9 @@ for symbol, df_symbol in df.groupby('_symbol'):
 best_df = best_df[best_df.wilson_score > 0.35]
 
 analyzer.analyze(best_df)
-#best_df.to_parquet("/home/daniel/Documents/Projects/predictor_filtered.parquet")
+if os.name != "nt":
+    best_df.to_parquet("/home/daniel/Documents/Projects/predictor_5.parquet")
+    best_df.to_parquet("/home/daniel/Documents/Projects/predictor_filtered.parquet")
 
 
 
