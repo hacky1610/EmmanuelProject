@@ -140,7 +140,11 @@ class Analyzer():
                 ]
 
             if len(filtered_df) >= min_strategies:
-                mean_wilson = filtered_df['wilson_score'].mean()
+                mean_wilson = (
+                    filtered_df.groupby('_symbol')['wilson_score']
+                    .mean()
+                    .mean()
+                )
                 if mean_wilson > best_result['mean_wilson']:
                     best_result = {
                         'mean_wilson': mean_wilson,
