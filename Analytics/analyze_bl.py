@@ -109,6 +109,7 @@ class Analyzer():
         self._identify_problematic_strategies(df)
         self._identify_strategies_with_cluster_problems(df)
         self._analyse_precision_by_bins(df)
+        self._analyse_precision_by_bins(df, precision_col='_test_reward')
 
 
     def find_best_filter_combination(self, df, min_precision=0.65, min_strategies=3):
@@ -122,6 +123,7 @@ class Analyzer():
         best_result = {
             'mean_wilson': 0,
             'count': 0,
+            'score': 0,
             'params': None,
             'filtered_df': None
         }
@@ -145,9 +147,12 @@ class Analyzer():
                     .mean()
                     .mean()
                 )
+                score = mean_wilson * np.log(len(filtered_df))
+                #if score > best_result['score']:
                 if mean_wilson > best_result['mean_wilson']:
                     best_result = {
                         'mean_wilson': mean_wilson,
+                        'score': score,
                         'count': len(filtered_df),
                         'params': {
                             'cluster_size_median': cluster_median,
