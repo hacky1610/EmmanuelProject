@@ -218,7 +218,7 @@ class Trader:
         predictors = []
 
         filtered:DataFrame = self._predictors_df[self._predictors_df._symbol == symbol]
-        filtered = filtered[filtered._test_precision > 0.6]
+        filtered = filtered[filtered._test_precision > 0.75]
         for predictor_data in filtered.to_dict(orient='records'):
             predictor = DeepPredictor(symbol=symbol, tracer=self._tracer, indicators=indicators, cache=self._cache)
             predictor.setup(predictor_data)
@@ -229,7 +229,7 @@ class Trader:
 
     def market_tradable(self, market: str) -> bool:
         if len(self._predictors_df[self._predictors_df._symbol == market]) > 0:
-            return self._predictors_df[self._predictors_df._symbol == market]["_test_precision"].mean() > 0.64
+            return self._predictors_df[self._predictors_df._symbol == market]["_test_precision"].mean() > 0.75
         return False
 
     def trade_market(self, indicators: Any, market: dict) -> TradeResult:
