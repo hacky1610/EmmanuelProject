@@ -14,6 +14,10 @@ else:
 creator = AnalyzeParamCreator()
 analyzer = Analyzer()
 #df = creator.add_measure_parameters(df)
+df['_train_wilson_score'] = df.apply(
+    lambda row: creator._wilson_score(row['_train_precision'], row['_train_trade_count']),
+    axis=1
+)
 
 
 results_per_symbol = {}

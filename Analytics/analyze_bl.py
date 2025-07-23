@@ -29,6 +29,10 @@ class AnalyzeParamCreator():
             'train_index_variance_distance'
         ]] = new_df['_train_indexes'].apply(self._calculate_index_distances)
         new_df['wilson_score'] = new_df['test_confidence']
+        new_df['_train_wilson_score'] = new_df.apply(
+            lambda row: self._wilson_score(row['_train_precision'], row['_train_trade_count']),
+            axis=1
+        )
 
         return new_df
 
@@ -110,12 +114,16 @@ class Analyzer():
         self._identify_strategies_with_cluster_problems(df)
         self._analyse_precision_by_bins(df)
         self._analyse_precision_by_bins(df, precision_col='_test_reward')
+        self._analyze_train_vs_test_bins(df)
+        self._analyze_df(df)
+
 
 
     def find_best_filter_combination(self, df, min_precision=0.65, min_strategies=3):
         # Parameterbereiche, die wir permutieren
         cluster_size_medians = [1, 2]
         max_cluster_sizes = [2, 3, 4, 5, 6]
+        cluster_counts = [2, 5, 13, 17, 26, 38, 50]
         outlier_counts = [0, 1, 2]
         min_trade_counts = [5, 6, 7]
         max_feature_lens = [5, 6, 7]
@@ -130,12 +138,13 @@ class Analyzer():
 
         # Alle Kombinationen durchprobieren
         for comb in itertools.product(cluster_size_medians, max_cluster_sizes, outlier_counts, min_trade_counts,
-                                      max_feature_lens):
-            cluster_median, cluster_max, outliers, trade_min, feature_max = comb
+                                      max_feature_lens, cluster_counts):
+            cluster_median, cluster_max, outliers, trade_min, feature_max, cluster_count = comb
 
             filtered_df = df[
                 (df['cluster_size_median'] <= cluster_median) &
                 (df['max_cluster_size'] <= cluster_max) &
+                (df['cluster_count'] <= cluster_count) &
                 (df['outlier_count'] <= outliers) &
                 (df['_test_trade_count'] >= trade_min) &
                 (df['features_len'] <= feature_max)
@@ -147,9 +156,9 @@ class Analyzer():
                     .mean()
                     .mean()
                 )
-                score = mean_wilson * np.log(len(filtered_df))
-                #if score > best_result['score']:
-                if mean_wilson > best_result['mean_wilson']:
+                score = (mean_wilson ** 2) * np.log(len(filtered_df))
+                if score > best_result['score']:
+                #if mean_wilson > best_result['mean_wilson']:
                     best_result = {
                         'mean_wilson': mean_wilson,
                         'score': score,
@@ -165,6 +174,38 @@ class Analyzer():
                     }
 
         return best_result
+
+    import pandas as pd
+    import numpy as np
+
+    def _analyze_train_vs_test_bins(self,df, bins=10):
+        if "_train_wilson_score" not in df.columns or "_test_precision" not in df.columns:
+            print("Fehlende Spalten im DataFrame.")
+            return
+
+        df_valid = df[["_train_wilson_score", "_test_precision"]].dropna()
+
+        # Bin-Einteilung
+        df_valid["bin"] = pd.cut(df_valid["_train_wilson_score"], bins=bins)
+
+        grouped = df_valid.groupby("bin")["_test_precision"]
+
+        print("\n🔍 Analyse von _test_precision pro _train_wilson_score-Bin:\n")
+
+        for bin_range, group in grouped:
+            n = group.count()
+            if n == 0:
+                continue
+            avg = group.mean()
+            min_val = group.min()
+            max_val = group.max()
+            median = group.median()
+
+            print(f"  ➤ Bin {bin_range}:")
+            print(f"     ▪ Anzahl Strategien: {n}")
+            print(f"     ▪ Ø Test-Precision : {avg:.3f}")
+            print(f"     ▪ Median           : {median:.3f}")
+            print(f"     ▪ Min – Max        : {min_val:.3f} – {max_val:.3f}\n")
 
     def pre_filter(self, df):
         return  df[
@@ -460,7 +501,7 @@ class Analyzer():
 
         # Übersicht anzeigen
         for feature, grouped in result.items():
-            print(f"\n=== ⏹️ {feature} → Ø _test_precision pro Bin ===")
+            print(f"\n=== ⏹️ {feature} → Ø {precision_col} pro Bin ===")
             print(grouped)
 
         return result
