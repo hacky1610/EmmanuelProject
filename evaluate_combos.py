@@ -159,9 +159,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
                   tracer=ConsoleTracer()):
     markets = IG.get_markets_offline()
     random.shuffle(markets)
-    parquet_name = "/home/daniel/Documents/Projects/predictor_5.parquet"
+    parquet_name = "/home/daniel/Documents/Projects/predictor_6.parquet"
     if os.name == "nt":
-        parquet_name = "C:\\Users\\adhada7\\Projects\predictor_win_5.parquet"
+        parquet_name = "C:\\Users\\adhada7\\Projects\predictor_win_6.parquet"
 
     for market in markets:
         fx = market["symbol"]

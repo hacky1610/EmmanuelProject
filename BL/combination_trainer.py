@@ -158,7 +158,7 @@ class CombinationTrainer:
         reward = TP_scaled - FP
 
         # Indexe der getätigten Trades
-        trade_indexes = df.index[trades].tolist()
+        trade_indexes = df["chart_index"][trades].tolist()
         variance = CombinationTrainer.trade_distance_variance(trade_indexes)
 
         return precision, reward, trade_indexes, trades.sum(), variance, trade_indexes
@@ -206,6 +206,40 @@ class CombinationTrainer:
 
         return importance_df
 
+    def _split(self, df):
+
+        BLOCK_SIZE = 25
+
+
+        # In 25-Zeilen-Blöcke aufteilen
+        num_blocks = len(df) // BLOCK_SIZE
+        blocks = [
+            df.iloc[i * BLOCK_SIZE: (i + 1) * BLOCK_SIZE].copy()
+            for i in range(num_blocks)
+        ]
+
+        # Trainingsblöcke: Blöcke mit geraden Indizes (0, 2, 4, ...)
+        train_blocks = []
+        for i in range(0, num_blocks, 2):
+            block = blocks[i]
+            shift = (i // 2) * BLOCK_SIZE
+            block["chart_index"] -= shift  # Lokaler ChartIndex
+            train_blocks.append(block)
+
+        # Testblöcke: Blöcke mit ungeraden Indizes (1, 3, 5, ...)
+        test_blocks = []
+        for i in range(1, num_blocks, 2):
+            block = blocks[i]
+            shift = (i // 2) * BLOCK_SIZE
+            block["chart_index"] -= shift  # Lokaler ChartIndex
+            test_blocks.append(block)
+
+        # Zusammenfügen der Blöcke
+        df_train = pd.concat(train_blocks, ignore_index=True)
+        df_test = pd.concat(test_blocks, ignore_index=True)
+
+        return df_train, df_test
+
     def train(self, df,
               min_prec_train: float,
               atr_factor_stop: float,
@@ -216,8 +250,7 @@ class CombinationTrainer:
 
         df = df.loc[:, ~df.columns.duplicated()]
         #train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
-        train_df = df[:int(len(df) * 0.8)]
-        test_df = df[int(len(df) * 0.8):]
+        train_df , test_df = self._split(df)
         # Doppelte Spalten im DataFrame entfernen
 
         results = []
@@ -318,7 +351,7 @@ class CombinationTrainer:
         signal_result_df['result'] = signal_result_df['result'].fillna(0)
         signal_result_df = signal_result_df.dropna()
 
-        df = signal_result_df.drop(columns=["chart_index"])
+        df = signal_result_df
 
         return df
 
