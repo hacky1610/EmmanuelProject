@@ -182,9 +182,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
         best_features_online_0_2 = get_most_used_features(df, 0.15)
 
         data = random.choice([
-            (2.0, 2.1, 0.66, 0.7, 11),
-            (1.5, 2.0, 0.66, 0.7, 11),
-            (1.5, 1.5, 0.66, 0.7, 11)
+            (1.5, 2.0, 0.75, 0.7, 11),
         ])
         atr_factor_stop, atr_factor_limit, min_prec_train, min_prec_test, min_train_reward = data
         ct = CombinationTrainer(
@@ -200,7 +198,7 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
             combos.append(ct.create_combos(best_features_online_0_2, combination_size))
             combos.append(ct.create_combos(random.sample(indicators.get_all_indicator_names(), 25), combination_size))
 
-        for combo in combos:
+        for combo in [[['ema_alligator_hist', 'adx_max_21', 'ema_20_smma_20', 'rsi_limit', 'bb', 'adx_slope_48']]]:
             for trade_action in [TradeAction.SELL, TradeAction.BUY]:
                 print(
                     f"Evaluate {fx} {trade_action} and stop factor "

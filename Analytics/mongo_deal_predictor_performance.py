@@ -69,8 +69,10 @@ def search_index(df, date):
 
 pd.set_option('future.no_silent_downcasting', True)
 for deal in reversed(list(ds.get_closed_deals())):
-    if deal['ticker'] != "EURAUD":
-          continue
+
+    #if deal["ticker"] != "CADCHF":
+    #    continue
+
     if deal["open_date_ig_datetime"] > datetime.now() - timedelta(hours=24):
         continue
 
@@ -87,7 +89,7 @@ for deal in reversed(list(ds.get_closed_deals())):
     #continue
 
     df, df_eval = tiingo.load_test_data(deal["ticker"], DataProcessor(), trade_type=TradeType.FX,
-                                                            use_cache=False, days=300)
+                                                            use_cache=True, save_cache=False, days=800)
 
     if "index" in df.columns:
         df = df.drop(columns="index")
@@ -133,9 +135,12 @@ for deal in reversed(list(ds.get_closed_deals())):
         print("ERROR")
 
 
-    precission, reward, trade_indexes, trade_count  = ct._predict_sum(signal_result_df.drop(columns=["chart_index", "entry_time"]),
+    precission, reward, trade_indexes, trade_count , v, ti  = ct._predict_sum(signal_result_df.drop(columns=["entry_time"]),
                                                                       predictor_object._features,predictor_object.get_atr_factor_stop(),predictor_object.get_atr_factor_limit())
 
     print(f'Real    : Profit: {deal["profit"]} Reward: {predictor_object._test_reward} Time {deal["open_date_ig_str"]}')
     print(f"Evaluate: Precission: {precission} Reward {reward}")
+
+
+
 

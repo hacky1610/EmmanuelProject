@@ -196,3 +196,9 @@ class DropBoxCache(BaseCache):
             return pd.read_parquet(io.BytesIO(res.content))
         return pd.DataFrame()
 
+    def save_parquet_model(self, name: str, df: pd.DataFrame) -> None:
+        buffer = io.BytesIO()
+        df.to_parquet(buffer, index=False)
+        buffer.seek(0)
+        self.dropbox_servie.upload_bytes(buffer.read(),self._get_model_cache_path(name))
+

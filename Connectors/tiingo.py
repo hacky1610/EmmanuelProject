@@ -76,7 +76,7 @@ class Tiingo:
         return df
 
     def load_data_by_date(self, ticker: str, start: str, end: str, data_processor: DataProcessor,
-                          resolution: str = "1hour", add_signals: bool = True,
+                          resolution: str = "1hour", add_signals: bool = True, save_cache:bool = False,
                           clean_data: bool = True, trade_type: TradeType = TradeType.FX,
                           use_cache: bool = True, validate: bool = True, suffix:str="mega",
                           fix_close_price = False, remove_sundays = False) -> DataFrame:
@@ -110,7 +110,7 @@ class Tiingo:
             return res
 
         if end is None:
-            if use_cache:
+            if save_cache:
                 self._cache.save_cache(res, name)
         else:
             end_str = TimeUtils.get_time_string(datetime.strptime(end, "%Y-%m-%d"))
@@ -241,7 +241,7 @@ class Tiingo:
                                          validate=False)
         return df, df_eval
 
-    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 1200, use_cache=True):
+    def load_test_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 1200, use_cache=True, save_cache=True):
 
         start_time = self._get_start_time(days=days)
         df = self.load_data_by_date(ticker=symbol,
@@ -252,6 +252,7 @@ class Tiingo:
                                     trade_type=trade_type,
                                     resolution="1day",
                                     validate=False,
+                                    save_cache=save_cache,
                                     suffix="mega", remove_sundays=True)
         df_eval = self.load_data_by_date(ticker=symbol,
                                          start=start_time,
@@ -261,6 +262,7 @@ class Tiingo:
                                          trade_type=trade_type,
                                          resolution="1hour",
                                          add_signals=False,
+                                         save_cache=save_cache,
                                          validate=False,
                                          suffix="mega")
         return df, df_eval

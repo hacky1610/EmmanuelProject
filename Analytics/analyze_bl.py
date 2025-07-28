@@ -16,6 +16,10 @@ class AnalyzeParamCreator():
         new_df[['cluster_count', 'max_cluster_size', 'cluster_size_median', 'outlier_count']] = new_df['_train_indexes'].apply(
             lambda x: self._analyse_trade_index_distribution(x)
         )
+        new_df[['test_cluster_count', 'test_max_cluster_size', 'test_cluster_size_median', 'test_outlier_count']] = new_df[
+            '_test_indexes'].apply(
+            lambda x: self._analyse_trade_index_distribution(x)
+        )
         new_df['_test_variance_calc'] = new_df['_test_indexes'].apply(self._trade_distance_variance)
 
         new_df['test_confidence'] = new_df.apply(
@@ -28,6 +32,7 @@ class AnalyzeParamCreator():
             'train_index_mean_distance',
             'train_index_variance_distance'
         ]] = new_df['_train_indexes'].apply(self._calculate_index_distances)
+
         new_df['wilson_score'] = new_df['test_confidence']
         new_df['_train_wilson_score'] = new_df.apply(
             lambda row: self._wilson_score(row['_train_precision'], row['_train_trade_count']),
@@ -123,7 +128,7 @@ class Analyzer():
         # Parameterbereiche, die wir permutieren
         cluster_size_medians = [1, 2]
         max_cluster_sizes = [2, 3, 4, 5, 6]
-        cluster_counts = [2, 5, 13, 17, 26, 38, 50]
+        cluster_counts = [8, 13, 17, 26, 38, 50]
         outlier_counts = [0, 1, 2]
         min_trade_counts = [5, 6, 7]
         max_feature_lens = [5, 6, 7]
@@ -457,7 +462,7 @@ class Analyzer():
     def _identify_problematic_strategies(df, median_thresh=5, var_thresh=100, reward_thresh=0):
         print("\n=== Analyse: Problematische Strategien ===")
 
-        clustered = df[df['train_index_median_distance'] < median_thresh]
+        clustered = df[df['cluster_count'] < median_thresh]
         print(f"⚠️ Strategien mit Median-Abstand < {median_thresh}: {len(clustered)}")
 
         high_precision_low_reward = df[(df['_test_precision'] > 0.7) & (df['_test_reward'] < reward_thresh)]

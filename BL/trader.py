@@ -229,7 +229,7 @@ class Trader:
 
     def market_tradable(self, market: str) -> bool:
         if len(self._predictors_df[self._predictors_df._symbol == market]) > 0:
-            return self._predictors_df[self._predictors_df._symbol == market]["_test_precision"].mean() > 0.75
+            return self._predictors_df[self._predictors_df._symbol == market]["_test_precision"].mean() > 0.67
         return False
 
     def trade_market(self, indicators: Any, market: dict) -> TradeResult:
