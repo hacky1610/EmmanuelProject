@@ -7,6 +7,7 @@ import pandas
 import pandas as pd
 import pymongo
 
+from Analytics.analyze_bl import AnalyzeParamCreator, Analyzer
 from BL import DataProcessor
 from BL.Simulation import Simulation
 from BL.analytics import Analytics
@@ -70,8 +71,9 @@ def search_index(df, date):
 pd.set_option('future.no_silent_downcasting', True)
 for deal in reversed(list(ds.get_closed_deals())):
 
-    #if deal["ticker"] != "CADCHF":
+    #if deal["ticker"] != "USDCHF":
     #    continue
+    results = []
 
     if deal["open_date_ig_datetime"] > datetime.now() - timedelta(hours=24):
         continue
@@ -122,17 +124,20 @@ for deal in reversed(list(ds.get_closed_deals())):
     signal_result_df['result'] = signal_result_df['result'].fillna(0)
     signal_result_df = signal_result_df.dropna()
 
-    if not  signal_result_df[signal_result_df.chart_index == chart_index][predictor_object._features].sum(axis=1).item() == len(predictor_object._features):
-        print("ERROR!!!")
+    if len(signal_result_df[signal_result_df.chart_index == chart_index]) > 0:
+        if not  signal_result_df[signal_result_df.chart_index == chart_index][predictor_object._features].sum(axis=1).item() == len(predictor_object._features):
+            print("ERROR!!!")
+        if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 0 and deal["profit"] < 0:
+            print("OK")
+        if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 1 and deal["profit"] > 0:
+            print("OK")
+        if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 0 and deal["profit"] > 0:
+            print("ERROR")
+        if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 1 and deal["profit"] < 0:
+            print("ERROR")
+    else:
+        print("No signal found for chart index:", chart_index)
 
-    if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 0 and deal["profit"] < 0:
-        print("OK")
-    if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 1 and deal["profit"] > 0:
-        print("OK")
-    if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 0 and deal["profit"] > 0:
-        print("ERROR")
-    if signal_result_df[signal_result_df.chart_index == chart_index].result.item() == 1 and deal["profit"] < 0:
-        print("ERROR")
 
 
     precission, reward, trade_indexes, trade_count , v, ti  = ct._predict_sum(signal_result_df.drop(columns=["entry_time"]),
@@ -140,6 +145,32 @@ for deal in reversed(list(ds.get_closed_deals())):
 
     print(f'Real    : Profit: {deal["profit"]} Reward: {predictor_object._test_reward} Time {deal["open_date_ig_str"]}')
     print(f"Evaluate: Precission: {precission} Reward {reward}")
+
+    results.append({
+        "symbol": deal["ticker"],
+        "_features": predictor_object._features,
+        "_train_precision": precission,
+        "_train_reward": reward,
+        "_test_precision": precission,
+        "_test_reward": reward,
+        "_trade_mode": predictor_object._trade_mode,
+        "_train_trade_count": trade_count,
+        "_test_trade_count": trade_count,
+        "_train_variance": v,
+        "_test_variance": v,
+        "_test_indexes": trade_indexes,
+        "_train_indexes": trade_indexes,
+        "_unique_indexes": [],
+    })
+
+    df = pd.DataFrame(results)
+    apc = AnalyzeParamCreator()
+    analyser = Analyzer()
+    train_df = apc.add_measure_parameters(df)
+    #analyser.analyze(train_df)
+    print(f"{train_df.cluster_count}")
+
+
 
 
 

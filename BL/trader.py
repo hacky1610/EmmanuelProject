@@ -69,7 +69,8 @@ class Trader:
                  predictor_store: PredictorStore,
                  deal_storage: DealStore,
                  market_storage: MarketStore,
-                 check_ig_performance: bool = False):
+                 check_ig_performance: bool = False,
+                 is_hour: bool = False):
         self._ig: IG = ig
         self._dataprocessor = dataprocessor
         self._tiingo = tiingo
@@ -83,8 +84,12 @@ class Trader:
         self._market_store = market_storage
         self._cache = cache
         self._check_ig_performance = check_ig_performance
+        self._is_hour = is_hour
 
-        self._predictors_df = self._cache.load_parquet_model("predictor_filtered.parquet")
+        if is_hour:
+            self._predictors_df = self._cache.load_parquet_model("predictor_filtered_hour.parquet")
+        else:
+            self._predictors_df = self._cache.load_parquet_model("predictor_filtered.parquet")
 
     def _is_good_ticker(self, ticker: str, min_avg_profit: float, min_deal_count: int, days: int = 1) -> bool:
         if not self._check_ig_performance:
@@ -411,6 +416,9 @@ class Trader:
 
         if res == TradeResult.SUCCESS:
             self._save_result(predictor, deal_response, config.symbol)
+            trade_interval = "1Day"
+            if self._is_hour:
+                trade_interval = "1Hour"
             self._tracer.debug("Save Deal in db")
             self._tracer.debug(f"Buy actions {buy_actions_df}")
             self._tracer.debug(f"Sell actions {sell_actions_df}")
@@ -439,7 +447,7 @@ class Trader:
                                          open_date_ig_datetime=datetime.strptime(date_string, '%Y-%m-%dT%H:%M:%S'),
                                          stop_factor=stop_1, limit_factor=limit_1, predictor_scan_id=predictor.get_id(),
                                          predictor_object=predictor.get_save_data(),
-                                         size=config.size))
+                                         size=config.size, trade_interval=trade_interval))
 
         return res
 

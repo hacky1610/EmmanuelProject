@@ -37,6 +37,7 @@ class Deal:
                  current_profit_percentage: float = 0.0,
                  next_dragen_deal_id: ObjectId = None,
                  predictor_object = None,
+                 trade_interval: str = "1Day"  # Default trade interval
                  ):
         self.ticker = ticker
         self.status = status
@@ -67,6 +68,7 @@ class Deal:
         self.current_profit_percentage = current_profit_percentage
         self.next_dragen_deal_id = next_dragen_deal_id
         self.predictor_object = predictor_object
+        self.trade_interval = trade_interval  # Store the trade interval
 
     @staticmethod
     def Create(data: dict):
@@ -99,7 +101,8 @@ class Deal:
             closed_by_error=data.get("closed_by_error", False),
             current_profit_percentage=data.get("current_profit_percentage", 0.0),
             next_dragen_deal_id=data.get("next_dragen_deal_id",None),
-            predictor_object=data.get("predictor_object", None)
+            predictor_object=data.get("predictor_object", None),
+            trade_interval=data.get("trade_interval", "1Day")
         )
 
     def __str__(self):
@@ -165,7 +168,8 @@ class Deal:
             "closed_by_error": self.closed_by_error,
             "current_profit_percentage": self.current_profit_percentage,
             "next_dragen_deal_id": self.next_dragen_deal_id,
-            "predictor_object": self.predictor_object
+            "predictor_object": self.predictor_object,
+            "trade_interval": self.trade_interval
 
         }
 

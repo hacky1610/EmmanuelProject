@@ -44,6 +44,8 @@ indicators = Indicators()
 ps = PredictorStore(db)
 #endregion
 
+is_hour = False
+
 trader = Trader(
     ig=ig,
     tiingo=tiingo,
@@ -54,7 +56,8 @@ trader = Trader(
     predictor_store=ps,
     deal_storage=ds,
     market_storage=ms,
-    cache=cache
+    cache=cache,
+    is_hour=is_hour
 )
 
 asyncio.run(trader.trade_markets(indicators))

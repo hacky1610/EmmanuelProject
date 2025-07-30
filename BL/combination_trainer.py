@@ -248,6 +248,7 @@ class CombinationTrainer:
               min_train_reward:int,
                combos: List = None):
 
+        print("Start training")
         df = df.loc[:, ~df.columns.duplicated()]
         #train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
         train_df , test_df = self._split(df)
@@ -323,17 +324,26 @@ class CombinationTrainer:
 
     def create_data(self, tiingo, symbol, trade_type, data_processor, simulation, factor_stop, factor_limit, indicators,
                     trade_mode: str,
-                    cache) -> (DataFrame, DataFrame, str):
-        df_train, eval_df_train = self._get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
-                                                       dropbox_cache=cache)
+                    cache, is_hour=False) -> (DataFrame, DataFrame, str):
+        print("Load data")
+        if is_hour:
+            df_train, eval_df_train = self._get_train_data_hour(tiingo, symbol, trade_type,
+                                                                data_processor=data_processor,
+                                                                dropbox_cache=cache)
+        else:
+            df_train, eval_df_train = self._get_train_data(tiingo, symbol, trade_type, data_processor=data_processor,
+                                                           dropbox_cache=cache)
+
         if len(df_train) < 500:
             raise Exception("Invalid data")
 
+        print("simulate")
         buy_results, sell_results = simulation.simulate(df_train, eval_df_train, symbol,
                                                        factor_stop=factor_stop,
-                                                        factor_limit=factor_limit)
-        simulation.get_signals(symbol, df_train, indicators, GenericPredictor)
-        train_signals_df = simulation.create_combined_indicator_data(indicators, symbol)
+                                                        factor_limit=factor_limit, is_hour=is_hour)
+        print("get signals")
+        simulation.get_signals(symbol, df_train, indicators, GenericPredictor, is_hour=is_hour)
+        train_signals_df = simulation.create_combined_indicator_data(indicators, symbol, is_hour=is_hour)
         trade_results = []
         pd.set_option('future.no_silent_downcasting', True)
         # Set specific replacement values for each trade type
@@ -369,6 +379,26 @@ class CombinationTrainer:
                                                             use_cache=True)
             dropbox_cache.save_train_cache(df_train, hour_df)
             dropbox_cache.save_train_cache(eval_df_train, day_df)
+
+        df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
+        eval_df_train = eval_df_train.astype(
+            {col: 'float32' for col in eval_df_train.select_dtypes(include='float64').columns})
+        return df_train, eval_df_train
+
+    @staticmethod
+    def _get_train_data_hour(tiingo: Tiingo, symbol: str, trade_type: TradeType, data_processor: DataProcessor,
+                        dropbox_cache: DropBoxCache) -> (DataFrame, DataFrame):
+        hour_df = f"{symbol}_train_1hour_forhour.csv"
+        minute_df = f"{symbol}_train_5minute_forhour.csv"
+
+        if dropbox_cache.train_cache_exist(hour_df) and dropbox_cache.train_cache_exist(minute_df):
+            df_train = dropbox_cache.load_train_cache(hour_df)
+            eval_df_train = dropbox_cache.load_train_cache(minute_df)
+        else:
+            df_train, eval_df_train = tiingo.load_test_data_hour(symbol, data_processor, trade_type=trade_type,
+                                                            use_cache=True)
+            dropbox_cache.save_train_cache(df_train, hour_df)
+            dropbox_cache.save_train_cache(eval_df_train, minute_df)
 
         df_train = df_train.astype({col: 'float32' for col in df_train.select_dtypes(include='float64').columns})
         eval_df_train = eval_df_train.astype(
