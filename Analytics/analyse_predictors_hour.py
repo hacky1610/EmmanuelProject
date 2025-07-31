@@ -26,27 +26,30 @@ analyzer = Analyzer()
 
 
 results_per_symbol = {}
-df = df[df._train_precision > 0.8]
-df = df[df.cluster_count > 7]
-df = df[df.test_cluster_count > 6]
+df = df[df._test_reward > 8]
+analyzer.analyze(df)
+exit(0)
+#df = df[df._train_precision > 0.8]
+#df = df[df.cluster_count > 7]
+#df = df[df.test_cluster_count > 6]
 
-best_df = DataFrame()
-for symbol, df_symbol in df.groupby('_symbol'):
-    best_result = analyzer.find_best_filter_combination(df_symbol)
-    best_df = pd.concat([best_df, best_result["filtered_df"]], axis=0, ignore_index=True)
+#best_df = DataFrame()
+#for symbol, df_symbol in df.groupby('_symbol'):
+#    best_result = analyzer.find_best_filter_combination(df_symbol)
+#    best_df = pd.concat([best_df, best_result["filtered_df"]], axis=0, ignore_index=True)
 
 
-best_df = best_df[best_df.wilson_score > 0.35]
+#best_df = best_df[best_df.wilson_score > 0.35]
 
-best_df = best_df[
-    (best_df["_test_precision"] >= 0.8) &
-    (best_df["wilson_score"] >= 0.55) &
-    (best_df["_test_reward"] >= 7) &
-    (best_df["_test_trade_count"] >= 10) &
-    (best_df["cluster_count"] <= 17) &
-    (best_df["test_cluster_count"] > 7) &
-    (best_df["train_index_median_distance"] >= 5)
-]
+#best_df = best_df[
+#    (best_df["_test_precision"] >= 0.8) &
+#    (best_df["wilson_score"] >= 0.55) &
+#    (best_df["_test_reward"] >= 7) &
+#    (best_df["_test_trade_count"] >= 10) &
+#    (best_df["cluster_count"] <= 17) &
+#    (best_df["test_cluster_count"] > 7) &
+#    (best_df["train_index_median_distance"] >= 5)
+#]
 
 analyzer.analyze(best_df)
 antwort = input("Möchtest du speichern? (y/N): ").strip().lower()

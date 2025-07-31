@@ -163,6 +163,9 @@ def train_symbols(markets, simulation, cache, tiingo, data_processor, indicators
 
     for market in markets:
         fx = market["symbol"]
+        #if fx not in ["EURUSD"]:
+        #    continue
+
         if fx not in low_spread_pairs:
             continue
         indicators.reset_caches()

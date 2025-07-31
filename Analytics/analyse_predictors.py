@@ -10,12 +10,9 @@ from BL import ConfigReader
 from Connectors.dropbox_cache import DropBoxCache
 from Connectors.dropboxservice import DropBoxService
 
-if os.name == "nt":
-    train_parquet_name = "C:\\Users\\adhada7\\Projects\predictor_win_7.parquet"
-    live_parquet_name = "C:\\Users\\adhada7\\Projects\predictor_filtered.parquet"
-else:
-    train_parquet_name = "/home/daniel/Documents/Projects/predictor_6.parquet"
-    live_parquet_name = "/home/daniel/Documents/Projects/predictor_filtered.parquet"
+train_parquet_name = "C:\\Users\\adhada7\\Projects\predictor_win_7.parquet"
+live_parquet_name = "C:\\Users\\adhada7\\Projects\predictor_filtered.parquet"
+
 
 df = pd.read_parquet(train_parquet_name)
 conf_reader = ConfigReader(live_config=False)

@@ -208,7 +208,7 @@ class CombinationTrainer:
 
     def _split(self, df):
 
-        BLOCK_SIZE = 25
+        BLOCK_SIZE = int(len(df) / 10)
 
 
         # In 25-Zeilen-Blöcke aufteilen
