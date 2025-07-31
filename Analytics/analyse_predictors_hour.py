@@ -27,6 +27,7 @@ analyzer = Analyzer()
 
 results_per_symbol = {}
 df = df[df._test_reward > 8]
+df = df[df.cluster_count > 4]
 analyzer.analyze(df)
 exit(0)
 #df = df[df._train_precision > 0.8]
