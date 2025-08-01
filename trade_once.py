@@ -49,6 +49,8 @@ analytics = Analytics(ms, tracer)
 indicators = Indicators(tracer=tracer)
 ps = PredictorStore(db)
 
+is_hour = True
+
 trader = Trader(
     ig=ig,
     tiingo=tiingo,
@@ -60,7 +62,8 @@ trader = Trader(
     deal_storage=ds,
     market_storage=ms,
     check_ig_performance=check_ig_performance,
-    cache=cache
+    cache=cache,
+    is_hour=is_hour
 )
 
 asyncio.run(trader.trade_markets(indicators))
