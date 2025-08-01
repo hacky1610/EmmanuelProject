@@ -131,10 +131,11 @@ class Tiingo:
             res = res.reset_index(drop=True)
 
         if fix_close_price:
-            close = self.get_last_hour_of_yesterday(ticker, data_processor, TradeType.FX)
-            old_close = res.loc[res.index[-1], "close"]
-            self._tracer.debug(f"{ticker} replace {old_close} with {close}")
-            res.loc[res.index[-1], "close"] = close
+            if resolution != "1hour":
+                close = self.get_last_hour_of_yesterday(ticker, data_processor, TradeType.FX)
+                old_close = res.loc[res.index[-1], "close"]
+                self._tracer.debug(f"{ticker} replace {old_close} with {close}")
+                res.loc[res.index[-1], "close"] = close
 
         if add_signals:
             data_processor.addSignals(res)
@@ -156,6 +157,10 @@ class Tiingo:
     @staticmethod
     def _get_start_time(days: int):
         return TimeUtils.get_date_string(date.today() - timedelta(days=days))
+
+    @staticmethod
+    def _get_start_time_by_hour(hours: int):
+        return TimeUtils.get_date_string(date.today() - timedelta(hours=hours))
 
 
 
@@ -324,6 +329,21 @@ class Tiingo:
 
         return df
 
+    def load_minute_data(self, symbol: str, dp: DataProcessor, trade_type, days: int = 1200, use_cache=True):
+
+        start_time = self._get_start_time_by_hour(hours=3)
+        df = self.load_data_by_date(ticker=symbol,
+                                    start=start_time,
+                                    end=None,
+                                    data_processor=dp,
+                                    use_cache=use_cache,
+                                    trade_type=trade_type,
+                                    resolution="5min",
+                                    validate=False,
+                                    suffix="mega")
+
+        return df
+
     def get_last_hour_of_yesterday(self, symbol: str, dp: DataProcessor, trade_type):
         from datetime import datetime, timedelta
         import pandas as pd
@@ -345,5 +365,28 @@ class Tiingo:
         # Sortiere nach Datum absteigend und nimm den letzten vollständigen Tag
         letzter_tag = df_23['day'].max()
         letzter_eintrag = df_23[df_23['day'] == letzter_tag].iloc[0]
+
+        return letzter_eintrag['close']
+
+    def get_last_minute_of_last_our(self, symbol: str, dp: DataProcessor, trade_type):
+        from datetime import datetime, timedelta
+        import pandas as pd
+
+        # Hole die letzten 7–14 Tage Stunden-Daten
+        df_min = self.load_minute_data(symbol, dp, trade_type, days=14, use_cache=False)
+        df_min['date'] = pd.to_datetime(df_min['date'], utc=True)
+
+        # Extrahiere Datum und Uhrzeit
+        df_min['hour'] = df_min['date'].dt.hour
+        df_min['minute'] = df_min['date'].dt.minute
+
+
+        # Filter auf Stunden == 23:00 UTC
+        df_23 = df_min[df_min['minute'] == 55].copy()
+
+        if df_23.empty:
+            raise ValueError(f"Keine 23:00 UTC Daten vorhanden für {symbol}")
+
+        letzter_eintrag = df_23.iloc[-1]
 
         return letzter_eintrag['close']
