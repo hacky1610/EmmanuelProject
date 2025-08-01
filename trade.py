@@ -44,7 +44,7 @@ indicators = Indicators()
 ps = PredictorStore(db)
 #endregion
 
-is_hour = False
+is_hour = True
 
 trader = Trader(
     ig=ig,
