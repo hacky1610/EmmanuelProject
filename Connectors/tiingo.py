@@ -172,6 +172,19 @@ class Tiingo:
                                       use_cache=False,
                                       suffix="", fix_close_price=True, remove_sundays=True)
 
+    def load_trade_data_hour(self, symbol: str, dp: DataProcessor, trade_type, days: int = 300):
+
+        start_time = self._get_start_time(days=days)
+        return self.load_data_by_date(ticker=symbol,
+                                      start=start_time,
+                                      end=None,
+                                      validate=False,
+                                      data_processor=dp,
+                                      trade_type=trade_type,
+                                      resolution="1hour",
+                                      use_cache=False,
+                                      suffix="", fix_close_price=True, remove_sundays=True)
+
     def _load_long_period(self, symbol: str,
                           trade_type, days: int = 100,
                           resolution: str = "1hour",

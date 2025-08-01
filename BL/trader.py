@@ -253,7 +253,10 @@ class Trader:
 
         self._tracer.debug(f"Attempting to trade {symbol}")
 
-        trade_df = self._tiingo.load_trade_data(symbol=symbol, dp=self._dataprocessor, trade_type=TradeType.FX)
+        if self._is_hour:
+            trade_df = self._tiingo.load_trade_data_hour(symbol=symbol, dp=self._dataprocessor, trade_type=TradeType.FX)
+        else:
+            trade_df = self._tiingo.load_trade_data(symbol=symbol, dp=self._dataprocessor, trade_type=TradeType.FX)
         if trade_df.empty:
             self._tracer.error(f"Could not load trade data for {symbol}")
             return TradeResult.ERROR
